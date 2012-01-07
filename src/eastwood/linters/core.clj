@@ -41,7 +41,8 @@
 (defn- check-usage-of-private-vars [exprs]
   (let [v-count (apply merge-with + (map var-count exprs))]
     (doseq [pvar (mapcat private-defs exprs)]
-      (when-not (get v-count pvar)
+      (when-not (or (get v-count pvar)
+                    (-> pvar meta :macro))
         (println "Private variable" pvar "is defined but never used")))))
 
 (defn unused-private-vars [exprs]
