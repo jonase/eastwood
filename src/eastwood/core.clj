@@ -8,6 +8,7 @@
 (defn- analyze [ns-sym]
   (let [source-file (-> (name ns-sym)
                         (string/replace "." "/")
+                        (string/replace "-" "_")
                         (str ".clj"))]
     (analyze/analyze-path source-file ns-sym)))
 

@@ -95,7 +95,7 @@
 (defmethod Expr->map Compiler$LetFnExpr
   [^Compiler$LetFnExpr expr env]
   (let [body (Expr->map (.body expr) env)
-        binding-inits (-> (doall (map BindingInit->vec (.bindingInits expr)))
+        binding-inits (-> (doall (map BindingInit->vec (.bindingInits expr) (repeat env)))
                         vec)]
     {:op :letfn
      :env env
