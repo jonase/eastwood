@@ -1,7 +1,7 @@
 (ns brittle.core
   (:use clojure.java.io)) ; Naked use
 
-(def *rebind-me* nil) ; non-dynamic, already checked by the compiler
+#_(def *rebind-me* nil) ; non-dynamic, already checked by the compiler
 
 (def ^:private unused) ; Never used
 
@@ -13,5 +13,7 @@
   (replicate 1 0) ; deprecated
   (.length s))
 
-(defn hour [] ;; Deprecated!
-  (.getHour ^java.util.Date (java.util.Date.)))
+
+
+(defn hour [] ;; Deprecated x 2!
+  (.getHours (java.util.Date. 2012 21 12)))

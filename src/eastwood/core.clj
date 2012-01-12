@@ -1,9 +1,11 @@
+(set! *warn-on-reflection* false)
 (ns eastwood.core
   (:require [analyze.core :as analyze]
             [clojure.string :as string]
             [clojure.set :as set]
             [eastwood.linters.core :as linters]
             [eastwood.linters.deprecated :as deprecated]))
+
 
 (defn analyze [ns-sym]
   (let [source-file (-> (name ns-sym)
@@ -33,4 +35,4 @@
     (doseq [ns namespaces]
       (lint exprs ns))))
 
-;(lint-ns 'brittle.core :exclude [:naked-use])
+;(lint-ns 'brittle.core :only [:deprecations])
