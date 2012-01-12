@@ -33,24 +33,4 @@
     (doseq [ns namespaces]
       (lint exprs ns))))
 
-(defn dissoc-rec
-  "dissoc[iate] keys recursively."
-  [m & keys]
-  (into (empty m)
-        (for [[key val] (apply dissoc m keys)]
-          [key (if (map? val)
-                 (apply remove-keys val keys)
-                 val)])))
-
-(defn print-expr [expr]
-  (println (dissoc-rec expr :children)))
-
-(defn expr-seq
-  "Given an expression, returns a lazy sequence of the expressions
-  followed by its children (in a depth first manner)"
-  [expr]
-  (tree-seq #(-> % :children boolean)
-            :children
-            expr))
-
 ;(lint-ns 'brittle.core :exclude [:naked-use])
