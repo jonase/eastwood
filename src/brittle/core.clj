@@ -13,3 +13,5 @@
   (replicate 1 0) ; deprecated
   (.length s))
 
+(defn hour [] ;; Deprecated!
+  (.getHour ^java.util.Date (java.util.Date.)))

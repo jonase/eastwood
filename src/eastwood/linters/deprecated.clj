@@ -1,15 +1,33 @@
-(ns eastwood.linters.deprecated)
+(ns eastwood.linters.deprecated
+  (:use [analyze.children :only [child-seq]]))
 
-(defn- var-seq [expr]
-  (if (= :var (:op expr))
-    [(:var expr)]
-    (mapcat var-seq (:children expr))))
+(defmulti deprecated :op)
 
-(defn- deprecated-var-seq [expr]
-  (filter #(:deprecated (meta %)) (var-seq expr)))
+(defmethod deprecated :var [expr]
+  (-> expr :var meta :deprecated))
 
-(defn deprecated-vars [exprs]
+(defmethod deprecated :instance-method [expr]
+  (->> expr
+       :Expr-obj
+       .method
+       .getAnnotations
+       (map #(.annotationType %))
+       (some #{java.lang.Deprecated})))
+
+(defmethod deprecated :default [_])
+
+(defmulti report-deprecated :op)
+
+(defmethod report-deprecated :var [expr] 
+  (println (:var expr) "is deprecated"))
+
+(defmethod report-deprecated :instance-method [expr] 
+  (println "Instance method" (-> expr :method :name)
+           "on" (-> expr :method :declaring-class)
+           "is deprecated."))
+
+(defn deprecations [exprs]
   (doseq [expr exprs
-          dvar (deprecated-var-seq expr)]
-    (println dvar "is deprecated")))
+          dexpr (filter deprecated (child-seq expr))]
+    (report-deprecated dexpr)))
 

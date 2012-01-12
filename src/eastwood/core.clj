@@ -5,7 +5,7 @@
             [eastwood.linters.core :as linters]
             [eastwood.linters.deprecated :as deprecated]))
 
-(defn- analyze [ns-sym]
+(defn analyze [ns-sym]
   (let [source-file (-> (name ns-sym)
                         (string/replace "." "/")
                         (string/replace "-" "_")
@@ -18,7 +18,7 @@
    :misplaced-docstrings linters/misplaced-docstrings
    ;:non-dynamic-earmuffs linters/non-dynamic-earmuffs ;checked by compiler
    :reflection linters/reflection
-   :deprecated-vars deprecated/deprecated-vars})
+   :deprecations deprecated/deprecations})
 
 (def ^:private all-linters (set (keys linters)))
 
@@ -32,5 +32,25 @@
         exprs (analyze ns-sym)]
     (doseq [ns namespaces]
       (lint exprs ns))))
+
+(defn dissoc-rec
+  "dissoc[iate] keys recursively."
+  [m & keys]
+  (into (empty m)
+        (for [[key val] (apply dissoc m keys)]
+          [key (if (map? val)
+                 (apply remove-keys val keys)
+                 val)])))
+
+(defn print-expr [expr]
+  (println (dissoc-rec expr :children)))
+
+(defn expr-seq
+  "Given an expression, returns a lazy sequence of the expressions
+  followed by its children (in a depth first manner)"
+  [expr]
+  (tree-seq #(-> % :children boolean)
+            :children
+            expr))
 
 ;(lint-ns 'brittle.core :exclude [:naked-use])
