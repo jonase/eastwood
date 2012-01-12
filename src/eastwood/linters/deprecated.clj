@@ -1,5 +1,5 @@
 (ns eastwood.linters.deprecated
-  (:use [analyze.children :only [child-seq]]))
+  (:use [analyze.util :only [expr-seq]]))
 
 (defmulti deprecated :op)
 
@@ -28,6 +28,6 @@
 
 (defn deprecations [exprs]
   (doseq [expr exprs
-          dexpr (filter deprecated (child-seq expr))]
+          dexpr (filter deprecated (expr-seq expr))]
     (report-deprecated dexpr)))
 
