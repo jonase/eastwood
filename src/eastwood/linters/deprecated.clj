@@ -13,35 +13,31 @@
        (some #{java.lang.Deprecated})))
 
 (defmethod deprecated :instance-method [expr]
-  ;(println "GOTHERE")
   (->> expr
        :Expr-obj
        .method
        java-is-deprecated?))
 
-#_(defmethod deprecated :new [expr]
-  (println "GOTHERE")
+(defmethod deprecated :new [expr]
   (->> expr
        :Expr-obj
        .ctor
        java-is-deprecated?))
 
 (defmethod deprecated :default [_]
-  (println (:op _))
   false)
 
 
 (defmulti report-deprecated :op)
 
 (defmethod report-deprecated :var [expr] 
-  (println (:var expr) "is deprecated"))
+  (printf "%s is deprecated\n" (:var expr)))
 
 (defmethod report-deprecated :instance-method [expr] 
-  (println "Instance method" (str \" (-> expr :Expr-obj .method) \")
-           "is deprecated."))
+  (printf "Instance method \"%s\" is deprecated\n" (-> expr :Expr-obj .method)))
 
 (defmethod report-deprecated :new [expr]
-  (println "Constructor" (str \" (-> expr :Expr-obj .ctor) \") "is deprecated"))
+  (printf "Constructor \"%s\" is deprecated\n" (-> expr :Expr-obj .ctor)))
 
 (defn deprecations [exprs]
   (doseq [expr exprs
