@@ -1,4 +1,5 @@
 (set! *warn-on-reflection* false)
+
 (ns eastwood.core
   (:require [analyze.core :as analyze]
             [clojure.string :as string]

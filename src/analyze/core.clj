@@ -83,14 +83,14 @@
 (defmethod analysis->map Compiler$LetExpr
   [^Compiler$LetExpr expr env]
   (let [body (analysis->map (.body expr) env)
-        bindings (-> (doall (map analysis->map (.bindingInits expr) (repeat env)))
-                   vec)]
+        binding-inits (-> (doall (map analysis->map (.bindingInits expr) (repeat env)))
+                         vec)]
     {:op :let
      :env env
-     :binding-inits bindings
+     :binding-inits binding-inits
      :body body
      :is-loop (.isLoop expr)
-     :children (conj bindings body)
+     :children (conj binding-inits body)
      :Expr-obj expr}))
 
 ;; letfn
@@ -175,7 +175,7 @@
   [^Compiler$InstanceFieldExpr expr env]
   (let [field (partial field-accessor Compiler$InstanceFieldExpr)
         target (analysis->map (field 'target expr) env)]
-    {:op :static-field
+    {:op :instance-field
      :env (assoc env
             :line (field 'line expr))
      :target target
@@ -184,7 +184,8 @@
               (@#'reflect/field->map field))
      :field-name (field 'fieldName expr)
      :tag (field 'tag expr)
-     :children [target]}))
+     :children [target]
+     :Expr-obj expr}))
 
 (defmethod analysis->map Compiler$NewExpr
   [^Compiler$NewExpr expr env]

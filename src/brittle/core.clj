@@ -1,4 +1,5 @@
 (ns brittle.core
+  (:import [java.awt Frame])
   (:use clojure.java.io)) ; Naked use
 
 #_(def *rebind-me* nil) ; non-dynamic, already checked by the compiler
@@ -16,4 +17,5 @@
 
 
 (defn hour [] ;; Deprecated x 2!
+  Frame/TEXT_CURSOR
   (.getHours (java.util.Date. 2012 21 12)))
