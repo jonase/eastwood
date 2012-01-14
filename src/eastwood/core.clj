@@ -5,7 +5,8 @@
             [clojure.string :as string]
             [clojure.set :as set]
             [eastwood.linters.core :as linters]
-            [eastwood.linters.deprecated :as deprecated]))
+            [eastwood.linters.deprecated :as deprecated]
+            [eastwood.linters.unused :as unused]))
 
 
 (defn analyze [ns-sym]
@@ -21,7 +22,9 @@
    :misplaced-docstrings linters/misplaced-docstrings
    ;:non-dynamic-earmuffs linters/non-dynamic-earmuffs ;checked by compiler
    :reflection linters/reflection
-   :deprecations deprecated/deprecations})
+   :deprecations deprecated/deprecations
+   :unused-locals unused/unused-locals
+   })
 
 (def ^:private all-linters (set (keys linters)))
 
@@ -36,4 +39,4 @@
     (doseq [ns namespaces]
       (lint exprs ns))))
 
-;(lint-ns 'brittle.core :only [:deprecations])
+;(lint-ns 'brittle.core :only [:unused-locals])

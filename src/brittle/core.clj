@@ -14,6 +14,10 @@
   (replicate 1 0) ; deprecated
   (.length s))
 
+(defn foo [x] ; <- never used
+  (let [a 0 x 1] ; <- a is never used
+    x))
+
 
 
 (defn hour [] ;; Deprecated x 2!
