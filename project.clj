@@ -1,7 +1,7 @@
 (defproject eastwood "0.0.1"
   :description "A Clojure lint tool"
   :dependencies [[org.clojure/clojure "1.3.0"]
-                 #_[analyze "0.1.2"]
+                 [analyze "0.1.3-SNAPSHOT"]
 
                  ;; OK - reflection warnings
                  #_[org.clojure/data.json "0.1.1"]

@@ -1,4 +1,4 @@
-(ns eastwood.linters.core)
+(ns eastwood.linters.misc)
 
 ;; Naked use
 (defn- warn-on-naked-use [use-expr]

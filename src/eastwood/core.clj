@@ -4,7 +4,7 @@
   (:require [analyze.core :as analyze]
             [clojure.string :as string]
             [clojure.set :as set]
-            [eastwood.linters.core :as linters]
+            [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.unused :as unused]))
 
@@ -17,11 +17,11 @@
     (analyze/analyze-path source-file ns-sym)))
 
 (def ^:private linters
-  {:naked-use linters/naked-use
-   :unused-private-vars linters/unused-private-vars
-   :misplaced-docstrings linters/misplaced-docstrings
-   ;:non-dynamic-earmuffs linters/non-dynamic-earmuffs ;checked by compiler
-   :reflection linters/reflection
+  {:naked-use misc/naked-use
+   :unused-private-vars misc/unused-private-vars
+   :misplaced-docstrings misc/misplaced-docstrings
+   ;; :non-dynamic-earmuffs misc/non-dynamic-earmuffs ; checked by compiler
+   :reflection misc/reflection
    :deprecations deprecated/deprecations
    :unused-locals unused/unused-locals
    })
