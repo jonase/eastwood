@@ -55,5 +55,5 @@
   (let [pdefs (private-defs exprs)
         vfreq (var-freq exprs)]
     (doseq [pvar pdefs
-            :when (nil? (vfreq pdefs))]
+            :when (nil? (vfreq pvar))]
       (println "Private var" pvar "is never used")))) 

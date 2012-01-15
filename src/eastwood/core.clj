@@ -23,20 +23,22 @@
    ;; :non-dynamic-earmuffs misc/non-dynamic-earmuffs ; checked by compiler
    :reflection reflection/reflection
    :deprecations deprecated/deprecations
-   :unused-locals unused/unused-locals
+   :unused-locals unused/unused-locals ; Currently too slow to be practical
    :unused-private-vars unused/unused-private-vars})
 
 (def ^:private all-linters (set (keys linters)))
 
 (defn- lint [exprs kw]
+  (println "==" kw "==")
   ((linters kw) exprs))
 
 (defn lint-ns [ns-sym & {:keys [only exclude] 
-                         :or {only all-linters
+                         :or {only (disj all-linters :unused-locals)
                               exclude nil}}]
-  (let [namespaces (set/difference (set only) (set exclude))
+  (let [linters (set/difference (set only) (set exclude))
         exprs (analyze ns-sym)]
-    (doseq [ns namespaces]
-      (lint exprs ns))))
+    (doseq [linter linters]
+      (lint exprs linter))))
 
 ;(lint-ns 'brittle.core)
+

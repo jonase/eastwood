@@ -27,5 +27,7 @@
 
 (defn reflection [exprs]
   (doseq [expr (mapcat expr-seq exprs)
-          :when (reflective-call? expr)]
+          :when (and (reflective-call? expr)
+                     (not (= "__methodImplCache"
+                             (:field-name expr))))]
     (report expr)))

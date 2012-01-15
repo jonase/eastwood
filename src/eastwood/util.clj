@@ -1,6 +1,8 @@
 (ns eastwood.util
   (:require [clojure.set :as set]))
 
+;; TODO: Profile!
+
 (defn local-bindings [expr]
   (condp = (:op expr)
     :fn-method (if-let [rest-param (:rest-param expr)]
