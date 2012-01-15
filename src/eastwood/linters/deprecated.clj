@@ -9,16 +9,18 @@
   (-> expr :var meta :deprecated))
 
 (defmethod deprecated :instance-method [expr]
-  (-> expr
-      :Expr-obj
-      .method
-      (.isAnnotationPresent java.lang.Deprecated)))
+  (let [method (-> expr
+                   :Expr-obj
+                   .method)]
+    (when method
+      (.isAnnotationPresent method java.lang.Deprecated))))
 
 (defmethod deprecated :static-field [expr]
-  (-> expr
-      :Expr-obj
-      .field
-      (.isAnnotationPresent java.lang.Deprecated)))
+  (let [field (-> expr
+                  :Expr-obj
+                  .field)]
+    (when field
+      (.isAnnotationPresent field java.lang.Deprecated))))
 
 (defmethod deprecated :new [expr]
   (-> expr

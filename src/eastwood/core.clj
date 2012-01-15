@@ -39,4 +39,4 @@
     (doseq [ns namespaces]
       (lint exprs ns))))
 
-;(lint-ns 'brittle.core :only [:reflection])
+;(lint-ns 'brittle.core)
