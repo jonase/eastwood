@@ -12,7 +12,8 @@
 
 (defn len [s] ; reflects
   (replicate 1 0) ; deprecated
-  (.length s))
+  (.length s)
+  (.method s 0))
 
 (defn foo [x] ; <- never used
   (let [a 0 x 1] ; <- a is never used

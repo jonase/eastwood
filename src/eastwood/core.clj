@@ -6,7 +6,8 @@
             [clojure.set :as set]
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
-            [eastwood.linters.unused :as unused]))
+            [eastwood.linters.unused :as unused]
+            [eastwood.linters.reflection :as reflection]))
 
 
 (defn analyze [ns-sym]
@@ -20,11 +21,10 @@
   {:naked-use misc/naked-use
    :misplaced-docstrings misc/misplaced-docstrings
    ;; :non-dynamic-earmuffs misc/non-dynamic-earmuffs ; checked by compiler
-   :reflection misc/reflection
+   :reflection reflection/reflection
    :deprecations deprecated/deprecations
    :unused-locals unused/unused-locals
-   :unused-private-vars unused/unused-private-vars
-   })
+   :unused-private-vars unused/unused-private-vars})
 
 (def ^:private all-linters (set (keys linters)))
 
@@ -39,4 +39,4 @@
     (doseq [ns namespaces]
       (lint exprs ns))))
 
-;(lint-ns 'brittle.core :only [:unused-private-vars])
+;(lint-ns 'brittle.core :only [:reflection])
