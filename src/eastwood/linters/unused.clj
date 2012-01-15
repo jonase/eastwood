@@ -12,15 +12,28 @@
 (defn binding-expr? [expr]
   (#{:let :let-fn :fn-method} (:op expr)))
 
-(defn report [locals]
-  ;; TODO: Line numbers?
-  (println "Bindings" locals "are never used"))
+(defmulti report (fn [expr locals] (:op expr)))
+
+(defmethod report :let [expr locals]
+  (if (> (count locals) 1)
+    (println "Unused let-locals:" locals)
+    (println "Unused let-local:" (first locals))))
+
+(defmethod report :let-fn [expr locals]
+  (if (> (count locals) 1)
+    (println "Unused letfn arguments:" locals)
+    (println "Unused letfn argument:" (first locals))))
+
+(defmethod report :fn-method [expr locals]
+  (if (> (count locals) 1)
+    (println "Unused fn arguments:" locals)
+    (println "Unused fn argument:" (first locals))))
 
 (defn unused-locals [exprs]
   (doseq [expr (mapcat expr-seq exprs)]
-    (if (and (binding-expr? expr))
+    (when (binding-expr? expr)
       (when-let [ul (seq (for [{sym :sym} (unused-locals* expr)
                                :when (not= '_ sym)]
                            sym))]
-        (report ul)))))
-                      
+        (report expr ul)))))
+
