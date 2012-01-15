@@ -22,32 +22,6 @@
     (find-and-analyze-use-forms expr)))
 
 
-;; Unused private vars
-(defn- defs [expr]
-  (apply concat
-         (when (= :def (:op expr)) [(:var expr)])
-         (map defs (:children expr))))
-
-(defn- private-defs [expr]
-  (filter #(:private (meta %))
-          (defs expr)))
-
-(defn- var-count [expr]
-  (if (= :var (:op expr))
-    {(:var expr) 1}
-    (apply merge-with +
-           (map var-count (:children expr)))))
-
-(defn- check-usage-of-private-vars [exprs]
-  (let [v-count (apply merge-with + (map var-count exprs))]
-    (doseq [pvar (mapcat private-defs exprs)]
-      (when-not (or (get v-count pvar)
-                    (-> pvar meta :macro))
-        (println "Private variable" pvar "is defined but never used")))))
-
-(defn unused-private-vars [exprs]
-  (check-usage-of-private-vars exprs))
-
 ;; Missplaced docstring
 
 (defn- check-def [exp]

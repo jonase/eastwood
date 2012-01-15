@@ -37,3 +37,23 @@
                            sym))]
         (report expr ul)))))
 
+;; Unused private vars
+(defn- private-defs [exprs]
+  (->> (mapcat expr-seq exprs)
+       (filter #(and (= :def (:op %))
+                     (-> % :var meta :private)
+                     (-> % :var meta :macro not))) ;; skip private macros
+       (map :var)))
+  
+(defn- var-freq [exprs]
+  (->> (mapcat expr-seq exprs)
+       (filter #(= :var (:op %)))
+       (map :var)
+       frequencies))
+  
+(defn unused-private-vars [exprs]
+  (let [pdefs (private-defs exprs)
+        vfreq (var-freq exprs)]
+    (doseq [pvar pdefs
+            :when (nil? (vfreq pdefs))]
+      (println "Private var" pvar "is never used")))) 

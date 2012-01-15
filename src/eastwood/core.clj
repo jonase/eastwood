@@ -18,12 +18,12 @@
 
 (def ^:private linters
   {:naked-use misc/naked-use
-   :unused-private-vars misc/unused-private-vars
    :misplaced-docstrings misc/misplaced-docstrings
    ;; :non-dynamic-earmuffs misc/non-dynamic-earmuffs ; checked by compiler
    :reflection misc/reflection
    :deprecations deprecated/deprecations
    :unused-locals unused/unused-locals
+   :unused-private-vars unused/unused-private-vars
    })
 
 (def ^:private all-linters (set (keys linters)))
@@ -39,4 +39,4 @@
     (doseq [ns namespaces]
       (lint exprs ns))))
 
-;(lint-ns 'brittle.core :only [:unused-locals])
+;(lint-ns 'brittle.core :only [:unused-private-vars])
