@@ -1,7 +1,8 @@
-(ns eastwood.linters.misc)
+(ns eastwood.linters.misc
+  (:use analyze.util))
 
 ;; Naked use
-(defn- warn-on-naked-use [use-expr]
+(defn- report-on-naked-use [use-expr]
   (doseq [s (map :val (:args use-expr))
           :when (symbol? s)]
     (println "Naked use of" (name s) "in" (-> use-expr :env :ns :name))))
@@ -11,40 +12,30 @@
        (= :var (-> expr :fexpr :op))
        (= 'use (-> expr :fexpr :var meta :name))))
 
-(defn- find-and-analyze-use-forms [expr]
-  (when (use? expr)
-    (warn-on-naked-use expr))
-  (doseq [child-expr (:children expr)]
-    (find-and-analyze-use-forms child-expr)))
-
 (defn naked-use [exprs]
-  (doseq [expr exprs]
-    (find-and-analyze-use-forms expr)))
+  (doseq [expr (mapcat expr-seq exprs)]
+    (when (use? expr)
+      (report-on-naked-use expr))))
+
 
 
 ;; Missplaced docstring
 
-(defn- check-def [exp]
-  (when (= :fn-expr (-> exp :init :op))
-    (doseq [method (-> exp :init :methods)]
+(defn- check-def [expr]
+  (when (= :fn-expr (-> expr :init :op))
+    (doseq [method (-> expr :init :methods)]
       (let [body (:body method)]
         (when (and (= :do (:op body))
                    (< 1 (count (-> body :exprs))))
           (let [first-exp (-> body :exprs first)]
             (when (and (= :literal (:op first-exp))
                        (string? (:val first-exp)))
-              (binding [*out* *err*]
-                (println "Possibly misplaced docstring," (-> exp :var))))))))))
-
-(defn- find-and-check-defs [exp]
-  (when (= :def (:op exp))
-    (check-def exp))
-  (doseq [child-exp (:children exp)]
-    (find-and-check-defs child-exp)))
+              (println "Possibly misplaced docstring," (-> expr :var)))))))))
 
 (defn misplaced-docstrings [exprs]
-  (doseq [exp exprs]
-    (find-and-check-defs exp)))
+  (doseq [expr (mapcat expr-seq exprs)
+          :when (= (:op expr) :def)]
+    (check-def expr)))
 
 ;; Nondynamic earmuffed var
 (defn- earmuffed? [sym]
@@ -53,20 +44,14 @@
          (.startsWith s "*")
          (.endsWith s "*"))))
 
-(defn- check-earmuffed-def [expr]
+(defn- report-earmuffed-def [expr]
   (let [v (:var expr)
         s (.sym v)]
     (when (and (earmuffed? s)
                (not (:is-dynamic expr)))
       (println "Should" v "be marked dynamic?"))))
 
-(defn- find-and-check-earmuffed-defs [expr]
-  (when (= :def (:op expr))
-    (check-earmuffed-def expr))
-  (doseq [child-expr (:children expr)]
-    (find-and-check-earmuffed-defs child-expr)))
-
 (defn non-dynamic-earmuffs [exprs]
-  (doseq [exp exprs]
-    (find-and-check-earmuffed-defs exp)))
-
+  (doseq [expr (mapcat expr-seq exprs)
+          :when (= (:op expr) :def)]
+    (report-earmuffed-def expr)))
