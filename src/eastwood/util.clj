@@ -15,9 +15,9 @@
 
 (defn free-locals [expr]
   (if (= (:op expr) :local-binding-expr)
-    #{(:local-binding expr)}
+    #{(:sym (:local-binding expr))}
     (set/difference (apply set/union (map free-locals
-                                          (:children expr)))
+                                          (:children expr))))
                     (local-bindings expr))))
 
 
