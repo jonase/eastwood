@@ -62,20 +62,53 @@
 (comment ;; Fails on
   (def ignore [:children :Expr-obj :ObjMethod-obj :LocalBinding-obj :BindingInit-obj :env :method :init])
   (def src '(loop [[a] nil] a))
-  (def boilerplate {:ns {:name 'user} :context :eval})
-  (def analyzed (analyze-one boilerplate src))
+  (def env {:ns {:name 'user} :context :eval})
+  (def analyzed (analyze-one env src))
   (unused-locals [analyzed])
 
   (apply print-expr analyzed ignore)
 
-  (fn [] (let [G__12015 nil
-               vec__12016 G__12015
-               a (nth vec__12016 0 nil)]
-           (do (let [G__12121 ?]
-                 (do (let [vec__12123 ?
-                           a ?]
-                       (do 1 a)))))))
-                 
-                     
+  ;;; Macroexpanding (loop ...):
+  
+  ;; (loop [[a] nil])
+  ;; The first 'a is never used
+  (let* [G__597 nil 
+         vec__598 G__597
+         a (nth vec__598 0 nil)]
+        (loop* [G__597 G__597]
+               (let* [vec__599 G__597
+                      a (nth vec__599 0 nil)])))
+        
+  ;; (loop [[a :as form] nil])
+  ;; the first 'a and 'form is never used
+  (let* [G__602 nil
+         vec__603 G__602
+         a (nth vec__603 0 nil)
+         form vec__603]
+        (loop* [G__602 G__602]
+               (let* [vec__604 G__602
+                      a (clojure.core/nth vec__604 0 nil)
+                      form vec__604])))
+  
+  
+  ;; (loop [[a & rest :as form] nil])
+  ;; The first 'a, 'rest and 'form is never used.
+  (let* [G__608 nil
+         vec__609 G__608
+         a (clojure.core/nth vec__609 0 nil)
+         rest (clojure.core/nthnext vec__609 1)
+         form vec__609]
+        (loop* [G__608 G__608]
+               (let* [vec__610 G__608
+                      a (clojure.core/nth vec__610 0 nil)
+                      rest (clojure.core/nthnext vec__610 1)
+                      form vec__610])))
+  
+  ;; (let [[a & rest :as form] nil]
+  (let* [vec__613 nil
+         a (clojure.core/nth vec__613 0 nil)
+         rest (clojure.core/nthnext vec__613 1)
+         form vec__613])       
+  
                
   )
