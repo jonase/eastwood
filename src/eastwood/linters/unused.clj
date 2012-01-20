@@ -4,7 +4,7 @@
   (:use analyze.core analyze.util))
 
 (defn binding-expr? [expr]
-  (#{:let :let-fn :fn-method} (:op expr)))
+  (#{:let :letfn :fn} (:op expr)))
 
 (defn locals-used [expr]
   (set (->> (expr-seq expr)
@@ -19,7 +19,7 @@
                  (set (map :LocalBinding-obj (:required-params expr))))
     :let (set (map #(-> % :local-binding :LocalBinding-obj)
                    (:binding-inits expr)))
-    :let-fn (set (map #(-> % :local-binding :LocalBinding-obj)
+    :letfn (set (map #(-> % :local-binding :LocalBinding-obj)
                       (:binding-inits expr)))))
 
 (defn report [expr locals]

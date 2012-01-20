@@ -20,6 +20,7 @@
 (def ^:private linters
   {:naked-use misc/naked-use
    :misplaced-docstrings misc/misplaced-docstrings
+   :def-in-def misc/def-in-def
    ;; :non-dynamic-earmuffs misc/non-dynamic-earmuffs ; checked by compiler
    :reflection reflection/reflection
    :deprecations deprecated/deprecations

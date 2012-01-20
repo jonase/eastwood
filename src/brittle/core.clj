@@ -24,3 +24,7 @@
 (defn hour [] ;; Deprecated x 2!
   Frame/TEXT_CURSOR
   (.getHours (java.util.Date. 2012 21 12)))
+
+
+(defn defndef [x]
+  (def a 3))
