@@ -23,7 +23,7 @@
    ;; :non-dynamic-earmuffs misc/non-dynamic-earmuffs ; checked by compiler
    :reflection reflection/reflection
    :deprecations deprecated/deprecations
-   :unused-locals unused/unused-locals ; Currently too slow to be practical
+   :unused-locals unused/unused-locals ; buggy with loops
    :unused-private-vars unused/unused-private-vars})
 
 (def ^:private all-linters (set (keys linters)))
@@ -40,5 +40,5 @@
     (doseq [linter linters]
       (lint exprs linter))))
 
-;(lint-ns 'brittle.core)
+;(lint-ns 'clojure.core.logic :only [:unused-locals])
 

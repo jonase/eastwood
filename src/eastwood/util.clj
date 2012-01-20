@@ -6,9 +6,9 @@
 (defmulti bound-locals :op)
 (defmulti free-locals :op)
 
-(defmethod bound-locals :fn-method [expr]
-  (let [required (set (map :sym (:required-params expr)))]
-    (if-let [rest (:sym (:rest-param expr))]
+(defn fn-method-bound-locals  [fnm]
+  (let [required (set (map :sym (:required-params fnm)))]
+    (if-let [rest (:sym (:rest-param fnm))]
       (conj required rest)
       required)))
 
@@ -25,7 +25,6 @@
   (take-while (complement empty?)
               (iterate rest seq)))
 
-(declare free-locals*)
 ;; Tricky because the second 'a in (let [a a] a) is free.
 (defmethod free-locals :let [expr]
   (let [free-in-bindings
@@ -41,16 +40,17 @@
                      (bound-locals expr))
      free-in-bindings)))
               
-(defn free-locals* [expr]
-  (set/difference (apply set/union (map free-locals
-                                          (:children expr)))
-                  (bound-locals expr)))
+(defn fn-method-free-locals [fnm]
+  (set/difference (free-locals (:body fnm))
+                  (fn-method-bound-locals fnm)))
 
-(defmethod free-locals :fn-method [expr]
-  (free-locals* expr))
+(defmethod free-locals :fn-expr [expr]
+  (apply set/union (map fn-method-free-locals (:methods expr))))
 
 (defmethod free-locals :letfn [expr]
-  (free-locals* expr))
+  (set/difference (apply set/union (map free-locals
+                                        (:children expr)))
+                  (bound-locals expr)))
 
 (defmethod free-locals :default [expr]
   (apply set/union (map free-locals (:children expr))))
