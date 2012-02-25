@@ -1,5 +1,7 @@
 # eastwood - a Clojure lint tool
 
+**Note:**  This tool is not yet usable. It's a work in progress.
+
 Eastwood is a clojure lint tool which uses the
 [analyze](https://github.com/frenchy64/analyze) library to inspect
 namespaces and report anomalies. Currently it works with projects
@@ -19,12 +21,6 @@ Eastwood warns when it finds
 - misplaced docstrings
 
 ## How to use?
-
-Add
-
-    [eastwood "0.0.1"]
-
-to your `:dev-dependencies` in `project.clj`.
 
 In the REPL: 
 
