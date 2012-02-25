@@ -58,12 +58,11 @@
 
 ;; Def-in-def
 
-
 (defn def-in-def [exprs]
   (doseq [expr (mapcat expr-seq exprs)
           :when (and (= (:op expr) :def)
                      (-> expr :var meta :macro not))]
-    (if (some #(= (:op %) :def) (rest (expr-seq expr)))
+    (when (some #(= (:op %) :def) (rest (expr-seq expr)))
       (println "There is a def inside" (:var expr)))))
 
 

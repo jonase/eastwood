@@ -7,7 +7,7 @@
   (not (:method expr)))
 
 (defmethod reflective-call? :instance-field [expr]
-  (not (:method expr)))
+  (not (:field expr)))
 
 (defmethod reflective-call? :default [_] false)
 
@@ -27,7 +27,5 @@
 
 (defn reflection [exprs]
   (doseq [expr (mapcat expr-seq exprs)
-          :when (and (reflective-call? expr)
-                     (not (= "__methodImplCache"
-                             (:field-name expr))))]
+          :when (reflective-call? expr)]
     (report expr)))

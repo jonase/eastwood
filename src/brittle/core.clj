@@ -28,3 +28,9 @@
 
 (defn defndef [x]
   (def a 3))
+
+;; This is often ok.
+(defmacro ^:private defindefmacro []
+  (def b nil))
+
+(defrecord SomeRecord [])
