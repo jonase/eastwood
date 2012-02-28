@@ -26,7 +26,7 @@
   (.getHours (java.util.Date. 2012 21 12)))
 
 
-(defn defndef [x]
+(defn defndef [y]
   (def a 3))
 
 ;; This is often ok.
@@ -34,3 +34,6 @@
   (def b nil))
 
 (defrecord SomeRecord [])
+
+(defprotocol SomeProto
+  (hmm [a b c]))

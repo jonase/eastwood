@@ -24,7 +24,8 @@
    ;; :non-dynamic-earmuffs misc/non-dynamic-earmuffs ; checked by compiler
    :reflection reflection/reflection
    :deprecations deprecated/deprecations
-   :unused-locals unused/unused-locals ; Currently too slow to be practical
+   ;; :unused-locals unused/unused-locals ; Currently too slow to be practical
+   :unused-fn-args unused/unused-fn-args
    :unused-private-vars unused/unused-private-vars})
 
 (def ^:private all-linters (set (keys linters)))
@@ -41,5 +42,9 @@
     (doseq [linter linters]
       (lint exprs linter))))
 
-;(lint-ns 'brittle.core)
-
+;; (lint-ns 'brittle.core)
+;; (lint-ns 'clojure.core.logic)
+;; (lint-ns 'clojure.java.jdbc.internal)
+;; (lint-ns 'clojure.core.match)
+;; (lint-ns 'clojure.data.csv)
+;; (lint-ns 'clojure.data.json)

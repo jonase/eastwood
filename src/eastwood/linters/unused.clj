@@ -3,48 +3,6 @@
             #_[eastwood.util :as util])
   (:use analyze.core analyze.util))
 
-(defn binding-expr? [expr]
-  (#{:let :letfn :fn} (:op expr)))
-
-(defn locals-used [expr]
-  (set (->> (expr-seq expr)
-            (filter #(= (:op %) :local-binding-expr))
-            (map #(-> % :local-binding :LocalBinding-obj)))))
-
-(defn local-bindings [expr]
-  (condp = (:op expr)
-    :fn-method (if-let [rest-param (:rest-param expr)]
-                 (conj (set (map :LocalBinding-obj (:required-params expr)))
-                       (:LocalBinding-obj rest-param))
-                 (set (map :LocalBinding-obj (:required-params expr))))
-    :let (set (map #(-> % :local-binding :LocalBinding-obj)
-                   (:binding-inits expr)))
-    :letfn (set (map #(-> % :local-binding :LocalBinding-obj)
-                      (:binding-inits expr)))))
-
-(defn report [expr locals]
-  (let [msg (condp = (:op  expr)
-              :let "let-local"
-              :let-fn "letfn argument"
-              :fn-method "fn argument")]
-    (if (> (count locals) 1)
-      (let [msg (str msg "s:")]
-        (apply println "Unused" msg locals))
-      (let [msg (str msg ":")]
-        (println "Unused" msg (first locals))))))
-
-(def ^:dynamic *ignore-locals* #{'_ '&form '&env})
-
-;; NOTE: destructured loop-locals are reported as unused
-(defn unused-locals [exprs]
-  (doseq [expr (mapcat expr-seq exprs)
-          :when (binding-expr? expr)]
-    (let [dl (local-bindings expr)
-          lu (locals-used expr)
-          diff (map #(.sym %) (set/difference dl lu))]
-      (when (seq (remove *ignore-locals* diff))
-        (report expr diff)))))
-
 ;; Unused private vars
 (defn- private-defs [exprs]
   (->> (mapcat expr-seq exprs)
@@ -67,29 +25,37 @@
       (println "Private var" pvar "is never used")))) 
 
 
-(comment
-  
-  (def src '(loop [[a] []] a))
-  (def analyzed (analyze-one {:ns {:name 'user} :context :eval}
-                             src))
+;; Unused fn args
 
-  (unused-locals [analyzed])
+(def ignore-args '#{_ &env &form})
 
-  (print-expr (analyze-one {:ns {:name 'user} :context :eval}
-                           '(let [a 0])))
+(defn- params [fn-method]
+  (let [required (:required-params fn-method)
+        rest (:rest-param fn-method)
+        params (if rest (cons rest required) required)]
+    (set (map #(select-keys % [:sym :idx]) params))))
 
-  (def expr (first (drop-while #(not= (:op %) :let)
-                                 (expr-seq analyzed))))
-  
-  (print-expr expr
-              :children
-              :env)
+(defn- used-locals [exprs]
+  (set
+   (->> exprs
+        (filter (op= :local-binding-expr))
+        (map :local-binding)
+        (map #(select-keys % [:sym :idx])))))
 
-  (locals-used expr)
+(defn- unused-fn-args* [fn-expr]
+  (reduce set/union
+          (for [method (:methods fn-expr)]
+            (let [args (params method)]
+              (set/difference args (used-locals (expr-seq (:body method))))))))
 
-  (local-bindings expr)
+(defn unused-fn-args [exprs]
+  (let [fn-exprs (->> (mapcat expr-seq exprs)
+                      (filter (op= :fn-expr)))]
+    (doseq [expr fn-exprs]
+      (let [unused (set/difference (set (map :sym (unused-fn-args* expr)))
+                                   ignore-args)]
+        (when-not (empty? unused)
+          (println "Args" unused "in" (:name expr) "is never used"))))))
 
-  (set/difference (local-bindings expr)
-                  (locals-used expr))
-  
-  )
+
+;; TODO: Unused locals
