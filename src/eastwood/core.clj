@@ -57,5 +57,8 @@
         excluded-linters (set (:exclude-linters opts))
         linters (set/difference linters excluded-linters)]
     (doseq [namespace namespaces]
-      (lint-ns namespace linters))))
+      (try
+        (lint-ns namespace linters)
+        (catch RuntimeException e
+          (println "Linting failed:" (.getMessage e)))))))
 

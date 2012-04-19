@@ -21,11 +21,11 @@ Eastwood warns when it finds
 
 ## Installation
 
-Eastwood is a leiningen plugin. Add `[jonase/eastwood "0.0.1"]` to
+Eastwood is a leiningen plugin. Add `[jonase/eastwood "0.0.2"]` to
 your `:plugins` vector in your `:user` profile (Leiningen 2) or if you
 are using Leiningen 1:
 
-    $ lein plugin install jonase/eastwood 0.0.1
+    $ lein plugin install jonase/eastwood 0.0.2
 
 ## Usage
 
