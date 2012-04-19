@@ -33,8 +33,7 @@
     :deprecations
     :unused-fn-args
     :keyword-typos
-    :unused-private-vars
-    :reflection})
+    :unused-private-vars})
 
 (defn- lint [exprs kw]
   ((linters kw) exprs))
@@ -48,7 +47,6 @@
       (println))))
 
 (defn run-eastwood [opts]
-  (pp/pprint opts)
   (let [namespaces (set (or (:namespaces opts)
                             (mapcat #(-> % io/file clj-ns/find-namespaces-in-dir)
                                     (:source-paths opts))))

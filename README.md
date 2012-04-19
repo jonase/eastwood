@@ -1,11 +1,9 @@
 # eastwood - a Clojure lint tool
 
-**Note:**  This tool is not yet usable. It's a work in progress.
-
 Eastwood is a clojure lint tool which uses the
 [analyze](https://github.com/frenchy64/analyze) library to inspect
-namespaces and report anomalies. Currently it works with projects
-running Clojure 1.3.0 and newer.
+namespaces and report possible problems. Currently it should works
+with projects running Clojure 1.3.0 and newer.
 
 ## What's there?
 
@@ -21,36 +19,45 @@ Eastwood warns when it finds
 - misplaced docstrings
 - keyword typos
 
-## How to use?
+## Installation
 
-In the REPL: 
+Eastwood is a leiningen plugin. Add `[jonase/eastwood "0.0.1"]` to
+your `:plugins` vector in your `:user` profile (Leiningen 2) or if you
+are using Leiningen 1:
 
-    > (use 'eastwood.core)
-    > (lint-ns 'my.namespace)
+    $ lein plugin install jonase/eastwood 0.0.1
 
-If you want to exclude some linters
+## Usage
 
-    (lint-ns 'my.namespace 
-             :exclude [:reflection :unused-private-vars])
+Running
 
-If you want to run one (or a few) linters:
+    $ lein eastwood
 
-    (lint-ns 'my.namespace :only [:misplaced-docstrings])
+in the root of your project will lint your projects namespaces. You
+can also lint your projects dependencies:
 
-Available linters include
+    $ lein eastwood '{:namespaces [clojure.set clojure.java.io] :exclude-linters [:unused-fn-args]}'
+    == Linting clojure.set ==
+    {:linter :misplaced-docstring,
+     :msg "Possibly misplaced docstring, #'clojure.set/bubble-max-key",
+     :line 13}
 
-    :deprecations 
-    :reflection 
-    :misplaced-docstrings 
-    :unused-locals 
-    :unused-private-vars 
-    :naked-use
+    == Linting clojure.java.io ==
+    {:linter :deprecated,
+     :msg
+     "Instance method 'public java.net.URL java.io.File.toURL() throws java.net.MalformedURLException' is deprecated.",
+     :line 50}
 
-## TODO
+Available options are:
 
-- Report line numbers.
-- More linters.
-- Lein plugin (will require Leiningen 2.0).
+* `:namespaces` Namespaces to lint
+* `:exclude-namespaces` Namespaces to exclude
+* `:linters` Linters to use
+* `:exclude-linters` Linters to exclude
+
+Note that you can add e.g., `{:eastwood {:exclude-linters
+[:keyword-typos]}}` to `.lein/profiles.clj` to disable linters you
+don't like.
 
 ## License
 
