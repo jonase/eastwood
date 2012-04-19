@@ -11,21 +11,22 @@
 
 (defmethod reflective-call? :default [_] false)
 
-(defmulti report :op)
+(defmulti msg :op)
 
-(defmethod report :instance-method [expr]
-  (println "Unresolved instance method"
+(defmethod msg :instance-method [expr]
+  (format "Unresolved instance method %s in %s"
            (:method-name expr)
-           "in"
            (-> expr :env :ns :name)))
 
-(defmethod report :instance-field [expr]
-  (println "Unresolved instance field"
+(defmethod msg :instance-field [expr]
+  (format "Unresolved instance field %s in %s"
            (:field-name expr)
-           "in"
            (-> expr :env :ns :name)))
 
 (defn reflection [exprs]
-  (doseq [expr (mapcat expr-seq exprs)
-          :when (reflective-call? expr)]
-    (report expr)))
+  (for [expr (mapcat expr-seq exprs)
+        :when (reflective-call? expr)]
+    {:linter :reflection
+     :msg (msg expr)
+     :line (-> expr :env :line)}))
+

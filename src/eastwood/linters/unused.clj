@@ -1,6 +1,6 @@
 (ns eastwood.linters.unused
   (:require [clojure.set :as set]
-            #_[eastwood.util :as util])
+            [eastwood.util :as util])
   (:use analyze.core analyze.util))
 
 ;; Unused private vars
@@ -20,14 +20,17 @@
 (defn unused-private-vars [exprs]
   (let [pdefs (private-defs exprs)
         vfreq (var-freq exprs)]
-    (doseq [pvar pdefs
-            :when (nil? (vfreq pvar))]
-      (println "Private var" pvar "is never used")))) 
+    (for [pvar pdefs
+          :when (nil? (vfreq pvar))]
+      {:linter :unused-private-var
+       :msg (format "Private var %s is never used" pvar)
+       :line (-> pvar :env :line)})))
+                    
 
 
 ;; Unused fn args
 
-(def ignore-args '#{_ &env &form})
+(def ^:private ignore-args '#{_ &env &form})
 
 (defn- params [fn-method]
   (let [required (:required-params fn-method)
@@ -38,7 +41,7 @@
 (defn- used-locals [exprs]
   (set
    (->> exprs
-        (filter (op= :local-binding-expr))
+        (filter (util/op= :local-binding-expr))
         (map :local-binding)
         (map #(select-keys % [:sym :idx])))))
 
@@ -50,12 +53,13 @@
 
 (defn unused-fn-args [exprs]
   (let [fn-exprs (->> (mapcat expr-seq exprs)
-                      (filter (op= :fn-expr)))]
-    (doseq [expr fn-exprs]
-      (let [unused (set/difference (set (map :sym (unused-fn-args* expr)))
-                                   ignore-args)]
-        (when-not (empty? unused)
-          (println "Args" unused "in" (:name expr) "is never used"))))))
-
+                      (filter (util/op= :fn-expr)))]
+    (for [expr fn-exprs
+          :let [unused (set/difference (set (map :sym (unused-fn-args* expr)))
+                                       ignore-args)]
+          :when (not-empty unused)]
+      {:linter :unused-fn-args
+       :msg (format "Function args %s are never used" unused)
+       :line (-> expr :env :line)})))
 
 ;; TODO: Unused locals

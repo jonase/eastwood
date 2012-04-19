@@ -1,5 +1,3 @@
-;; TODO: Check for deprecated Interfaces, Classes and Exceptions?
-
 (ns eastwood.linters.deprecated
   (:use [analyze.util :only [expr-seq print-expr]]))
 
@@ -23,33 +21,35 @@
       (.isAnnotationPresent field java.lang.Deprecated))))
 
 (defmethod deprecated :new [expr]
-  (-> expr
-      :Expr-obj
-      .ctor
-      (.isAnnotationPresent java.lang.Deprecated)))
+  (let [ctor (-> expr
+                 :Expr-obj
+                 .ctor)]
+    (when ctor
+      (.isAnnotationPresent ctor java.lang.Deprecated))))
 
 (defmethod deprecated :default [_] false)
 
-(defmulti report-deprecated :op)
+(defmulti msg :op)
 
-(defmethod report-deprecated :var [expr] 
-  (printf "Var '%s' is deprecated.\n"
+(defmethod msg :var [expr] 
+  (format "Var '%s' is deprecated."
           (:var expr)))
 
-(defmethod report-deprecated :instance-method [expr] 
-  (printf "Instance method '%s' is deprecated.\n"
+(defmethod msg :instance-method [expr] 
+  (format "Instance method '%s' is deprecated."
           (-> expr :Expr-obj .method)))
 
-(defmethod report-deprecated :static-field [expr]
-  (printf "Static field '%s' is deprecated.\n"
+(defmethod msg :static-field [expr]
+  (format "Static field '%s' is deprecated."
           (-> expr :Expr-obj .field)))
 
-(defmethod report-deprecated :new [expr]
-  (printf "Constructor '%s' is deprecated.\n"
+(defmethod msg :new [expr]
+  (format "Constructor '%s' is deprecated."
           (-> expr :Expr-obj .ctor)))
 
 (defn deprecations [exprs]
-  (doseq [expr exprs
-          dexpr (filter deprecated (expr-seq expr))]
-    (report-deprecated dexpr)))
-
+  (for [expr exprs
+        dexpr (filter deprecated (expr-seq expr))]
+    {:linter :deprecated
+     :msg (msg dexpr)
+     :line (-> dexpr :env :line)}))

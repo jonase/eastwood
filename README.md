@@ -5,7 +5,7 @@
 Eastwood is a clojure lint tool which uses the
 [analyze](https://github.com/frenchy64/analyze) library to inspect
 namespaces and report anomalies. Currently it works with projects
-running Clojure 1.3.0.
+running Clojure 1.3.0 and newer.
 
 ## What's there?
 
@@ -14,11 +14,12 @@ Eastwood warns when it finds
 - deprecated java instance methods, static fields, static methods and
   constructors
 - deprecated clojure vars
-- unused let-locals and function arguments
+- unused function arguments
 - unused private vars
 - reflection
 - naked (:use ...)
 - misplaced docstrings
+- keyword typos
 
 ## How to use?
 
