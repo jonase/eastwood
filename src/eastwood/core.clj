@@ -55,10 +55,11 @@
         linters (set (or (:linters opts)
                          default-linters))
         excluded-linters (set (:exclude-linters opts))
-        linters (set/difference linters excluded-linters)]
+        add-linters (set (:add-linters opts))
+        linters (-> (set/difference linters excluded-linters)
+                    (set/union add-linters))]
     (doseq [namespace namespaces]
       (try
         (lint-ns namespace linters)
         (catch RuntimeException e
           (println "Linting failed:" (.getMessage e)))))))
-

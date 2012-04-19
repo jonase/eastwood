@@ -20,7 +20,7 @@
   (let [project (update-in project
                            [:dependencies]
                            conj
-                           '[jonase/eastwood "0.0.2"])
+                           '[jonase/eastwood "0.0.3"])
 
         project (if (contains? project :source-path)
                   (assoc project :source-paths [(:source-path project)])
