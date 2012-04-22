@@ -30,7 +30,9 @@
 
 ;; Unused fn args
 
-(def ^:private ignore-args '#{_ &env &form})
+(defn- ignore-arg? [arg]
+  (or (contains? #{'&env '&form} arg)
+      (.startsWith (name arg) "_")))
 
 (defn- params [fn-method]
   (let [required (:required-params fn-method)
@@ -55,8 +57,10 @@
   (let [fn-exprs (->> (mapcat expr-seq exprs)
                       (filter (util/op= :fn-expr)))]
     (for [expr fn-exprs
-          :let [unused (set/difference (set (map :sym (unused-fn-args* expr)))
-                                       ignore-args)]
+          :let [unused (->> (unused-fn-args* expr)
+                            (map :sym)
+                            (remove ignore-arg?)
+                            set)]
           :when (not-empty unused)]
       {:linter :unused-fn-args
        :msg (format "Function args %s are never used" unused)
