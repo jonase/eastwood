@@ -34,7 +34,7 @@
   (for [expr (mapcat expr-seq exprs)
         :when (and (= (:op expr) :def)
                    (misplaced-docstring? expr))]
-    {:linter :misplaced-docstring
+    {:linter :misplaced-docstrings
      :msg (format "Possibly misplaced docstring, %s" (:var expr))
      :line (-> expr :env :line)}))
 

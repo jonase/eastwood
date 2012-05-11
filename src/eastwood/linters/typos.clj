@@ -24,6 +24,6 @@
                      (not= s1 s2)
                      (< 3 (count s1))
                      (< (levenshtein s1 s2) 2))]
-      {:linter :keyword-typo
+      {:linter :keyword-typos
        :msg (format "Possible keyword typo: %s instead of %s?" kw1 kw2)})))
 

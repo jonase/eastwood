@@ -50,6 +50,6 @@
 (defn deprecations [exprs]
   (for [expr exprs
         dexpr (filter deprecated (expr-seq expr))]
-    {:linter :deprecated
+    {:linter :deprecations
      :msg (msg dexpr)
      :line (-> dexpr :env :line)}))

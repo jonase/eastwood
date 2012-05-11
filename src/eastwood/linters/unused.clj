@@ -22,7 +22,7 @@
         vfreq (var-freq exprs)]
     (for [pvar pdefs
           :when (nil? (vfreq pvar))]
-      {:linter :unused-private-var
+      {:linter :unused-private-vars
        :msg (format "Private var %s is never used" pvar)
        :line (-> pvar :env :line)})))
                     

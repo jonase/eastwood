@@ -38,15 +38,27 @@ can also lint your projects dependencies:
 
     $ lein eastwood '{:namespaces [clojure.set clojure.java.io] :exclude-linters [:unused-fn-args]}'
     == Linting clojure.set ==
-    {:linter :misplaced-docstring,
+    {:linter :misplaced-docstrings,
      :msg "Possibly misplaced docstring, #'clojure.set/bubble-max-key",
      :line 13}
 
     == Linting clojure.java.io ==
-    {:linter :deprecated,
+    {:linter :deprecations,
      :msg
      "Instance method 'public java.net.URL java.io.File.toURL() throws java.net.MalformedURLException' is deprecated.",
      :line 50}
+
+Available linters are:
+
+* `:naked-use`
+* `:misplaced-docstrings`
+* `:def-in-def`
+* `:reflection`
+* `:deprecations`
+* `:unused-fn-args`
+* `:unused-private-vars`
+* `:keyword-typos`
+
 
 Available options are:
 
