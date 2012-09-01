@@ -35,16 +35,18 @@
     :keyword-typos
     :unused-private-vars})
 
-(defn- lint [exprs kw]
-  ((linters kw) exprs))
+(defn lint [ast-map ls]
+  (doseq [lint-fn (map linters ls)
+          result (lint-fn ast-map)]
+    (pp/pprint result)
+    (println)))
 
-(defn lint-ns [ns-sym linters]
-  (println "== Linting" ns-sym "==")
-  (let [exprs (analyze/analyze-path ns-sym)]
-    (doseq [linter linters
-            result (lint exprs linter)]
-      (pp/pprint result)
-      (println))))
+;; TODO: error handling
+(defn analyze-namespaces
+  "Returns a map from namespace to ast data"
+  [namespaces]
+  (zipmap namespaces
+          (map analyze/analyze-path namespaces)))
 
 (defn run-eastwood [opts]
   (let [namespaces (set (or (:namespaces opts)
@@ -58,8 +60,5 @@
         add-linters (set (:add-linters opts))
         linters (-> (set/difference linters excluded-linters)
                     (set/union add-linters))]
-    (doseq [namespace namespaces]
-      (try
-        (lint-ns namespace linters)
-        (catch RuntimeException e
-          (println "Linting failed:" (.getMessage e)))))))
+    (lint (analyze-namespaces namespaces) linters)))
+

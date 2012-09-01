@@ -8,14 +8,16 @@
        (= :var (-> expr :fexpr :op))
        (= 'use (-> expr :fexpr :var meta :name))))
 
-(defn naked-use [exprs]
-  (for [expr (mapcat expr-seq exprs)
+(defn naked-use [ast-map]
+  (for [[namespace exprs] ast-map
+        expr (mapcat expr-seq exprs)
         :when (use? expr)
         :let [s (filter symbol? (map :val (:args expr)))]
         :when (not-empty s)]
     {:linter :naked-use
      :msg (format "Naked use of %s in %s" (seq s) (-> expr :env :ns :name))
-     :line (-> expr :env :line)}))
+     :line (-> expr :env :line)
+     :ns namespace}))
 
 ;; Missplaced docstring
 
@@ -30,13 +32,15 @@
             (= :string
                (-> body :exprs first :op))))))
 
-(defn misplaced-docstrings [exprs]
-  (for [expr (mapcat expr-seq exprs)
+(defn misplaced-docstrings [ast-map]
+  (for [[namespace exprs] ast-map
+        expr (mapcat expr-seq exprs)
         :when (and (= (:op expr) :def)
                    (misplaced-docstring? expr))]
     {:linter :misplaced-docstrings
      :msg (format "Possibly misplaced docstring, %s" (:var expr))
-     :line (-> expr :env :line)}))
+     :line (-> expr :env :line)
+     :ns namespace}))
 
 ;; Nondynamic earmuffed var
 
@@ -46,8 +50,9 @@
          (.startsWith s "*")
          (.endsWith s "*"))))
 
-(defn non-dynamic-earmuffs [exprs]
-  (for [expr (mapcat expr-seq exprs)
+(defn non-dynamic-earmuffs [ast-map]
+  (for [[namespace exprs] ast-map
+        expr (mapcat expr-seq exprs)
         :when (= (:op expr) :def)
         :let [v (:var expr)
               s (.sym v)]
@@ -55,15 +60,18 @@
                    (not (:is-dynamic expr)))]
     {:linter :non-dynamic-earmuffs
      :msg (format "%s should be marked dynamic" v)
-     :line (-> expr :env :line)}))
+     :line (-> expr :env :line)
+     :ns namespace}))
 
 ;; Def-in-def
 
-(defn def-in-def [exprs]
-  (for [expr (mapcat expr-seq exprs)
+(defn def-in-def [ast-map]
+  (for [[namespace exprs] ast-map
+        expr (mapcat expr-seq exprs)
         :when (and (= (:op expr) :def)
                    (-> expr :var meta :macro not)
                    (some #(= (:op %) :def) (rest (expr-seq expr))))]
     {:linter :def-in-def
      :msg (format "There is a def inside %s" (:var expr))
-     :line (-> expr :env :line)}))
+     :line (-> expr :env :line)
+     :ns namespace}))

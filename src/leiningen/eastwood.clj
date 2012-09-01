@@ -11,7 +11,7 @@
                                               [(:source-path project)]))
            global-opts (:eastwood project)
            opts (merge global-opts opts)]
-       (eval-in-project (add-if-missing project '[jonase/eastwood "0.0.3"])
+       (eval-in-project (add-if-missing project '[jonase/eastwood "0.0.4-SNAPSHOT"])
                         `(eastwood.core/run-eastwood '~opts)
                         '(require 'eastwood.core)))))
 

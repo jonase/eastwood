@@ -47,9 +47,11 @@
   (format "Constructor '%s' is deprecated."
           (-> expr :Expr-obj .ctor)))
 
-(defn deprecations [exprs]
-  (for [expr exprs
+(defn deprecations [ast-map]
+  (for [[namespace exprs] ast-map
+        expr exprs
         dexpr (filter deprecated (expr-seq expr))]
     {:linter :deprecations
      :msg (msg dexpr)
-     :line (-> dexpr :env :line)}))
+     :line (-> dexpr :env :line)
+     :ns namespace}))

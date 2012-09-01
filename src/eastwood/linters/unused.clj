@@ -17,14 +17,17 @@
        (map :var)
        frequencies))
   
-(defn unused-private-vars [exprs]
-  (let [pdefs (private-defs exprs)
-        vfreq (var-freq exprs)]
-    (for [pvar pdefs
-          :when (nil? (vfreq pvar))]
-      {:linter :unused-private-vars
-       :msg (format "Private var %s is never used" pvar)
-       :line (-> pvar :env :line)})))
+(defn unused-private-vars [ast-map]
+  (mapcat (fn [[namespace exprs]]
+            (let [pdefs (private-defs exprs)
+                  vfreq (var-freq exprs)]
+              (for [pvar pdefs
+                    :when (nil? (vfreq pvar))]
+                {:linter :unused-private-vars
+                 :msg (format "Private var %s is never used" pvar)
+                 :line (-> pvar :env :line)
+                 :ns namespace})))
+          ast-map))
                     
 
 
@@ -53,17 +56,20 @@
             (let [args (params method)]
               (set/difference args (used-locals (expr-seq (:body method))))))))
 
-(defn unused-fn-args [exprs]
-  (let [fn-exprs (->> (mapcat expr-seq exprs)
-                      (filter (util/op= :fn-expr)))]
-    (for [expr fn-exprs
-          :let [unused (->> (unused-fn-args* expr)
-                            (map :sym)
-                            (remove ignore-arg?)
-                            set)]
-          :when (not-empty unused)]
-      {:linter :unused-fn-args
-       :msg (format "Function args %s are never used" unused)
-       :line (-> expr :env :line)})))
+(defn unused-fn-args [ast-map]
+  (mapcat (fn [[namespace exprs]]
+            (let [fn-exprs (->> (mapcat expr-seq exprs)
+                                (filter (util/op= :fn-expr)))]
+              (for [expr fn-exprs
+                    :let [unused (->> (unused-fn-args* expr)
+                                      (map :sym)
+                                      (remove ignore-arg?)
+                                      set)]
+                    :when (not-empty unused)]
+                {:linter :unused-fn-args
+                 :msg (format "Function args %s are never used" unused)
+                 :line (-> expr :env :line)
+                 :ns namespace})))
+          ast-map))
 
 ;; TODO: Unused locals
