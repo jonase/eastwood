@@ -9,6 +9,9 @@
            opts (assoc opts :source-paths (or (:source-paths opts)
                                               (:source-paths project)
                                               [(:source-path project)]))
+           opts (assoc opts :java-source-paths (or (:java-source-paths opts)
+                                                   (:java-source-paths project)
+                                                   [(:java-source-path project)]))
            global-opts (:eastwood project)
            opts (merge global-opts opts)]
        (eval-in-project (add-if-missing project '[jonase/eastwood "0.0.4-SNAPSHOT"])
