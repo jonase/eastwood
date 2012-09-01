@@ -4,22 +4,24 @@
   (:use analyze.core analyze.util))
 
 ;; Unused private vars
-(defn- private-defs [exprs]
+(defn- defs [exprs public?]
   (->> (mapcat expr-seq exprs)
        (filter #(and (= :def (:op %))
-                     (-> % :var meta :private)
-                     (-> % :var meta :macro not))) ;; skip private macros
-       (map :var)))
+                     (or public? (-> % :var meta :private))
+                     (-> % :var meta :macro not))) ;; skip macros
+       (map #(symbol (str (-> % :var meta :ns))
+                     (str (-> % :var meta :name))))))
 
 (defn- var-freq [exprs]
   (->> (mapcat expr-seq exprs)
        (filter #(= :var (:op %)))
-       (map :var)
+       (map #(symbol (str (-> % :var meta :ns))
+                     (str (-> % :var meta :name))))
        frequencies))
   
 (defn unused-private-vars [ast-map]
   (mapcat (fn [[namespace exprs]]
-            (let [pdefs (private-defs exprs)
+            (let [pdefs (defs exprs false)
                   vfreq (var-freq exprs)]
               (for [pvar pdefs
                     :when (nil? (vfreq pvar))]
@@ -29,10 +31,16 @@
                  :ns namespace})))
           ast-map))
                     
-
+;; Unused vars
+(defn unused-vars [ast-map]
+  (let [ds (set (defs (apply concat (vals ast-map)) true))
+        vs (set (keys (var-freq (apply concat (vals ast-map)))))
+        unused (set/difference ds vs)]
+    (for [var unused]
+      {:linter :unused-vars
+       :msg (format "The var %s is never used" var)})))
 
 ;; Unused fn args
-
 (defn- ignore-arg? [arg]
   (or (contains? #{'&env '&form} arg)
       (.startsWith (name arg) "_")))

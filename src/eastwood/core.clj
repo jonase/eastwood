@@ -24,6 +24,7 @@
    :deprecations deprecated/deprecations
    :unused-fn-args unused/unused-fn-args
    :unused-private-vars unused/unused-private-vars
+   :unused-vars unused/unused-vars
    :keyword-typos typos/keyword-typos})
 
 (def ^:private default-linters
