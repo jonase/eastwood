@@ -16,7 +16,7 @@
 
 (defn- var-freq [exprs]
   (->> (mapcat util/ast-nodes exprs)
-       (filter #(= :var (:op %)))
+       (filter #(contains? #{:var :the-var} (:op %)))
        (map :var)
        frequencies))
 
@@ -28,7 +28,7 @@
       {:linter :unused-private-vars
        :msg (format "Private var %s is never used" pvar)
        :line (-> pvar :env :line)})))
-                    
+
 
 
 ;; Unused fn args
