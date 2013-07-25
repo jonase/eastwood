@@ -3,5 +3,5 @@
   :dependencies [[analyze "0.1.6"]
                  [org.clojure/tools.namespace "0.1.2"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
-                 [leinjacker "0.1.0"]]
+                 [leinjacker "0.4.1"]]
   :eval-in-leiningen true)
