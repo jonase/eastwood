@@ -13,7 +13,7 @@
 
 (defn- var-freq [exprs]
   (->> (mapcat expr-seq exprs)
-       (filter #(= :var (:op %)))
+       (filter #(contains? #{:var :the-var} (:op %)))
        (map :var)
        frequencies))
   
