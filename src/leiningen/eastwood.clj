@@ -1,5 +1,5 @@
 (ns leiningen.eastwood
-  (:use [leinjacker.eval-in-project :only [eval-in-project]]
+  (:use [leinjacker.eval :only [eval-in-project]]
         [leinjacker.deps :only [add-if-missing]]))
 
 (defn eastwood
