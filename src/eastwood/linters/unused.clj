@@ -66,4 +66,27 @@
        :msg (format "Function args %s are never used" unused)
        :line (-> expr :env :line)})))
 
+
+;; Unused namespaces
+
+(defn required-namespaces [exprs]
+  (->> (mapcat expr-seq exprs)
+       (filter #(and (= (:op %) :invoke)
+                     (let [v (-> % :fexpr :var)]
+                       (or (= v #'clojure.core/require)
+                           (= v #'clojure.core/use)))))
+       (mapcat :args)
+       (map :val)
+       (map #(if (coll? %) (first %) %))
+       (remove keyword?)
+       (into #{})))
+
+(defn unused-namespaces [exprs]
+  (let [curr-ns (-> exprs first :env :ns :name)
+        required (required-namespaces exprs)
+        used (set (map #(-> % .ns .getName) (keys (var-freq exprs))))]
+    (for [ns (set/difference required used)]
+      {:linter :unused-namespaces
+       :msg (format "Namespace %s is never used in %s" ns curr-ns)})))
+
 ;; TODO: Unused locals

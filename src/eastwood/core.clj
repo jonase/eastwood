@@ -24,6 +24,7 @@
    :deprecations deprecated/deprecations
    :unused-fn-args unused/unused-fn-args
    :unused-private-vars unused/unused-private-vars
+   :unused-namespaces unused/unused-namespaces
    :keyword-typos typos/keyword-typos})
 
 (def ^:private default-linters
@@ -33,7 +34,8 @@
     :deprecations
     :unused-fn-args
     :keyword-typos
-    :unused-private-vars})
+    :unused-private-vars
+    :unused-namespaces})
 
 (defn- lint [exprs kw]
   ((linters kw) exprs))
