@@ -20,6 +20,7 @@
   {:naked-use misc/naked-use
    :misplaced-docstrings misc/misplaced-docstrings
    :def-in-def misc/def-in-def
+   :redefd-vars misc/redefd-vars
    :reflection reflection/reflection
    :deprecations deprecated/deprecations
    :unused-fn-args unused/unused-fn-args
@@ -31,6 +32,7 @@
   #{:naked-use
     :misplaced-docstrings
     :def-in-def
+    :redefd-vars
     :deprecations
     :unused-fn-args
     :keyword-typos

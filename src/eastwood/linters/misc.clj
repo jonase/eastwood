@@ -67,3 +67,28 @@
     {:linter :def-in-def
      :msg (format "There is a def inside %s" (:var expr))
      :line (-> expr :env :line)}))
+
+;; redef'd vars
+
+(defn- defd-vars [exprs]
+  (->> (mapcat expr-seq exprs)
+       (filter #(= :def (:op %)))
+       (map :var)))
+
+(defn redefd-vars [exprs]
+  (let [defd-vars (defd-vars exprs)
+        defd-var-groups (group-by identity defd-vars)
+;;        _ (do
+;;            (println (format "dbg # defd-vars=%d, unique defd-vars=%d,  defd-var-freq="
+;;                             (count defd-vars)
+;;                             (count defd-var-groups)))
+;;            (clojure.pprint/pprint defd-var-groups)
+;;            (println (format "All defd-vars with their line numbers:"))
+;;            (doseq [v defd-vars]
+;;              (println (format "    %s LINE=%d" v (-> v meta :line)))))
+        ]
+    (for [[defd-var vlist] defd-var-groups
+          :when (> (count vlist) 1)]
+      {:linter :redefd-vars
+       :msg (format "Var %s defined %d times" defd-var (count vlist))
+       :line (-> (second vlist) meta :line)})))
