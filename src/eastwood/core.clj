@@ -28,15 +28,16 @@
    :keyword-typos typos/keyword-typos})
 
 (def ^:private default-linters
-  #{:naked-use
-    :misplaced-docstrings
+  #{;;:naked-use
+    ;;:misplaced-docstrings
     :def-in-def
     :redefd-vars
-    :deprecations
-    :unused-fn-args
-    :keyword-typos
-    :unused-private-vars
-    :unused-namespaces})
+    ;;:deprecations
+    ;;:unused-fn-args
+    ;;:keyword-typos
+    ;;:unused-private-vars
+    ;;:unused-namespaces
+    })
 
 (defn- lint [exprs kw]
   ((linters kw) exprs))
