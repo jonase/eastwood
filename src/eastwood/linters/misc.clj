@@ -61,17 +61,6 @@
      :msg (format "%s should be marked dynamic" v)
      :line (-> expr :env :line)}))
 
-;; Def-in-def
-
-(defn def-in-def [exprs]
-  (for [expr (mapcat expr-seq exprs)
-        :when (and (= (:op expr) :def)
-                   (-> expr :var meta :macro not)
-                   (some #(= (:op %) :def) (rest (expr-seq expr))))]
-    {:linter :def-in-def
-     :msg (format "There is a def inside %s" (:var expr))
-     :line (-> expr :env :line)}))
-
 ;; redef'd vars
 
 ;; Attempt to detect any var that is def's multiple times in the same
@@ -185,3 +174,24 @@
                     (string/join " "
                                  (map #(get-in % [:env :line]) vlist)))
        :line (-> (second vlist) :env :line)})))
+
+
+;; Def-in-def
+
+;; TBD: The former implementation of def-in-def only signaled a
+;; warnings if the parent def was not a macro.  Should that be done
+;; here, too?  Try to find a small example, if so, and add it to
+;; tryanalyzer.
+
+(defn- def-in-def-vars [exprs]
+  (let [nested-vars (:nested-defs (def-walker exprs))]
+    (map var-info nested-vars)))
+
+
+(defn def-in-def [exprs]
+  (let [nested-vars (def-in-def-vars exprs)]
+    (for [nested-var nested-vars]
+      {:linter :def-in-def
+       :msg (format "There is a def of %s nested inside def TBD"
+                    (:var nested-var))
+       :line (-> nested-var :env :line)})))
