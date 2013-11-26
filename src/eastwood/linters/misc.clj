@@ -126,6 +126,14 @@ significantly faster than the otherwise equivalent (= (count s) n)"
   (or (hasroot-expr? form)
       (and (sequential? form)
            (some contains-hasroot-expr? form))))
+
+
+(defn def-expr-with-value?
+  [form]
+  (and (sequential? form)
+       (count-equals? form 3)
+       (= 'def (nth form 0))
+       [(nth form 1) (nth form 2)]))
   
 
 ;; TBD: I am sure defonce-or-defmulti-macro-expansion? can be written
@@ -197,12 +205,21 @@ a (defonce foo val) expression.  If it is, return [foo val]."
             :ancestor-op-vec (conj ancestor-op-vec (:op ast))
             :ancestor-op-set-stack (conj ancestor-op-set-stack ancestor-op-set)
             :ancestor-op-set (conj ancestor-op-set (:op ast))
-            :top-level-defs (if (and def?
-                                     (not declare?)
-                                     (not nested-def?)
-                                     (not inside-defonce-or-defmulti-expr?))
-                              (conj top-level-defs ast)
-                              top-level-defs)
+            ;; TBD: We want to remember that a var def'd inside of a
+            ;; defonce or defmulti was def'd, but only once, not
+            ;; multiple times.  Fortunately all macroexpansions of
+            ;; defonce and defmulti in Clojure 1.5.1 have exactly one
+            ;; (def foo) and one (def foo val) expression.  Pick the
+            ;; second one to remember.
+            :top-level-defs
+            (let [remember-def? (if (and def? (not declare?) (not nested-def?))
+                                  (if inside-defonce-or-defmulti-expr?
+                                    (def-expr-with-value? (:form ast))
+                                    true)
+                                  false)]
+              (if remember-def?
+                (conj top-level-defs ast)
+                top-level-defs))
             :nested-defs (if nested-def?
                            (conj nested-defs ast)
                            nested-defs)
