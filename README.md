@@ -78,6 +78,20 @@ Note that you can add e.g., `{:eastwood {:exclude-linters
 don't like.
 
 
+## Bugs
+
+If more than one namespace is analyzed in a single command, settings
+like (set! *warn-on-reflection* true) will be preserved from one
+namespace to the next.
+
+Protocols (defined with defprotocol) give a redef'd warning.  They
+should not, but I have not yet determined what condition can be used
+to show that the var has not been redefined.
+
+Several namespaces in contrib libraries give NullPointerException when
+trying to analyze them.
+
+
 ## License
 
 Copyright (C) 2012 Jonas Enlund
