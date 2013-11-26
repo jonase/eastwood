@@ -164,18 +164,18 @@
 (defn redefd-vars [exprs]
   (let [defd-vars (defd-vars exprs)
         defd-var-groups (group-by :var defd-vars)
-        _ (do
+;;        _ (do
 ;;            (println (format "dbg all (:op :name) keys of exprs=%s"
 ;;                             (seq (map (juxt :op :name) exprs))))
-            (println (format "dbg # defd-vars=%d, unique defd-vars=%d"
-                             (count defd-vars)
-                             (count defd-var-groups)))
+;;            (println (format "dbg # defd-vars=%d, unique defd-vars=%d"
+;;                             (count defd-vars)
+;;                             (count defd-var-groups)))
             ;;(println (format " defd-var-freq="))
             ;;(pp/pprint defd-var-groups)
-            (println (format "All defd-vars with their line numbers:"))
-            (doseq [{:keys [var env]} defd-vars]
-              (println (format "    %s LINE=%d COL=%d FILE=%s"
-                               var (:line env) (:column env) (:file env)))))
+;;            (println (format "All defd-vars with their line numbers:"))
+;;            (doseq [{:keys [var env]} defd-vars]
+;;              (println (format "    %s LINE=%d COL=%d FILE=%s"
+;;                               var (:line env) (:column env) (:file env)))))
         ]
     (for [[defd-var vlist] defd-var-groups
           :when (> (count vlist) 1)]
