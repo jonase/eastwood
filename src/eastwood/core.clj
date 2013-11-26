@@ -1,9 +1,10 @@
 (ns eastwood.core
   (:require [clojure.java.io :as io]
-            [analyze.core :as analyze]
+            [eastwood.analyze-ns :as analyze]
             [clojure.string :as string]
             [clojure.set :as set]
             [clojure.pprint :as pp]
+            [clojure.repl :as repl]
             [clojure.tools.namespace :as clj-ns]
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
@@ -13,8 +14,6 @@
   (:import [java.io PushbackReader]
            [clojure.lang LineNumberingPushbackReader]))
 
-(reset! analyze/JAVA-OBJ true)
-(reset! analyze/CHILDREN true)
 
 (def ^:private linters
   {:naked-use misc/naked-use
@@ -42,9 +41,9 @@
 (defn- lint [exprs kw]
   ((linters kw) exprs))
 
-(defn lint-ns [ns-sym linters]
+(defn lint-ns [ns-sym linters opts]
   (println "== Linting" ns-sym "==")
-  (let [exprs (analyze/analyze-path ns-sym)]
+  (let [exprs (analyze/analyze-ns ns-sym :opt opts)]
     (doseq [linter linters
             result (lint exprs linter)]
       (pp/pprint result)
@@ -64,6 +63,7 @@
                     (set/union add-linters))]
     (doseq [namespace namespaces]
       (try
-        (lint-ns namespace linters)
+        (lint-ns namespace linters opts)
         (catch RuntimeException e
-          (println "Linting failed:" (.getMessage e)))))))
+          (println "Linting failed:")
+          (repl/pst e 100))))))

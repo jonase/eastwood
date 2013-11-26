@@ -1,5 +1,7 @@
-(ns eastwood.linters.deprecated
-  (:use [analyze.util :only [expr-seq print-expr]]))
+(ns eastwood.linters.deprecated)
+
+(def expr-seq identity)
+
 
 (defmulti deprecated :op)
 

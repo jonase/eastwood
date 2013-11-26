@@ -1,7 +1,9 @@
 (ns eastwood.linters.unused
   (:require [clojure.set :as set]
-            [eastwood.util :as util])
-  (:use analyze.core analyze.util))
+            [eastwood.util :as util]))
+
+(def expr-seq identity)
+
 
 ;; Unused private vars
 (defn- private-defs [exprs]
