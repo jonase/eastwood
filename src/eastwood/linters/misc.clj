@@ -83,40 +83,144 @@
 ;; situation and not warn about them.  Also, why don't the :def's have
 ;; line numbers?
 
+
+;; TBD: defonce-or-defmulti-macro-expansion? is a bit of a hackish way
+;; to recognize the macroexpansion of a defonce or defmulti
+;; declaration.  Without doing something to recognize these forms, the
+;; two occurrences of (def foo ...) in the expansion leads to a
+;; :redefd-vars warning.
+
+(defn count-at-most-n+1
+  "Return (count s) if it is at most n+1, otherwise return n+1.  Do
+this without counting past n+1 elements in s.  Significantly faster
+than (count s) if all you care about is whether it has exactly n
+items."
+  [s n]
+  (let [limit (inc n)]
+    (loop [c 0
+           s (seq s)]
+      (if s
+        (if (== c limit)
+          c
+          (recur (inc c) (next s)))
+        c))))
+
+
+(defn count-equals?
+  "Verify that a sequential s has exactly n elements, without counting
+past n+1 elements in the sequence.  If s is long, this can be
+significantly faster than the otherwise equivalent (= (count s) n)"
+  [s n]
+  (= n (count-at-most-n+1 s n)))
+
+
+(defn hasroot-expr?
+  [form]
+  (and (sequential? form)
+       (count-equals? form 2)
+       (= '.hasRoot (nth form 0))
+       [(nth form 1)]))
+
+(defn contains-hasroot-expr?
+  [form]
+  (or (hasroot-expr? form)
+      (and (sequential? form)
+           (some contains-hasroot-expr? form))))
+  
+
+;; TBD: I am sure defonce-or-defmulti-macro-expansion? can be written
+;; more clearly and concisely using core.match or core.logic.
+
+(defn defonce-or-defmulti-macro-expansion?
+  "Return false if form is not the same as a macroexpansion of
+a (defonce foo val) expression.  If it is, return [foo val]."
+  [form]
+  (and (sequential? form)
+       (= 'let* (first form))
+       (count-equals? form 3)
+       (let [bindings (nth form 1)
+             body (nth form 2)]
+         (and (vector? bindings)
+              (= 2 (count bindings))
+              (sequential? body)
+              (count-equals? body 3)
+              (= 'clojure.core/when-not (nth body 0))
+              (let [symbol-bound (nth bindings 0)
+                    val-bound (nth bindings 1)
+                    when-not-condition (nth body 1)
+                    when-not-body (nth body 2)]
+                (symbol? symbol-bound)
+                (sequential? val-bound)
+                (count-equals? val-bound 2)
+                (= 'def (first val-bound))
+                (sequential? when-not-body)
+                (count-equals? when-not-body 3)
+                (= 'def (nth when-not-body 0))
+                (let [first-def-sym (nth val-bound 1)
+                      second-def-sym (nth when-not-body 1)
+                      [hasroot-symbol] (contains-hasroot-expr?
+                                        when-not-condition)]
+                  (and hasroot-symbol
+                       (symbol? hasroot-symbol)
+                       (= symbol-bound hasroot-symbol)
+                       (symbol? first-def-sym)
+                       (symbol? second-def-sym)
+                       (= first-def-sym second-def-sym)
+                       [first-def-sym (nth when-not-body 2)])))))))
+
+
 (def ^:dynamic *def-walker-data* 0)
 
+
+;; TBD: Test a case like this to see what happens:
+
+;; (defonce foo (defonce bar 5))
+
+;; I doubt many people would write code like that, but it would be a
+;; good corner test to see how this code handles it.  It would be good
+;; if it could be recognized as a :def-in-def warning.
 
 (defn def-walker-pre1 [ast]
   (let [{:keys [ancestor-op-vec ancestor-op-set
                 ancestor-op-set-stack top-level-defs
-                nested-defs]} *def-walker-data*
+                nested-defs defonce-or-defmulti-match-stack]} *def-walker-data*
+        defonce-or-defmulti-expr? (defonce-or-defmulti-macro-expansion?
+                                    (:form ast))
         def? (= :def (:op ast))
         declare? (and def? (-> ast :name meta :declared true?))
         nested-def? (and def?
-                         (contains? ancestor-op-set :def))]
+                         (contains? ancestor-op-set :def))
+        inside-defonce-or-defmulti-expr? (some vector?
+                                               defonce-or-defmulti-match-stack)]
     (set! *def-walker-data*
           (assoc *def-walker-data*
             :ancestor-op-vec (conj ancestor-op-vec (:op ast))
             :ancestor-op-set-stack (conj ancestor-op-set-stack ancestor-op-set)
             :ancestor-op-set (conj ancestor-op-set (:op ast))
-            :top-level-defs (if (and def? (not declare?) (not nested-def?))
+            :top-level-defs (if (and def?
+                                     (not declare?)
+                                     (not nested-def?)
+                                     (not inside-defonce-or-defmulti-expr?))
                               (conj top-level-defs ast)
                               top-level-defs)
             :nested-defs (if nested-def?
                            (conj nested-defs ast)
-                           nested-defs))))
+                           nested-defs)
+            :defonce-or-defmulti-match-stack (conj defonce-or-defmulti-match-stack
+                                                   defonce-or-defmulti-expr?))))
   ast)
 
 
 (defn def-walker-post1 [ast]
   (let [{:keys [ancestor-op-vec ancestor-op-set
                 ancestor-op-set-stack top-level-defs
-                nested-defs]} *def-walker-data*]
+                nested-defs defonce-or-defmulti-match-stack]} *def-walker-data*]
     (set! *def-walker-data*
           (assoc *def-walker-data*
             :ancestor-op-vec (pop ancestor-op-vec)
             :ancestor-op-set-stack (pop ancestor-op-set-stack)
-            :ancestor-op-set (peek ancestor-op-set-stack))))
+            :ancestor-op-set (peek ancestor-op-set-stack)
+            :defonce-or-defmulti-match-stack (pop defonce-or-defmulti-match-stack))))
   ast)
 
 
@@ -125,7 +229,8 @@
                                :ancestor-op-set #{}
                                :ancestor-op-set-stack []
                                :top-level-defs []
-                               :nested-defs []}]
+                               :nested-defs []
+                               :defonce-or-defmulti-match-stack []}]
     (doseq [ast ast-seq]
       (pass/walk ast def-walker-pre1 def-walker-post1)
 ;;      (println (format "dbg *def-walker-data* %s"
@@ -135,7 +240,8 @@
 ;;      (pp/pprint (map :var (:nested-defs *def-walker-data*)))
       (assert (empty? (:ancestor-op-vec *def-walker-data*)))
       (assert (empty? (:ancestor-op-set *def-walker-data*)))
-      (assert (empty? (:ancestor-op-set-stack *def-walker-data*))))
+      (assert (empty? (:ancestor-op-set-stack *def-walker-data*)))
+      (assert (empty? (:defonce-or-defmulti-match-stack *def-walker-data*))))
     (select-keys *def-walker-data* [:top-level-defs :nested-defs])))
 
 
