@@ -169,24 +169,24 @@ a (defonce foo val) expression.  If it is, return [foo val]."
                     val-bound (nth bindings 1)
                     when-not-condition (nth body 1)
                     when-not-body (nth body 2)]
-                (symbol? symbol-bound)
-                (sequential? val-bound)
-                (count-equals? val-bound 2)
-                (= 'def (first val-bound))
-                (sequential? when-not-body)
-                (count-equals? when-not-body 3)
-                (= 'def (nth when-not-body 0))
-                (let [first-def-sym (nth val-bound 1)
-                      second-def-sym (nth when-not-body 1)
-                      [hasroot-symbol] (contains-hasroot-expr?
-                                        when-not-condition)]
-                  (and hasroot-symbol
-                       (symbol? hasroot-symbol)
-                       (= symbol-bound hasroot-symbol)
-                       (symbol? first-def-sym)
-                       (symbol? second-def-sym)
-                       (= first-def-sym second-def-sym)
-                       [first-def-sym (nth when-not-body 2)])))))))
+                (and (symbol? symbol-bound)
+                     (sequential? val-bound)
+                     (count-equals? val-bound 2)
+                     (= 'def (first val-bound))
+                     (sequential? when-not-body)
+                     (count-equals? when-not-body 3)
+                     (= 'def (nth when-not-body 0))
+                     (let [first-def-sym (nth val-bound 1)
+                           second-def-sym (nth when-not-body 1)
+                           [hasroot-symbol] (contains-hasroot-expr?
+                                             when-not-condition)]
+                       (and hasroot-symbol
+                            (symbol? hasroot-symbol)
+                            (= symbol-bound hasroot-symbol)
+                            (symbol? first-def-sym)
+                            (symbol? second-def-sym)
+                            (= first-def-sym second-def-sym)
+                            [first-def-sym (nth when-not-body 2)]))))))))
 
 
 (def ^:dynamic *def-walker-data* 0)
