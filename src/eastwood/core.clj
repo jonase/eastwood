@@ -53,7 +53,7 @@
 (defn run-eastwood [opts]
   (let [namespaces (set (or (:namespaces opts)
                             (mapcat #(-> % io/file clj-ns/find-namespaces-in-dir)
-                                    (:source-paths opts))))
+                                    (concat (:source-paths opts) (:test-paths opts)))))
         excluded-namespaces (set (:exclude-namespaces opts))
         namespaces (set/difference namespaces excluded-namespaces)
         linters (set (or (:linters opts)
