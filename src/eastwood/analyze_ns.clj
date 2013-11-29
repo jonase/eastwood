@@ -148,15 +148,17 @@
     - :debug-forms If true, print forms just before analysis, both
                    before and after macroexpanding them.
     - :debug-all If true, enable all of the above :debug-* options.
-    - :eval-all If true, call eval on all forms read before reading
-                the next form.  If false, only eval forms that appear
-                to be (ns ...) forms.
+    - :eval If :all (the default), call eval on all forms read before
+            reading the next form.  If :ns-only, only eval forms that
+            appear to be (ns ...) forms.  If :none, do not eval any
+            forms (not expected to be useful).
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
   [source-path & {:keys [reader opt] 
                   :or {reader (LineNumberingPushbackReader.
                                (io/reader (io/resource source-path)))}}]
-  (let [debug-ns (or (:debug-ns opt) (:debug-all opt))]
+  (let [debug-ns (or (:debug-ns opt) (:debug-all opt))
+        eval-opt (or (:eval opt) :all)]
     (when debug-ns
       (println (format "all-ns before (analyze-file \"%s\") begins:"
                        source-path))
@@ -184,8 +186,8 @@
                     env (analyze-jvm/empty-env)
                     expr-analysis (janal/analyze form env)]
                 (post-analyze-debug out form expr-analysis *ns* opt)
-                (when (or (= :all (:eval opt))
-                          (and (= :ns-only (:eval opt))
+                (when (or (= :all eval-opt)
+                          (and (= :ns-only eval-opt)
                                (ns-form? form expr-analysis)))
                   (eval form))
                 (let [new-nss (if debug-ns (namespace-changes-debug nss opt))]
