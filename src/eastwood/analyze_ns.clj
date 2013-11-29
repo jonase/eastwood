@@ -71,24 +71,33 @@
 
 
 (defn pre-analyze-debug [out form *ns* opt]
-  (when (or (:debug-forms opt) (:debug-all opt))
+  (let [print-normally? (or (contains? (:debug opt) :all)
+                            (contains? (:debug opt) :forms))
+        pprint? (or (contains? (:debug opt) :all)
+                    (contains? (:debug opt) :forms-pprint))]
+  (when (or print-normally? pprint?)
     (println (format "dbg pre-analyze #%d *ns*=%s"
                      (count out) (str *ns*)))
-    (println "    form before macroexpand:")
-    (pp/pprint form)
-    (println "    form before macroexpand, with metadata:")
-    (binding [*print-meta* true] (pr form))
+    (when pprint?
+      (println "    form before macroexpand:")
+      (pp/pprint form))
+    (when print-normally?
+      (println "    form before macroexpand, with metadata:")
+      (binding [*print-meta* true] (pr form)))
     (println "\n    --------------------")
     (let [exp (macroexpand form)]
-      (println "    form after macroexpand:")
-      (pp/pprint exp)
-      (println "    form after macroexpand, with metadata:")
-      (binding [*print-meta* true] (pr exp)))
-    (println "\n    --------------------")))
+      (when pprint?
+        (println "    form after macroexpand:")
+        (pp/pprint exp))
+      (when print-normally?
+        (println "    form after macroexpand, with metadata:")
+        (binding [*print-meta* true] (pr exp))))
+    (println "\n    --------------------"))))
 
 
 (defn post-analyze-debug [out form expr-analysis *ns* opt]
-  (when (or (:debug-progress opt) (:debug-all opt))
+  (when (or (contains? (:debug opt) :progress)
+            (contains? (:debug opt) :all))
     (println (format "dbg anal'd %d *ns*=%s"  ; aliases=%s"
                      (count out)
                      (str *ns*)
@@ -138,16 +147,16 @@
   Options:
   - :reader  a pushback reader to use to read the namespace forms
   - :opt     a map of analyzer options
-
-    - :debug-progress If true, print simple progress messages as
-                      analysis proceeds.
-    - :debug-ns If true, print all namespaces that exist according
-                to (all-ns) before analysis begins, and then only when
-                that set of namespaces changes after each form is
-                analyzed.
-    - :debug-forms If true, print forms just before analysis, both
-                   before and after macroexpanding them.
-    - :debug-all If true, enable all of the above :debug-* options.
+    - :debug A set of keywords.
+      - :all Enable all of the following debug messages.
+      - :progress Print simple progress messages as analysis proceeds.
+      - :ns Print all namespaces that exist according to (all-ns)
+            before analysis begins, and then only when that set of
+            namespaces changes after each form is analyzed.
+      - :forms Print forms just before analysis, both before and after
+               macroexpanding them.
+      - :forms-pprint Pretty-print forms just before analysis, both
+                      before and after macroexpanding them.
     - :eval If :all (the default), call eval on all forms read before
             reading the next form.  If :ns-only, only eval forms that
             appear to be (ns ...) forms.  If :none, do not eval any
@@ -157,7 +166,8 @@
   [source-path & {:keys [reader opt] 
                   :or {reader (LineNumberingPushbackReader.
                                (io/reader (io/resource source-path)))}}]
-  (let [debug-ns (or (:debug-ns opt) (:debug-all opt))
+  (let [debug-ns (or (contains? (:debug opt) :ns)
+                     (contains? (:debug opt) :all))
         eval-opt (or (:eval opt) :all)]
     (when debug-ns
       (println (format "all-ns before (analyze-file \"%s\") begins:"
