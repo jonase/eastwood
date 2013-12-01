@@ -29,7 +29,7 @@
 
 (def ^:private default-linters
   #{;;:naked-use
-    ;;:misplaced-docstrings
+    :misplaced-docstrings
     :def-in-def
     :redefd-vars
     ;;:deprecations

@@ -1,9 +1,9 @@
 (ns eastwood.linters.misc
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
+            [eastwood.util :as util]
             [clojure.tools.analyzer.passes :as pass]))
 
-(def expr-seq identity)
 
 ;; Naked use
 
@@ -13,7 +13,7 @@
        (= 'use (-> expr :fexpr :var meta :name))))
 
 (defn naked-use [exprs]
-  (for [expr (mapcat expr-seq exprs)
+  (for [expr (mapcat util/ast-nodes exprs)
         :when (use? expr)
         :let [s (filter symbol? (map :val (:args expr)))]
         :when (not-empty s)]
@@ -24,18 +24,17 @@
 ;; Missplaced docstring
 
 (defn- misplaced-docstring? [expr]
-  (when (= :fn-expr (-> expr :init :op))
+  (when (= :fn (-> expr :init :op))
     (some true?
           (for [method (-> expr :init :methods)
                 :let [body (:body method)]
                 :when (and (= :do (:op body))
-                           (< 1 (count (-> body :exprs))))
-                :let [first-expr (-> body :exprs first)]]
-            (= :string
-               (-> body :exprs first :op))))))
+                           (>= (count (-> body :statements)) 1))
+                :let [first-expr (-> body :statements first)]]
+            (string? (-> first-expr :form))))))
 
 (defn misplaced-docstrings [exprs]
-  (for [expr (mapcat expr-seq exprs)
+  (for [expr (mapcat util/ast-nodes exprs)
         :when (and (= (:op expr) :def)
                    (misplaced-docstring? expr))]
     {:linter :misplaced-docstrings
@@ -51,7 +50,7 @@
          (.endsWith s "*"))))
 
 (defn non-dynamic-earmuffs [exprs]
-  (for [expr (mapcat expr-seq exprs)
+  (for [expr (mapcat util/ast-nodes exprs)
         :when (= (:op expr) :def)
         :let [^clojure.lang.Var v (:var expr)
               s (.sym v)]
