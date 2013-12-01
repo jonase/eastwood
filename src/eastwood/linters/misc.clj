@@ -139,17 +139,10 @@ significantly faster than the otherwise equivalent (= (count s) n)"
 ;; TBD: I am sure defonce-or-defmulti-macro-expansion? can be written
 ;; more clearly and concisely using core.match or core.logic.
 
-;; TBD: Why doesn't macroexpand replace clojure.core/when-not with
-;; equivalent if?  I feel like I'm missing something important here.
-
-;; I think there are two related questions:
-
-;; (1) Why doesn't clojure.core/macroexpand-1 expand the nested
-;; clojure.core/when-not expression?
-
-;; (2) Why doesn't clojure.tools.analyzer/analyze's macroexpand do so?
-;; Is this because I am not calling it with a correct value for the
-;; env parameter?
+;; Why doesn't macroexpand replace clojure.core/when-not with
+;; equivalent if?  Answer: Because macroexpand is explicitly
+;; documented only to expand the outermost macro invocation, if any,
+;; and to leave inner macro invocations untouched.
 
 (defn defonce-or-defmulti-macro-expansion?
   "Return false if form is not the same as a macroexpansion of
