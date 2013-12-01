@@ -32,11 +32,12 @@
     :misplaced-docstrings
     :def-in-def
     :redefd-vars
+    ;;:reflection
     ;;:deprecations
     ;;:unused-fn-args
-    ;;:keyword-typos
     ;;:unused-private-vars
     ;;:unused-namespaces
+    ;;:keyword-typos
     })
 
 (defn- lint [exprs kw]
