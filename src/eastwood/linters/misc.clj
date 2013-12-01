@@ -21,7 +21,7 @@
      :msg (format "Naked use of %s in %s" (seq s) (-> expr :env :ns :name))
      :line (-> expr :env :line)}))
 
-;; Missplaced docstring
+;; Misplaced docstring
 
 (defn- misplaced-docstring? [expr]
   (when (= :fn (-> expr :init :op))
