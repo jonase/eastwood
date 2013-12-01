@@ -50,6 +50,10 @@
       (pp/pprint result)
       (println))))
 
+(defn lint-ns-noprint [ns-sym linters opts]
+  (let [exprs (analyze/analyze-ns ns-sym :opt opts)]
+    (mapcat #(lint exprs %) linters)))
+
 (defn run-eastwood [opts]
   (let [namespaces (set (or (:namespaces opts)
                             (mapcat #(-> % io/file clj-ns/find-namespaces-in-dir)
