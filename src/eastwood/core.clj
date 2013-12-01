@@ -34,7 +34,7 @@
     :redefd-vars
     ;;:reflection
     ;;:deprecations
-    ;;:unused-fn-args
+    :unused-fn-args
     ;;:unused-private-vars
     ;;:unused-namespaces
     ;;:keyword-typos

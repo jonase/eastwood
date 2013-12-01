@@ -73,4 +73,28 @@
                        [:misplaced-docstrings :def-in-def :redefd-vars]
                        {}))
          {}))
-  )
+  (is (= (frequencies (lint-ns-noprint
+                       'eastwood.test.testcases.f06
+                       [:unused-fn-args :misplaced-docstrings :def-in-def
+                        :redefd-vars]
+                       {}))
+         {
+          {:linter :unused-fn-args,
+           :msg "Function args [y] of (or within) fn-with-unused-args are never used",
+           :line 5}
+          1,
+          {:linter :unused-fn-args,
+           :msg "Function args [y] of (or within) fn-with-unused-args2 are never used",
+           :line 9}
+          1,
+          {:linter :unused-fn-args,
+           :msg "Function args [w] of (or within) fn-with-unused-args3 are never used",
+           :line 19}
+          1,
+          {:linter :unused-fn-args,
+           :msg "Function args [body] of (or within) macro2 are never used",
+           :line nil}
+          1,
+          }
+         ))
+)

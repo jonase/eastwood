@@ -1,20 +1,19 @@
 (ns eastwood.linters.unused
   (:require [clojure.set :as set]
+            [clojure.string :as str]
             [eastwood.util :as util]))
-
-(def expr-seq identity)
 
 
 ;; Unused private vars
 (defn- private-defs [exprs]
-  (->> (mapcat expr-seq exprs)
+  (->> (mapcat util/ast-nodes exprs)
        (filter #(and (= :def (:op %))
                      (-> % :var meta :private)
                      (-> % :var meta :macro not))) ;; skip private macros
        (map :var)))
 
 (defn- var-freq [exprs]
-  (->> (mapcat expr-seq exprs)
+  (->> (mapcat util/ast-nodes exprs)
        (filter #(= :var (:op %)))
        (map :var)
        frequencies))
@@ -32,47 +31,51 @@
 
 ;; Unused fn args
 
-(defn- ignore-arg? [arg]
-  (or (contains? #{'&env '&form} arg)
-      (.startsWith (name arg) "_")))
+(defn- ignore-arg?
+  "Return logical true for args that should never be warned about as
+unused, such as &form and &env that are 'hidden' args of macros."
+  [arg]
+;  (or
+   (contains? #{'&env '&form} arg)
+;   (.startsWith (name arg) "_"))
+  )
 
 (defn- params [fn-method]
-  (let [required (:required-params fn-method)
-        rest (:rest-param fn-method)
-        params (if rest (cons rest required) required)]
-    (set (map #(select-keys % [:sym :idx]) params))))
+  (let [params (:params fn-method)]
+    (set (map #(select-keys % [:form :name]) params))))
 
 (defn- used-locals [exprs]
   (set
    (->> exprs
-        (filter (util/op= :local-binding-expr))
-        (map :local-binding)
-        (map #(select-keys % [:sym :idx])))))
+        (filter (util/op= :local))
+        (map #(select-keys % [:form :name])))))
 
 (defn- unused-fn-args* [fn-expr]
   (reduce set/union
           (for [method (:methods fn-expr)]
             (let [args (params method)]
-              (set/difference args (used-locals (expr-seq (:body method))))))))
+              (set/difference args (used-locals (util/ast-nodes (:body method))))))))
 
 (defn unused-fn-args [exprs]
-  (let [fn-exprs (->> (mapcat expr-seq exprs)
-                      (filter (util/op= :fn-expr)))]
+  (let [fn-exprs (->> (mapcat util/ast-nodes exprs)
+                      (filter (util/op= :fn)))]
     (for [expr fn-exprs
           :let [unused (->> (unused-fn-args* expr)
-                            (map :sym)
+                            (map :form)
                             (remove ignore-arg?)
                             set)]
           :when (not-empty unused)]
       {:linter :unused-fn-args
-       :msg (format "Function args %s are never used" unused)
-       :line (-> expr :env :line)})))
+       :msg (format "Function args [%s] of (or within) %s are never used"
+                    (str/join " " unused)
+                    (-> expr :env :name))
+       :line (-> expr :env :name meta :line)})))
 
 
 ;; Unused namespaces
 
 (defn required-namespaces [exprs]
-  (->> (mapcat expr-seq exprs)
+  (->> (mapcat util/ast-nodes exprs)
        (filter #(and (= (:op %) :invoke)
                      (let [v (-> % :fexpr :var)]
                        (or (= v #'clojure.core/require)
