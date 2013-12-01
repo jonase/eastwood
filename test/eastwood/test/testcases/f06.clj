@@ -34,6 +34,10 @@
   `(if ~x 1 2))
 
 
+(defn ignore-underline-args [_]
+  (+ 5 7))
+
+
 
 (comment
 

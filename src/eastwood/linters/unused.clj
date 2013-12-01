@@ -35,10 +35,8 @@
   "Return logical true for args that should never be warned about as
 unused, such as &form and &env that are 'hidden' args of macros."
   [arg]
-;  (or
-   (contains? #{'&env '&form} arg)
-;   (.startsWith (name arg) "_"))
-  )
+  (or (contains? #{'&env '&form} arg)
+      (= (name arg) "_")))  ; TBD: Change = to .startsWith ?
 
 (defn- params [fn-method]
   (let [params (:params fn-method)]
