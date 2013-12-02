@@ -33,10 +33,14 @@
 
 (defn- ignore-arg?
   "Return logical true for args that should never be warned about as
-unused, such as &form and &env that are 'hidden' args of macros."
+unused, such as &form and &env that are 'hidden' args of macros.
+
+By convention, _ is never reported as unused, and neither is any arg
+with a name that begins with _.  This gives eastwood users a way to
+selectively disable such warnings if they wish."
   [arg]
   (or (contains? #{'&env '&form} arg)
-      (= (name arg) "_")))  ; TBD: Change = to .startsWith ?
+      (.startsWith (name arg) "_")))
 
 (defn- params [fn-method]
   (let [params (:params fn-method)]

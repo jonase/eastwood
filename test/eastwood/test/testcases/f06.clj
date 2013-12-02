@@ -34,9 +34,14 @@
   `(if ~x 1 2))
 
 
+;; No warning for args with name _
 (defn ignore-underline-args [_]
   (+ 5 7))
 
+
+;; No warnings for args whose names begin with _ character
+(defn default-value-fn [_k v]
+  v)
 
 
 (comment
