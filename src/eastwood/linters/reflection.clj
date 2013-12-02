@@ -1,5 +1,7 @@
-(ns eastwood.linters.reflection
-  (:use analyze.util))
+(ns eastwood.linters.reflection)
+
+(def expr-seq identity)
+
 
 (defmulti reflective-call? :op)
 

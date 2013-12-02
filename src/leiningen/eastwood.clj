@@ -1,5 +1,5 @@
 (ns leiningen.eastwood
-  (:use [leinjacker.eval-in-project :only [eval-in-project]]
+  (:use [leinjacker.eval :as leval]
         [leinjacker.deps :only [add-if-missing]]))
 
 (defn eastwood
@@ -9,12 +9,15 @@
            opts (assoc opts :source-paths (or (:source-paths opts)
                                               (:source-paths project)
                                               [(:source-path project)]))
+           opts (assoc opts :test-paths (or (:test-paths opts)
+                                            (:test-paths project)
+                                            [(:test-path project)]))
            opts (assoc opts :java-source-paths (or (:java-source-paths opts)
                                                    (:java-source-paths project)
                                                    [(:java-source-path project)]))
            global-opts (:eastwood project)
            opts (merge global-opts opts)]
-       (eval-in-project (add-if-missing project '[jonase/eastwood "0.0.3"])
-                        `(eastwood.core/run-eastwood '~opts)
-                        '(require 'eastwood.core)))))
+       (leval/eval-in-project (add-if-missing project '[jonase/eastwood "0.0.3"])
+                              `(eastwood.core/run-eastwood '~opts)
+                              '(require 'eastwood.core)))))
 

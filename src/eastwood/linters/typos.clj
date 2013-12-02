@@ -1,8 +1,10 @@
 (ns eastwood.linters.typos
-  (:use [analyze.util :only [expr-seq]]
-        [eastwood.util :only [op=]]
+  (:use [eastwood.util :only [op=]]
         [clojure.pprint :only [pprint]])
   (:import [name.fraser.neil.plaintext diff_match_patch]))
+
+
+(def expr-seq identity)
 
 
 (def ^:private dmp (diff_match_patch.))
