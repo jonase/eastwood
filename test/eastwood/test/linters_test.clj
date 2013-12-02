@@ -95,6 +95,10 @@
            :msg "Function args [body] of (or within) macro2 are never used",
            :line nil}
           1,
+          {:linter :unused-fn-args,
+           :msg "Function args [z] of (or within) fn-with-unused-args4 are never used",
+           :line 50}
+          1,
           }
          ))
 )

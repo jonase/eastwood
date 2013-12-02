@@ -44,6 +44,15 @@
   v)
 
 
+;; There was a bug in tools.analyzer in the way it renamed the last
+;; occurrence of y in this function -- it had a different :name than
+;; the arg y.  Ticket TANAL-15 was filed and Nicola fixed it.
+(defn fn-with-unused-args4 [x y z]
+  (let [foo (fn [y z]
+              (* y z))]
+    (foo x y)))
+
+
 (comment
 
 (require '[clojure.inspector :as insp])
