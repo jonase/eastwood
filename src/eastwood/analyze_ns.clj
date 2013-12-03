@@ -4,6 +4,7 @@
             [clojure.pprint :as pp]
             [clojure.set :as set]
             [clojure.java.io :as io]
+            [clojure.tools.reader :as tr]
             [clojure.tools.analyzer.jvm :as analyze-jvm]
             [eastwood.jvm :as janal]))
 
@@ -184,7 +185,7 @@
                               (LineNumberingPushbackReader. reader))]
         (with-bindings (analyzer-bindings source-path pushback-reader)
           (loop [nss (if debug-ns (all-ns-names-set))
-                 form (read pushback-reader nil eof)
+                 form (tr/read pushback-reader nil eof)
                  out []]
             (if (identical? form eof)
               out
@@ -201,7 +202,7 @@
                                (ns-form? form expr-analysis)))
                   (eval form))
                 (let [new-nss (if debug-ns (namespace-changes-debug nss opt))]
-                  (recur new-nss (read pushback-reader nil eof)
+                  (recur new-nss (tr/read pushback-reader nil eof)
                          (conj out expr-analysis)))))))))))
 
 
