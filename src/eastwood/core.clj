@@ -25,6 +25,7 @@
    :unused-fn-args unused/unused-fn-args
    :unused-private-vars unused/unused-private-vars
    :unused-namespaces unused/unused-namespaces
+   :unused-ret-vals unused/unused-ret-vals
    :keyword-typos typos/keyword-typos})
 
 (def ^:private default-linters
@@ -36,7 +37,8 @@
     ;;:deprecations
     :unused-fn-args
     ;;:unused-private-vars
-    ;;:unused-namespaces
+    :unused-namespaces
+    :unused-ret-vals
     ;;:keyword-typos
     })
 

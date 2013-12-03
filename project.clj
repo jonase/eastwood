@@ -6,4 +6,5 @@
                  [org.clojure/tools.reader "0.8.0"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
                  [leinjacker "0.4.1"]]
-  :eval-in-leiningen true)
+  :eval-in-leiningen true
+  :resource-paths ["resource"])
