@@ -80,25 +80,33 @@
                        {}))
          {
           {:linter :unused-fn-args,
-           :msg "Function args [y] of (or within) fn-with-unused-args are never used",
+           :msg "Function args [y (line 5)] of (or within) fn-with-unused-args are never used",
            :line 5}
           1,
           {:linter :unused-fn-args,
-           :msg "Function args [y] of (or within) fn-with-unused-args2 are never used",
+           :msg "Function args [y (line 9)] of (or within) fn-with-unused-args2 are never used",
            :line 9}
           1,
           {:linter :unused-fn-args,
-           :msg "Function args [w] of (or within) fn-with-unused-args3 are never used",
+           :msg "Function args [w (line 20)] of (or within) fn-with-unused-args3 are never used",
            :line 19}
           1,
           {:linter :unused-fn-args,
-           :msg "Function args [body] of (or within) macro2 are never used",
+           :msg "Function args [body (line 33)] of (or within) macro2 are never used",
            :line 33}
           1,
           {:linter :unused-fn-args,
-           :msg "Function args [z] of (or within) fn-with-unused-args4 are never used",
+           :msg "Function args [z (line 50)] of (or within) fn-with-unused-args4 are never used",
            :line 50}
+          1,
+          {:linter :unused-fn-args,
+           :msg "Function args [val (line 69) f (line 68)] of (or within) protocol CollReduce type clojure.lang.ASeq method coll-reduce are never used",
+           :line nil}
+          1,
+          {:linter :unused-fn-args,
+           :msg "Function args [f (line 64) coll (line 63)] of (or within) protocol CollReduce type nil method coll-reduce are never used",
+           :line nil}
           1,
           }
          ))
-)
+  )

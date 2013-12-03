@@ -61,7 +61,9 @@ selectively disable such warnings if they wish."
               (set/difference args (used-locals (util/ast-nodes (:body method))))))))
 
 (defn unused-fn-args [exprs]
-  (let [fn-exprs (->> (mapcat util/ast-nodes exprs)
+  (let [fn-exprs (->> exprs
+                      (map util/enhance-extend-invocations)
+                      (mapcat util/ast-nodes)
                       (filter (util/op= :fn)))]
     (for [expr fn-exprs
           :let [unused (->> (unused-fn-args* expr)
@@ -71,7 +73,11 @@ selectively disable such warnings if they wish."
           :when (not-empty unused)]
       {:linter :unused-fn-args
        :msg (format "Function args [%s] of (or within) %s are never used"
-                    (str/join " " unused)
+                    (str/join " " (map (fn [sym]
+                                         (if-let [l (-> sym meta :line)]
+                                           (format "%s (line %s)" sym l)
+                                           sym))
+                                       unused))
                     (-> expr :env :name))
        :line (-> expr :env :name meta :line)})))
 

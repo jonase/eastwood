@@ -53,6 +53,22 @@
     (foo x y)))
 
 
+(defprotocol CollReduce
+  (coll-reduce [coll f] [coll f val]))
+
+
+(extend-protocol CollReduce
+  nil
+  (coll-reduce
+   ([coll f] (f))
+   ([coll f val] val))
+
+  clojure.lang.ASeq
+  (coll-reduce
+   ([coll f] [coll])
+   ([coll f val] [coll f])))
+
+
 (comment
 
 (require '[clojure.inspector :as insp])
