@@ -6,7 +6,8 @@
             [clojure.java.io :as io]
             [clojure.tools.reader :as tr]
             [clojure.tools.analyzer.jvm :as analyze-jvm]
-            [eastwood.jvm :as janal]))
+            ;;[eastwood.jvm :as janal]
+            ))
 
 
 ;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library
@@ -193,7 +194,8 @@
                     ;; empty-env once and then update it as needed as
                     ;; forms are analyzed?
                     env (analyze-jvm/empty-env)
-                    expr-analysis (janal/analyze form env)]
+                    ;;expr-analysis (janal/analyze form env)]
+                    expr-analysis (analyze-jvm/analyze form env)]
                 (post-analyze-debug out form expr-analysis *ns* opt)
                 (when (or (= :all eval-opt)
                           (and (= :ns-only eval-opt)
