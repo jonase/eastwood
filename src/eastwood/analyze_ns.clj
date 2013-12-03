@@ -39,7 +39,7 @@
 ;; analyzer-bindings was copied from library jvm.tools.analyzer and
 ;; then modified
 
-(defmacro ^:private analyzer-bindings [source-path pushback-reader]
+(defmacro ^:private analyzer-bindings [source-path _pushback-reader]
   `{#'*file* (str ~source-path)}
   ;; TBD: Does tools.analyzer.jvm/analyze need any of this?  If so,
   ;; does it belong in its env argument, or in dynamic bindings set up
@@ -96,17 +96,15 @@
     (println "\n    --------------------"))))
 
 
-(defn post-analyze-debug [out form expr-analysis *ns* opt]
+(defn post-analyze-debug [out _form _expr-analysis *ns* opt]
   (when (or (contains? (:debug opt) :progress)
             (contains? (:debug opt) :all))
-    (println (format "dbg anal'd %d *ns*=%s"  ; aliases=%s"
+    (println (format "dbg anal'd %d *ns*=%s"
                      (count out)
-                     (str *ns*)
-                     ;;(ns-aliases *ns*)
-                     ))))
+                     (str *ns*)))))
 
 
-(defn namespace-changes-debug [old-nss opt]
+(defn namespace-changes-debug [old-nss _opt]
   (let [new-nss (all-ns-names-set)
         added (set/difference new-nss old-nss)
         removed (set/difference old-nss new-nss)]
@@ -128,7 +126,7 @@
 (defn ns-form?
   "Keep this really simple-minded for now.  It will miss ns forms
   nested inside of other forms."
-  [form expr-analysis]
+  [form _expr-analysis]
   (and (list? form)
        (= 'ns (first form))))
 

@@ -1,7 +1,6 @@
 (ns eastwood.core
   (:require [clojure.java.io :as io]
             [eastwood.analyze-ns :as analyze]
-            [clojure.string :as string]
             [clojure.set :as set]
             [clojure.pprint :as pp]
             [clojure.repl :as repl]

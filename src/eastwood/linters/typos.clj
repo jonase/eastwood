@@ -1,6 +1,5 @@
 (ns eastwood.linters.typos
-  (:use [eastwood.util :only [op=]]
-        [clojure.pprint :only [pprint]])
+  (:use [eastwood.util :only [op=]])
   (:import [name.fraser.neil.plaintext diff_match_patch]))
 
 

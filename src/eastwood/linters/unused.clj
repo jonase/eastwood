@@ -3,7 +3,6 @@
             [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.tools.reader.edn :as edn]
-            [clojure.pprint :as pp]
             [eastwood.util :as util]))
 
 

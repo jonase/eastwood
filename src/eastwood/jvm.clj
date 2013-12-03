@@ -12,7 +12,7 @@
              :rename {analyze -analyze}]
             [clojure.tools.analyzer.passes :refer [walk prewalk postwalk cycling]]
             [clojure.tools.analyzer.jvm :as analyze-jvm]
-            [clojure.tools.analyzer.jvm.utils :refer :all :exclude [box]]
+            ;;[clojure.tools.analyzer.jvm.utils :refer :all :exclude [box]]
             [clojure.tools.analyzer.passes.source-info :refer [source-info]]
             [clojure.tools.analyzer.passes.cleanup :refer [cleanup1 cleanup2]]
             [clojure.tools.analyzer.passes.elide-meta :refer [elide-meta]]
