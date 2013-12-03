@@ -28,12 +28,13 @@
                                     (update-in meth-fn-ast
                                                [:env :name]
                                                (constantly
-                                                (format "protocol %s type %s method %s"
-                                                        proto-sym
-                                                        (if (nil? atype-sym)
-                                                          "nil"
-                                                          atype-sym)
-                                                        meth-sym)))))
+                                                (format
+                                                 "protocol %s type %s method %s"
+                                                 proto-sym
+                                                 (cond (nil? atype-sym) "nil"
+                                                       (class? atype-sym) (.getName atype-sym)
+                                                       :else atype-sym)
+                                                 meth-sym)))))
                                 (:keys mmap-ast) (:vals mmap-ast)))]
                       [proto-ast (assoc mmap-ast :vals enh-mmap-vals)])))))))
 
