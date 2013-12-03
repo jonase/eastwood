@@ -68,11 +68,17 @@
                        [:misplaced-docstrings :def-in-def :redefd-vars]
                        {}))
          {}))
-  (is (= (frequencies (lint-ns-noprint
-                       'eastwood.test.testcases.f05
-                       [:misplaced-docstrings :def-in-def :redefd-vars]
-                       {}))
-         {}))
+  ;; The following test is known to fail with Clojure 1.5.1 because of
+  ;; protocol method names that begin with "-".  See
+  ;; http://dev.clojure.org/jira/browse/TANAL-17 and
+  ;; http://dev.clojure.org/jira/browse/CLJ-1202
+  (when (and (>= (:major *clojure-version*) 1)
+             (>= (:minor *clojure-version*) 6))
+    (is (= (frequencies (lint-ns-noprint
+                         'eastwood.test.testcases.f05
+                         [:misplaced-docstrings :def-in-def :redefd-vars]
+                         {}))
+           {})))
   (is (= (frequencies (lint-ns-noprint
                        'eastwood.test.testcases.f06
                        [:unused-fn-args :misplaced-docstrings :def-in-def
