@@ -111,11 +111,14 @@ exception."))))
     (mapcat #(lint analyze-results %) linters)))
 
 (defn run-eastwood [opts]
-  (let [namespaces (set (or (:namespaces opts)
-                            (mapcat #(-> % io/file clj-ns/find-namespaces-in-dir)
-                                    (concat (:source-paths opts) (:test-paths opts)))))
+  ;; Note: Preserve order of (:namespaces opts) if specified, in case
+  ;; it is important.
+  (let [namespaces (distinct
+                    (or (:namespaces opts)
+                        (mapcat #(-> % io/file clj-ns/find-namespaces-in-dir)
+                                (concat (:source-paths opts) (:test-paths opts)))))
         excluded-namespaces (set (:exclude-namespaces opts))
-        namespaces (set/difference namespaces excluded-namespaces)
+        namespaces (remove excluded-namespaces namespaces)
         linters (set (or (:linters opts)
                          default-linters))
         excluded-linters (set (:exclude-linters opts))
