@@ -62,7 +62,11 @@ read."
   [^Throwable e]
   (let [^Throwable e2 (Throwable. "Stack trace of the original exception:")]
     (. e2 (setStackTrace (.getStackTrace e)))
-    (.printStackTrace e2)))
+    (.printStackTrace e2)
+    ;; Not sure if this is needed to keep stack traces and messages
+    ;; printed to *out* from mingling with each other, but it doesn't
+    ;; hurt.
+    (. System/err flush)))
 
 (defn handle-ex-data [ns-sym opts ^Throwable exc]
   (let [dat (ex-data exc)
@@ -111,6 +115,11 @@ exception."))))
     (mapcat #(lint analyze-results %) linters)))
 
 (defn run-eastwood [opts]
+  ;; The following line is an attempt to avoid stack traces and other
+  ;; output being mingled with each other, by making System.err and
+  ;; System.out the same output stream.
+  ;; http://stackoverflow.com/questions/6121786/java-synchronizing-standard-out-and-standard-error
+  (. System (setErr System/out))
   ;; Note: Preserve order of (:namespaces opts) if specified, in case
   ;; it is important.
   (let [namespaces (distinct
