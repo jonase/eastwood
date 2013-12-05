@@ -97,7 +97,7 @@
     (println "\n    --------------------"))))
 
 
-(defn post-analyze-debug [out _form _expr-analysis *ns* opt]
+(defn post-analyze-debug [out _form _form-analysis *ns* opt]
   (when (or (contains? (:debug opt) :progress)
             (contains? (:debug opt) :all))
     (println (format "dbg anal'd %d *ns*=%s"
@@ -127,17 +127,24 @@
 (defn ns-form?
   "Keep this really simple-minded for now.  It will miss ns forms
   nested inside of other forms."
-  [form _expr-analysis]
+  [form _form-analysis]
   (and (list? form)
        (= 'ns (first form))))
 
+(defn analyze-form [form env]
+  (try
+    (let [form-analysis (analyze-jvm/analyze form env)]
+      {:analyze-exception nil :analysis form-analysis})
+    (catch Exception e
+      {:analyze-exception e :analysis nil})))
 
 ;; analyze-file was copied from library jvm.tools.analyzer and then
 ;; modified
 
-;; TBD: I think we need to to eval for side effects, e.g. changing the
+;; We need to eval forms for side effects, e.g. changing the
 ;; namespace, importing Java classes, etc.  If it sets the namespace,
-;; though, should that effect the value of env, too?
+;; though, should that effect the value of env, too?  Perhaps by
+;; calling empty-env in the form reading loop below, we achieve that.
 
 (defn analyze-file
   "Takes a file path and optionally a pushback reader.
@@ -187,23 +194,24 @@
                  form (tr/read pushback-reader nil eof)
                  out []]
             (if (identical? form eof)
-              out
+              {:analyze-exception nil :analyze-results out}
               (let [_ (pre-analyze-debug out form *ns* opt)
                     ;; TBD: analyze-jvm/empty-env uses *ns*.  Is that
                     ;; what is needed here?  Is there some way to call
                     ;; empty-env once and then update it as needed as
                     ;; forms are analyzed?
                     env (analyze-jvm/empty-env)
-                    ;;expr-analysis (janal/analyze form env)]
-                    expr-analysis (analyze-jvm/analyze form env)]
-                (post-analyze-debug out form expr-analysis *ns* opt)
+                    form-analysis (analyze-form form env)]
+                (post-analyze-debug out form form-analysis *ns* opt)
                 (when (or (= :all eval-opt)
                           (and (= :ns-only eval-opt)
-                               (ns-form? form expr-analysis)))
+                               (ns-form? form form-analysis)))
                   (eval form))
                 (let [new-nss (if debug-ns (namespace-changes-debug nss opt))]
+                  (if-let [e (:analyze-exception form-analysis)]
+                    {:analyze-exception e :analyze-results out}
                   (recur new-nss (tr/read pushback-reader nil eof)
-                         (conj out expr-analysis)))))))))))
+                           (conj out (:analysis form-analysis)))))))))))))
 
 
 ;; analyze-ns was copied from library jvm.tools.analyzer and then

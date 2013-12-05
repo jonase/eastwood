@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [eastwood.analyze-ns :as analyze]
             [clojure.set :as set]
+            [clojure.string :as str]
             [clojure.pprint :as pp]
             [clojure.repl :as repl]
             [clojure.tools.namespace :as clj-ns]
@@ -44,17 +45,70 @@
 (defn- lint [exprs kw]
   ((linters kw) exprs))
 
+(defn handle-no-matching-arity-for-fn [ns-sym opts dat]
+  (let [{:keys [arity fn]} dat
+        {:keys [arglists form var]} fn]
+    (println (format "Function on var %s called on line %d
+with %s args, but it is only known to take one of the following args:"
+                     var (-> form meta :line) arity))
+    (println (format "    %s"
+                     (str/join "\n    " arglists)))))
+
+(defn print-stack-trace-without-ex-data
+  "Print the stack trace of exception e, but without the other
+information about the exception.  This can be useful for Clojure
+data-carrying exceptions where the data is very long and difficult to
+read."
+  [^Throwable e]
+  (let [^Throwable e2 (Throwable. "Stack trace of the original exception:")]
+    (. e2 (setStackTrace (.getStackTrace e)))
+    (.printStackTrace e2)))
+
+(defn handle-ex-data [ns-sym opts ^Throwable exc]
+  (let [dat (ex-data exc)
+        msg (.getMessage exc)]
+    (cond
+     (= msg "No matching arity found for function: ")
+     (handle-no-matching-arity-for-fn ns-sym opts dat)
+     :else
+     (do
+       ;; Print useful info about the exception so we might more
+       ;; quickly learn how to enhance it.
+       (println (format "Got exception with extra ex-data:"))
+       (println (format "    msg='%s'" msg))
+       (println (format "    (keys dat)=%s" (keys dat)))
+       (binding [*print-meta* true
+                 *print-level* 7
+                 *print-length* 50]
+         (pp/pprint dat))
+       (print-stack-trace-without-ex-data exc)))))
+
 (defn lint-ns [ns-sym linters opts]
   (println "== Linting" ns-sym "==")
-  (let [exprs (analyze/analyze-ns ns-sym :opt opts)]
+  (let [{:keys [analyze-exception analyze-results]}
+        (analyze/analyze-ns ns-sym :opt opts)]
     (doseq [linter linters
-            result (lint exprs linter)]
+            result (lint analyze-results linter)]
       (pp/pprint result)
-      (println))))
+      (println))
+    (when analyze-exception
+      (println "An exception was thrown during linting of" ns-sym)
+      (if (ex-data analyze-exception)
+        (handle-ex-data ns-sym opts analyze-exception)
+        (repl/pst analyze-exception 100))
+      (println
+"\nAn exception was thrown while analyzing namespace" ns-sym "
+Lint results may be incomplete.  If there are compilation errors in
+your code, try fixing those.  If not, check above for info on the
+exception."))))
 
+;; TBD: Think about what to do with analyze-exception in this
+;; function.  Probably just return it to the caller in a map
+;; containing it and the current ret value on different keys.
 (defn lint-ns-noprint [ns-sym linters opts]
-  (let [exprs (analyze/analyze-ns ns-sym :opt opts)]
-    (mapcat #(lint exprs %) linters)))
+  (let [{:keys [analyze-exception analyze-results]}
+        (analyze/analyze-ns ns-sym :opt opts)]
+    (mapcat #(lint analyze-results %) linters)))
 
 (defn run-eastwood [opts]
   (let [namespaces (set (or (:namespaces opts)
