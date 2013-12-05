@@ -1,6 +1,6 @@
 # eastwood - a Clojure lint tool
 
-Eastwood is a clojure lint tool which uses the
+Eastwood is a Clojure lint tool which uses the
 [tools.analyzer](https://github.com/clojure/tools.analyzer) and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.  It has
@@ -38,13 +38,13 @@ machine, etc.
 
 ## Installation
 
-Eastwood is a leiningen plugin.  Add `[jonase/eastwood "0.0.3"]` to
+Eastwood is a Leiningen plugin.  Add `[jonase/eastwood "0.0.3"]` to
 your `:plugins` vector in your `:user` profile (Leiningen 2) or if you
 are using Leiningen 1:
 
-    $ lein plugin install jonase/eastwood 0.0.2
+    $ lein plugin install jonase/eastwood 0.0.3
 
-TBD: Does eastwood really still work with Leininge 1?  Do we care?
+TBD: Does eastwood really still work with Leiningen 1?  Do we care?
 
 
 ## Usage
@@ -281,7 +281,7 @@ is likely to be a mistake, and Eastwood issues warnings for this.
 
 ```clojure
 (defn unused-ret-val [k v]
-  (assoc {} k v)   ; return value of asooc is discarded
+  (assoc {} k v)   ; return value of assoc is discarded
   [k v])
 ```
 
