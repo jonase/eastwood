@@ -320,6 +320,12 @@ to it as a pure function if the only thing 'unpure' about it is the
 possibility of throwing an exception, since in most circumstances it
 is pure.
 
+If you use `clojure.test`, this warning can also occur if such an
+expression is evaluated in an `(is (thrown? ThrowableType
+(expression)))`.  This is another case of an expression's return value
+being discarded, in the expansion of the `is` macro.  The expression
+is being evaluated only to see if it will throw an exception.
+
 
 ## License
 
