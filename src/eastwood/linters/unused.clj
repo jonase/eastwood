@@ -84,6 +84,13 @@ selectively disable such warnings if they wish."
 
 ;; Unused namespaces
 
+;; If require is called outside of an ns form, on an argument that is
+;; not a constant, the #(-> % :expr :form) step below can introduce
+;; nil values into the sequence.  For now, just filter those out to
+;; avoid warnings about namespace 'null' not being used.  Think about
+;; if there is a better way to handle such expressions.  Examples are
+;; in core namespace clojure.main, and contrib library namespaces
+;; clojure.tools.namespace.reload and clojure.test.generative.runner.
 (defn required-namespaces [exprs]
   (->> (mapcat util/ast-nodes exprs)
        (filter #(and (= (:op %) :invoke)
@@ -92,6 +99,7 @@ selectively disable such warnings if they wish."
                            (= v #'clojure.core/use)))))
        (mapcat :args)
        (map #(-> % :expr :form))
+       (remove nil?)
        (map #(if (coll? %) (first %) %))
        (remove keyword?)
        (into #{})))
