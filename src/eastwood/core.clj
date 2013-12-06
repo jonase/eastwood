@@ -34,7 +34,7 @@
     :def-in-def
     :redefd-vars
     ;;:reflection
-    ;;:deprecations
+    :deprecations
     :unused-fn-args
     ;;:unused-private-vars
     :unused-namespaces
