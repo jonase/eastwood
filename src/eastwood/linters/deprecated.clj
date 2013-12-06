@@ -55,22 +55,4 @@
     {:linter :deprecations
      :msg (msg dexpr)
      :line (-> dexpr :env :line)}))
-
-
-
-(comment
-  (require '[clojure.tools.analyzer.jvm :as jvm]
-           '[clojure.tools.analyzer.passes :as passes])
-
-  
-  (import '[java.util Date Calendar])
-
-
-
-  (analyze '(.getMonth (Date.)) (empty-env))
-
-
-  (str (:reflected-method (passes/postwalk (jvm/analyze '(Calendar/getInstance)
-                                                        (jvm/empty-env)) 
-                                           reflect-validated)))
-  ) 
+ 
