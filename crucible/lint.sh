@@ -5,6 +5,8 @@
 # clojure.parallel (perhaps only because I was using JDK6 at the time)
 
 set -x
+cd repos
+
 cd algo.generic
 set +x
 for core_ns in \
@@ -42,6 +44,7 @@ cd ..
 for lib in \
     algo.generic \
     algo.monads \
+    core.async \
     core.cache \
     core.contracts \
     core.incubator \
@@ -49,9 +52,11 @@ for lib in \
     core.match \
     core.memoize \
     core.rrb-vector \
+    core.typed \
     core.unify \
     data.codec \
     data.csv \
+    data.finger-tree \
     data.fressian \
     data.generators \
     data.json \
@@ -62,6 +67,7 @@ for lib in \
     java.data \
     java.jdbc \
     java.jmx \
+    jvm.tools.analyer \
     math.combinatorics \
     math.numeric-tower \
     test.generative \

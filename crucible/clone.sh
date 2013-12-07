@@ -114,3 +114,17 @@ $C https://github.com/michalmarczyk/avl.clj
 $C https://github.com/noir-clojure/lib-noir
 $C https://github.com/weavejester/compojure
 $C https://github.com/weavejester/hiccup
+
+
+cd ..
+
+echo "Copy additional files into some of the cloned repos ..."
+
+set -x
+cd project-clj-files
+for dir in *
+do
+    cd $dir
+    cp * ../../repos/$dir/
+    cd ..
+done
