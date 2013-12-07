@@ -13,6 +13,7 @@
   :jvm-opts ^:replace []
   :profiles {:dev {:dependencies [[org.clojure/clojurescript "0.0-1847"]]
                    :plugins [[lein-cljsbuild "0.3.2"]]}
+             :1.4   {:dependencies [[org.clojure/clojure "1.4.0"]]}
              :1.5   {:dependencies [[org.clojure/clojure "1.5.1"]]}
              :1.6   {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
   :cljsbuild {:builds {:test {:source-paths ["src/main/cljs"

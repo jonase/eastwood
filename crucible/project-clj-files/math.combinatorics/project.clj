@@ -1,10 +1,7 @@
 (defproject math.combinatorics "0.0.8-SNAPSHOT"
   ;;:description "clojure.math.combinatorics 0.0.7-SNAPSHOT"
   ;;:main clojure.math.combinatorics
-  :dependencies [
-                 [org.clojure/clojure "1.5.1"]
-                 ;;[org.clojure/clojure "1.6.0-master-SNAPSHOT"]
-                ]
+  :dependencies [[org.clojure/clojure "1.5.1"]]
   :profiles {:1.2   {:dependencies [[org.clojure/clojure "1.2.0"]]}
              :1.2.1 {:dependencies [[org.clojure/clojure "1.2.1"]]}
              :1.3   {:dependencies [[org.clojure/clojure "1.3.0"]]}
