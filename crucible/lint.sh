@@ -85,11 +85,13 @@ for lib in \
 do
     echo $lib
     cd $lib
+    set +e
     if [ -x ./lint.sh ]
     then
         ./lint.sh
     else
 	lein eastwood
     fi
+    set -e
     cd ..
 done
