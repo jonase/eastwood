@@ -130,4 +130,29 @@
      :line nil}
     1,
     })
+  (lint-test
+   'eastwood.test.testcases.deprecated
+   [:deprecations]
+   {}
+   {
+    {:linter :deprecations,
+     :msg
+     "Constructor 'public java.util.Date(int,int,int)' is deprecated.",
+     :line 7}
+    1,
+    {:linter :deprecations,
+     :msg
+     "Static field 'public static final int java.awt.Frame.TEXT_CURSOR' is deprecated.",
+     :line 9}
+    1,
+    {:linter :deprecations,
+     :msg
+     "Instance method 'public int java.util.Date.getMonth()' is deprecated.",
+     :line 11}
+    1,
+    {:linter :deprecations,
+     :msg "Var '#'clojure.core/replicate' is deprecated.",
+     :line 13}
+    1,
+    })
   )
