@@ -23,7 +23,9 @@ $C https://github.com/clojure/algo.generic
 $C https://github.com/clojure/algo.monads
 # Build infrastructure, not Clojure code https://github.com/clojure/build.ci
 # Build infrastructure, not Clojure code https://github.com/clojure/build.poms
-# Eastwood can lint Clojure core code without repo https://github.com/clojure/clojure
+# Eastwood can lint Clojure core code without the repo, but pulling
+# the repo makes it convenient for building the latest master version.
+$C https://github.com/clojure/clojure
 # No ClojureCLR for Eastwood yet https://github.com/clojure/clojure-clr
 # Old nearly abondoned code https://github.com/clojure/clojure-contrib
 # Docs, not Clojure code https://github.com/clojure/clojure.github.com

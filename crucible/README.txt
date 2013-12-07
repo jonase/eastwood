@@ -6,8 +6,15 @@ This will also copy project.clj files from the directory
 project-clj-files into some of the cloned repositories, in order to
 make running Eastwood on them possible.
 
-To run Eastwood on them, make sure you have edited your
-~/.lein/profiles.clj file to include the line recommended in
+At least some of those project.clj files specify 1.6.0-master-SNAPSHOT
+as the version of Clojure to use.  To build and install a copy in your
+local $HOME/.m2 Maven repository, do this:
+
+    % cd repos/clojure
+    % mvn install
+
+To run Eastwood on many of these repos, make sure you have edited your
+$HOME/.lein/profiles.clj file to include the line recommended in
 Eastwood's README.md file.  Then run:
 
     % ./lint.sh
