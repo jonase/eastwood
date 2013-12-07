@@ -9,6 +9,7 @@ cd repos
 
 cd algo.generic
 set +x
+set -e
 for core_ns in \
     clojure.core.protocols \
     clojure.core.reducers \
@@ -67,7 +68,7 @@ for lib in \
     java.data \
     java.jdbc \
     java.jmx \
-    jvm.tools.analyer \
+    jvm.tools.analyzer \
     math.combinatorics \
     math.numeric-tower \
     test.generative \
