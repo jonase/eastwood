@@ -20,9 +20,9 @@
        (map :var)
        frequencies))
 
-(defn unused-private-vars [exprs]
-  (let [pdefs (private-defs exprs)
-        vfreq (var-freq exprs)]
+(defn unused-private-vars [{:keys [asts]}]
+  (let [pdefs (private-defs asts)
+        vfreq (var-freq asts)]
     (for [pvar pdefs
           :when (nil? (vfreq pvar))]
       {:linter :unused-private-vars
@@ -60,8 +60,8 @@ selectively disable such warnings if they wish."
             (let [args (params method)]
               (set/difference args (used-locals (util/ast-nodes (:body method))))))))
 
-(defn unused-fn-args [exprs]
-  (let [fn-exprs (->> exprs
+(defn unused-fn-args [{:keys [asts]}]
+  (let [fn-exprs (->> asts
                       (map util/enhance-extend-invocations)
                       (mapcat util/ast-nodes)
                       (filter (util/op= :fn)))]
@@ -104,10 +104,10 @@ selectively disable such warnings if they wish."
        (remove keyword?)
        (into #{})))
 
-(defn unused-namespaces [exprs]
-  (let [curr-ns (-> exprs first :statements first :args first :expr :form)
-        required (required-namespaces exprs)
-        used (set (map #(-> % .ns .getName) (keys (var-freq exprs))))]
+(defn unused-namespaces [{:keys [asts]}]
+  (let [curr-ns (-> asts first :statements first :args first :expr :form)
+        required (required-namespaces asts)
+        used (set (map #(-> % .ns .getName) (keys (var-freq asts))))]
     (for [ns (set/difference required used)]
       {:linter :unused-namespaces
        :msg (format "Namespace %s is never used in %s" ns curr-ns)})))
@@ -135,10 +135,10 @@ selectively disable such warnings if they wish."
 (def ^:dynamic *warning-type-if-ret-val-unused* {})
 
 
-(defn unused-ret-vals [exprs]
+(defn unused-ret-vals [{:keys [asts]}]
   (binding [*warning-type-if-ret-val-unused* (make-val-unused-action-map
                                               "var-info.edn")]
-    (let [unused-ret-val-exprs (->> exprs
+    (let [unused-ret-val-exprs (->> asts
                                     (mapcat util/ast-nodes)
                                     (mapcat :statements))
           should-use-ret-val-exprs
