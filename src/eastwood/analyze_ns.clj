@@ -99,15 +99,6 @@
        (= 'ns (first form))))
 
 
-;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library
-;; jvm.tools.analyzer verbatim
-
-(defn ^:private munge-ns [ns-sym]
-  (-> (name ns-sym)
-      (string/replace "." "/")
-      (string/replace "-" "_")
-      (str ".clj")))
-
 (defn macroexpand-1
   [form env]
   (if (seq? form)
