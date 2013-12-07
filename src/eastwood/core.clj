@@ -15,6 +15,16 @@
            [clojure.lang LineNumberingPushbackReader]))
 
 
+(def ^:dynamic *eastwood-version*
+  {:major 0, :minor 0, :incremental 3, :qualifier ""})
+
+(defn eastwood-version []
+  (let [{:keys [major minor incremental qualifier]} *eastwood-version*]
+    (str major "." minor "." incremental
+         (if (and qualifier (not= qualifier ""))
+           (str "-" qualifier)
+           ""))))
+
 (def ^:private linters
   {:naked-use misc/naked-use
    :misplaced-docstrings misc/misplaced-docstrings
@@ -134,6 +144,10 @@ exception."))))
         add-linters (set (:add-linters opts))
         linters (-> (set/difference linters excluded-linters)
                     (set/union add-linters))]
+    (println (format "== Eastwood %s Clojure %s JVM %s"
+                     (eastwood-version)
+                     (clojure-version)
+                     (get (System/getProperties) "java.version")))
     (doseq [namespace namespaces]
       (try
         (lint-ns namespace linters opts)
