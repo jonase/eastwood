@@ -148,8 +148,8 @@
 
 (defn analyze-file
   "Takes a file path and optionally a pushback reader.
-  Returns a vector of maps representing the ASTs of the forms in the
-  target file.
+  Returns a vector of maps with keys :form and :ast (representing the
+  ASTs of the forms in the target file).
 
   Options:
   - :reader  a pushback reader to use to read the namespace forms
@@ -210,8 +210,9 @@
                 (let [new-nss (if debug-ns (namespace-changes-debug nss opt))]
                   (if-let [e (:analyze-exception form-analysis)]
                     {:analyze-exception e :analyze-results out}
-                  (recur new-nss (tr/read pushback-reader nil eof)
-                           (conj out (:analysis form-analysis)))))))))))))
+                    (recur new-nss (tr/read pushback-reader nil eof)
+                           (conj out {:form form
+                                      :ast (:analysis form-analysis)}))))))))))))
 
 
 ;; analyze-ns was copied from library jvm.tools.analyzer and then
@@ -229,5 +230,11 @@
 
   eg. (analyze-ns 'my-ns :opt {} :reader (pb-reader-for-ns 'my.ns))"
   [source-nsym & {:keys [reader opt] :or {reader (pb-reader-for-ns source-nsym)}}]
-  (let [source-path (munge-ns source-nsym)]
-    (analyze-file source-path :reader reader :opt opt)))
+  (let [source-path (munge-ns source-nsym)
+        {:keys [analyze-results analyze-exception]} 
+        (analyze-file source-path :reader reader :opt opt)]
+    {:analyze-results {:source (slurp (io/resource source-path))
+                       :namespace source-nsym
+                       :forms (mapv :form analyze-results)
+                       :asts (mapv :ast analyze-results)}
+     :analyze-exception analyze-exception}))

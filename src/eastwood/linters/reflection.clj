@@ -25,8 +25,8 @@
            (:field-name expr)
            (-> expr :env :ns :name)))
 
-(defn reflection [exprs]
-  (for [expr (mapcat expr-seq exprs)
+(defn reflection [{:keys [asts]}]
+  (for [expr (mapcat expr-seq asts)
         :when (reflective-call? expr)]
     {:linter :reflection
      :msg (msg expr)

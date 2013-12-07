@@ -11,8 +11,8 @@
 (defn levenshtein [s1 s2]
   (.diff_levenshtein dmp (.diff_main dmp s1 s2)))
 
-(defn keyword-typos [exprs]
-  (let [freqs (->> (mapcat expr-seq exprs)
+(defn keyword-typos [{:keys [asts]}]
+  (let [freqs (->> (mapcat expr-seq [asts])
                    (filter (op= :keyword))
                    (map :val)
                    (filter keyword?)

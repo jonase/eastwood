@@ -33,8 +33,8 @@
                 :let [first-expr (-> body :statements first)]]
             (string? (-> first-expr :form))))))
 
-(defn misplaced-docstrings [exprs]
-  (for [expr (mapcat util/ast-nodes exprs)
+(defn misplaced-docstrings [{:keys [asts]}]
+  (for [expr (mapcat util/ast-nodes asts)
         :when (and (= (:op expr) :def)
                    (misplaced-docstring? expr))]
     {:linter :misplaced-docstrings
@@ -49,8 +49,8 @@
          (.startsWith s "*")
          (.endsWith s "*"))))
 
-(defn non-dynamic-earmuffs [exprs]
-  (for [expr (mapcat util/ast-nodes exprs)
+(defn non-dynamic-earmuffs [{:keys [asts]}]
+  (for [expr (mapcat util/ast-nodes asts)
         :when (= (:op expr) :def)
         :let [^clojure.lang.Var v (:var expr)
               s (.sym v)]
@@ -277,8 +277,8 @@ a (defonce foo val) expression.  If it is, return [foo val]."
     (map var-info top-level-vars)))
 
 
-(defn redefd-vars [exprs]
-  (let [defd-vars (defd-vars exprs)
+(defn redefd-vars [{:keys [asts]}]
+  (let [defd-vars (defd-vars asts)
         defd-var-groups (group-by :var defd-vars)
 ;;        _ (do
 ;;            (println (format "dbg all (:op :name) keys of exprs=%s"
@@ -315,8 +315,8 @@ a (defonce foo val) expression.  If it is, return [foo val]."
     (map var-info nested-vars)))
 
 
-(defn def-in-def [exprs]
-  (let [nested-vars (def-in-def-vars exprs)]
+(defn def-in-def [{:keys [asts]}]
+  (let [nested-vars (def-in-def-vars asts)]
     (for [nested-var nested-vars]
       {:linter :def-in-def
        :msg (format "There is a def of %s nested inside def TBD"

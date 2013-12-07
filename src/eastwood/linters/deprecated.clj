@@ -49,9 +49,9 @@
 (defmethod msg :static-field [expr]
   (format "Static field '%s' is deprecated." (:reflected-field expr)))
 
-(defn deprecations [exprs]
-  (for [expr (map #(passes/postwalk % eastwood.passes/reflect-validated) exprs)
-        dexpr (filter deprecated (util/ast-nodes expr))]
+(defn deprecations [{:keys [asts]}]
+  (for [ast (map #(passes/postwalk % eastwood.passes/reflect-validated) asts)
+        dexpr (filter deprecated (util/ast-nodes ast))]
     {:linter :deprecations
      :msg (msg dexpr)
      :line (-> dexpr :env :line)}))
