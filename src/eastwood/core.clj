@@ -22,12 +22,12 @@
            ""))))
 
 (def ^:private default-linters
-  #{linters/misplaced-docstrings
-    linters/def-in-def
-    linters/redefd-vars
-    linters/deprecations
-    linters/unused-namespaces
-    linters/unused-ret-vals})
+  #{#'linters/misplaced-docstrings
+    #'linters/def-in-def
+    #'linters/redefd-vars
+    #'linters/deprecations
+    #'linters/unused-namespaces
+    #'linters/unused-ret-vals})
 
 (defn handle-no-matching-arity-for-fn [ns-sym opts dat]
   (let [{:keys [arity fn]} dat
