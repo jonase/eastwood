@@ -6,11 +6,7 @@
             [clojure.pprint :as pp]
             [clojure.repl :as repl]
             [clojure.tools.namespace :as clj-ns]
-            [eastwood.linters.misc :as misc]
-            [eastwood.linters.deprecated :as deprecated]
-            [eastwood.linters.unused :as unused]
-            [eastwood.linters.reflection :as reflection]
-            [eastwood.linters.typos :as typos])
+            [eastwood.linters :as linters])
   (:import [java.io PushbackReader]
            [clojure.lang LineNumberingPushbackReader]))
 
@@ -25,35 +21,13 @@
            (str "-" qualifier)
            ""))))
 
-(def ^:private linters
-  {:naked-use misc/naked-use
-   :misplaced-docstrings misc/misplaced-docstrings
-   :def-in-def misc/def-in-def
-   :redefd-vars misc/redefd-vars
-   :reflection reflection/reflection
-   :deprecations deprecated/deprecations
-   :unused-fn-args unused/unused-fn-args
-   :unused-private-vars unused/unused-private-vars
-   :unused-namespaces unused/unused-namespaces
-   :unused-ret-vals unused/unused-ret-vals
-   :keyword-typos typos/keyword-typos})
-
 (def ^:private default-linters
-  #{;;:naked-use
-    :misplaced-docstrings
-    :def-in-def
-    :redefd-vars
-    ;;:reflection
-    :deprecations
-    :unused-fn-args
-    ;;:unused-private-vars
-    :unused-namespaces
-    :unused-ret-vals
-    ;;:keyword-typos
-    })
-
-(defn- lint [exprs kw]
-  ((linters kw) exprs))
+  #{linters/misplaced-docstrings
+    linters/def-in-def
+    linters/redefd-vars
+    linters/deprecations
+    linters/unused-namespaces
+    linters/unused-ret-vals})
 
 (defn handle-no-matching-arity-for-fn [ns-sym opts dat]
   (let [{:keys [arity fn]} dat
@@ -102,7 +76,7 @@ read."
   (let [{:keys [analyze-exception analyze-results]}
         (analyze/analyze-ns ns-sym :opt opts)]
     (doseq [linter linters
-            result (lint analyze-results linter)]
+            result (linter analyze-results)]
       (pp/pprint result)
       (println))
     (when analyze-exception
@@ -122,7 +96,22 @@ exception."))))
 (defn lint-ns-noprint [ns-sym linters opts]
   (let [{:keys [analyze-exception analyze-results]}
         (analyze/analyze-ns ns-sym :opt opts)]
-    (mapcat #(lint analyze-results %) linters)))
+    (mapcat #(% analyze-results) linters)))
+
+(defn resolve-symbol 
+  "Attempts to resolve the fully qualified sym to its var."
+  [sym]
+  (let [ns (symbol (namespace sym))
+        s (symbol (name sym))]
+    (require ns)
+    (if-let [v (ns-resolve ns s)]
+      v
+      (throw (ex-info (str "Cannot resolve symbol: " sym) {:sym sym})))))
+
+(defn resolve-linters [linters]
+  (let [linters (mapv resolve-symbol linters)]
+    (when-not (empty? linters)
+      linters)))
 
 (defn run-eastwood [opts]
   ;; The following line is an attempt to avoid stack traces and other
@@ -138,10 +127,10 @@ exception."))))
                                 (concat (:source-paths opts) (:test-paths opts)))))
         excluded-namespaces (set (:exclude-namespaces opts))
         namespaces (remove excluded-namespaces namespaces)
-        linters (set (or (:linters opts)
+        linters (set (or (resolve-linters (:linters opts))
                          default-linters))
-        excluded-linters (set (:exclude-linters opts))
-        add-linters (set (:add-linters opts))
+        excluded-linters (set (resolve-linters (:exclude-linters opts)))
+        add-linters (set (resolve-linters (:add-linters opts)))
         linters (-> (set/difference linters excluded-linters)
                     (set/union add-linters))]
     (println (format "== Eastwood %s Clojure %s JVM %s"
