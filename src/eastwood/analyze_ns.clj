@@ -194,6 +194,7 @@
                 (when (or (= :all eval-opt)
                           (and (= :ns-only eval-opt)
                                (ns-form? form form-analysis)))
+                  (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader))
                   (eval form))
                 (let [new-nss (if debug-ns (namespace-changes-debug nss opt))]
                   (if-let [e (:analyze-exception form-analysis)]
