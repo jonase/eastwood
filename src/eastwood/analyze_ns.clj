@@ -1,14 +1,14 @@
 (ns eastwood.analyze-ns
+  (:refer-clojure :exclude [macroexpand-1])
   (:import (clojure.lang LineNumberingPushbackReader))
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
             [clojure.set :as set]
             [clojure.java.io :as io]
             [clojure.tools.reader :as tr]
-            [clojure.tools.analyzer.jvm :as analyze-jvm]
-            ;;[eastwood.jvm :as janal]
-            ))
-
+            [clojure.tools.analyzer.jvm :as ana.jvm]
+            [clojure.tools.analyzer.utils :refer [maybe-var]]
+            [clojure.tools.analyzer :as ana :refer [analyze] :rename {analyze -analyze}]))
 
 ;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer verbatim
@@ -36,41 +36,8 @@
   (let [uri (uri-for-ns ns-sym)]
     (LineNumberingPushbackReader. (io/reader uri))))
 
-
-;; analyzer-bindings was copied from library jvm.tools.analyzer and
-;; then modified
-
-(defmacro ^:private analyzer-bindings [source-path _pushback-reader]
-  `{#'*file* (str ~source-path)}
-  ;; TBD: Does tools.analyzer.jvm/analyze need any of this?  If so,
-  ;; does it belong in its env argument, or in dynamic bindings set up
-  ;; before calling it?
-;;  `(merge
-;;     {Compiler/LOADER (RT/makeClassLoader)
-;;      Compiler/SOURCE_PATH (str ~source-path)
-;;      Compiler/SOURCE (str ~source-path)
-;;      Compiler/METHOD nil
-;;      Compiler/LOCAL_ENV nil
-;;      Compiler/LOOP_LOCALS nil
-;;      Compiler/NEXT_LOCAL_NUM 0
-;;      RT/CURRENT_NS @RT/CURRENT_NS
-;;      Compiler/LINE_BEFORE (.getLineNumber ~pushback-reader)
-;;      Compiler/LINE_AFTER (.getLineNumber ~pushback-reader)
-;;      RT/UNCHECKED_MATH @RT/UNCHECKED_MATH}
-;;     ~(when (RT-members 'WARN_ON_REFLECTION)
-;;        `{(field RT ~'WARN_ON_REFLECTION) @(field RT ~'WARN_ON_REFLECTION)})
-;;     ~(when (Compiler-members 'COLUMN_BEFORE)
-;;        `{Compiler/COLUMN_BEFORE (.getColumnNumber ~pushback-reader)})
-;;     ~(when (Compiler-members 'COLUMN_AFTER)
-;;        `{Compiler/COLUMN_AFTER (.getColumnNumber ~pushback-reader)})
-;;     ~(when (RT-members 'DATA_READERS)
-;;        `{RT/DATA_READERS @RT/DATA_READERS}))
-  )
-
-
 (defn all-ns-names-set []
   (set (map str (all-ns))))
-
 
 (defn pre-analyze-debug [out form *ns* opt]
   (let [print-normally? (or (contains? (:debug opt) :all)
@@ -131,9 +98,30 @@
   (and (list? form)
        (= 'ns (first form))))
 
+
+(defn macroexpand-1
+  [form env]
+  (if (seq? form)
+    (let [op (first form)]
+      (if-not (ana.jvm/specials op)
+        (let [v (maybe-var op env)
+              local? (-> env :locals (get op))]
+          (if (and (not local?) (:macro (meta v)))
+           (apply v form (:locals env) (rest form))
+           (ana.jvm/macroexpand-1 form env)))
+        (ana.jvm/macroexpand-1 form env)))
+    (ana.jvm/macroexpand-1 form env)))
+
+(defn analyze
+  [form env]
+  (binding [ana/macroexpand-1 macroexpand-1
+            ana/create-var    ana.jvm/create-var
+            ana/parse         ana.jvm/parse]
+    (ana.jvm/run-passes (-analyze form env))))
+
 (defn analyze-form [form env]
   (try
-    (let [form-analysis (analyze-jvm/analyze form env)]
+    (let [form-analysis (analyze form env)]
       {:analyze-exception nil :analysis form-analysis})
     (catch Exception e
       {:analyze-exception e :analysis nil})))
@@ -185,27 +173,28 @@
     ;; want it to go back to the original before returning.
     (binding [*ns* *ns*]
       (let [eof (reify)
-            ^LineNumberingPushbackReader 
+            ^LineNumberingPushbackReader
             pushback-reader (if (instance? LineNumberingPushbackReader reader)
                               reader
                               (LineNumberingPushbackReader. reader))]
-        (with-bindings (analyzer-bindings source-path pushback-reader)
+        (binding [*file* (str source-path)]
           (loop [nss (if debug-ns (all-ns-names-set))
                  form (tr/read pushback-reader nil eof)
                  out []]
             (if (identical? form eof)
               {:analyze-exception nil :analyze-results out}
               (let [_ (pre-analyze-debug out form *ns* opt)
-                    ;; TBD: analyze-jvm/empty-env uses *ns*.  Is that
+                    ;; TBD: ana.jvm/empty-env uses *ns*.  Is that
                     ;; what is needed here?  Is there some way to call
                     ;; empty-env once and then update it as needed as
                     ;; forms are analyzed?
-                    env (analyze-jvm/empty-env)
+                    env (ana.jvm/empty-env)
                     form-analysis (analyze-form form env)]
                 (post-analyze-debug out form form-analysis *ns* opt)
                 (when (or (= :all eval-opt)
                           (and (= :ns-only eval-opt)
                                (ns-form? form form-analysis)))
+                  (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader))
                   (eval form))
                 (let [new-nss (if debug-ns (namespace-changes-debug nss opt))]
                   (if-let [e (:analyze-exception form-analysis)]
