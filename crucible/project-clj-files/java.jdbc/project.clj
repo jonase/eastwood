@@ -7,7 +7,7 @@
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
   :repositories {"sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/"}
-  :dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]
+  :dependencies [[org.clojure/clojure "1.5.1"]
                  [mysql/mysql-connector-java "5.1.25"]
                  [org.apache.derby/derby "10.8.1.2"]
                  [hsqldb "1.8.0.10"]

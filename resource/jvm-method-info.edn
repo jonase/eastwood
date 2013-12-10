@@ -1,0 +1,96 @@
+;; Many of these were found by searching for occurrences of :inline in
+;; Clojure's src/clj/clojure/core.clj, version 1.6.0-alpha3.  Some
+;; others were added because they were called in code bases analyzed
+;; while testing Eastwood.
+
+{
+ {:class clojure.lang.LockingTransaction, :method runInTransaction} {:side-effect true},
+ {:class clojure.lang.Numbers, :method addP} {:lazy false, :pure-fn true} ; +'
+ {:class clojure.lang.Numbers, :method add} {:lazy false, :pure-fn true} ; + with *unchecked-math* false
+ {:class clojure.lang.Numbers, :method and } {:lazy false, :pure-fn true} ; bit-and
+ {:class clojure.lang.Numbers, :method andNot} {:lazy false, :pure-fn true} ; bit-and-not
+ {:class clojure.lang.Numbers, :method boolean_array} {:lazy false, :pure-fn true} ; boolean-array
+ {:class clojure.lang.Numbers, :method byte_array} {:lazy false, :pure-fn true} ; byte-array
+ {:class clojure.lang.Numbers, :method char_array} {:lazy false, :pure-fn true} ; char-array
+ {:class clojure.lang.Numbers, :method decP} {:lazy false, :pure-fn true} ; dec'
+ {:class clojure.lang.Numbers, :method dec} {:lazy false, :pure-fn true} ; dec with *unchecked-math* false
+ {:class clojure.lang.Numbers, :method divide} {:lazy false, :pure-fn true} ; /
+ {:class clojure.lang.Numbers, :method double_array} {:lazy false, :pure-fn true} ; double-array
+ {:class clojure.lang.Numbers, :method equiv} {:lazy false, :pure-fn true} ; ==
+ {:class clojure.lang.Numbers, :method float_array} {:lazy false, :pure-fn true} ; float-array
+ {:class clojure.lang.Numbers, :method gte} {:lazy false, :pure-fn true} ; >=
+ {:class clojure.lang.Numbers, :method gt} {:lazy false, :pure-fn true} ; >
+ {:class clojure.lang.Numbers, :method incP} {:lazy false, :pure-fn true} ; inc'
+ {:class clojure.lang.Numbers, :method inc} {:lazy false, :pure-fn true} ; inc with *unchecked-math* false
+ {:class clojure.lang.Numbers, :method int_array} {:lazy false, :pure-fn true} ; int-array
+ {:class clojure.lang.Numbers, :method isNeg} {:lazy false, :pure-fn true} ; neg?
+ {:class clojure.lang.Numbers, :method isPos} {:lazy false, :pure-fn true} ; pos?
+ {:class clojure.lang.Numbers, :method isZero} {:lazy false, :pure-fn true} ; zero?
+ {:class clojure.lang.Numbers, :method long_array} {:lazy false, :pure-fn true} ; long-array
+ {:class clojure.lang.Numbers, :method lte} {:lazy false, :pure-fn true} ; <=
+ {:class clojure.lang.Numbers, :method lt} {:lazy false, :pure-fn true} ; <
+ {:class clojure.lang.Numbers, :method max} {:lazy false, :pure-fn true} ; max
+ {:class clojure.lang.Numbers, :method minusP} {:lazy false, :pure-fn true} ; -'
+ {:class clojure.lang.Numbers, :method minus} {:lazy false, :pure-fn true} ; - with *unchecked-math* false
+ {:class clojure.lang.Numbers, :method min} {:lazy false, :pure-fn true} ; min
+ {:class clojure.lang.Numbers, :method multiplyP} {:lazy false, :pure-fn true} ; *'
+ {:class clojure.lang.Numbers, :method multiply} {:lazy false, :pure-fn true} ; * with *unchecked-math* false
+ {:class clojure.lang.Numbers, :method not} {:lazy false, :pure-fn true} ; bit-not
+ {:class clojure.lang.Numbers, :method num} {:lazy false, :pure-fn true} ; num
+ {:class clojure.lang.Numbers, :method or} {:lazy false, :pure-fn true} ; bit-or
+ {:class clojure.lang.Numbers, :method quotient} {:lazy false, :pure-fn true} ; quot
+ {:class clojure.lang.Numbers, :method remainder} {:lazy false, :pure-fn true} ; rem
+ {:class clojure.lang.Numbers, :method shiftLeft} {:lazy false, :pure-fn true} ; bit-shift-left
+ {:class clojure.lang.Numbers, :method shiftRight} {:lazy false, :pure-fn true} ; bit-shift-right
+ {:class clojure.lang.Numbers, :method short_array} {:lazy false, :pure-fn true} ; short-array
+ {:class clojure.lang.Numbers, :method unchecked_add} {:lazy false, :pure-fn true} ; + with *unchecked-math* true, unchecked-add
+ {:class clojure.lang.Numbers, :method unchecked_dec} {:lazy false, :pure-fn true} ; dec with *unchecked-math* true, unchecked-dec
+ {:class clojure.lang.Numbers, :method unchecked_inc} {:lazy false, :pure-fn true} ; inc with *unchecked-math* true, unchecked-inc
+ {:class clojure.lang.Numbers, :method unchecked_int_add} {:lazy false, :pure-fn true} ; unchecked-add-int
+ {:class clojure.lang.Numbers, :method unchecked_int_dec} {:lazy false, :pure-fn true} ; unchecked-dec-int
+ {:class clojure.lang.Numbers, :method unchecked_int_divide} {:lazy false, :pure-fn true} ; unchecked-divide-int
+ {:class clojure.lang.Numbers, :method unchecked_int_inc} {:lazy false, :pure-fn true} ; unchecked-inc-int
+ {:class clojure.lang.Numbers, :method unchecked_int_multiply} {:lazy false, :pure-fn true} ; unchecked-multiply-int
+ {:class clojure.lang.Numbers, :method unchecked_int_negate} {:lazy false, :pure-fn true} ; unchecked-negate-int
+ {:class clojure.lang.Numbers, :method unchecked_int_remainder} {:lazy false, :pure-fn true} ; unchecked-remainder-int
+ {:class clojure.lang.Numbers, :method unchecked_int_subtract} {:lazy false, :pure-fn true} ; unchecked-subtract-int
+ {:class clojure.lang.Numbers, :method unchecked_minus} {:lazy false, :pure-fn true} ; - with *unchecked-math* true, unchecked-negate, unchecked-subtract
+ {:class clojure.lang.Numbers, :method unchecked_multiply} {:lazy false, :pure-fn true} ; * with *unchecked-math* true, unchecked-multiply
+ {:class clojure.lang.Numbers, :method unsignedShiftRight} {:lazy false, :pure-fn true} ; unsigned-bit-shift-right
+ {:class clojure.lang.Numbers, :method xor} {:lazy false, :pure-fn true} ; bit-xor
+ {:class clojure.lang.RT, :method aclone} {:lazy false, :pure-fn true} ; aclone
+ {:class clojure.lang.RT, :method aget} {:lazy false, :pure-fn true} ; aget  TBD: Might want a slightly different category for a function that is 'pure', but its return value depends on current contents of a mutable value
+ {:class clojure.lang.RT, :method alength} {:lazy false, :pure-fn true} ; alength
+ {:class clojure.lang.RT, :method aset} {:lazy false, :side-effect true}, ; aset
+ {:class clojure.lang.RT, :method booleanCast} {:lazy false, :pure-fn true} ; boolean
+ {:class clojure.lang.RT, :method byteCast} {:lazy false, :pure-fn true} ; byte with *unchecked-math* true
+ {:class clojure.lang.RT, :method charCast} {:lazy false, :pure-fn true} ; char with *unchecked-math* true
+ {:class clojure.lang.RT, :method count} {:lazy false, :pure-fn true} ; count
+ {:class clojure.lang.RT, :method doubleCast} {:lazy false, :pure-fn true} ; double
+ {:class clojure.lang.RT, :method floatCast} {:lazy false, :pure-fn true} ; float with *unchecked-math* false
+ {:class clojure.lang.RT, :method get} {:lazy false, :pure-fn true} ; get
+ {:class clojure.lang.RT, :method intCast} {:lazy false, :pure-fn true} ; int with *unchecked-math* false
+ {:class clojure.lang.RT, :method isReduced} {:lazy false, :pure-fn true} ; reduced?
+ {:class clojure.lang.RT, :method loadClassForName} {:side-effect true},
+ {:class clojure.lang.RT, :method longCast} {:lazy false, :pure-fn true}, ; long
+ {:class clojure.lang.RT, :method nth} {:lazy false, :pure-fn true} ; nth
+ {:class clojure.lang.RT, :method object_array} {:lazy false, :pure-fn true} ; object-array
+ {:class clojure.lang.RT, :method shortCast} {:lazy false, :pure-fn true} ; short with *unchecked-math* true
+ {:class clojure.lang.RT, :method uncheckedByteCast} {:lazy false, :pure-fn true} ; byte with *unchecked-math* true, unchecked-byte
+ {:class clojure.lang.RT, :method uncheckedCharCast} {:lazy false, :pure-fn true} ; char with *unchecked-math* true, unchecked-char
+ {:class clojure.lang.RT, :method uncheckedDoubleCast} {:lazy false, :pure-fn true} ; unchecked-double
+ {:class clojure.lang.RT, :method uncheckedFloatCast} {:lazy false, :pure-fn true} ; float with *unchecked-math* true, unchecked-float
+ {:class clojure.lang.RT, :method uncheckedIntCast} {:lazy false, :pure-fn true} ; int with *unchecked-math* true, unchecked-int
+ {:class clojure.lang.RT, :method uncheckedLongCast} {:lazy false, :pure-fn true} ; unchecked-long
+ {:class clojure.lang.RT, :method uncheckedShortCast} {:lazy false, :pure-fn true} ; short with *unchecked-math* true, unchecked-short
+ {:class clojure.lang.Util, :method compare} {:lazy false, :pure-fn true} ; compare
+ {:class clojure.lang.Util, :method equiv } {:lazy false, :pure-fn true} ; =
+ {:class clojure.lang.Util, :method identical } {:lazy false, :pure-fn true} ; nil? identical?
+ {:class clojure.lang.Var, :method pushThreadBindings} {:side-effect true},
+ {:class java.lang.Class, :method forName} {:lazy false, :warn-if-ret-val-unused true},  ; TBD: Not pure fn because it depends on which classes have been loaded, I think.
+ {:class java.lang.System, :method arraycopy} {:side-effect true},
+ {:class java.lang.System, :method gc} {:side-effect true},
+ {:class java.lang.System, :method setOut} {:side-effect true},
+ {:class java.lang.System, :method setErr} {:side-effect true},
+ {:class java.lang.Thread, :method sleep} {:side-effect true},
+ }

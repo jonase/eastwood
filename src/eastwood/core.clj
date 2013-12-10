@@ -25,6 +25,15 @@
            (str "-" qualifier)
            ""))))
 
+(defmacro timeit
+  "Evaluates expr and returns a vector containing the expression's
+return value followed by the time it took to evaluate in millisec."
+  [expr]
+  `(let [start# (. System (nanoTime))
+         ret# ~expr
+         elapsed-msec# (/ (double (- (. System (nanoTime)) start#)) 1000000.0)]
+     [ret# elapsed-msec#]))
+
 (def ^:private linters
   {:naked-use misc/naked-use
    :misplaced-docstrings misc/misplaced-docstrings
@@ -53,7 +62,10 @@
     })
 
 (defn- lint [exprs kw]
-  ((linters kw) exprs))
+  (try
+    (doall ((linters kw) exprs))
+    (catch Throwable e
+      [e])))
 
 (defn handle-no-matching-arity-for-fn [ns-sym opts dat]
   (let [{:keys [arity fn]} dat
@@ -97,19 +109,34 @@ read."
          (pp/pprint dat))
        (print-stack-trace-without-ex-data exc)))))
 
+(defn show-exception [ns-sym opts e]
+  (if (ex-data e)
+    (handle-ex-data ns-sym opts e)
+    (repl/pst e 100)))
+
 (defn lint-ns [ns-sym linters opts]
   (println "== Linting" ns-sym "==")
-  (let [{:keys [analyze-exception analyze-results]}
-        (analyze/analyze-ns ns-sym :opt opts)]
-    (doseq [linter linters
-            result (lint analyze-results linter)]
-      (pp/pprint result)
-      (println))
+  (let [[{:keys [analyze-exception analyze-results]} analyze-time-msec]
+        (timeit (analyze/analyze-ns ns-sym :opt opts))
+        print-time? (or (contains? (:debug opts) :all)
+                        (contains? (:debug opts) :time))]
+    (when print-time?
+      (println (format "Analysis took %.1f millisec" analyze-time-msec)))
+    (doseq [linter linters]
+      (let [[results time-msec] (timeit (lint analyze-results linter))]
+        (doseq [result results]
+          (if (instance? Throwable result)
+            (do
+              (println (format "Exception thrown by linter %s on namespace %s"
+                               linter ns-sym))
+              (show-exception ns-sym opts result))
+            (pp/pprint result))
+          (println))
+        (when print-time?
+          (println (format "Linter %s took %.1f millisec" linter time-msec)))))
     (when analyze-exception
-      (println "An exception was thrown during linting of" ns-sym)
-      (if (ex-data analyze-exception)
-        (handle-ex-data ns-sym opts analyze-exception)
-        (repl/pst analyze-exception 100))
+      (println "Exception thrown during analysis phase of linting" ns-sym)
+      (show-exception ns-sym opts analyze-exception)
       (println
 "\nAn exception was thrown while analyzing namespace" ns-sym "
 Lint results may be incomplete.  If there are compilation errors in
