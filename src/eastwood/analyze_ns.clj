@@ -184,7 +184,11 @@
                  out []]
             (if (identical? form eof)
               {:analyze-exception nil :analyze-results out}
-              (let [_ (pre-analyze-debug out form *ns* opt)
+              (let [_ (if (and (#{:ns-only :all} eval-opt)
+                               (ns-form? form nil))
+                        (eval form)
+                        (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
+                    _ (pre-analyze-debug out form *ns* opt)
                     ;; TBD: ana.jvm/empty-env uses *ns*.  Is that
                     ;; what is needed here?  Is there some way to call
                     ;; empty-env once and then update it as needed as
@@ -192,13 +196,12 @@
                     env (ana.jvm/empty-env)
                     form-analysis (analyze-form form env)]
                 (post-analyze-debug out form form-analysis *ns* opt)
-                (when (or (= :all eval-opt)
-                          (and (= :ns-only eval-opt)
-                               (ns-form? form form-analysis)))
+                (when (and (= :all eval-opt)
+                           (not (ns-form? form form-analysis)))
                   (let [a (atom #{})]
                     (postwalk (:analysis form-analysis)
                               (fn [{:keys [op class-name]}]
-                                (when (#{:reify :deftype} op)
+                                (when (= :deftype op)
                                   (swap! a conj class-name))))
                     (when (seq @a)
                       (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
