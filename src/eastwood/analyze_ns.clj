@@ -20,11 +20,11 @@
       (string/replace "-" "_")
       (str ".clj")))
 
-(defn uri-for-ns 
+(defn uri-for-ns
   "Returns a URI representing the namespace. Throws an
   exception if URI not found."
   [ns-sym]
-  (let [source-path (munge-ns ns-sym) 
+  (let [source-path (munge-ns ns-sym)
         uri (io/resource source-path)]
     (when-not uri
       (throw (Exception. (str "No file found for namespace " ns-sym))))
@@ -64,14 +64,12 @@
         (binding [*print-meta* true] (pr exp))))
     (println "\n    --------------------"))))
 
-
 (defn post-analyze-debug [out _form _form-analysis *ns* opt]
   (when (or (contains? (:debug opt) :progress)
             (contains? (:debug opt) :all))
     (println (format "dbg anal'd %d *ns*=%s"
                      (count out)
                      (str *ns*)))))
-
 
 (defn namespace-changes-debug [old-nss _opt]
   (let [new-nss (all-ns-names-set)
@@ -84,7 +82,6 @@
       (println (format "Namespaces removed recently: %s"
                        (seq removed))))
     new-nss))
-
 
 ;; TBD: Hack alert.  I am looking at the pre-macroexpanded form and
 ;; assuming if the first symbol is 'ns', then this is clojure.core/ns.
@@ -228,7 +225,7 @@
   eg. (analyze-ns 'my-ns :opt {} :reader (pb-reader-for-ns 'my.ns))"
   [source-nsym & {:keys [reader opt] :or {reader (pb-reader-for-ns source-nsym)}}]
   (let [source-path (munge-ns source-nsym)
-        {:keys [analyze-results analyze-exception]} 
+        {:keys [analyze-results analyze-exception]}
         (analyze-file source-path :reader reader :opt opt)]
     {:analyze-results {:source (slurp (io/resource source-path))
                        :namespace source-nsym

@@ -4,17 +4,17 @@
 (defmulti reflect-validated :op)
 
 (defn get-ctor [ast]
-  (.getConstructor (:class ast) 
-                   (into-array java.lang.Class (mapv :tag (:args ast)))))
+  (.getConstructor ^Class (:class ast)
+                   (into-array Class (mapv :tag (:args ast)))))
 
 (defn get-field [ast]
-  (.getField (:class ast)
+  (.getField ^Class (:class ast)
              (name (:field ast))))
 
 (defn get-method [ast]
-  (.getMethod (:class ast) 
-              (name (:method ast)) 
-              (into-array java.lang.Class (mapv :tag (:args ast)))))
+  (.getMethod ^Class (:class ast)
+              (name (:method ast))
+              (into-array Class (mapv :tag (:args ast)))))
 
 (defmethod reflect-validated :default [ast] ast)
 

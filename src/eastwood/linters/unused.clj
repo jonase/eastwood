@@ -5,7 +5,6 @@
             [clojure.tools.reader.edn :as edn]
             [eastwood.util :as util]))
 
-
 ;; Unused private vars
 (defn- private-defs [exprs]
   (->> (mapcat util/ast-nodes exprs)
@@ -28,8 +27,6 @@
       {:linter :unused-private-vars
        :msg (format "Private var %s is never used" pvar)
        :line (-> pvar :env :line)})))
-
-
 
 ;; Unused fn args
 
@@ -107,12 +104,10 @@ selectively disable such warnings if they wish."
 (defn unused-namespaces [{:keys [asts]}]
   (let [curr-ns (-> asts first :statements first :args first :expr :form)
         required (required-namespaces asts)
-        used (set (map #(-> % .ns .getName) (keys (var-freq asts))))]
+        used (set (map #(-> ^clojure.lang.Var % .ns .getName) (keys (var-freq asts))))]
     (for [ns (set/difference required used)]
       {:linter :unused-namespaces
        :msg (format "Namespace %s is never used in %s" ns curr-ns)})))
-
-
 
 ;; TBD: It would be good to recognize analyzed expressions that result
 ;; from things like (+ x y) in the source code.  These cannot be

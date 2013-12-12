@@ -2,17 +2,13 @@
   (:use [eastwood.util :only [op=]])
   (:import [name.fraser.neil.plaintext diff_match_patch]))
 
-
-(def expr-seq identity)
-
-
-(def ^:private dmp (diff_match_patch.))
+(def ^:private ^diff_match_patch dmp (diff_match_patch.))
 
 (defn levenshtein [s1 s2]
   (.diff_levenshtein dmp (.diff_main dmp s1 s2)))
 
 (defn keyword-typos [{:keys [asts]}]
-  (let [freqs (->> (mapcat expr-seq [asts])
+  (let [freqs (->> (mapcat identity [asts])
                    (filter (op= :keyword))
                    (map :val)
                    (filter keyword?)
@@ -27,4 +23,3 @@
                      (< (levenshtein s1 s2) 2))]
       {:linter :keyword-typos
        :msg (format "Possible keyword typo: %s instead of %s?" kw1 kw2)})))
-

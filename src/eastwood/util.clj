@@ -1,16 +1,13 @@
 (ns eastwood.util
   (:require [clojure.tools.analyzer.passes :as pass]))
 
-
 (defn op= [op]
   (fn [ast]
     (= (:op ast) op)))
 
-
 (defn ast-nodes [ast]
   (lazy-seq
    (cons ast (mapcat ast-nodes (pass/children ast)))))
-
 
 (defn enhance-extend-args [extend-args]
   (let [[atype-ast & proto+mmaps-asts] extend-args
@@ -32,17 +29,15 @@
                                                  "protocol %s type %s method %s"
                                                  proto-sym
                                                  (cond (nil? atype-sym) "nil"
-                                                       (class? atype-sym) (.getName atype-sym)
+                                                       (class? atype-sym) (.getName ^Class atype-sym)
                                                        :else atype-sym)
                                                  meth-sym)))))
                                 (:keys mmap-ast) (:vals mmap-ast)))]
                       [proto-ast (assoc mmap-ast :vals enh-mmap-vals)])))))))
 
-
 (defn extend-invocation-ast? [ast]
   (and (= (:op ast) :invoke)
        (= #'clojure.core/extend (get-in ast [:fn :var]))))
-
 
 (defn enhance-extend-invocations-prewalk [ast]
   (if (extend-invocation-ast? ast)
@@ -50,10 +45,5 @@
     ;; else no enhancement
     ast))
 
-
 (defn enhance-extend-invocations [ast]
-  (pass/walk ast
-             enhance-extend-invocations-prewalk
-             ;;identity
-             identity
-             ))
+  (pass/prewalk ast enhance-extend-invocations-prewalk))
