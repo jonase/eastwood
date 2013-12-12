@@ -113,13 +113,26 @@ use these two commands to analyze one problem namespace separately:
 
 ### Explicit use of Clojure environment `&env`
 
-Code that uses the `&env` feature of the Clojure compiler may cause
-errors when being analyzed.  Some known examples are Clojure contrib
-libraries `core.async`, `core.logic`, and `core.typed`, and the
+Code that uses the **values of `&env`** feature of the Clojure compiler
+will cause errors when being analyzed. Some known examples are the libraries
 libraries
 [`immutable-bitset`](https://github.com/ztellman/immutable-bitset) and
-[`flatland/useful`](https://github.com/flatland/useful).  It is still
-to be determined how much effort it might be to support such code.
+[`flatland/useful`](https://github.com/flatland/useful).
+
+Note that if a library uses simply `(keys &env)` it will be analyzed with
+no problems, however because the values of &env are `Compiler$LocalBinding`s,
+there's no way for `tools.analyzer.jvm` to provide a compatible `&env`
+
+### Namespaces collision
+
+The Clojure Contrib libraries `core.typed` and `jvm.tools.analyzer` cannot
+be analyzed because both `tools.analyzer` and `jvm.tools.analyzer` share the
+same `clojure.tools.analyzer` namespace.
+
+### Other Issues
+
+Currently, the Clojure Contrib liraries `data.fressian` and `test.generative`
+cannot be analyzed due to a known bug in `tools.analyer.jvm`: [TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24)
 
 
 ## Notes on warnings
