@@ -184,10 +184,10 @@
                  out []]
             (if (identical? form eof)
               {:analyze-exception nil :analyze-results out}
-              (let [_ (if (and (#{:ns-only :all} eval-opt)
-                               (ns-form? form nil))
-                        (eval form)
-                        (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
+              (let [_ (when (and (#{:ns-only :all} eval-opt)
+                                 (ns-form? form nil))
+                        (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader))
+                        (eval form))
                     _ (pre-analyze-debug out form *ns* opt)
                     ;; TBD: ana.jvm/empty-env uses *ns*.  Is that
                     ;; what is needed here?  Is there some way to call
