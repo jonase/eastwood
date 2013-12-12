@@ -8,6 +8,7 @@
             [clojure.tools.reader :as tr]
             [clojure.tools.analyzer.jvm :as ana.jvm]
             [clojure.tools.analyzer.utils :refer [maybe-var]]
+            [clojure.tools.analyzer.passes :refer [postwalk]]
             [clojure.tools.analyzer :as ana :refer [analyze] :rename {analyze -analyze}]))
 
 ;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library
@@ -183,7 +184,11 @@
                  out []]
             (if (identical? form eof)
               {:analyze-exception nil :analyze-results out}
-              (let [_ (pre-analyze-debug out form *ns* opt)
+              (let [_ (if (and (#{:ns-only :all} eval-opt)
+                               (ns-form? form nil))
+                        (eval form)
+                        (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
+                    _ (pre-analyze-debug out form *ns* opt)
                     ;; TBD: ana.jvm/empty-env uses *ns*.  Is that
                     ;; what is needed here?  Is there some way to call
                     ;; empty-env once and then update it as needed as
@@ -191,11 +196,16 @@
                     env (ana.jvm/empty-env)
                     form-analysis (analyze-form form env)]
                 (post-analyze-debug out form form-analysis *ns* opt)
-                (when (or (= :all eval-opt)
-                          (and (= :ns-only eval-opt)
-                               (ns-form? form form-analysis)))
-                  (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader))
-                  (eval form))
+                (when (and (= :all eval-opt)
+                           (not (ns-form? form form-analysis)))
+                  (let [a (atom #{})]
+                    (postwalk (:analysis form-analysis)
+                              (fn [{:keys [op class-name]}]
+                                (when (= :deftype op)
+                                  (swap! a conj class-name))))
+                    (when (seq @a)
+                      (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
+                    (eval form)))
                 (let [new-nss (if debug-ns (namespace-changes-debug nss opt))]
                   (if-let [e (:analyze-exception form-analysis)]
                     {:analyze-exception e :analyze-results out}
