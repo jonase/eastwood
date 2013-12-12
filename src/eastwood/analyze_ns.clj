@@ -95,10 +95,9 @@
 (defn ns-form?
   "Keep this really simple-minded for now.  It will miss ns forms
   nested inside of other forms."
-  [form _form-analysis]
+  [form]
   (and (list? form)
        (= 'ns (first form))))
-
 
 (defn macroexpand-1
   [form env]
@@ -153,18 +152,16 @@
                macroexpanding them.
       - :forms-pprint Pretty-print forms just before analysis, both
                       before and after macroexpanding them.
-    - :eval If :all (the default), call eval on all forms read before
-            reading the next form.  If :ns-only, only eval forms that
-            appear to be (ns ...) forms.  If :none, do not eval any
-            forms (not expected to be useful).
+    - :eval If true (the default), call eval on all forms read before
+            reading the next form.
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
-  [source-path & {:keys [reader opt] 
+  [source-path & {:keys [reader opt]
                   :or {reader (LineNumberingPushbackReader.
                                (io/reader (io/resource source-path)))}}]
   (let [debug-ns (or (contains? (:debug opt) :ns)
                      (contains? (:debug opt) :all))
-        eval-opt (or (:eval opt) :all)]
+        eval? (get opt :eval true)]
     (when debug-ns
       (println (format "all-ns before (analyze-file \"%s\") begins:"
                        source-path))
@@ -185,8 +182,7 @@
                  out []]
             (if (identical? form eof)
               {:analyze-exception nil :analyze-results out}
-              (let [_ (when (and (#{:ns-only :all} eval-opt)
-                                 (ns-form? form nil))
+              (let [_ (when (and eval? (ns-form? form))
                         (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader))
                         (eval form)
                         (swap! loaded-namespaces into (disj (loaded-libs) (ns-name *ns*))))
@@ -198,8 +194,7 @@
                     env (ana.jvm/empty-env)
                     form-analysis (analyze-form form env)]
                 (post-analyze-debug out form form-analysis *ns* opt)
-                (when (and (= :all eval-opt)
-                           (not (ns-form? form form-analysis)))
+                (when (and eval? (not (ns-form? form)))
                   (let [a (atom #{})]
                     (postwalk (:analysis form-analysis)
                               (fn [{:keys [op class-name]}]
