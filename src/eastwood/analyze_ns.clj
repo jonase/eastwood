@@ -177,7 +177,8 @@
             ^LineNumberingPushbackReader
             pushback-reader (if (instance? LineNumberingPushbackReader reader)
                               reader
-                              (LineNumberingPushbackReader. reader))]
+                              (LineNumberingPushbackReader. reader))
+            loaded-namespaces (atom (loaded-libs))]
         (binding [*file* (str source-path)]
           (loop [nss (if debug-ns (all-ns-names-set))
                  form (tr/read pushback-reader nil eof)
@@ -187,7 +188,8 @@
               (let [_ (when (and (#{:ns-only :all} eval-opt)
                                  (ns-form? form nil))
                         (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader))
-                        (eval form))
+                        (eval form)
+                        (swap! loaded-namespaces into (disj (loaded-libs) (ns-name *ns*))))
                     _ (pre-analyze-debug out form *ns* opt)
                     ;; TBD: ana.jvm/empty-env uses *ns*.  Is that
                     ;; what is needed here?  Is there some way to call
@@ -205,7 +207,8 @@
                                   (swap! a conj class-name))))
                     (when (seq @a)
                       (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
-                    (eval form)))
+                    (when (not (@loaded-namespaces (ns-name *ns*)))
+                      (eval form))))
                 (let [new-nss (if debug-ns (namespace-changes-debug nss opt))]
                   (if-let [e (:analyze-exception form-analysis)]
                     {:analyze-exception e :analyze-results out}
