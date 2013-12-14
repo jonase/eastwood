@@ -1,6 +1,6 @@
 (defproject data.codec "0.1.1-SNAPSHOT"
   :description "data.codec 0.1.1-SNAPSHOT"
-  :dependencies [[org.clojure/clojure "1.5.1"]
+  :dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]
                  [commons-codec "1.5"]]
   :profiles {:1.2 {:dependencies [[org.clojure/clojure "1.2.1"]]}
              :1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}
