@@ -4,17 +4,30 @@
 (defmulti reflect-validated :op)
 
 (defn get-ctor [ast]
-  (.getConstructor ^Class (:class ast)
-                   (into-array Class (mapv :tag (:args ast)))))
+  (try
+    (.getConstructor ^Class (:class ast)
+                     (into-array Class (mapv :tag (:args ast))))
+    (catch NoSuchMethodException e
+      (.getDeclaredConstructor ^Class (:class ast)
+                               (into-array Class (mapv :tag (:args ast)))))))
 
 (defn get-field [ast]
-  (.getField ^Class (:class ast)
-             (name (:field ast))))
+  (try
+    (.getField ^Class (:class ast)
+               (name (:field ast)))
+    (catch NoSuchFieldException e
+      (.getDeclaredField ^Class (:class ast)
+                         (name (:field ast))))))
 
 (defn get-method [ast]
-  (.getMethod ^Class (:class ast)
-              (name (:method ast))
-              (into-array Class (mapv :tag (:args ast)))))
+  (try
+    (.getMethod ^Class (:class ast)
+                (name (:method ast))
+                (into-array Class (mapv :tag (:args ast))))
+    (catch NoSuchMethodException e
+      (.getDeclaredMethod ^Class (:class ast)
+                          (name (:method ast))
+                          (into-array Class (mapv :tag (:args ast)))))))
 
 (defmethod reflect-validated :default [ast] ast)
 
