@@ -92,7 +92,7 @@
  clojure.core/agent-errors {:var-kind nil, :macro nil},
  clojure.core/aget {:var-kind nil, :macro nil, :lazy false, :pure-fn true},  ; TBD: Might want a slightly different category for a function that is 'pure', but its return value depends on current contents of a mutable value
  clojure.core/alength {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/alias {:var-kind nil, :macro nil},
+ clojure.core/alias {:var-kind nil, :macro nil, :side-effect true},
  clojure.core/all-ns {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},
  clojure.core/alter {:var-kind nil, :macro nil},
  clojure.core/alter-meta! {:var-kind nil, :macro nil, :side-effect true},
@@ -214,7 +214,7 @@
  clojure.core/deftype {:var-kind nil, :macro true},
  clojure.core/delay {:var-kind nil, :macro true},
  clojure.core/delay? {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/deliver {:var-kind nil, :macro nil},
+ clojure.core/deliver {:var-kind nil, :macro nil, :side-effect true},
  clojure.core/denominator {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/deref {:var-kind nil, :macro nil},
  clojure.core/derive {:var-kind nil, :macro nil, :side-effect true},
@@ -913,4 +913,56 @@
  ;; data.codec 0.1.1-SNAPSHOT
  clojure.data.codec.base64/encoding-transfer {:var-kind nil, :macro nil, :io-fn true, :side-effect true},
  clojure.data.codec.base64/decoding-transfer {:var-kind nil, :macro nil, :io-fn true, :side-effect true},
+
+ ;; core.async 0.1.0-SNAPSHOT
+ clojure.core.async.impl.ioc-macros/aset-object {:var-kind nil, :macro nil, :side-effect true},
+ clojure.core.async.impl.ioc-macros/process-exception {:var-kind nil, :macro nil, :side-effect true},
+ clojure.core.async.impl.dispatch/run {:var-kind nil, :macro nil, :side-effect true},
+
+;; core.typed 0.2.20-SNAPSHOT
+ clojure.core.typed/load-if-needed {:var-kind nil, :macro nil, :side-effect true},
+
+;; tools.trace 0.7.6-SNAPSHOT
+ clojure.tools.trace/trace-var* {:var-kind nil, :macro nil, :side-effect true},
+ clojure.tools.trace/untrace-var* {:var-kind nil, :macro nil, :side-effect true},
+ clojure.tools.trace/trace-ns* {:var-kind nil, :macro nil, :side-effect true},
+ clojure.tools.trace/untrace-ns* {:var-kind nil, :macro nil, :side-effect true},
+ clojure.tools.trace/tracer {:var-kind nil, :macro nil, :io-fn true, :side-effect true},
+
+;; tools.reader 0.8.2-SNAPSHOT
+ clojure.tools.reader/read {:var-kind nil, :macro nil, :io-fn true, :evals-exprs true, :lazy false, :warn-if-ret-val-unused true},
+ clojure.tools.reader/read-string {:var-kind nil, :macro nil, :evals-exprs true, :lazy false, :warn-if-ret-val-unused true},
+ clojure.tools.reader.edn/read {:var-kind nil, :macro nil, :io-fn true, :lazy false, :warn-if-ret-val-unused true},
+ clojure.tools.reader.edn/read-string {:var-kind nil, :macro nil, :lazy false, :pure-if-fn-args-pure true},  ; TBD: purity depends upon the value of data readers
+
+;; math.numeric-tower 0.0.3-SNAPSHOT
+ clojure.math.numeric-tower/abs {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.math.numeric-tower/expt {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.math.numeric-tower/exact-integer-sqrt {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.math.numeric-tower/gcd {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.math.numeric-tower/lcm {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+
+;; java.jdbc 0.3.0-SNAPSHOT
+ clojure.java.jdbc/insert! {:var-kind nil, :macro nil, :lazy false, :side-effect true},
+ clojure.java.jdbc/update! {:var-kind nil, :macro nil, :lazy false, :side-effect true},
+ clojure.java.jdbc/db-set-rollback-only! {:var-kind nil, :macro nil, :lazy false, :side-effect true},
+ clojure.java.test-jdbc/create-test-table {:var-kind nil, :macro nil, :lazy false, :side-effect true},
+ clojure.java.test-jdbc/update-or-insert-values {:var-kind nil, :macro nil, :lazy false, :side-effect true},
+
+;; data.csv 0.1.3-SNAPSHOT
+ clojure.data.csv/write-cell {:var-kind nil, :macro nil, :lazy false, :io-fn true, :side-effect true},
+ clojure.data.csv/write-record {:var-kind nil, :macro nil, :lazy false, :io-fn true, :side-effect true},
+ clojure.data.csv/write-csv {:var-kind nil, :macro nil, :lazy false, :io-fn true, :side-effect true},
+
+;; data.json 0.2.4-SNAPSHOT
+ clojure.data.json/read {:var-kind nil, :macro nil, :io-fn true, :evals-exprs false, :lazy false, :warn-if-ret-val-unused true},
+ clojure.data.json/read-str {:var-kind nil, :macro nil, :evals-exprs false, :lazy false, :warn-if-ret-val-unused true},  ; TBD: This might be a pure fn, but I do not know whether the JSON reader can call user-supplied fns or not.
+ clojure.data.json/read-json {:var-kind nil, :macro nil, :lazy false, :io-fn true, :warn-if-ret-val-unused true},
+ clojure.data.json/write {:var-kind nil, :macro nil, :lazy false, :io-fn true, :side-effect true},
+ clojure.data.json/pprint {:var-kind nil, :macro nil, :lazy false, :io-fn true, :side-effect true},
+ clojure.data.json/write-str {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.data.json/write-string {:var-kind nil, :macro nil, :lazy false, :io-fn true, :side-effect true},
+ clojure.data.json/print-json {:var-kind nil, :macro nil, :lazy false, :io-fn true, :side-effect true},
+ clojure.data.json/pprint-json {:var-kind nil, :macro nil, :lazy false, :io-fn true, :side-effect true},
+ 
  }

@@ -87,6 +87,7 @@
  {:class clojure.lang.Util, :method equiv } {:lazy false, :pure-fn true} ; =
  {:class clojure.lang.Util, :method identical } {:lazy false, :pure-fn true} ; nil? identical?
  {:class clojure.lang.Var, :method pushThreadBindings} {:side-effect true},
+ {:class clojure.lang.Var, :method resetThreadBindingFrame} {:side-effect true},
  {:class java.lang.Class, :method forName} {:lazy false, :warn-if-ret-val-unused true},  ; TBD: Not pure fn because it depends on which classes have been loaded, I think.
  {:class java.lang.System, :method arraycopy} {:side-effect true},
  {:class java.lang.System, :method gc} {:side-effect true},
