@@ -82,8 +82,10 @@
    :ast/ret (tx-data ret)})
 
 (defmethod tx-data :const
-  [{:keys [meta]}]
-  (cond-> {:ast/op :ast.op/const}
+  [{:keys [meta type form]}]
+  (cond-> {:ast/op :ast.op/const
+           :ast/type type
+           :ast/form (pr-str form)}
           meta (assoc :ast/meta (tx-data meta))))
 
 (defmethod tx-data :set
@@ -183,6 +185,13 @@
   {:ast/op :ast.op/throw
    :ast/exception (tx-data exception)})
 
-(defn transaction-data [ast]
-  (assoc (tx-data ast)
-    :db/id (d/tempid :db.part/user)))
+(defn transaction-data 
+  "Given a sequence of asts (representing top level forms) returns a sequence of transaction data"
+  [asts]
+  (map-indexed (fn [i ast]
+                 (assoc (tx-data ast)
+                   :db/id (d/tempid :db.part/user)
+                   :ast/top-level? true
+                   :ast/idx i
+                   :ast/namespace (-> ast :env :ns str)))
+               asts))

@@ -15,35 +15,32 @@
     conn))
 
 (defn index-ns [conn ns]
-  (doseq [ast (:asts (:analyze-results (analyze-ns ns)))]
-    @(d/transact conn [(tx/transaction-data ast)])))
-
-(time (index-ns (db-conn "mydb3") 'clojure.main))
-
-(defn -main [ns]
-  (let [ns (read-string ns)]
-    (println ns)))
-
-(tx/tx-data (analyze '(def foo) (jvm/empty-env)))
+  (->> ns
+       analyze-ns
+       :analyze-results
+       :asts
+       tx/transaction-data
+       (d/transact conn)
+       deref))
 
 (comment 
   (def conn (db-conn "test"))
 
-  (index-ns conn 'clojure.string)
+  (index-ns conn 'clojure.set)
 
   (def db (d/db conn))
 
+  ;; This is the misplaced-docstrings linter
   (d/q '[:find ?name
          :where
-         [?def :ast/op :ast.op/def]
-         [?def :ast.def/name ?name]]
+         [?def :ast.def/name ?name]
+         [?def :ast/init ?fn]
+         [?fn :ast/methods ?method]
+         [?method :ast/body ?body]
+         [?body :ast/statements ?statement]
+         [?statement :ast/idx 0]
+         [?statement :ast/type :string]]
        db)
+  ;; Returns #{["bubble-max-key"]} 
 
-
-
-  (reduce (fn [result node]
-            (update-in result [(:op node)]
-                       (fn [info-map]
-                         (update-in  info-map [(:children node)] (fnil inc 0)))))
-          {}
-          (mapcat ast-nodes (:asts (:analyze-results (analyze-ns 'clojure.string))))))
+)

@@ -167,7 +167,36 @@
             :db/ident :ast/idx
             :db/valueType :db.type/long
             :db/cardinality :db.cardinality/one
-            :db.install/_attribute :db.part/db}]
+            :db.install/_attribute :db.part/db}
+           
+           {:db/id (d/tempid :db.part/db)
+            :db/ident :ast/top-level?
+            :db/valueType :db.type/boolean
+            :db/cardinality :db.cardinality/one
+            :db.install/_attribute :db.part/db}
+
+           {:db/id (d/tempid :db.part/db)
+            :db/ident :ast/namespace
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one
+            :db.install/_attribute :db.part/db}
+
+           {:db/id (d/tempid :db.part/db)
+            :db/ident :ast/type
+            :db/valueType :db.type/keyword
+            :db/cardinality :db.cardinality/one
+            :db.install/_attribute :db.part/db}
+
+           ;; Forms are strings, created with pr-str
+           {:db/id (d/tempid :db.part/db)
+            :db/ident :ast/form
+            :db/valueType :db.type/string
+            :db/cardinality :db.cardinality/one
+            :db.install/_attribute :db.part/db}
+
+           ]
+
+
           (child-nodes)
           (ops)
           (op-specific)))
