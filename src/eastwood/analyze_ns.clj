@@ -7,7 +7,6 @@
             [clojure.java.io :as io]
             [clojure.tools.reader :as tr]
             [clojure.tools.analyzer.jvm :as ana.jvm]
-            [clojure.tools.analyzer.passes.jvm.emit-form :refer [emit-form]]
             [clojure.tools.analyzer.utils :refer [maybe-var]]
             [clojure.tools.analyzer.passes :refer [postwalk]]
             [clojure.tools.analyzer :as ana :refer [analyze] :rename {analyze -analyze}]))
@@ -190,18 +189,18 @@
                     ;; empty-env once and then update it as needed as
                     ;; forms are analyzed?
                     env (ana.jvm/empty-env)
-                    {:keys [analysis] :as form-analysis} (analyze-form form env)]
+                    form-analysis (analyze-form form env)]
                 (post-analyze-debug out form form-analysis *ns* opt)
                 (when (and eval? (not (ns-form? form)))
                   (let [a (atom #{})]
-                    (postwalk analysis
+                    (postwalk (:analysis form-analysis)
                               (fn [{:keys [op class-name]}]
                                 (when (= :deftype op)
                                   (swap! a conj class-name))))
                     (when (seq @a)
                       (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
                     (when (not (@loaded-namespaces (ns-name *ns*)))
-                      (eval (emit-form analysis)))))
+                      (eval form))))
                 (let [new-nss (if debug-ns (namespace-changes-debug nss opt))]
                   (if-let [e (:analyze-exception form-analysis)]
                     {:analyze-exception e :analyze-results out}
