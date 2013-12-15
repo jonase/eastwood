@@ -109,10 +109,19 @@
         (ana.jvm/macroexpand-1 form env)))
     (ana.jvm/macroexpand-1 form env)))
 
+(defn create-var
+  [sym {:keys [ns]}]
+  (if-let [v (find-var (symbol (str ns) (name sym)))]
+    (doto v
+      (reset-meta! (if (bound? v)
+                     (merge (meta sym) (meta v))
+                     (meta sym))))
+    (intern ns sym)))
+
 (defn analyze
   [form env]
   (binding [ana/macroexpand-1 macroexpand-1
-            ana/create-var    ana.jvm/create-var
+            ana/create-var    create-var
             ana/parse         ana.jvm/parse]
     (ana.jvm/run-passes (-analyze form env))))
 
