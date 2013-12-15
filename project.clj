@@ -7,6 +7,7 @@
                  [org.clojure/tools.namespace "0.1.2"]
                  [org.clojure/tools.reader "0.8.0"]
                  [org.clojure/tools.macro "0.1.2"]
+                 [com.datomic/datomic-free "0.9.4353"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
                  [leinjacker "0.4.1"]]
   ;; Note: comment out the following line if you want to do 'lein
