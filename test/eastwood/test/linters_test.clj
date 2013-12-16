@@ -210,6 +210,12 @@
     1,
     })
   (lint-test
+   'eastwood.test.testcases.tanal-9
+   [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
+    :unused-ret-vals]
+   {}
+   {})
+  (lint-test
    'eastwood.test.testcases.tanal-27
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals]
