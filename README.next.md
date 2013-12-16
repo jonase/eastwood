@@ -54,7 +54,7 @@ Running
 
     $ lein eastwood
 
-in the root of your project will lint your projects namespaces.  You
+in the root of your project will lint your project's namespaces.  You
 can also lint your project's dependencies:
 
     $ lein eastwood '{:namespaces [clojure.set clojure.java.io] :exclude-linters [:unused-fn-args]}'
