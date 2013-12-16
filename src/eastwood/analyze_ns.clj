@@ -199,9 +199,9 @@
                     ;; empty-env once and then update it as needed as
                     ;; forms are analyzed?
                     env (ana.jvm/empty-env)
-                    {:keys [analysis] :as form-analysis} (analyze-form form env)]
+                    {:keys [analysis analyze-exception] :as form-analysis} (analyze-form form env)]
                 (post-analyze-debug out form form-analysis *ns* opt)
-                (when (and eval? (not (ns-form? form)))
+                (when (and eval? (not (ns-form? form)) (nil? analyze-exception))
                   (let [a (atom #{})]
                     (postwalk analysis
                               (fn [{:keys [op class-name]}]
