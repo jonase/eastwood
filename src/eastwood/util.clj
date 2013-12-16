@@ -47,3 +47,17 @@
 
 (defn enhance-extend-invocations [ast]
   (pass/prewalk ast enhance-extend-invocations-prewalk))
+
+(defn interface? [obj]
+  (and (= Class (class obj))
+       (.isInterface obj)))
+
+(defn invoke-expr? [ast-node]
+  (and (= :invoke (:op ast-node))
+       (contains? ast-node :fn)
+       (contains? (:fn ast-node) :var)))
+
+(defn static-call? [ast-node]
+  (and (= :static-call (:op ast-node))
+       (contains? ast-node :class)
+       (contains? ast-node :method)))

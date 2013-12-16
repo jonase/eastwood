@@ -45,6 +45,7 @@ return value followed by the time it took to evaluate in millisec."
    :unused-private-vars unused/unused-private-vars
    :unused-namespaces unused/unused-namespaces
    :unused-ret-vals unused/unused-ret-vals
+   :unused-ret-vals-in-try unused/unused-ret-vals-in-try
    :keyword-typos typos/keyword-typos})
 
 (def ^:private default-linters
@@ -58,6 +59,7 @@ return value followed by the time it took to evaluate in millisec."
     ;;:unused-private-vars
     :unused-namespaces
     :unused-ret-vals
+    :unused-ret-vals-in-try
     ;;:keyword-typos
     })
 
