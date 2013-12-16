@@ -131,6 +131,60 @@
     1,
     })
   (lint-test
+   'eastwood.test.testcases.f07
+   [:unused-ret-vals :unused-ret-vals-in-try]
+   {}
+   {
+    {:line 10, :linter :unused-ret-vals-in-try, :msg "Pure static method call return value is discarded inside body of try: (. clojure.lang.Numbers (add 5 7))"}
+    1,
+    {:line 22, :linter :unused-ret-vals, :msg "Constant value is discarded inside unused-ret-vals33: 7"}
+    1,
+    {:line 22, :linter :unused-ret-vals, :msg "Constant value is discarded inside unused-ret-vals33: :a"}
+    1,
+    {:line 24, :linter :unused-ret-vals, :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (add (. clojure.lang.Numbers (add (. clojure.lang.Numbers (add (. clojure.lang.Numbers (add i n)) i)) n)) i))"}
+    1,
+    {:line 25, :linter :unused-ret-vals, :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (multiplyP n i))"}
+    1,
+    {:line 26, :linter :unused-ret-vals, :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (clojure.core/quotient i n))"}
+    1,
+    {:line 27, :linter :unused-ret-vals, :msg "Lazy function call return value is discarded: (map inc [1 2 3])"}
+    1,
+    {:line 27, :linter :unused-ret-vals, :msg "Pure function call return value is discarded: (dissoc {:b 2} :b)"}
+    1,
+    {:line 28, :linter :unused-ret-vals, :msg "Pure function call return value is discarded: (assoc {} a n)"}
+    1,
+    {:line 28, :linter :unused-ret-vals, :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (divide i a))"}
+    1,
+    {:line 32, :linter :unused-ret-vals, :msg "Pure function call return value is discarded: (assoc {} x y)"}
+    1,
+    {:line 33, :linter :unused-ret-vals, :msg "Pure function call return value is discarded: (apply + [1 2 3])"}
+    1,
+    {:line 34, :linter :unused-ret-vals, :msg "Lazy function call return value is discarded: (filter print [1 2 3])"}
+    1,
+    {:line 35, :linter :unused-ret-vals, :msg "Should use return value of function call, but it is discarded: (disj! (transient #{:a :b}) :a)"}
+    1,
+    {:line 36, :linter :unused-ret-vals, :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (minus (. clojure.lang.Numbers (minus x y)) x))"}
+    1,
+    {:line 60, :linter :unused-ret-vals, :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (dec i))"}
+    2,
+    {:line 65, :linter :unused-ret-vals, :msg "Pure function call return value is discarded: (assoc {} i i)"} 2, {:line 79, :linter :unused-ret-vals, :msg "Constant value is discarded inside unused-ret-vals3: :a"}
+    1,
+    {:line 81, :linter :unused-ret-vals, :msg "Pure function call return value is discarded: (dissoc {:b 2} :b)"}
+    1,
+    {:line 82, :linter :unused-ret-vals, :msg "Pure function call return value is discarded: (assoc {} a n)"}
+    1,
+    {:line 82, :linter :unused-ret-vals, :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (divide i a))"}
+    1,
+    {:line 100, :linter :unused-ret-vals, :msg "Pure function call return value is discarded: (assoc {} i n)"}
+    1,
+    {:line 100, :linter :unused-ret-vals, :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (add 3 n))"}
+    1,
+    {:line 100, :linter :unused-ret-vals, :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (divide i n))"}
+    1,
+    {:line 107, :linter :unused-ret-vals, :msg "Pure function call return value is discarded: (assoc {} k v)"}
+    1,
+    })
+  (lint-test
    'eastwood.test.testcases.deprecated
    [:deprecations]
    {}
