@@ -40,6 +40,16 @@ echo
 echo "Linting 3rd party Clojure libraries"
 echo 
 for lib in \
+    avl.clj \
+    cheshire \
+    criterium \
+    elastisch \
+    enlive \
+    hiccup \
+    lib-noir \
+    mailer \
+    meltdown \
+    money \
     buffy \
     cassaforte \
     seesaw \
