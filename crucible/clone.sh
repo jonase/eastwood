@@ -130,3 +130,7 @@ do
     cp * ../../repos/$dir/
     cd ..
 done
+cd ..
+
+echo "Remove an empty file from data.zip that interferes with Leiningen ..."
+/bin/rm -f repos/data.zip/src/test/clojure/clojure/data/zip.clj
