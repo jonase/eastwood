@@ -12,18 +12,19 @@ Clojure versions earlier than 1.4.0.
 
 Eastwood warns when it finds:
 
+- misplaced docstrings
 - deprecated java instance methods, static fields, static methods and
   constructors
 - deprecated clojure vars
 - def's nested inside other def's
 - redefinitions of the same name in the same namespace
-- unused function arguments
-- unused private vars
 - unused return values of pure functions, or some others where it
   rarely makes sense to discard its return value
+- unused private vars
+- unused function arguments
+- unused namespaces
 - reflection
 - naked (:use ...)
-- misplaced docstrings
 - keyword typos
 
 Because Eastwood evaluates the code it is linting, you must use a
@@ -70,18 +71,18 @@ can also lint your project's dependencies:
 
 Available linters are:
 
-* `:naked-use`
 * `:misplaced-docstrings`
+* `:deprecations`
 * `:def-in-def`
 * `:redefd-vars`
-* `:reflection`
-* `:deprecations`
-* `:unused-fn-args`
-* `:unused-private-vars`
 * `:unused-ret-vals`
+* `:unused-ret-vals-in-try`
+* `:unused-private-vars`
+* `:unused-fn-args`
 * `:unused-namespaces`
+* `:reflection`
+* `:naked-use`
 * `:keyword-typos`
-
 
 Available options are:
 
@@ -113,29 +114,32 @@ use these two commands to analyze one problem namespace separately:
 
 ### Explicit use of Clojure environment `&env`
 
-Code that uses the **values of `&env`** feature of the Clojure compiler
-will cause errors when being analyzed. Some known examples are the libraries
-libraries
+Code that uses the **values of `&env`** feature of the Clojure
+compiler will cause errors when being analyzed. Some known examples
+are the libraries
 [`immutable-bitset`](https://github.com/ztellman/immutable-bitset) and
 [`flatland/useful`](https://github.com/flatland/useful).
 
 Note that if a library uses simply `(keys &env)` it will be analyzed with
-no problems, however because the values of &env are `Compiler$LocalBinding`s,
+no problems, however because the values of `&env` are `Compiler$LocalBinding`s,
 there's no way for `tools.analyzer.jvm` to provide a compatible `&env`
 
 ### Namespaces collision
 
-The Clojure Contrib libraries `core.typed` and `jvm.tools.analyzer` cannot
-be analyzed because both `tools.analyzer` and `jvm.tools.analyzer` share the
-same `clojure.tools.analyzer` namespace.
+The Clojure Contrib libraries `core.typed` and `jvm.tools.analyzer`
+cannot be analyzed.  These libraries use `jvm.tools.analyzer`, and
+both it and `tools.analyzer` (used by Eastwood) share the same
+`clojure.tools.analyzer` namespace.
 
 ### Other Issues
 
-Currently, the Clojure Contrib liraries `data.fressian` and `test.generative`
-cannot be analyzed due to a known bug in `tools.analyer.jvm`: [TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24)
+Currently, the Clojure Contrib libraries `data.fressian` and
+`test.generative` cannot be analyzed due to a known bug in
+`tools.analyer.jvm`:
+[TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24)
 
 
-## Notes on warnings
+## Notes on linter warnings
 
 A lint warning is not always a sign of a problem with your program.
 Your code may be doing exactly what it needs to do, but the lint tool
@@ -146,7 +150,7 @@ too noisy.
 ### `:redefd-vars` - Redefinitions of the same name in the same namespace
 
 It is possible to accidentally define the same var multiple times in
-the same namespace.  Eastwood's :redefd-vars linter will warn about
+the same namespace.  Eastwood's `:redefd-vars` linter will warn about
 these.
 
 ```clojure
@@ -162,14 +166,14 @@ these.
 ```
 
 Clojure's behavior in this situation is not to give any warnings, and
-for the later definition to replace the first.  In fact, reloading the
-same namespace after editing its source code is a common method for
-developing Clojure code, and warnings when reloading a modified source
-file would be very annoying in such cases.
+for the later definition to replace the first.  Reloading a namespace
+after editing its source code is a common method for developing
+Clojure code, and warnings when reloading a modified source file would
+be very annoying in such cases.
 
 If you use `clojure.test` to develop tests for your code, note that
 `deftest` statements create vars with the same name as you give to the
-test, and if you accidentally create two tests with the same name, the
+test.  If you accidentally create two tests with the same name, the
 tests in the first one will never be run, and you will lose test
 coverage.  There will be nothing in the source code to indicate this
 other than the common name.  Here is an example where the first
@@ -186,6 +190,9 @@ not run, all of your tests could still pass.
 (deftest test-feature-a   ; perhaps written months after the earlier tests
   (is (= 5 (+ 2 3))))
 ```
+
+The best fix here is simply to rename the tests so no two have the
+same name.
 
 Eastwood will treat a `declare` as if it were not there, for the
 purposes of issuing `:redefd-vars` warnings.  These are specifically
@@ -210,9 +217,9 @@ possible, and Eastwood will ignore all but that last definition.
 ### `:def-in-def` - Defs nested inside other defs
 
 If you come to Clojure having learned Scheme earlier, you may write
-Clojure code with def statements inside of functions.  Or you might be
-unfamiliar with functional programming style, and try writing code in
-imperative style using def like this:
+Clojure code with `def` statements inside of functions.  Or you might
+be unfamiliar with functional programming style, and try writing code
+in imperative style using `def` like this:
 
 ```clojure
 (defn count-up-to [n]
@@ -224,9 +231,10 @@ imperative style using def like this:
 
 This is bad form in Clojure.  It is written in imperative style, which
 is not encouraged, but that is not the worst thing about this example.
-The worst part is the use of def inside of another def (the defn
-count-up-to).  Defs always have an effect on a globally visible var in
-the namespace, whether they are nested inside another def or not.
+The worst part is the use of `def` inside of another `def` (the `defn
+count-up-to` counts as the outer `def`).  `def`s always have an effect
+on a globally visible var in the namespace, whether they are nested
+inside another `def` or not.
 
 Unless you really know what you are doing and looking for a very
 particular effect, it is highly recommended to take `:def-in-def`
@@ -281,7 +289,7 @@ this way, so `(doc my-function)` will not show what you intended, and
 tools that extract documentation from Clojure code will not find it.
 
 
-### `:unused-ret-vals` - Function return values that are not used
+### `:unused-ret-vals` and `:unused-ret-vals-in-try` - Function return values that are not used
 
 Many of Clojure's core functions are 'pure' functions, meaning that
 they do not modify any state of the system other than perhaps
@@ -303,20 +311,50 @@ which it is probably a mistake to discard its return value.  For
 example, `assoc!`, `rand`, and `read`.  Eastwood warns about these,
 too.
 
+Discarding the return value of a lazy function such as `map`,
+`filter`, etc. is almost certainly a mistake, and Eastwood warns about
+these.  If the return value is not used, these functions do almost
+nothing, and never call any functions passed to them as args, whether
+they have side effects or not.
+
+```clojure
+;; This use of map calls print 4 times, because the REPL will print
+;; the return value of anything you evaluate in it, and thus force its
+;; evaluation.
+user=> (map print [1 2 3 4])
+(1234nil nil nil nil)
+
+;; The call to foo1 below will never call print, because nothing is
+;; forcing the evaluation of the return value of the lazy function map
+user=> (defn foo1 [coll]
+  #_=>   (map print coll)
+  #_=>   (count coll))
+#'user/foo1
+user=> (foo1 [1 2 3 4])
+4
+```
+
 There are many Clojure functions that take other functions as
 arguments.  These are often called higher order functions, or HOFs.
 Some of these HOFs are 'conditionally pure', meaning that if the
 functions passed as arguments are pure, then so is the HOF.  For
-example, `map` and `apply` are conditionally pure HOFs.
+example, `mapv`, `group-by`, `every?`, and `apply` are conditionally
+pure HOFs (and none of them are lazy).
 
 Eastwood warns about discarding the return value of a conditionally
-pure HOF.  It is not sophisticated enough to check whether the
-function arguments to the HOF are non-pure, e.g. it will warn about a
-case like `(apply printf args)` if the return value is discarded, even
-though a person can easily see that discarding the return value is OK.
+pure non-lazy HOF.  It is not sophisticated enough to check whether
+the function arguments to the HOF are non-pure, e.g. it will warn
+about a case like `(mapv print args)` if the return value is
+discarded, even though a person can easily see that discarding the
+return value still causes the side effects of `print` to occur.  As a
+special case, Eastwood only warns about the return value of `apply`
+being discarded based upon the properties of the function passed as
+its first argument, so `(apply print args)` will not cause a warning
+because `print` is known by Eastwood to have side effects.
+
 In the future, Eastwood might be enhanced to avoid warning about such
-cases, if it is clear that the functions given as arguments have side
-effects, such as I/O.
+cases for other HOFs besides `apply`, if it is clear that the
+functions given as arguments have side effects, such as I/O.
 
 It is not commonly done, but it can be useful to invoke what we have
 called a pure function, even if its return value is discarded.  The
@@ -338,6 +376,16 @@ expression is evaluated in an `(is (thrown? ThrowableType
 (expression)))`.  This is another case of an expression's return value
 being discarded, in the expansion of the `is` macro.  The expression
 is being evaluated only to see if it will throw an exception.
+
+When such a discarded return value occurs directly within the body of
+a `try` form, it is warned about with a linter having a different
+name, `:unused-ret-vals-in-try`.  The detection of an unused return
+value being done within a `try` form is done after macro expansion.
+Thus since the `(is ...)` forms of `clojure.test` macro expand into
+try blocks, unused return values _directly_ in their bodies will be
+reported by the `:unused-ret-vals-in-try` linter.  You can exclude
+this linter, but keep `:unused-ret-vals`, or vice versa, if one or the
+other linter gives too many false warnings for your code.
 
 
 ## License
