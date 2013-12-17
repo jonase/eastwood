@@ -65,7 +65,7 @@
         (binding [*print-meta* true] (pr exp))))
     (println "\n    --------------------"))))
 
-(defn post-analyze-debug [out _form _form-analysis *ns* opt]
+(defn post-analyze-debug [out _form _analysis _exception *ns* opt]
   (when (or (contains? (:debug opt) :progress)
             (contains? (:debug opt) :all))
     (println (format "dbg anal'd %d *ns*=%s"
@@ -129,9 +129,17 @@
 (defn analyze-form [form env]
   (try
     (let [form-analysis (analyze form env)]
-      {:analyze-exception nil :analysis form-analysis})
+      {:exception nil :analysis form-analysis})
     (catch Exception e
-      {:analyze-exception e :analysis nil})))
+      {:exception e :analysis nil})))
+
+(defn deftype-classnames [analysis]
+  (let [a (atom #{})]
+    (postwalk analysis
+              (fn [{:keys [op class-name]}]
+                (when (= :deftype op)
+                  (swap! a conj class-name))))
+    @a))
 
 ;; analyze-file was copied from library jvm.tools.analyzer and then
 ;; modified
@@ -168,7 +176,13 @@
                                (io/reader (io/resource source-path)))}}]
   (let [debug-ns (or (contains? (:debug opt) :ns)
                      (contains? (:debug opt) :all))
-        eval? (get opt :eval true)]
+        eval? (get opt :eval true)
+        eof (reify)
+        ^LineNumberingPushbackReader
+        pushback-reader (if (instance? LineNumberingPushbackReader reader)
+                          reader
+                          (LineNumberingPushbackReader. reader))
+        loaded-namespaces (atom (loaded-libs))]
     (when debug-ns
       (println (format "all-ns before (analyze-file \"%s\") begins:"
                        source-path))
@@ -176,47 +190,55 @@
     ;; HACK ALERT: Make a new binding of the current *ns* before doing
     ;; the below.  If we eval a form that changes the namespace, I
     ;; want it to go back to the original before returning.
-    (binding [*ns* *ns*]
-      (let [eof (reify)
-            ^LineNumberingPushbackReader
-            pushback-reader (if (instance? LineNumberingPushbackReader reader)
-                              reader
-                              (LineNumberingPushbackReader. reader))
-            loaded-namespaces (atom (loaded-libs))]
-        (binding [*file* (str source-path)]
-          (loop [nss (if debug-ns (all-ns-names-set))
-                 form (tr/read pushback-reader nil eof)
-                 out []]
-            (if (identical? form eof)
-              {:analyze-exception nil :analyze-results out}
-              (let [_ (when (and eval? (ns-form? form))
-                        (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader))
-                        (eval form)
-                        (swap! loaded-namespaces into (disj (loaded-libs) (ns-name *ns*))))
-                    _ (pre-analyze-debug out form *ns* opt)
-                    ;; TBD: ana.jvm/empty-env uses *ns*.  Is that
-                    ;; what is needed here?  Is there some way to call
-                    ;; empty-env once and then update it as needed as
-                    ;; forms are analyzed?
-                    env (ana.jvm/empty-env)
-                    {:keys [analysis analyze-exception] :as form-analysis} (analyze-form form env)]
-                (post-analyze-debug out form form-analysis *ns* opt)
-                (when (and eval? (not (ns-form? form)) (nil? analyze-exception))
-                  (let [a (atom #{})]
-                    (postwalk analysis
-                              (fn [{:keys [op class-name]}]
-                                (when (= :deftype op)
-                                  (swap! a conj class-name))))
-                    (when (seq @a)
-                      (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
-                    (when (not (@loaded-namespaces (ns-name *ns*)))
-                      (eval (emit-form analysis)))))
-                (let [new-nss (if debug-ns (namespace-changes-debug nss opt))]
-                  (if-let [e (:analyze-exception form-analysis)]
-                    {:analyze-exception e :analyze-results out}
-                    (recur new-nss (tr/read pushback-reader nil eof)
-                           (conj out {:form form
-                                      :ast (:analysis form-analysis)}))))))))))))
+    (binding [*ns* *ns*
+              *file* (str source-path)]
+      (loop [nss (if debug-ns (all-ns-names-set))
+             form (tr/read pushback-reader nil eof)
+             out []]
+        (if (identical? form eof)
+          {:analyze-results out, :exception nil}
+          (if-let [eval-ns-exc
+                   (when (and eval? (ns-form? form))
+                     (try
+                       (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader))
+                       (eval form)
+                       (swap! loaded-namespaces into (disj (loaded-libs) (ns-name *ns*)))
+                       nil  ; return no exception
+                       (catch Exception e
+                         e)))]
+            {:analyze-results out, :exception eval-ns-exc,
+             :exception-phase :eval-ns, :exception-form form}
+            (let [_ (pre-analyze-debug out form *ns* opt)
+                  ;; TBD: ana.jvm/empty-env uses *ns*.  Is that what
+                  ;; is needed here?  Is there some way to call
+                  ;; empty-env once and then update it as needed as
+                  ;; forms are analyzed?
+                  env (ana.jvm/empty-env)
+                  {:keys [analysis exception]} (analyze-form form env)]
+              (post-analyze-debug out form analysis exception *ns* opt)
+              (if exception
+                {:analyze-results out, :exception exception
+                 :exception-phase :analyze, :exception-form form}
+                (if-let [[exc-phase exc]
+                         (when (and eval? (not (ns-form? form)))
+                           (when (seq (deftype-classnames analysis))
+                             (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
+                           (when (not (@loaded-namespaces (ns-name *ns*)))
+                             (try
+                               (let [f (emit-form analysis)]
+                                 (try
+                                   (eval f)
+                                   nil   ; no exception
+                                   (catch Exception e
+                                     [:eval-form e])))
+                               (catch Exception e
+                                 [:emit-form e]))))]
+                  {:analyze-results out, :exception exc
+                   :exception-phase exc-phase, :exception-form form}
+                  (recur (if debug-ns (namespace-changes-debug nss opt))
+                         (tr/read pushback-reader nil eof)
+                         (conj out {:form form
+                                    :ast analysis})))))))))))
 
 
 ;; analyze-ns was copied from library jvm.tools.analyzer and then
@@ -235,10 +257,10 @@
   eg. (analyze-ns 'my-ns :opt {} :reader (pb-reader-for-ns 'my.ns))"
   [source-nsym & {:keys [reader opt] :or {reader (pb-reader-for-ns source-nsym)}}]
   (let [source-path (munge-ns source-nsym)
-        {:keys [analyze-results analyze-exception]}
+        {:keys [analyze-results] :as m}
         (analyze-file source-path :reader reader :opt opt)]
-    {:analyze-results {:source (slurp (io/resource source-path))
-                       :namespace source-nsym
-                       :forms (mapv :form analyze-results)
-                       :asts (mapv :ast analyze-results)}
-     :analyze-exception analyze-exception}))
+    (assoc m
+      :analyze-results {:source (slurp (io/resource source-path))
+                        :namespace source-nsym
+                        :forms (mapv :form analyze-results)
+                        :asts (mapv :ast analyze-results)})))

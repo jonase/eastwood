@@ -118,7 +118,8 @@ read."
 
 (defn lint-ns [ns-sym linters opts]
   (println "== Linting" ns-sym "==")
-  (let [[{:keys [analyze-exception analyze-results]} analyze-time-msec]
+  (let [[{:keys [analyze-results exception exception-phase exception-form]}
+         analyze-time-msec]
         (timeit (analyze/analyze-ns ns-sym :opt opts))
         print-time? (or (contains? (:debug opts) :all)
                         (contains? (:debug opts) :time))]
@@ -136,20 +137,28 @@ read."
           (println))
         (when print-time?
           (println (format "Linter %s took %.1f millisec" linter time-msec)))))
-    (when analyze-exception
-      (println "Exception thrown during analysis phase of linting" ns-sym)
-      (show-exception ns-sym opts analyze-exception)
+    (when exception
+      (println "Exception thrown during phase" exception-phase
+               "of linting namespace" ns-sym)
+      (show-exception ns-sym opts exception)
+      (println "\nThe following form was being processed during the exception:")
+      (binding [*print-level* 7
+                *print-length* 50]
+        (pp/pprint exception-form)
+        (binding [*print-meta* true]
+          (println "\nShown again with metadata for debugging:")
+          (pp/pprint exception-form)))
       (println
 "\nAn exception was thrown while analyzing namespace" ns-sym "
 Lint results may be incomplete.  If there are compilation errors in
 your code, try fixing those.  If not, check above for info on the
 exception."))))
 
-;; TBD: Think about what to do with analyze-exception in this
+;; TBD: Think about what to do with exception in this
 ;; function.  Probably just return it to the caller in a map
 ;; containing it and the current ret value on different keys.
 (defn lint-ns-noprint [ns-sym linters opts]
-  (let [{:keys [analyze-exception analyze-results]}
+  (let [{:keys [exception analyze-results]}
         (analyze/analyze-ns ns-sym :opt opts)]
     (mapcat #(lint analyze-results %) linters)))
 
