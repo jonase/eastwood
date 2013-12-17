@@ -221,4 +221,13 @@
     :unused-ret-vals]
    {}
    {})
+  (lint-test
+   'eastwood.test.testcases.keyword-typos
+   [:keyword-typos]
+   {}
+   {
+    {:linter :keyword-typos,
+     :msg "Possible keyword typo: :occuption instead of :occupation ?"}
+    1,
+    })
   )

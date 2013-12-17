@@ -1,5 +1,5 @@
 (ns eastwood.linters.typos
-  (:use [eastwood.util :only [op=]])
+  (:require [eastwood.util :as util])
   (:import [name.fraser.neil.plaintext diff_match_patch]))
 
 (def ^:private ^diff_match_patch dmp (diff_match_patch.))
@@ -8,10 +8,12 @@
   (.diff_levenshtein dmp (.diff_main dmp s1 s2)))
 
 (defn keyword-typos [{:keys [asts]}]
-  (let [freqs (->> (mapcat identity [asts])
-                   (filter (op= :keyword))
-                   (map :val)
-                   (filter keyword?)
+  (let [freqs (->> asts
+                   (mapcat util/ast-nodes)
+                   (filter #(and (= :const (:op %))
+                                 (true? (:literal? %))
+                                 (= :keyword (:type %))))
+                   (map :form)
                    frequencies)]
     (for [[kw1 n] freqs
           [kw2 _] freqs
@@ -22,4 +24,4 @@
                      (< 3 (count s1))
                      (< (levenshtein s1 s2) 2))]
       {:linter :keyword-typos
-       :msg (format "Possible keyword typo: %s instead of %s?" kw1 kw2)})))
+       :msg (format "Possible keyword typo: %s instead of %s ?" kw1 kw2)})))

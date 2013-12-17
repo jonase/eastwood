@@ -60,7 +60,7 @@ return value followed by the time it took to evaluate in millisec."
     :unused-namespaces
     :unused-ret-vals
     :unused-ret-vals-in-try
-    ;;:keyword-typos
+    :keyword-typos
     })
 
 (defn- lint [exprs kw]
