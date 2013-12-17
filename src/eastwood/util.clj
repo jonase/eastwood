@@ -50,7 +50,7 @@
 
 (defn interface? [obj]
   (and (= Class (class obj))
-       (.isInterface obj)))
+       (.isInterface ^Class obj)))
 
 (defn invoke-expr? [ast-node]
   (and (= :invoke (:op ast-node))
