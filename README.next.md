@@ -164,6 +164,27 @@ is not able to figure that out.  It often errs on the side of being
 too noisy.
 
 
+### `:deprecations` - Deprecated Java methods/fields/constructors and Clojure vars
+
+The warnings issued are based upon the particular JDK you are using
+when running Eastwood, and can change between different JDK versions.
+
+The warnings for Clojure vars are based upon the var having a metadata
+map with key `:deprecated` having a value that is neither false nor
+nil.  These can change from one version of Clojure, or a Clojure
+library you use, to the next.  One example of such a function is
+`clojure.core/replicate`, deprecated as of Clojure version 1.3 as you
+can see from its definition copied below.
+
+```clojure
+(defn replicate
+  "DEPRECATED: Use 'repeat' instead.
+   Returns a lazy seq of n xs."
+  {:added "1.0"
+   :deprecated "1.3"}
+  [n x] (take n (repeat x)))
+```
+
 ### `:redefd-vars` - Redefinitions of the same name in the same namespace
 
 It is possible to accidentally define the same var multiple times in
