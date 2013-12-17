@@ -69,6 +69,28 @@ return value followed by the time it took to evaluate in millisec."
     (catch Throwable e
       [e])))
 
+;; Copied from clojure.repl/pst then slightly modified to print to
+;; *out*, not *err*, and to use depth nil to print all stack frames.
+(defn pst
+  "Prints a stack trace of the exception, to the depth requested (the
+entire stack trace if depth is nil)."
+  [^Throwable e depth]
+  (println (str (-> e class .getSimpleName) " "
+                (.getMessage e)
+                (when-let [info (ex-data e)] (str " " (pr-str info)))))
+  (let [st (.getStackTrace e)
+        cause (.getCause e)]
+    (doseq [el (remove #(#{"clojure.lang.RestFn" "clojure.lang.AFn"}
+                         (.getClassName ^StackTraceElement %))
+                       st)]
+      (println (str \tab (repl/stack-element-str el))))
+    (when cause
+      (println "Caused by:")
+      (pst cause (if depth
+                   (min depth
+                        (+ 2 (- (count (.getStackTrace cause))
+                                (count st)))))))))
+
 (defn handle-no-matching-arity-for-fn [ns-sym opts dat]
   (let [{:keys [arity fn]} dat
         {:keys [arglists form var]} fn]
@@ -78,17 +100,15 @@ with %s args, but it is only known to take one of the following args:"
     (println (format "    %s"
                      (str/join "\n    " arglists)))))
 
-(defn print-stack-trace-without-ex-data
-  "Print the stack trace of exception e, but without the other
-information about the exception.  This can be useful for Clojure
-data-carrying exceptions where the data is very long and difficult to
-read."
+(defn exception-without-ex-data
+  "Return the exception e, but without any ex-data associated with e.
+This can be useful for Clojure data-carrying exceptions where the data
+is very long and difficult to read."
   [^Throwable e]
-  (let [^Throwable e2 (Throwable. "Stack trace of the original exception:")]
+  (let [^Throwable e2 (Throwable. (.getMessage e))]
     (. e2 (setStackTrace (.getStackTrace e)))
-    (flush)
-    (.printStackTrace e2 ^java.io.PrintWriter *out*)
-    (flush)))
+    (. e2 (initCause (.getCause e)))
+    e2))
 
 (defn handle-ex-data [ns-sym opts ^Throwable exc]
   (let [dat (ex-data exc)
@@ -103,23 +123,17 @@ read."
        (println (format "Got exception with extra ex-data:"))
        (println (format "    msg='%s'" msg))
        (println (format "    (keys dat)=%s" (keys dat)))
+       (println (format "    extra ex-data printed with metadata:"))
        (binding [*print-meta* true
                  *print-level* 7
                  *print-length* 50]
          (pp/pprint dat))
-       (print-stack-trace-without-ex-data exc)))))
-
-(defn my-pst [e]
-  ;; Really, really try to avoid *out* and *err* from interfering with
-  ;; each other here.
-  (flush)
-  (repl/pst e 100)
-  (. *err* (flush)))
+       (pst exc nil)))))
 
 (defn show-exception [ns-sym opts e]
   (if (ex-data e)
     (handle-ex-data ns-sym opts e)
-    (my-pst e)))
+    (pst e nil)))
 
 (defn lint-ns [ns-sym linters opts]
   (println "== Linting" ns-sym "==")
@@ -192,4 +206,4 @@ exception."))))
           (lint-ns namespace linters opts)
           (catch RuntimeException e
             (println "Linting failed:")
-            (my-pst e)))))))
+            (pst e nil)))))))
