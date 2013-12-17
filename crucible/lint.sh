@@ -105,6 +105,8 @@ cd ..
 
 echo 
 echo "Linting Clojure contrib libraries"
+echo "Leaving out core.typed, which has known reasons for throwing"
+echo "many exceptions."
 echo 
 for lib in \
     algo.generic \
