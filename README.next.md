@@ -131,6 +131,23 @@ cannot be analyzed.  These libraries use `jvm.tools.analyzer`, and
 both it and `tools.analyzer` (used by Eastwood) share the same
 `clojure.tools.analyzer` namespace.
 
+### Exception thrown during linting if wrong number of args detected
+
+The `tools.analyzer` code used by Eastwood throws an exception when a
+function call is found where it can be determined during analysis that
+it has a number of arguments that the function does not take.  The
+Clojure compiler will compile such code successfully, but throw an
+exception only if such a function call is attempted at run time.
+
+Often this is a mistake in your code, and it is a good idea to correct
+the erroneous function call.  However, there are some projects with
+unit tests that intentionally have such calls in their tests, to
+verify that an exception is thrown.  There are no plans to change this
+behavior of `tools.analyzer`.  If you use Eastwood regularly to help
+catch such things, you could consider removing such calls from your
+tests as well, confident that such erroneous calls do throw exceptions
+at run time.
+
 ### Other Issues
 
 Currently, the Clojure Contrib libraries `data.fressian` and
