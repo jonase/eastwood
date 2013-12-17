@@ -117,7 +117,6 @@ for lib in \
     core.match \
     core.memoize \
     core.rrb-vector \
-    core.typed \
     core.unify \
     data.codec \
     data.csv \
