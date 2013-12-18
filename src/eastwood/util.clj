@@ -1,15 +1,11 @@
 (ns eastwood.util
-  (:require [clojure.tools.analyzer.passes :as pass]
+  (:require [clojure.tools.analyzer.ast :as ast]
             [clojure.tools.reader :as trdr]
             [clojure.tools.reader.reader-types :as rdr-types]))
 
 (defn op= [op]
   (fn [ast]
     (= (:op ast) op)))
-
-(defn ast-nodes [ast]
-  (lazy-seq
-   (cons ast (mapcat ast-nodes (pass/children ast)))))
 
 (defn enhance-extend-args [extend-args]
   (let [[atype-ast & proto+mmaps-asts] extend-args
@@ -48,7 +44,7 @@
     ast))
 
 (defn enhance-extend-invocations [ast]
-  (pass/prewalk ast enhance-extend-invocations-prewalk))
+  (ast/prewalk ast enhance-extend-invocations-prewalk))
 
 (defn interface? [obj]
   (and (= Class (class obj))

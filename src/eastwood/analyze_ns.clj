@@ -9,7 +9,7 @@
             [clojure.tools.analyzer.jvm :as ana.jvm]
             [clojure.tools.analyzer.passes.jvm.emit-form :refer [emit-form]]
             [clojure.tools.analyzer.utils :refer [maybe-var]]
-            [clojure.tools.analyzer.passes :refer [postwalk]]
+            [clojure.tools.analyzer.ast :refer [postwalk]]
             [clojure.tools.analyzer :as ana :refer [analyze] :rename {analyze -analyze}]))
 
 ;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library

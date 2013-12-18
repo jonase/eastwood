@@ -1,8 +1,8 @@
 (ns eastwood.linters.deprecated
   (:refer-clojure :exclude [get-method])
-  (:require [eastwood.passes]
+  (:require [eastwood.passes :as pass]
             [eastwood.util :as util]
-            [clojure.tools.analyzer.passes :as passes])
+            [clojure.tools.analyzer.ast :as ast])
   (:import (java.lang.reflect Method Constructor Field)))
 
 (defmulti deprecated :op)
@@ -51,8 +51,8 @@
   (format "Static field '%s' is deprecated." (:reflected-field expr)))
 
 (defn deprecations [{:keys [asts]}]
-  (for [ast (map #(passes/postwalk % eastwood.passes/reflect-validated) asts)
-        dexpr (filter deprecated (util/ast-nodes ast))]
+  (for [ast (map #(ast/postwalk % pass/reflect-validated) asts)
+        dexpr (filter deprecated (ast/nodes ast))]
     {:linter :deprecations
      :msg (msg dexpr)
      :line (-> dexpr :env :line)}))

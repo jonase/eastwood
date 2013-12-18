@@ -1,10 +1,7 @@
 (ns eastwood.linters.misc
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
-            [eastwood.util :as util]
-            [clojure.tools.analyzer.passes :as pass]))
-
-
+            [clojure.tools.analyzer.ast :as ast]))
 ;; Naked use
 
 (defn- use? [expr]
@@ -13,7 +10,7 @@
        (= 'use (-> expr :fexpr :var meta :name))))
 
 (defn naked-use [exprs]
-  (for [expr (mapcat util/ast-nodes exprs)
+  (for [expr (mapcat ast/nodes exprs)
         :when (use? expr)
         :let [s (filter symbol? (map :val (:args expr)))]
         :when (not-empty s)]
@@ -34,7 +31,7 @@
             (string? (-> first-expr :form))))))
 
 (defn misplaced-docstrings [{:keys [asts]}]
-  (for [expr (mapcat util/ast-nodes asts)
+  (for [expr (mapcat ast/nodes asts)
         :when (and (= (:op expr) :def)
                    (misplaced-docstring? expr))]
     {:linter :misplaced-docstrings
@@ -50,7 +47,7 @@
          (.endsWith s "*"))))
 
 (defn non-dynamic-earmuffs [{:keys [asts]}]
-  (for [expr (mapcat util/ast-nodes asts)
+  (for [expr (mapcat ast/nodes asts)
         :when (= (:op expr) :def)
         :let [^clojure.lang.Var v (:var expr)
               s (.sym v)]
@@ -133,7 +130,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
        (count-equals? form 3)
        (= 'def (nth form 0))
        [(nth form 1) (nth form 2)]))
-  
+
 
 ;; TBD: I am sure defonce-or-defmulti-macro-expansion? can be written
 ;; more clearly and concisely using core.match or core.logic.
@@ -253,7 +250,7 @@ a (defonce foo val) expression.  If it is, return [foo val]."
                                :nested-defs []
                                :defonce-or-defmulti-match-stack []}]
     (doseq [ast ast-seq]
-      (pass/walk ast def-walker-pre1 def-walker-post1)
+      (ast/walk ast def-walker-pre1 def-walker-post1)
 ;;      (println (format "dbg *def-walker-data* %s"
 ;;                       (class *def-walker-data*)))
 ;;      (pp/pprint (select-keys *def-walker-data* [:ancestor-op-vec :ancestor-op-set :ancestor-op-set-stack]))

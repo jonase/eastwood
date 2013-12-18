@@ -5,19 +5,18 @@
             [clojure.tools.reader.edn :as edn]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
-            [clojure.tools.analyzer.passes :as pass]))
-
+            [clojure.tools.analyzer.ast :as ast]))
 
 ;; Unused private vars
 (defn- private-defs [exprs]
-  (->> (mapcat util/ast-nodes exprs)
+  (->> (mapcat ast/nodes exprs)
        (filter #(and (= :def (:op %))
                      (-> % :var meta :private)
                      (-> % :var meta :macro not))) ;; skip private macros
        (map :var)))
 
 (defn- var-freq [exprs]
-  (->> (mapcat util/ast-nodes exprs)
+  (->> (mapcat ast/nodes exprs)
        (filter #(contains? #{:var :the-var} (:op %)))
        (map :var)
        frequencies))
@@ -58,12 +57,12 @@ selectively disable such warnings if they wish."
   (reduce set/union
           (for [method (:methods fn-expr)]
             (let [args (params method)]
-              (set/difference args (used-locals (util/ast-nodes (:body method))))))))
+              (set/difference args (used-locals (ast/nodes (:body method))))))))
 
 (defn unused-fn-args [{:keys [asts]}]
   (let [fn-exprs (->> asts
                       (map util/enhance-extend-invocations)
-                      (mapcat util/ast-nodes)
+                      (mapcat ast/nodes)
                       (filter (util/op= :fn)))]
     (for [expr fn-exprs
           :let [unused (->> (unused-fn-args* expr)
@@ -92,7 +91,7 @@ selectively disable such warnings if they wish."
 ;; in core namespace clojure.main, and contrib library namespaces
 ;; clojure.tools.namespace.reload and clojure.test.generative.runner.
 (defn required-namespaces [exprs]
-  (->> (mapcat util/ast-nodes exprs)
+  (->> (mapcat ast/nodes exprs)
        (filter #(and (= (:op %) :invoke)
                      (let [v (-> % :fn :var)]
                        (or (= v #'clojure.core/require)
@@ -158,7 +157,7 @@ selectively disable such warnings if they wish."
     ast))
 
 (defn mark-statements-in-try-body [ast]
-  (pass/walk ast identity mark-statements-in-try-body-post))
+  (ast/postwalk ast mark-statements-in-try-body-post))
 
 (defn statement-in-try-body? [ast]
   (contains? ast :eastwood/unused-ret-vals-statement-in-try-body))
@@ -257,7 +256,7 @@ selectively disable such warnings if they wish."
             (make-static-method-val-unused-action-map "jvm-method-info.edn")]
     (let [unused-ret-val-exprs (->> asts
                                     (map mark-statements-in-try-body)
-                                    (mapcat util/ast-nodes)
+                                    (mapcat ast/nodes)
                                     (mapcat :statements)
                                     (mapcat unused-exprs-to-check))
           should-use-ret-val-exprs
