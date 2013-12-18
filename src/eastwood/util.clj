@@ -1,5 +1,7 @@
 (ns eastwood.util
-  (:require [clojure.tools.analyzer.passes :as pass]))
+  (:require [clojure.tools.analyzer.passes :as pass]
+            [clojure.tools.reader :as trdr]
+            [clojure.tools.reader.reader-types :as rdr-types]))
 
 (defn op= [op]
   (fn [ast]
@@ -61,3 +63,16 @@
   (and (= :static-call (:op ast-node))
        (contains? ast-node :class)
        (contains? ast-node :method)))
+
+(defn string->forms
+  "Treat a string as a sequence of 0 or more Clojure forms, and read
+  all of them.  No line or column number metadata will be attached to
+  the returned forms, but sometimes this is what you want."
+  [s]
+  (let [rdr (rdr-types/string-push-back-reader s)
+        eof (reify)]
+    (loop [forms []]
+      (let [x (trdr/read rdr nil eof)]
+        (if (identical? x eof)
+          forms
+          (recur (conj forms x)))))))

@@ -15,6 +15,20 @@
   (filter (complement flattenable?)
           (rest (tree-seq flattenable? seq x))))
 
+;(defn debug-seq [x]
+;  (when (some #{:end-line} (flatten-also-colls x))
+;    (println "dbg debug-seq is travering a thing that has :end-line in it:")
+;    (binding [*print-meta* true
+;              *print-level* 10
+;              *print-length* 50]
+;      (pp/pprint x)))
+;  (seq x))
+;
+;(defn debug-flatten-also-colls
+;  [x]
+;  (filter (complement flattenable?)
+;          (rest (tree-seq flattenable? debug-seq x))))
+
 (def ^:private ^diff_match_patch dmp (diff_match_patch.))
 
 (defn levenshtein [s1 s2]
@@ -35,12 +49,26 @@
 ;; reader.  It would be best to find a way to ignore that metadta, but
 ;; still pay attention to any keys in metadata that the user
 ;; explicitly typed in the source code.
+
+;; Below is an alternate way that I've tested somewhat.  It throws
+;; exceptions if the source code contains occurrences of ::ns/name
+;; keywords, which several crucible projects have.
+
+;(defn keyword-typos [{:keys [source]}]
+;  (let [forms (util/string->forms source)
+;        freqs (->> forms
+
 (defn keyword-typos [{:keys [forms]}]
   (let [freqs (->> forms
                    flatten-also-colls
                    (filter keyword?)
                    frequencies)]
     (when debug-keywords-found
+;      (println "dbx: forms:")
+;      (binding [*print-meta* true
+;                *print-level* 10
+;                *print-length* 50]
+;        (pp/pprint forms))
       (println "dbx: keyword-typos frequencies:")
       (pp/pprint (into (sorted-map) freqs)))
     (for [[kw1 n] freqs
