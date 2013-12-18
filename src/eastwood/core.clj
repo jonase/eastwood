@@ -9,7 +9,6 @@
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.unused :as unused]
-            [eastwood.linters.reflection :as reflection]
             [eastwood.linters.typos :as typos])
   (:import [java.io PushbackReader]
            [clojure.lang LineNumberingPushbackReader]))
@@ -34,12 +33,11 @@ return value followed by the time it took to evaluate in millisec."
          elapsed-msec# (/ (double (- (. System (nanoTime)) start#)) 1000000.0)]
      [ret# elapsed-msec#]))
 
-(def ^:private linters
+(def ^:private available-linters
   {:naked-use misc/naked-use
    :misplaced-docstrings misc/misplaced-docstrings
    :def-in-def misc/def-in-def
    :redefd-vars misc/redefd-vars
-   :reflection reflection/reflection
    :deprecations deprecated/deprecations
    :unused-fn-args unused/unused-fn-args
    :unused-private-vars unused/unused-private-vars
@@ -53,7 +51,6 @@ return value followed by the time it took to evaluate in millisec."
     :misplaced-docstrings
     :def-in-def
     :redefd-vars
-    ;;:reflection
     :deprecations
     ;; :unused-fn-args    ; updated, but don't use it by default
     ;;:unused-private-vars
@@ -65,7 +62,7 @@ return value followed by the time it took to evaluate in millisec."
 
 (defn- lint [exprs kw]
   (try
-    (doall ((linters kw) exprs))
+    (doall ((available-linters kw) exprs))
     (catch Throwable e
       [e])))
 
@@ -195,15 +192,24 @@ exception."))))
                            default-linters))
           excluded-linters (set (:exclude-linters opts))
           add-linters (set (:add-linters opts))
-          linters (-> (set/difference linters excluded-linters)
-                      (set/union add-linters))]
+          linters-requested (-> (set/difference linters excluded-linters)
+                                (set/union add-linters))
+          known-linters (set (keys available-linters))
+          linters-unavailable (set/difference linters-requested known-linters)
+          linters (set/intersection linters-requested known-linters)]
       (println (format "== Eastwood %s Clojure %s JVM %s"
                        (eastwood-version)
                        (clojure-version)
                        (get (System/getProperties) "java.version")))
-      (doseq [namespace namespaces]
-        (try
-          (lint-ns namespace linters opts)
-          (catch RuntimeException e
-            (println "Linting failed:")
-            (pst e nil)))))))
+      (when (seq linters-unavailable)
+        (println (format "The following requested linters are unknown: %s"
+                         (seq linters-unavailable)))
+        (println (format "Known linters are: %s"
+                         (seq (sort known-linters)))))
+      (when (seq linters)
+        (doseq [namespace namespaces]
+          (try
+            (lint-ns namespace linters opts)
+            (catch RuntimeException e
+              (println "Linting failed:")
+              (pst e nil))))))))

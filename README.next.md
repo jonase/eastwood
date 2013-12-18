@@ -23,7 +23,6 @@ Eastwood warns when it finds:
 - unused private vars
 - unused function arguments (disabled by default)
 - unused namespaces (disabled by default)
-- reflection
 - naked (:use ...)
 - keyword typos
 
@@ -80,7 +79,6 @@ Available linters are:
 * `:unused-private-vars`
 * `:unused-fn-args`
 * `:unused-namespaces`
-* `:reflection`
 * `:naked-use`
 * `:keyword-typos`
 
