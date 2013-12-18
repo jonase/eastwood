@@ -122,6 +122,29 @@ The best solution is to explicitly import the
 `package.name.JavaClassName`, or if the type hint is unnecessary,
 remove it.
 
+### Exception thrown during linting if wrong number of args detected
+
+Another example where `tools.analyzer` is more picky than the Clojure
+compiler is that it will throw an exception if it finds a function
+call with a wrong number of arguments.  The Clojure compiler will
+compile such code successfully, but throw an exception only if such a
+function call is attempted at run time.
+
+Often this is a mistake in your code, and it is a good idea to correct
+the erroneous function call.  However, there are some projects with
+unit tests that intentionally have such calls in their tests, to
+verify that an exception is thrown.  There are no plans to change this
+behavior of `tools.analyzer`.  If you use Eastwood regularly to help
+catch such things, you could consider removing such calls from your
+tests as well, confident that such erroneous calls do throw exceptions
+at run time.
+
+There are some libraries that provide macros for defining functions
+that are sneaky in changing their argument lists in ways that
+`tools.analyzer` does not catch onto, and it will throw exceptions
+like this even though there would be no exception at run time.  The
+[Hiccup](https://github.com/weavejester/hiccup) library's macro
+`defelem` is a known example of this.
 
 ### Interaction between namespaces
 
@@ -156,29 +179,16 @@ cannot be analyzed.  These libraries use `jvm.tools.analyzer`, and
 both it and `tools.analyzer` (used by Eastwood) share the same
 `clojure.tools.analyzer` namespace.
 
-### Exception thrown during linting if wrong number of args detected
-
-The `tools.analyzer` code used by Eastwood throws an exception when a
-function call is found where it can be determined during analysis that
-it has a number of arguments that the function does not take.  The
-Clojure compiler will compile such code successfully, but throw an
-exception only if such a function call is attempted at run time.
-
-Often this is a mistake in your code, and it is a good idea to correct
-the erroneous function call.  However, there are some projects with
-unit tests that intentionally have such calls in their tests, to
-verify that an exception is thrown.  There are no plans to change this
-behavior of `tools.analyzer`.  If you use Eastwood regularly to help
-catch such things, you could consider removing such calls from your
-tests as well, confident that such erroneous calls do throw exceptions
-at run time.
-
 ### Other Issues
 
 Currently, the Clojure Contrib libraries `data.fressian` and
 `test.generative` cannot be analyzed due to a known bug in
 `tools.analyer.jvm`:
 [TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24)
+
+Other libraries known to cause problems for Eastwood because of
+`test.generative`: Cheshire (TBD whether this is truly due to
+test.generative, or something else).
 
 
 ## Notes on linter warnings
