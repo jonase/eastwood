@@ -1,4 +1,4 @@
-(defproject lib-noir "0.7.7"
+(defproject lib-noir "0.7.8"
   :description "Libraries from Noir for your enjoyment."
   :url "https://github.com/noir-clojure/lib-noir"
   :license {:name "Eclipse Public License - v 1.0"
@@ -12,5 +12,6 @@
                  [hiccup "1.0.4"]
                  [ring-middleware-format "0.3.1"]
                  [org.mindrot/jbcrypt "0.3m"]]
+  :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
   :plugins [[codox "0.6.4"]]
   :codox {:output-dir "doc"})
