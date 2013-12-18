@@ -67,12 +67,22 @@
 (defn string->forms
   "Treat a string as a sequence of 0 or more Clojure forms, and read
   all of them.  No line or column number metadata will be attached to
-  the returned forms, but sometimes this is what you want."
-  [s]
-  (let [rdr (rdr-types/string-push-back-reader s)
-        eof (reify)]
-    (loop [forms []]
-      (let [x (trdr/read rdr nil eof)]
-        (if (identical? x eof)
-          forms
-          (recur (conj forms x)))))))
+  the returned forms, but sometimes this is what you want.
+
+  Hack alert: In order to be able to correctly interpret keywords of
+  the form ::name or ::ns-or-ns-alias/name, you should pass in a
+  namespace to bind to the *ns* var during this function's reading of
+  s.  The assumption is that this namespace and those it requires are
+  already loaded before this function is called, and any aliases used
+  by keywords are already set up.  It also assumes that the entire
+  string is in that same namespace.  Fortunately, this is pretty
+  common for most Clojure code as written today."
+  [s ns]
+  (binding [*ns* (or ns *ns*)]
+    (let [rdr (rdr-types/string-push-back-reader s)
+          eof (reify)]
+      (loop [forms []]
+        (let [x (trdr/read rdr nil eof)]
+          (if (identical? x eof)
+            forms
+            (recur (conj forms x))))))))

@@ -425,6 +425,24 @@ reported by the `:unused-ret-vals-in-try` linter.  You can exclude
 this linter, but keep `:unused-ret-vals`, or vice versa, if one or the
 other linter gives too many false warnings for your code.
 
+### `:keyword-typos` - Keywords that may have typographical errors
+
+If you use a keyword like `:frangible` in several places in your
+source code, but then in one place you accidentally type `:frangable`
+instead, that will likely lead to incorrect behavior of your program.
+
+This linter cannot guarantee finding such misspelled keywords, but if
+there is a keyword in your source code that appears only once, and is
+nearly the same spelling as keywords that appear elsewhere in the same
+source file, this linter will warn about them.  It can of course
+report keywords that are exactly what you intended them to be.
+
+As implemented now, this linter only works if (a) there are no
+keywords of the form `::ns-alias/name` in the file, or (b) the first
+expression in the file is an `ns` expression, and the namespace
+remains the same throughout the file.  This is a common convention
+followed by most Clojure source code, and required by several other
+Clojure development tools.
 
 ## License
 

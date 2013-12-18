@@ -43,23 +43,25 @@
 ;; binding forms like {:keys [k1 k2 k3]} will see k1 k2 k3 as symbols
 ;; k1 k2 k3, not keywords :k1 :k2 :k3.
 
-;; TBD: This method of using the forms and flattening them still
-;; sometimes includes :line, :column, :end-line, and :end-column
-;; metadata keys, and probably others I am not aware of, from the
-;; reader.  It would be best to find a way to ignore that metadta, but
-;; still pay attention to any keys in metadata that the user
-;; explicitly typed in the source code.
+;; If we used the forms as read during analysis, there is the
+;; disadvantage that any backquoted expressions will have keywords
+;; like :line, :column, :end-line, and :end-column 'leak' from the
+;; metadata added by the reader into the backquoted expression as
+;; read.
 
-;; Below is an alternate way that I've tested somewhat.  It throws
-;; exceptions if the source code contains occurrences of ::ns/name
-;; keywords, which several crucible projects have.
+;; Instead, re-read the forms from the string given by the :source key
+;; on the linter argument, in a way that will not attach this :line
+;; :column etc. metadata, implemented in string->forms.
 
-;(defn keyword-typos [{:keys [source]}]
-;  (let [forms (util/string->forms source)
-;        freqs (->> forms
-
-(defn keyword-typos [{:keys [forms]}]
-  (let [freqs (->> forms
+(defn keyword-typos [{:keys [asts source]}]
+  ;; Hack alert: Assumes that the first form in the file is an ns
+  ;; form, and that the namespace remains the same throughout the
+  ;; source file.
+  (let [this-ns (-> (first asts) :env :ns the-ns)
+;        _ (println (format "Namespace= %s\n"
+;                           (-> (first asts) :env :ns the-ns)))
+        forms (util/string->forms source this-ns)
+        freqs (->> forms
                    flatten-also-colls
                    (filter keyword?)
                    frequencies)]
