@@ -98,6 +98,31 @@ don't like.
 
 ## Known issues
 
+### Code analysis engine is more picky than the Clojure compiler
+
+Eastwood uses `tools.analyzer` and `tools.analyzer.jvm` to analyze
+Clojure source code.  It performs some sanity checks on the source
+code that the Clojure compiler does not, as of Clojure version 1.5.1.
+
+For example, Eastwood will throw an exception when analyzing code with
+a type hint `^Typename` where the type name is a Java class that has
+not been imported by default by the Clojure compiler, nor by an
+`:import` inside of an `ns` form.  Such an exception will look like
+this:
+
+    Exception thrown during phase :analyze of linting namespace clojurewerkz.elastisch.native.index
+    Got exception with extra ex-data:
+        msg='class not found: ClearIndicesCacheResponse'
+        (keys dat)=(:class)
+    {:class
+     ^{:line 144, :column 10, :end-line 144, :end-column 35} ClearIndicesCacheResponse}
+    ExceptionInfo class not found: ClearIndicesCacheResponse {:class ClearIndicesCacheResponse}
+
+The best solution is to explicitly import the
+`package.name.JavaClassName`, or if the type hint is unnecessary,
+remove it.
+
+
 ### Interaction between namespaces
 
 If more than one namespace is analyzed in a single command, settings
