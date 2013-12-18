@@ -1,6 +1,7 @@
 (ns eastwood.core
   (:require [clojure.java.io :as io]
             [eastwood.analyze-ns :as analyze]
+            [eastwood.util :as util]
             [clojure.set :as set]
             [clojure.string :as str]
             [clojure.pprint :as pp]
@@ -121,10 +122,7 @@ is very long and difficult to read."
        (println (format "    msg='%s'" msg))
        (println (format "    (keys dat)=%s" (keys dat)))
        (println (format "    extra ex-data printed with metadata:"))
-       (binding [*print-meta* true
-                 *print-level* 7
-                 *print-length* 50]
-         (pp/pprint dat))
+       (util/pprint-ast-node dat)
        (pst exc nil)))))
 
 (defn show-exception [ns-sym opts e]
@@ -160,10 +158,9 @@ is very long and difficult to read."
       (println "\nThe following form was being processed during the exception:")
       (binding [*print-level* 7
                 *print-length* 50]
-        (pp/pprint exception-form)
-        (binding [*print-meta* true]
-          (println "\nShown again with metadata for debugging:")
-          (pp/pprint exception-form)))
+        (pp/pprint exception-form))
+      (println "\nShown again with metadata for debugging:")
+      (util/pprint-ast-node exception-form)
       (println
 "\nAn exception was thrown while analyzing namespace" ns-sym "
 Lint results may be incomplete.  If there are compilation errors in

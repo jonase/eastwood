@@ -1,7 +1,14 @@
 (ns eastwood.util
   (:require [clojure.tools.analyzer.ast :as ast]
             [clojure.tools.reader :as trdr]
+            [clojure.pprint :as pp]
             [clojure.tools.reader.reader-types :as rdr-types]))
+
+(defn pprint-ast-node [ast]
+  (binding [*print-meta* true
+            *print-level* 9
+            *print-length* 50]
+    (pp/pprint ast)))
 
 (defn op= [op]
   (fn [ast]
@@ -82,3 +89,89 @@
           (if (identical? x eof)
             forms
             (recur (conj forms x))))))))
+
+(defn- mark-statements-in-try-body-post [ast]
+  (if (and (= :try (:op ast))
+           (some #{:body} (:children ast))
+           (let [body (:body ast)]
+             (and (= :do (:op body))
+                  (some #{:statements} (:children body))
+                  (vector? (:statements body)))))
+    (update-in ast [:body :statements]
+               (fn [stmts]
+                 (mapv #(assoc % :eastwood/unused-ret-val-expr-in-try-body true)
+                       stmts)))
+    ast))
+
+(defn- mark-exprs-in-try-body-post [ast]
+  (if-not (= :try (:op ast))
+    ast
+    (if-not (some #{:body} (:children ast))
+        (do
+          (println (format "Found try node but it had no :body key in its :children, only %s"
+                           (seq (:children ast))))
+          (pprint-ast-node ast)
+          ast)
+        (let [body (:body ast)]
+          (if-not (= :do (:op body))
+            (update-in ast [:body]
+                       (fn [node]
+                         (assoc node
+                           :eastwood/used-ret-val-expr-in-try-body true)))
+            (let [;; Mark statements - i.e. non-returning expressions in body
+                  ast (if-not (and (some #{:statements} (:children body))
+                                   (vector? (:statements body)))
+                        (do
+                          (println (format "Found :try node with :body child that is :do, but either do has no :statements in children (only %s), or it does, but it is not a vector (it has class %s)"
+                                           (seq (:children body))
+                                           (class (:statements body))))
+                          (pprint-ast-node ast)
+                          ast)
+                        (update-in ast [:body :statements]
+                                   (fn [stmts]
+                                     (mapv #(assoc % :eastwood/unused-ret-val-expr-in-try-body true)
+                                           stmts))))
+                  ;; Mark the return expression
+                  ast (if-not (some #{:ret} (:children body))
+                        (do
+                          (println (format "Found :try node with :body child that is :do, but do has no :ret in children (only %s)"
+                                           (seq (:children body))))
+                          (pprint-ast-node ast)
+                          ast)
+                        (update-in ast [:body :ret]
+                                   (fn [node]
+                                     (assoc node
+                                       :eastwood/used-ret-val-expr-in-try-body true))))]
+              ast))))))
+
+(defn mark-exprs-in-try-body
+  "Return an ast that is identical to the argument, except that
+expressions 'directly' within try blocks will have one of two new
+keywords with value
+true.
+
+Statements, i.e. expressions that are not the last one in the body,
+and thus their return value is discarded, will have the new
+keyword :eastwood/unused-ret-val-expr-in-try-body with value true.
+Use the fn statement-in-try-body? to check whether a node was so
+marked.
+
+Return values, i.e. expressions that are the last one in the body,
+will have the new keyword :eastwood/used-ret-val-expr-in-try-body with
+value true.  Use the fn ret-expr-in-try-body? to check whether a node
+was so marked.
+
+Use fn expr-in-try-body? to check whether an expression was either one
+of these kind."
+  [ast]
+  (ast/postwalk ast mark-exprs-in-try-body-post))
+
+(defn statement-in-try-body? [ast]
+  (contains? ast :eastwood/unused-ret-val-expr-in-try-body))
+
+(defn ret-expr-in-try-body? [ast]
+  (contains? ast :eastwood/used-ret-val-expr-in-try-body))
+
+(defn expr-in-try-body? [ast]
+  (or (statement-in-try-body? ast)
+      (ret-expr-in-try-body? ast)))

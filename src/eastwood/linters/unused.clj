@@ -143,25 +143,6 @@ selectively disable such warnings if they wish."
 (def ^:dynamic *warning-if-invoke-ret-val-unused* {})
 (def ^:dynamic *warning-if-static-ret-val-unused* {})
 
-(defn mark-statements-in-try-body-post [ast]
-  (if (and (= :try (:op ast))
-           (some #{:body} (:children ast))
-           (let [body (:body ast)]
-             (and (= :do (:op body))
-                  (some #{:statements} (:children body))
-                  (vector? (:statements body)))))
-    (update-in ast [:body :statements]
-               (fn [stmts]
-                 (mapv #(assoc % :eastwood/unused-ret-vals-statement-in-try-body true)
-                       stmts)))
-    ast))
-
-(defn mark-statements-in-try-body [ast]
-  (ast/postwalk ast mark-statements-in-try-body-post))
-
-(defn statement-in-try-body? [ast]
-  (contains? ast :eastwood/unused-ret-vals-statement-in-try-body))
-
 (defn unused-exprs-to-check [ast-node]
   (case (:op ast-node)
     :invoke (if (util/invoke-expr? ast-node)
@@ -204,7 +185,7 @@ selectively disable such warnings if they wish."
 
 (defn unused-ret-val-lint-result [stmt stmt-desc-str action fn-or-method
                                   location]
-  (let [stmt-in-try-body? (statement-in-try-body? stmt)
+  (let [stmt-in-try-body? (util/statement-in-try-body? stmt)
         extra-msg (if stmt-in-try-body?
                     " inside body of try"
                     "")
@@ -255,7 +236,7 @@ selectively disable such warnings if they wish."
             *warning-if-static-ret-val-unused*
             (make-static-method-val-unused-action-map "jvm-method-info.edn")]
     (let [unused-ret-val-exprs (->> asts
-                                    (map mark-statements-in-try-body)
+                                    (map util/mark-exprs-in-try-body)
                                     (mapcat ast/nodes)
                                     (mapcat :statements)
                                     (mapcat unused-exprs-to-check))
