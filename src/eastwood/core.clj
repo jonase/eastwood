@@ -55,9 +55,9 @@ return value followed by the time it took to evaluate in millisec."
     :redefd-vars
     ;;:reflection
     :deprecations
-    :unused-fn-args
+    ;; :unused-fn-args    ; updated, but don't use it by default
     ;;:unused-private-vars
-    :unused-namespaces
+    ;; :unused-namespaces ; updated, but don't use it by default
     :unused-ret-vals
     :unused-ret-vals-in-try
     :keyword-typos

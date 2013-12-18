@@ -21,8 +21,8 @@ Eastwood warns when it finds:
 - unused return values of pure functions, or some others where it
   rarely makes sense to discard its return value
 - unused private vars
-- unused function arguments
-- unused namespaces
+- unused function arguments (disabled by default)
+- unused namespaces (disabled by default)
 - reflection
 - naked (:use ...)
 - keyword typos
