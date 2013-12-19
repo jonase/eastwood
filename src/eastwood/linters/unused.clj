@@ -145,16 +145,22 @@ selectively disable such warnings if they wish."
 
 (defn unused-exprs-to-check [ast-node]
   (case (:op ast-node)
+    (:const :var :local) [ast-node]
     :invoke (if (util/invoke-expr? ast-node)
               [ast-node]
               [])
-    :const [ast-node]
     :static-call (if (util/static-call? ast-node)
                    [ast-node]
                    [])
     ;; If a do node has an unused ret value, then even its return
     ;; value is unused.
     :do (unused-exprs-to-check (:ret ast-node))
+    ;; Digging into let exprs may be the cause of many many
+    ;; auto-generated names appearing in the :unused-ret-vals linter
+    ;; output during recent testing.  Too noisy to be useful like
+    ;; that.  Try without it.
+;    ;; Similarly for let, except everything in its body is unused.
+;    :let (unused-exprs-to-check (:body ast-node))
     ;; If a :set node has an unused ret value, then all of its
     ;; elements have unused ret values.
     :set (mapcat unused-exprs-to-check (:items ast-node))
@@ -242,14 +248,25 @@ selectively disable such warnings if they wish."
                                     (mapcat unused-exprs-to-check))
           should-use-ret-val-exprs
           (->> unused-ret-val-exprs
-               (filter #(or (= :const (:op %))
+               (filter #(or (#{:const :var :local} (:op %))
                             (util/invoke-expr? %)
                             (util/static-call? %))))]
       (doall
        (remove
         nil?
         (for [stmt should-use-ret-val-exprs]
-          (cond (and (= :const (:op stmt))
+          ;; Note: Report unused :const :var and :local only when
+          ;; linter is the regular :unused-ret-vals one, but do so for
+          ;; such values whether they are inside of a try block or
+          ;; not.  If both :unused-ret-vals and
+          ;; :unused-ret-vals-in-try are specified, such values will
+          ;; only be reported once, and if :unused-ret-vals-in-try is
+          ;; used but not the other, they will not be reported.  I
+          ;; expect that :unused-ret-vals will be the more commonly
+          ;; used one, as the :unused-ret-vals-in-try will likely have
+          ;; more false positives from functions being called in unit
+          ;; tests to see if they throw an exception.
+          (cond (and (#{:const :var :local} (:op stmt))
                      (= location :outside-try))
                 (if (util/interface? (:form stmt))
                   ;; Then assume this is an interface created by the
@@ -263,7 +280,11 @@ selectively disable such warnings if they wish."
                   ;; enough.
                   nil
                   {:linter :unused-ret-vals
-                   :msg (format "Constant value is discarded inside %s: %s"
+                   :msg (format "%s value is discarded inside %s: %s"
+                                (case (:op stmt)
+                                  :const "Constant"
+                                  :var "Var"
+                                  :local "Local")
                                 (-> stmt :env :name)
                                 (:form stmt))
                    :line (-> stmt :env :name meta :line)})
