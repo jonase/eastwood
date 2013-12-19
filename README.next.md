@@ -18,12 +18,14 @@ Eastwood warns when it finds:
 - deprecated clojure vars
 - def's nested inside other def's
 - redefinitions of the same name in the same namespace
+- function calls that seem to have the wrong number of arguments (to
+  be implemented)
 - unused return values of pure functions, or some others where it
   rarely makes sense to discard its return value
-- unused private vars
+- unused private vars (not yet)
 - unused function arguments (disabled by default)
 - unused namespaces (disabled by default)
-- naked (:use ...)
+- naked (:use ...) (to be updated)
 - keyword typos
 
 Because Eastwood evaluates the code it is linting, you must use a
@@ -74,6 +76,7 @@ Available linters are:
 * `:deprecations`
 * `:def-in-def`
 * `:redefd-vars`
+* `:wrong-arity`
 * `:unused-ret-vals`
 * `:unused-ret-vals-in-try`
 * `:unused-private-vars`
