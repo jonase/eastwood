@@ -8,7 +8,7 @@
             [clojure.tools.reader :as tr]
             [clojure.tools.analyzer.jvm :as ana.jvm]
             [clojure.tools.analyzer.passes.jvm.emit-form :refer [emit-form]]
-            [clojure.tools.analyzer.utils :refer [maybe-var]]
+            [clojure.tools.analyzer.utils :refer [resolve-var]]
             [clojure.tools.analyzer.ast :refer [postwalk]]
             [clojure.tools.analyzer :as ana :refer [analyze] :rename {analyze -analyze}]))
 
@@ -102,7 +102,7 @@
   (if (seq? form)
     (let [op (first form)]
       (if-not (ana.jvm/specials op)
-        (let [v (maybe-var op env)
+        (let [v (resolve-var op env)
               local? (-> env :locals (get op))]
           (if (and (not local?) (:macro (meta v)))
            (apply v form (:locals env) (rest form))
