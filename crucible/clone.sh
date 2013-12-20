@@ -106,12 +106,16 @@ $C https://github.com/clojurewerkz/elastisch
 $C https://github.com/clojurewerkz/mailer
 $C https://github.com/clojurewerkz/meltdown
 $C https://github.com/clojurewerkz/money
+$C https://github.com/clojurewerkz/scrypt.git
+$C https://github.com/clojurewerkz/serialism.git
 # Dec 20 2013: Latest romulan fails compilation via 'lein check'.
 # Don't bother with eastwood testing until it passes that.
 #$C https://github.com/clojurewerkz/romulan
-# Dec 20 2013: Latest spyglass passes 'lein check', but fails eastwood
-# with exception.  Learn why.
-$C https://github.com/clojurewerkz/spyglass.git
+# Dec 20 2013: Latest spyglass passes 'lein check', but fails to make
+# connection attempts even when only doing eastwood analysis on some
+# its test namespaces.
+#$C https://github.com/clojurewerkz/spyglass.git
+$C https://github.com/clojurewerkz/support.git
 $C https://github.com/clojurewerkz/titanium
 $C https://github.com/dakrone/cheshire
 $C https://github.com/daveray/seesaw
@@ -121,7 +125,9 @@ $C https://github.com/hugoduncan/criterium
 # throws exceptions because it fails to make network connections.
 # Save it for later.
 #$C https://github.com/michaelklishin/neocons
+$C https://github.com/michaelklishin/pantomime.git
 $C https://github.com/michaelklishin/quartzite.git
+$C https://github.com/michaelklishin/urly.git
 # Dec 20 2013: vclock passes lein check and lein test, but eastwood
 # throws exception.  Learn why.
 $C https://github.com/michaelklishin/vclock.git

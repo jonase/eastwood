@@ -41,7 +41,12 @@ echo "Linting 3rd party Clojure libraries"
 echo 
 for lib in \
     archimedes \
+    pantomime \
     quartzite \
+    scrypt \
+    serialism \
+    support \
+    urly \
     vclock \
     avl.clj \
     cheshire \
