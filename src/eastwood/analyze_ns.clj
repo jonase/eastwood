@@ -123,7 +123,8 @@
   [form env]
   (binding [ana/macroexpand-1 macroexpand-1
             ana/create-var    create-var
-            ana/parse         ana.jvm/parse]
+            ana/parse         ana.jvm/parse
+            ana/var?          var?]
     (ana.jvm/run-passes (-analyze form env))))
 
 (defn analyze-form [form env]
