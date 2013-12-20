@@ -26,9 +26,9 @@ do_eastwood()
     set +e   # Do not stop if an eastwood run returns a non-0 exit status.  Keep going with more checking, if any.
     if [ "x${ns}" == "x" ]
     then
-	lein eastwood "{:exclude-linters [:unused-fn-args :unused-namespaces]}"
+	lein eastwood "{:exclude-linters [:keyword-typos]}"
     else
-	lein eastwood "{:namespaces [ ${core_ns} ] :exclude-linters [:unused-fn-args :unused-namespaces]}"
+	lein eastwood "{:namespaces [ ${core_ns} ] :exclude-linters [:keyword-typos]}"
     fi
     set -e
 }
@@ -40,6 +40,9 @@ echo
 echo "Linting 3rd party Clojure libraries"
 echo 
 for lib in \
+    archimedes \
+    quartzite \
+    vclock \
     avl.clj \
     cheshire \
     criterium \

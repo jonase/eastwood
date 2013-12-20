@@ -99,19 +99,34 @@ $C https://github.com/clojure/tools.trace
 # Some other Clojure libraries that are not Clojure contrib libraries
 
 $C https://github.com/cgrand/enlive
+$C https://github.com/clojurewerkz/archimedes.git
 $C https://github.com/clojurewerkz/buffy
 $C https://github.com/clojurewerkz/cassaforte
 $C https://github.com/clojurewerkz/elastisch
 $C https://github.com/clojurewerkz/mailer
 $C https://github.com/clojurewerkz/meltdown
 $C https://github.com/clojurewerkz/money
-$C https://github.com/clojurewerkz/romulan
+# Dec 20 2013: Latest romulan fails compilation via 'lein check'.
+# Don't bother with eastwood testing until it passes that.
+#$C https://github.com/clojurewerkz/romulan
+# Dec 20 2013: Latest spyglass passes 'lein check', but fails eastwood
+# with exception.  Learn why.
+$C https://github.com/clojurewerkz/spyglass.git
 $C https://github.com/clojurewerkz/titanium
 $C https://github.com/dakrone/cheshire
 $C https://github.com/daveray/seesaw
 $C https://github.com/flatland/useful
 $C https://github.com/hugoduncan/criterium
-$C https://github.com/michaelklishin/neocons
+# Dec 20 2013: Latest neocons passes 'lein check', but 'lein eastwood'
+# throws exceptions because it fails to make network connections.
+# Save it for later.
+#$C https://github.com/michaelklishin/neocons
+$C https://github.com/michaelklishin/quartzite.git
+# Dec 20 2013: vclock passes lein check and lein test, but eastwood
+# throws exception.  Learn why.
+$C https://github.com/michaelklishin/vclock.git
+# Dec 20 2013: welle seems to hang during 'lein eastwood'.  Learn why.
+#$C https://github.com/michaelklishin/welle.git
 $C https://github.com/michalmarczyk/avl.clj
 $C https://github.com/noir-clojure/lib-noir
 $C https://github.com/weavejester/compojure
