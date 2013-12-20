@@ -357,14 +357,16 @@ exception."))))
           linters-requested (-> (set/difference linters excluded-linters)
                                 (set/union add-linters))
           known-linters (set (keys available-linters))
-          linters-unavailable (set/difference linters-requested known-linters)
+          linters-unavailable (set/difference (set/union linters-requested
+                                                         excluded-linters)
+                                              known-linters)
           linters (set/intersection linters-requested known-linters)]
       (println (format "== Eastwood %s Clojure %s JVM %s"
                        (eastwood-version)
                        (clojure-version)
                        (get (System/getProperties) "java.version")))
       (when (seq linters-unavailable)
-        (println (format "The following requested linters are unknown: %s"
+        (println (format "The following requested or excluded linters are unknown: %s"
                          (seq linters-unavailable)))
         (println (format "Known linters are: %s"
                          (seq (sort known-linters)))))
