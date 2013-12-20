@@ -15,6 +15,8 @@
            [clojure.lang LineNumberingPushbackReader]))
 
 
+(def eastwood-url "https://github.com/jonase/eastwood")
+
 (def ^:dynamic *eastwood-version*
   {:major 0, :minor 0, :incremental 3, :qualifier ""})
 
@@ -88,6 +90,47 @@ entire stack trace if depth is nil).  Does not print ex-data."
                         (+ 2 (- (count (.getStackTrace cause))
                                 (count st)))))))))
 
+(defn maybe-unqualified-java-class-name? [x]
+  (if-not (or (symbol? x) (string? x))
+    false
+    (let [^String x (if (symbol? x) (str x) x)]
+      (and (>= (count x) 1)
+           (== (.indexOf x ".") -1)   ; no dots
+           (Character/isJavaIdentifierStart ^Character (nth x 0))
+           (= (subs x 0 1)
+              (str/upper-case (subs x 0 1))))))) ; first char is upper-case
+
+(defn misplaced-primitive-tag? [x]
+  (cond
+   (= x clojure.core/byte) "byte"
+   (= x clojure.core/short) "short"
+   (= x clojure.core/int) "int"
+   (= x clojure.core/long) "long"
+   (= x clojure.core/boolean) "boolean"
+   (= x clojure.core/char) "char"
+   (= x clojure.core/float) "float"
+   (= x clojure.core/double) "double"
+   :else nil))
+
+(defn print-ex-data-details [ns-sym opts ^Throwable exc]
+  (let [dat (ex-data exc)
+        msg (.getMessage exc)]
+    ;; Print useful info about the exception so we might more
+    ;; quickly learn how to enhance it.
+    (println (format "Got exception with extra ex-data:"))
+    (println (format "    msg='%s'" msg))
+    (println (format "    (keys dat)=%s" (keys dat)))
+    (when (contains? dat :tag-kind)
+      (println (format "    (:tag-kind dat)=%s" (:tag-kind dat))))
+    (when (contains? dat :ast)
+      (println (format "     (:op ast)=%s" (-> dat :ast :op)))
+      (when (contains? (:ast dat) :form)
+        (println (format "    (class (-> dat :ast :form))=%s (-> dat :ast :form)="
+                         (class (-> dat :ast :form))))
+        (util/pprint-ast-node (-> dat :ast :form)))
+      (util/pprint-ast-node (-> dat :ast)) )
+    (pst exc nil)))
+
 (defn handle-no-matching-arity-for-fn [ns-sym opts dat]
   (let [{:keys [arity fn]} dat
         {:keys [arglists form var]} fn]
@@ -97,15 +140,132 @@ with %s args, but it is only known to take one of the following args:"
     (println (format "    %s"
                      (str/join "\n    " arglists)))))
 
-(defn exception-without-ex-data
-  "Return the exception e, but without any ex-data associated with e.
-This can be useful for Clojure data-carrying exceptions where the data
-is very long and difficult to read."
-  [^Throwable e]
-  (let [^Throwable e2 (Throwable. (.getMessage e))]
-    (. e2 (setStackTrace (.getStackTrace e)))
-    (. e2 (initCause (.getCause e)))
-    e2))
+(defn handle-bad-tag [ns-sym opts ^Throwable exc]
+  (let [dat (ex-data exc)
+        {:keys [tag-kind ast]} dat
+        msg (.getMessage exc)]
+    (cond
+     (or (and (= tag-kind :return-tag) (= (:op ast) :var))
+         (and (= tag-kind :tag)        (= (:op ast) :invoke))
+         (and (= tag-kind :tag)        (= (:op ast) :const)))
+     (let [form (:form ast)
+           form (if (= (:op ast) :invoke)
+                  (first form)
+                  form)
+           tag (get ast tag-kind)]
+       (println (format "A function, macro, protocol method, etc. named %s has been used here:"
+                        form))
+       (util/pprint-ast-node (meta form))
+       (println (format "Wherever it is defined, it has a return type of %s"
+                        tag))
+       (cond
+        (maybe-unqualified-java-class-name? tag)
+        (do
+          (println (format
+"This appears to be a Java class name with no package path.
+Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
+If this definition is easy for you to change, we recommend you prepend it with
+a full package path name, e.g. java.net.URI
+Otherwise import the class by adding a line like this to your ns statement:
+    (:import (java.net URI))"))
+          :no-more-details-needed)
+
+        (misplaced-primitive-tag? tag)
+        (let [prim-name (misplaced-primitive-tag? tag)
+              form (if (var? form)
+                     (.sym ^clojure.lang.Var form)
+                     form)]
+          (println (format
+"It has probably been defined with a primitive return type tag on the var name,
+like this:
+    (defn ^%s %s [args] ...)" prim-name form))
+          (println (format
+"Clojure 1.5.1 does not handle such tags correctly, and gives no error messages.
+Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
+The type hint should be just before the arg vector, like this:
+    (defn %s ^%s [args] ...)" form prim-name))
+          (println (format
+"or if there are multiple arities defined, like this:
+    (defn %s (^%s [arg1] ...) (^%s [arg1 arg2] ...))" form prim-name prim-name))
+          :no-more-details-needed)
+        
+        :else
+        (do
+          (println (format "dbgx tag=%s (class tag)=%s (str tag)='%s' boolean?=%s long?=%s"
+                           tag
+                           (class tag)
+                           (str tag)
+                           (= tag clojure.core/boolean)
+                           (= tag clojure.core/long)))
+          :show-more-details)))
+     
+     (and (= tag-kind :tag)
+          (#{:local :binding} (:op ast)))
+     (let [{:keys [form tag]} ast]
+       (println (format "Local name '%s' has been given a type tag '%s' here:"
+                        form tag))
+       (util/pprint-ast-node (meta tag))
+       (cond
+        (maybe-unqualified-java-class-name? tag)
+        (do
+          (println (format
+"This appears to be a Java class name with no package path.
+Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
+Either prepend it with a full package path name, e.g. java.net.URI
+Otherwise, import the Java class, e.g. add a line like this to the ns statement:
+    (:import (java.net URI))"))
+          :no-more-details-needed)
+
+        (symbol? tag)
+        (do
+          (println (format
+"This is a symbol, but does not appear to be a Java class.  Whatever it
+is, library tools.analyzer, on which Eastwood relies, cannot analyze
+such files.
+
+Cases like this have been seen in some Clojure code that used the
+library test.generative.  That library uses tag metadata in an unusual
+way that might be changed to avoid this.  See
+http://dev.clojure.org/jira/browse/TGEN-5 for details if you are
+curious.
+
+If you are not using test.generative, and are able to provide the code
+that you used that gives this error to the Eastwood developers for
+further investigation, please file an issue on the Eastwood Github
+page at %s"
+          eastwood-url))
+          :no-more-details-needed)
+
+        (sequential? tag)
+        (do
+          (println (format
+"This appears to be a Clojure form to be evaluated.
+Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
+
+If you have this expression in your source code, it is recommended to
+replace it with a constant type tag if you can, or create an issue on
+the Eastwood project Github page with details of your situation for
+possible future enhancement to Eastwood: %s
+
+If you do not see any expression like this in your source code, cases
+like this have been seen programs that used the library
+test.generative.  That library uses tag metadata in an unusual way
+that might be changed to avoid this.  See
+http://dev.clojure.org/jira/browse/TGEN-5 for details if you are
+curious." eastwood-url))
+          :no-more-details-needed)
+
+        :else
+        (do
+          (println (format "dbgx for case tag-kind=:tag :op :local tag=%s (class form)=%s (sequential? form) form="
+                           (class form) (sequential? form) tag))
+          (util/pprint-ast-node form)
+          :show-more-details)))
+
+     :else
+     (do
+       (print-ex-data-details ns-sym opts exc)
+       :show-more-details))))
 
 (defn handle-ex-data [ns-sym opts ^Throwable exc]
   (let [dat (ex-data exc)
@@ -113,21 +273,19 @@ is very long and difficult to read."
     (cond
      (= msg "No matching arity found for function: ")
      (handle-no-matching-arity-for-fn ns-sym opts dat)
+     (contains? dat :tag-kind)
+     (handle-bad-tag ns-sym opts exc)
      :else
      (do
-       ;; Print useful info about the exception so we might more
-       ;; quickly learn how to enhance it.
-       (println (format "Got exception with extra ex-data:"))
-       (println (format "    msg='%s'" msg))
-       (println (format "    (keys dat)=%s" (keys dat)))
-       (println (format "    extra ex-data printed with metadata:"))
-       (util/pprint-ast-node dat)
-       (pst exc nil)))))
+       (print-ex-data-details ns-sym opts exc)
+       :show-more-details))))
 
 (defn show-exception [ns-sym opts e]
   (if (ex-data e)
     (handle-ex-data ns-sym opts e)
-    (pst e nil)))
+    (do
+      (pst e nil)
+      :show-more-details)))
 
 (defn lint-ns [ns-sym linters opts]
   (println "== Linting" ns-sym "==")
@@ -153,13 +311,13 @@ is very long and difficult to read."
     (when exception
       (println "Exception thrown during phase" exception-phase
                "of linting namespace" ns-sym)
-      (show-exception ns-sym opts exception)
-      (println "\nThe following form was being processed during the exception:")
-      (binding [*print-level* 7
-                *print-length* 50]
-        (pp/pprint exception-form))
-      (println "\nShown again with metadata for debugging:")
-      (util/pprint-ast-node exception-form)
+      (when (= (show-exception ns-sym opts exception) :show-more-details)
+        (println "\nThe following form was being processed during the exception:")
+        (binding [*print-level* 7
+                  *print-length* 50]
+          (pp/pprint exception-form))
+        (println "\nShown again with metadata for debugging:")
+        (util/pprint-ast-node exception-form))
       (println
 "\nAn exception was thrown while analyzing namespace" ns-sym "
 Lint results may be incomplete.  If there are compilation errors in
