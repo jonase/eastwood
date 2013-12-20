@@ -71,11 +71,10 @@ return value followed by the time it took to evaluate in millisec."
 ;; *out*, not *err*, and to use depth nil to print all stack frames.
 (defn pst
   "Prints a stack trace of the exception, to the depth requested (the
-entire stack trace if depth is nil)."
+entire stack trace if depth is nil).  Does not print ex-data."
   [^Throwable e depth]
   (println (str (-> e class .getSimpleName) " "
-                (.getMessage e)
-                (when-let [info (ex-data e)] (str " " (pr-str info)))))
+                (.getMessage e)))
   (let [st (.getStackTrace e)
         cause (.getCause e)]
     (doseq [el (remove #(#{"clojure.lang.RestFn" "clojure.lang.AFn"}
