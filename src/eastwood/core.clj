@@ -156,7 +156,7 @@ with %s args, but it is only known to take one of the following args:"
        (println (format "A function, macro, protocol method, etc. named %s has been used here:"
                         form))
        (util/pprint-ast-node (meta form))
-       (println (format "Wherever it is defined, it has a return type of %s"
+       (println (format "Wherever it is defined, or where it is called, it has a return type of %s"
                         tag))
        (cond
         (maybe-unqualified-java-class-name? tag)
@@ -256,7 +256,7 @@ the Eastwood project Github page with details of your situation for
 possible future enhancement to Eastwood: %s
 
 If you do not see any expression like this in your source code, cases
-like this have been seen programs that used the library
+like this have been seen in programs that used the library
 test.generative.  That library uses tag metadata in an unusual way
 that might be changed to avoid this.  See
 http://dev.clojure.org/jira/browse/TGEN-5 for details if you are
