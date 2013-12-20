@@ -183,6 +183,14 @@
     1,
     {:line 107, :linter :unused-ret-vals, :msg "Pure function call return value is discarded: (assoc {} k v)"}
     1,
+    {:line 110, :linter :unused-ret-vals, :msg "Var value is discarded inside gah: repeatedly"}
+    1,
+    {:line 110, :linter :unused-ret-vals, :msg "Local value is discarded inside gah: n"}
+    1,
+    {:line 110, :linter :unused-ret-vals, :msg "Local value is discarded inside gah: x"}
+    1,
+    {:line 114, :linter :unused-ret-vals, :msg "Var value is discarded inside check-do-let-nesting: gah"}
+    1,
     })
   (lint-test
    'eastwood.test.testcases.deprecated

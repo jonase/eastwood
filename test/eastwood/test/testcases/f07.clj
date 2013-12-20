@@ -106,3 +106,21 @@
 (defn unused-ret-val4 [k v]
   (assoc {} k v)
   [k v])
+
+(defn gah [n]
+  (let [x (* 2 n)]
+    repeatedly n x #(rand-int 100)))
+
+(defn check-do-let-nesting [a]
+  ;;(let [b 2]
+  (do
+    (println "no warning for me")
+    ;;(let [c 3]
+    (do
+      (println "nor for me")
+      ;; The gah on the following line should get an unused warning
+      ;; because even though it is in return position for the
+      ;; enclosing let, and that let is in return position for its
+      ;; enclosing let, that enclosing let has an unused return value.
+      gah))
+  (/ a 2))
