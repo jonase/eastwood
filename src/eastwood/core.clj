@@ -102,14 +102,14 @@ entire stack trace if depth is nil).  Does not print ex-data."
 
 (defn misplaced-primitive-tag? [x]
   (cond
-   (= x clojure.core/byte) "byte"
-   (= x clojure.core/short) "short"
-   (= x clojure.core/int) "int"
-   (= x clojure.core/long) "long"
-   (= x clojure.core/boolean) "boolean"
-   (= x clojure.core/char) "char"
-   (= x clojure.core/float) "float"
-   (= x clojure.core/double) "double"
+   (= x clojure.core/byte)    {:prim-name "byte",    :supported-as-ret-hint false}
+   (= x clojure.core/short)   {:prim-name "short",   :supported-as-ret-hint false}
+   (= x clojure.core/int)     {:prim-name "int",     :supported-as-ret-hint false}
+   (= x clojure.core/long)    {:prim-name "long",    :supported-as-ret-hint true}
+   (= x clojure.core/boolean) {:prim-name "boolean", :supported-as-ret-hint false}
+   (= x clojure.core/char)    {:prim-name "char",    :supported-as-ret-hint false}
+   (= x clojure.core/float)   {:prim-name "float",   :supported-as-ret-hint false}
+   (= x clojure.core/double)  {:prim-name "double",  :supported-as-ret-hint true}
    :else nil))
 
 (defn print-ex-data-details [ns-sym opts ^Throwable exc]
@@ -171,22 +171,30 @@ Otherwise import the class by adding a line like this to your ns statement:
           :no-more-details-needed)
 
         (misplaced-primitive-tag? tag)
-        (let [prim-name (misplaced-primitive-tag? tag)
+        (let [{:keys [prim-name supported-as-ret-hint]} (misplaced-primitive-tag? tag)
               form (if (var? form)
-                     (.sym ^clojure.lang.Var form)
-                     form)]
+                     (name (.sym ^clojure.lang.Var form))
+                     form)
+              good-prim-name (if supported-as-ret-hint
+                               prim-name
+                               "long")]
           (println (format
 "It has probably been defined with a primitive return type tag on the var name,
 like this:
     (defn ^%s %s [args] ...)" prim-name form))
           (println (format
-"Clojure 1.5.1 does not handle such tags correctly, and gives no error messages.
-Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
-The type hint should be just before the arg vector, like this:
-    (defn %s ^%s [args] ...)" form prim-name))
+"Clojure 1.5.1 does not handle such tags correctly, and gives no error messages."))
+          (when-not supported-as-ret-hint
+            (println (format
+"Also, it only supports return type hints of long and double, not %s" prim-name)))
+          (println (format
+"Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
+Type hints for unsupported types (other than long or double) should be deleted.
+For supported type hints, it should be just before the arg vector, like this:
+    (defn %s ^%s [args] ...)" form good-prim-name))
           (println (format
 "or if there are multiple arities defined, like this:
-    (defn %s (^%s [arg1] ...) (^%s [arg1 arg2] ...))" form prim-name prim-name))
+    (defn %s (^%s [arg1] ...) (^%s [arg1 arg2] ...))" form good-prim-name good-prim-name))
           :no-more-details-needed)
         
         :else
