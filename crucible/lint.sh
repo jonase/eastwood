@@ -41,6 +41,8 @@ echo "Linting 3rd party Clojure libraries"
 echo 
 for lib in \
     archimedes \
+    chash \
+    ogre \
     pantomime \
     quartzite \
     scrypt \

@@ -77,7 +77,7 @@
   (lint-test
    'eastwood.test.testcases.f03
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :unused-namespaces :unused-ret-vals]
+    :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try]
    {}
    {})
   (lint-test

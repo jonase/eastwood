@@ -124,3 +124,9 @@
       ;; enclosing let, that enclosing let has an unused return value.
       gah))
   (/ a 2))
+
+;; Marker protocols and interfaces should not generate any warnings
+
+(defprotocol MarkerProtocol)
+
+(definterface IMarkerInterface)
