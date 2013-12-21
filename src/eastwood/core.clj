@@ -41,6 +41,7 @@ return value followed by the time it took to evaluate in millisec."
    :misplaced-docstrings misc/misplaced-docstrings
    :def-in-def misc/def-in-def
    :redefd-vars misc/redefd-vars
+   :wrong-arity misc/wrong-arity
    :deprecations deprecated/deprecations
    :unused-fn-args unused/unused-fn-args
    :unused-private-vars unused/unused-private-vars
@@ -54,6 +55,7 @@ return value followed by the time it took to evaluate in millisec."
     :misplaced-docstrings
     :def-in-def
     :redefd-vars
+    :wrong-arity
     :deprecations
     ;; :unused-fn-args    ; updated, but don't use it by default
     ;;:unused-private-vars
@@ -130,15 +132,6 @@ entire stack trace if depth is nil).  Does not print ex-data."
         (util/pprint-ast-node (-> dat :ast :form)))
       (util/pprint-ast-node (-> dat :ast)) )
     (pst exc nil)))
-
-(defn handle-no-matching-arity-for-fn [ns-sym opts dat]
-  (let [{:keys [arity fn]} dat
-        {:keys [arglists form var]} fn]
-    (println (format "Function on var %s called on line %d
-with %s args, but it is only known to take one of the following args:"
-                     var (-> form meta :line) arity))
-    (println (format "    %s"
-                     (str/join "\n    " arglists)))))
 
 (defn handle-bad-tag [ns-sym opts ^Throwable exc]
   (let [dat (ex-data exc)
@@ -279,8 +272,6 @@ curious." eastwood-url))
   (let [dat (ex-data exc)
         msg (.getMessage exc)]
     (cond
-     (= msg "No matching arity found for function: ")
-     (handle-no-matching-arity-for-fn ns-sym opts dat)
      (contains? dat :tag-kind)
      (handle-bad-tag ns-sym opts exc)
      :else

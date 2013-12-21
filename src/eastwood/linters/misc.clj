@@ -1,7 +1,9 @@
 (ns eastwood.linters.misc
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
-            [clojure.tools.analyzer.ast :as ast]))
+            [clojure.tools.analyzer.ast :as ast]
+            [eastwood.util :as util]))
+
 ;; Naked use
 
 (defn- use? [expr]
@@ -319,3 +321,22 @@ a (defonce foo val) expression.  If it is, return [foo val]."
        :msg (format "There is a def of %s nested inside def TBD"
                     (:var nested-var))
        :line (-> nested-var :env :line)})))
+
+
+;; Wrong arity
+
+(defn wrong-arity [{:keys [asts]}]
+  (let [exprs (->> asts
+                   (mapcat ast/nodes)
+                   (filter :maybe-mismatch-arity))]
+    (for [expr exprs]
+      (do
+;        (println (format "dbgx: Maybe wrong # args:"))
+;        (util/pprint-ast-node expr)
+        {:linter :wrong-arity
+         :msg (format "Function on var %s called with %s args, but it is only known to take one of the following args: %s"
+                      (-> expr :fn :var)
+                      (count (-> expr :args))
+                      (string/join "  " (-> expr :fn :arglists)))
+         :line (-> expr :fn :form meta :line)}
+        ))))
