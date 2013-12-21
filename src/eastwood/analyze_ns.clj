@@ -105,7 +105,10 @@
         (let [v (resolve-var op env)
               local? (-> env :locals (get op))]
           (if (and (not local?) (:macro (meta v)))
-           (apply v form (:locals env) (rest form))
+            (let [res (apply v form (:locals env) (rest form))]
+              (if (instance? clojure.lang.IObj res)
+                (vary-meta res assoc ::macro-form form)
+                res))
            (ana.jvm/macroexpand-1 form env)))
         (ana.jvm/macroexpand-1 form env)))
     (ana.jvm/macroexpand-1 form env)))
