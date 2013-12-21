@@ -98,6 +98,7 @@
  {:class java.lang.System, :method arraycopy} {:side-effect true},
  {:class java.lang.System, :method gc} {:side-effect true},
  {:class java.lang.System, :method runFinalization} {:side-effect true},
+ {:class java.lang.System, :method setIn} {:side-effect true},
  {:class java.lang.System, :method setOut} {:side-effect true},
  {:class java.lang.System, :method setErr} {:side-effect true},
  {:class java.lang.System, :method setProperty} {:side-effect true},

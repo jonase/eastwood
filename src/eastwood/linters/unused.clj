@@ -375,6 +375,11 @@ discarded inside null: null'."
                                 (:form stmt))
                    :line (-> stmt :env :name meta :line)})
 
+                ;; TBD: If there is no info about the method m in
+                ;; *warning-if-static-ret-val-unused*, use reflection
+                ;; to see if the return type of the method is void.
+                ;; That is a fairly sure sign that it is intended to
+                ;; be called for side effects.
                 (util/static-call? stmt)
                 (let [cls (:class stmt)
                       method (:method stmt)
