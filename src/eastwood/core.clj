@@ -37,31 +37,34 @@ return value followed by the time it took to evaluate in millisec."
      [ret# elapsed-msec#]))
 
 (def ^:private available-linters
-  {:naked-use misc/naked-use
+  {
    :misplaced-docstrings misc/misplaced-docstrings
-   :def-in-def misc/def-in-def
-   :redefd-vars misc/redefd-vars
-   :wrong-arity misc/wrong-arity
    :deprecations deprecated/deprecations
-   :unused-fn-args unused/unused-fn-args
-   :unused-private-vars unused/unused-private-vars
-   :unused-namespaces unused/unused-namespaces
+   :redefd-vars misc/redefd-vars
+   :def-in-def misc/def-in-def
+   :wrong-arity misc/wrong-arity
    :unused-ret-vals unused/unused-ret-vals
    :unused-ret-vals-in-try unused/unused-ret-vals-in-try
-   :keyword-typos typos/keyword-typos})
+   :unused-private-vars unused/unused-private-vars
+   :unused-fn-args unused/unused-fn-args
+   :unused-namespaces unused/unused-namespaces
+   :naked-use misc/naked-use
+   :keyword-typos typos/keyword-typos
+   })
 
 (def ^:private default-linters
-  #{;;:naked-use
+  #{
     :misplaced-docstrings
-    :def-in-def
-    :redefd-vars
-    :wrong-arity
     :deprecations
-    ;; :unused-fn-args    ; updated, but don't use it by default
-    ;;:unused-private-vars
-    ;; :unused-namespaces ; updated, but don't use it by default
+    :redefd-vars
+    :def-in-def
+    :wrong-arity
     :unused-ret-vals
     :unused-ret-vals-in-try
+    ;;:unused-private-vars
+    ;; :unused-fn-args    ; updated, but don't use it by default
+    ;; :unused-namespaces ; updated, but don't use it by default
+    ;;:naked-use
     :keyword-typos
     })
 

@@ -16,8 +16,8 @@ Eastwood warns when it finds:
 - deprecated java instance methods, static fields, static methods and
   constructors
 - deprecated clojure vars
-- def's nested inside other def's
 - redefinitions of the same name in the same namespace
+- def's nested inside other def's
 - function calls that seem to have the wrong number of arguments
 - unused return values of pure functions, or some others where it
   rarely makes sense to discard its return value
@@ -73,8 +73,8 @@ Available linters are:
 
 * `:misplaced-docstrings`
 * `:deprecations`
-* `:def-in-def`
 * `:redefd-vars`
+* `:def-in-def`
 * `:wrong-arity`
 * `:unused-ret-vals`
 * `:unused-ret-vals-in-try`
@@ -100,27 +100,20 @@ don't like.
 
 ### Code analysis engine is more picky than the Clojure compiler
 
-Eastwood uses `tools.analyzer` and `tools.analyzer.jvm` to analyze
-Clojure source code.  It performs some sanity checks on the source
-code that the Clojure compiler does not, as of Clojure version 1.5.1.
+Eastwood uses
+[`tools.analyzer`](https://github.com/clojure/tools.analyzer) and
+[`tools.analyzer.jvm`](https://github.com/clojure/tools.analyzer.jvm)
+to analyze Clojure source code.  It performs some sanity checks on the
+source code that the Clojure compiler does not (at least as of Clojure
+version 1.5.1).
 
 For example, Eastwood will throw an exception when analyzing code with
 a type hint `^Typename` where the type name is a Java class that has
 not been imported by default by the Clojure compiler, nor by an
-`:import` inside of an `ns` form.  Such an exception will look like
-this:
-
-    Exception thrown during phase :analyze of linting namespace clojurewerkz.elastisch.native.index
-    Got exception with extra ex-data:
-        msg='class not found: ClearIndicesCacheResponse'
-        (keys dat)=(:class)
-    {:class
-     ^{:line 144, :column 10, :end-line 144, :end-column 35} ClearIndicesCacheResponse}
-    ExceptionInfo class not found: ClearIndicesCacheResponse {:class ClearIndicesCacheResponse}
-
-The best solution is to explicitly import the
-`package.name.JavaClassName`, or if the type hint is unnecessary,
-remove it.
+`:import` inside of an `ns` form.  In most cases, an explanatory
+message should be given by Eastwood explaining the problem's cause,
+and what you can do to change your code so that Eastwood can analyze
+it.
 
 ### Interaction between namespaces
 
@@ -150,21 +143,25 @@ there's no way for `tools.analyzer.jvm` to provide a compatible `&env`
 
 ### Namespaces collision
 
-The Clojure Contrib libraries `core.typed` and `jvm.tools.analyzer`
-cannot be analyzed.  These libraries use `jvm.tools.analyzer`, and
-both it and `tools.analyzer` (used by Eastwood) share the same
+The Clojure Contrib libraries
+[`core.typed`](https://github.com/clojure/core.typed) and
+[`jvm.tools.analyzer`](https://github.com/clojure/jvm.tools.analyzer)
+cannot be analyzed.  `core.typed` use `jvm.tools.analyzer`, and both
+it and `tools.analyzer` (used by Eastwood) share the same
 `clojure.tools.analyzer` namespace.
 
 ### Other Issues
 
-Currently, the Clojure Contrib libraries `data.fressian` and
-`test.generative` cannot be analyzed due to a known bug in
-`tools.analyer.jvm`:
+Currently, the Clojure Contrib libraries
+[`data.fressian`](https://github.com/clojure/data.fressian) and
+[`test.generative`](https://github.com/clojure/test.generative) cannot
+be analyzed due to a known bug in `tools.analyer.jvm`:
 [TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24)
 
 Other libraries known to cause problems for Eastwood because of
-`test.generative`: Cheshire (TBD whether this is truly due to
-test.generative, or something else).
+`test.generative`: [Cheshire](https://github.com/dakrone/cheshire)
+(TBD whether this is truly due to `test.generative`, or something
+else).
 
 
 ## Notes on linter warnings
@@ -175,17 +172,47 @@ is not able to figure that out.  It often errs on the side of being
 too noisy.
 
 
+### `:misplaced-docstrings` - Strings that appear to be misplaced documentation strings
+
+The correct place to put a documentation string for a function or
+macro is just before the arguments, like so:
+
+```clojure
+(defn my-function
+  "Do the thing, with the stuff.  Fast."
+  [thing stuff]
+  (conj stuff thing))
+```
+
+It is an easy mistake to accidentally put them in the opposite order,
+especially if you like to place your arguments on the same line as the
+function name.
+
+```clojure
+(defn my-function [thing stuff]
+  "Do the thing, with the stuff.  Fast."
+  (conj stuff thing))
+```
+
+This function will still return the desired value.  The primary
+disadvantage is that there is no doc string for a function defined
+this way, so `(doc my-function)` will not show what you intended, and
+tools that extract documentation from Clojure code will not find it.
+
+
 ### `:deprecations` - Deprecated Java methods/fields/constructors and Clojure vars
 
 The warnings issued are based upon the particular JDK you are using
 when running Eastwood, and can change between different JDK versions.
 
-The warnings for Clojure vars are based upon the var having a metadata
-map with key `:deprecated` having a value that is neither false nor
-nil.  These can change from one version of Clojure, or a Clojure
-library you use, to the next.  One example of such a function is
-`clojure.core/replicate`, deprecated as of Clojure version 1.3 as you
-can see from its definition copied below.
+Clojure vars are considered deprecated if they have metadata with a
+key `:deprecated`, and the value associated with that key is neither
+`false` nor `nil`.  Which vars are deprecated can change from one
+version of Clojure, or a Clojure library you use, to the next.
+
+One example of such a function is `clojure.core/replicate`, deprecated
+as of Clojure version 1.3 as you can see from its definition, copied
+below.
 
 ```clojure
 (defn replicate
@@ -215,19 +242,20 @@ these.
 ```
 
 Clojure's behavior in this situation is not to give any warnings, and
-for the later definition to replace the first.  Reloading a namespace
-after editing its source code is a common method for developing
-Clojure code, and warnings when reloading a modified source file would
-be very annoying in such cases.
+for the later definition to replace the first.  It is common practice
+for many Clojure developers to reload namespaces after editing their
+source code.  If Clojure issued warnings when reloading a modified
+source file for every redefined var, it would be a significant
+annoyance.
 
 If you use `clojure.test` to develop tests for your code, note that
 `deftest` statements create vars with the same name as you give to the
-test.  If you accidentally create two tests with the same name, the
-tests in the first one will never be run, and you will lose test
-coverage.  There will be nothing in the source code to indicate this
-other than the common name.  Here is an example where the first
+test.  If you accidentally create two `deftest`s with the same name,
+the tests in the first `deftest` will never be run, and you will lose
+test coverage.  There will be nothing in the source code to indicate
+this other than the common name.  Below is an example where the first
 `deftest` contains tests that clearly should fail, but since they are
-not run, all of your tests could still pass.
+not run, all of the tests actually run could still pass.
 
 ```clojure
 (deftest test-feature-a
@@ -286,14 +314,15 @@ on a globally visible var in the namespace, whether they are nested
 inside another `def` or not.
 
 Unless you really know what you are doing and looking for a very
-particular effect, it is highly recommended to take `:def-in-def`
-warnings as a sign to change your code.
+particular effect, it is recommended to take `:def-in-def` warnings as
+a sign to change your code.
 
 
 ### `:wrong-arity` - Function call with wrong number of arguments
 
 Eastwood warns if a function call is found that has a number of
-arguments not equal to any of the defined arities of the function.
+arguments not equal to any of the defined signatures (also called
+arities) of the function.
 
 Often this is a mistake in your code, and it is a good idea to correct
 the erroneous function call.  However, there are some projects with
@@ -302,58 +331,10 @@ exception is thrown.
 
 There are some libraries that provide macros for defining functions
 that are sneaky in changing their argument lists in ways that
-`tools.analyzer` does not detect, and Eastwood will issue warnings
-even though there would be no exception at run time.  The
+`tools.analyzer` does not detect.  Eastwood will issue warnings even
+though there would be no exception at run time.  The
 [Hiccup](https://github.com/weavejester/hiccup) library's macro
 `defelem` is a known example of this.
-
-
-### `:unused-fn-args` - Unused arguments of functions, macros, methods
-
-Writing a function that does not use some of its arguments is not
-necessarily a mistake.  In particular, it is fairly common for
-multimethods defined with `defmulti` to have a dispatch function that
-only uses some of its arguments.
-
-However, Eastwood warns about such unused function arguments, to
-signal to a developer that there might be a problem.
-
-Eastwood will not issue an `:unused-fn-args` warning for any argument
-whose name begins with an underscore character, such as `_` or
-`_coll`.  It is a common convention in Clojure to use `_` as a name
-for something that will not be used, and this convention is recognized
-and extended by Eastwood.  If you wish to enable the `:unused-fn-args`
-linter, but have several unused arguments that are acceptable to you,
-consider prepending an underscore to their names to silence the
-warnings.
-
-
-### `:misplaced-docstrings` - Strings that appear to be misplaced documentation strings
-
-The correct place to put a documentation string for a function is just
-before the arguments, like so:
-
-```clojure
-(defn my-function
-  "Do the thing, with the stuff.  Fast."
-  [thing stuff]
-  (conj stuff thing))
-```
-
-It is an easy mistake to accidentally put them in the opposite order,
-especially if you like to place your arguments on the same line as the
-function name.
-
-```clojure
-(defn my-function [thing stuff]
-  "Do the thing, with the stuff.  Fast."
-  (conj stuff thing))
-```
-
-This function will still return the desired value.  The primary
-disadvantage is that there is no doc string for a function defined
-this way, so `(doc my-function)` will not show what you intended, and
-tools that extract documentation from Clojure code will not find it.
 
 
 ### `:unused-ret-vals` and `:unused-ret-vals-in-try` - Function return values that are not used
@@ -370,7 +351,7 @@ is likely to be a mistake, and Eastwood issues warnings for this.
 ```clojure
 (defn unused-ret-val [k v]
   (assoc {} k v)   ; return value of assoc is discarded
-  [k v])
+  [k v])           ; [k v] is the only return value of the function
 ```
 
 There are many Clojure functions that are not pure functions, but for
@@ -382,7 +363,7 @@ Discarding the return value of a lazy function such as `map`,
 `filter`, etc. is almost certainly a mistake, and Eastwood warns about
 these.  If the return value is not used, these functions do almost
 nothing, and never call any functions passed to them as args, whether
-they have side effects or not.
+those functions have side effects or not.
 
 ```clojure
 ;; This use of map calls print 4 times, because the REPL will print
@@ -453,6 +434,35 @@ try blocks, unused return values _directly_ in their bodies will be
 reported by the `:unused-ret-vals-in-try` linter.  You can exclude
 this linter, but keep `:unused-ret-vals`, or vice versa, if one or the
 other linter gives too many false warnings for your code.
+
+Implementation note: Eastwood does not automatically determine whether
+a function is pure, conditionally pure, a HOF, etc.  All of these
+properties were determined by manual inspection and recorded in a map
+of data about Clojure core functions.  It would be possible to enhance
+Eastwood so that developers can add to this map, so their own
+functions will cause similar warnings, but right now any function not
+in this map will never cause one of these warnings.
+
+
+### `:unused-fn-args` - Unused arguments of functions, macros, methods
+
+Writing a function that does not use some of its arguments is not
+necessarily a mistake.  In particular, it is common for multimethods
+defined with `defmulti` to have a dispatch function that only uses
+some of its arguments.
+
+However, Eastwood warns about such unused function arguments, to
+signal to a developer that there might be a problem.
+
+Eastwood will not issue an `:unused-fn-args` warning for any argument
+whose name begins with an underscore character, such as `_` or
+`_coll`.  It is a common convention in Clojure to use `_` as a name
+for something that will not be used, and this convention is recognized
+and extended by Eastwood.  If you wish to enable the `:unused-fn-args`
+linter, but have several unused arguments that are acceptable to you,
+consider prepending an underscore to their names to silence the
+warnings.
+
 
 ### `:keyword-typos` - Keywords that may have typographical errors
 
