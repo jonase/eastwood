@@ -238,4 +238,50 @@
      :msg "Possible keyword typo: :occuption instead of :occupation ?"}
     1,
     })
+  (lint-test
+   'eastwood.test.testcases.testtest
+   [:suspicious-test]
+   {}
+   {
+    {:linter :suspicious-test,
+     :msg "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test",
+     :line 11}
+    1,
+    {:linter :suspicious-test,
+     :msg "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test",
+     :line 13}
+    1,
+    {:linter :suspicious-test,
+     :msg "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test",
+     :line 17}
+    1,
+    {:linter :suspicious-test,
+     :msg "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?",
+     :line 61}
+    1,
+    {:linter :suspicious-test,
+     :msg "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?",
+     :line 63}
+    1,
+    {:linter :suspicious-test,
+     :msg "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?",
+     :line 65}
+    1,
+    {:linter :suspicious-test,
+     :msg "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?",
+     :line 69}
+    1,
+    {:linter :suspicious-test,
+     :msg "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?",
+     :line 71}
+    1,
+    {:linter :suspicious-test,
+     :msg "Found (= ...) form inside deftest.  Did you forget to wrap it in 'is', e.g. (is (= ...))?",
+     :line 73}
+    1,
+    {:linter :suspicious-test,
+     :msg "Found (= ...) form inside testing.  Did you forget to wrap it in 'is', e.g. (is (= ...))?",
+     :line 77}
+    1,
+    })
   )
