@@ -43,6 +43,7 @@ return value followed by the time it took to evaluate in millisec."
    :redefd-vars misc/redefd-vars
    :def-in-def misc/def-in-def
    :wrong-arity misc/wrong-arity
+   :suspicious-test typos/suspicious-test
    :unused-ret-vals unused/unused-ret-vals
    :unused-ret-vals-in-try unused/unused-ret-vals-in-try
    :unused-private-vars unused/unused-private-vars
@@ -59,6 +60,7 @@ return value followed by the time it took to evaluate in millisec."
     :redefd-vars
     :def-in-def
     :wrong-arity
+    :suspicious-test
     :unused-ret-vals
     :unused-ret-vals-in-try
     ;;:unused-private-vars

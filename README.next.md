@@ -19,6 +19,7 @@ Eastwood warns when it finds:
 - redefinitions of the same name in the same namespace
 - def's nested inside other def's
 - function calls that seem to have the wrong number of arguments
+- tests using `clojure.test` that may be written incorrectly
 - unused return values of pure functions, or some others where it
   rarely makes sense to discard its return value
 - unused private vars (not yet)
@@ -76,6 +77,7 @@ Available linters are:
 * `:redefd-vars`
 * `:def-in-def`
 * `:wrong-arity`
+* `:suspicious-test`
 * `:unused-ret-vals`
 * `:unused-ret-vals-in-try`
 * `:unused-private-vars`
@@ -335,6 +337,90 @@ that are sneaky in changing their argument lists in ways that
 though there would be no exception at run time.  The
 [Hiccup](https://github.com/weavejester/hiccup) library's macro
 `defelem` is a known example of this.
+
+
+### `:suspicious-test` - Suspicious test that may be written incorrectly
+
+It is easy to misunderstand or forget the correct arguments to
+`clojure.test`'s `is` macro, and as a result write unit tests that do
+not have the desired effect.  The `:suspicious-test` linter warns
+about some kinds of tests that appear to be incorrect.
+
+The form of correct tests written using `clojure.test`'s `is` macro
+are as follows:
+
+```clojure
+(is expr)
+(is expr message-string)
+(is (thrown? ExceptionClass expr1 ...))
+(is (thrown? ExceptionClass expr1 ...) message-string)
+(is (thrown-with-msg? ExceptionClass regex expr1 ...))
+(is (thrown-with-msg? ExceptionClass regex expr1 ...) message-string)
+```
+
+Here are some examples of tests that are not quite one of these forms,
+but will silently pass.  The `:suspicious-test` linter will warn about
+all of them, but it may take some thought to learn how to correct the
+test.
+
+```clojure
+(is ["josh"] names)    ; warns that first arg is a constant
+;; Vector values anything except nil or false are always treated as
+;; logical true in if conditions, so the test above will always pass.
+;; Probably what was intended was:
+(is (= ["josh"] names))   ; probably intended
+
+
+(is (= #{"josh"}) (get-names x))   ; warns that second arg is not a string
+;; The warning message is true, but perhaps misleading.  It appears
+;; that the author intended to compare the set against the return
+;; value of get-names, but the extra parens are legal Clojure.  (= x)
+;; always returns true.
+(is (= #{"josh"} (get-names x)))   ; probably intended
+
+
+(is (= ["josh"] names) (str "error when testing with josh and " names))
+;; This gives the same warning as the previous case, except here it is
+;; clear to the developer that the second arg is a message string.
+;; Instead of being a constant string, it is one constructed by
+;; evaluating an expression.  This is most likely what was intended,
+;; but the linter does not currently have a special check for this
+;; kind of string-constructing expression.
+
+
+(deftest test1
+  (= 5 (my-func 1)))   ; warns that = expr occurs directly inside deftest
+
+;; The = expression will be evaluated during testing, but whether the
+;; result is true or false, the test will pass.
+(deftest test1
+  (is (= 5 (my-func 1))))   ; probably intended
+
+;; TBD: Extend the warning for not only expressions beginning with =,
+;; but with any symbols x such that clojure.core/x is a var for a
+;; function that is a pure function and a predicate, e.g. ==, string?
+;; and many others.  Use data in var-info.edn for this, and just
+;; assume that any non-namespace-qualifed symbol is in clojure.core
+;; for this purpose -- good enough for a linter.
+
+
+(is (thrown? Throwable #"There were 2 vertices returned."
+             (my-fn-that-i-expect-to-throw-exception)))
+;; The above warns that the second arg to thrown? is a regex, but that
+;; (is (thrown? ...)) ignores this regex.  Why is it ignored?  Because
+;; thrown? can take any number of expressions.  If the first such
+;; expression is a regex, it is evaluated and then it goes on to
+;; evaluate the other expressions.  It was probably intended to use
+;; thrown-with-msg? so that not only is it verified that an exception
+;; is thrown, but also that the message in the exception matches the
+;; given regex.
+(is (thrown-with-msg? Throwable #"There were 2 vertices returned."
+                      (my-fn-that-i-expect-to-throw-exception)))
+
+
+```
+
+
 
 
 ### `:unused-ret-vals` and `:unused-ret-vals-in-try` - Function return values that are not used

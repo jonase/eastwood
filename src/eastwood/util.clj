@@ -1,4 +1,6 @@
 (ns eastwood.util
+  (:import [java.io StringReader]
+           [clojure.lang LineNumberingPushbackReader])
   (:require [clojure.tools.analyzer.ast :as ast]
             [clojure.tools.reader :as trdr]
             [clojure.pprint :as pp]
@@ -80,9 +82,11 @@
   by keywords are already set up.  It also assumes that the entire
   string is in that same namespace.  Fortunately, this is pretty
   common for most Clojure code as written today."
-  [s ns]
+  [s ns include-line-col-metadata?]
   (binding [*ns* (or ns *ns*)]
-    (let [rdr (rdr-types/string-push-back-reader s)
+    (let [rdr (if include-line-col-metadata?
+                (LineNumberingPushbackReader. (StringReader. s))
+                (rdr-types/string-push-back-reader s))
           eof (reify)]
       (loop [forms []]
         (let [x (trdr/read rdr nil eof)]

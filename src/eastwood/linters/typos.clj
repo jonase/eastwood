@@ -1,7 +1,12 @@
 (ns eastwood.linters.typos
   (:require [clojure.pprint :as pp])
-  (:require [eastwood.util :as util])
+  (:require [eastwood.util :as util]
+            [clojure.java.io :as io]
+            [clojure.tools.reader.edn :as edn]
+            [clojure.walk :as w])
   (:import [name.fraser.neil.plaintext diff_match_patch]))
+
+;; Typos in keywords
 
 (def debug-keywords-found false)
 
@@ -60,7 +65,7 @@
   (let [this-ns (-> (first asts) :env :ns the-ns)
 ;        _ (println (format "Namespace= %s\n"
 ;                           (-> (first asts) :env :ns the-ns)))
-        forms (util/string->forms source this-ns)
+        forms (util/string->forms source this-ns false)
         freqs (->> forms
                    flatten-also-colls
                    (filter keyword?)
@@ -83,3 +88,149 @@
                      (< (levenshtein s1 s2) 2))]
       {:linter :keyword-typos
        :msg (format "Possible keyword typo: %s instead of %s ?" kw1 kw2)})))
+
+
+;; Wrong args to clojure.test/is macro invocations
+
+;; TBD: Consider trying to find forms like (= ...) that are not
+;; wrapped inside (is (= ...)) inside deftest, even if they are nested
+;; within a (testing ...) form.
+
+(defn subforms-with-first-symbol [form sym]
+  (let [a (atom [])]
+    (w/prewalk (fn [form]
+                 (when (and (sequential? form)
+                            (not (vector? form))
+                            (= sym (first form)))
+                   (swap! a conj form))
+                 form)
+               form)
+    @a))
+
+(defn constant-expr-logical-true? [expr]
+  (or (char? expr)
+      (true? expr)
+      (class? expr)
+      (number? expr)
+      (keyword? expr)
+      (string? expr)
+      (instance? java.util.regex.Pattern expr)
+      (list? expr)
+      (map? expr)
+      (set? expr)
+      (vector? expr)))
+
+(defn constant-expr-logical-false? [expr]
+  (or (false? expr)
+      (nil? expr)))
+
+(defn constant-expr? [expr]
+  (or (constant-expr-logical-false? expr)
+      (constant-expr-logical-true? expr)))
+
+(defn suspicious-is-forms [is-forms]
+  (apply
+   concat
+   (for [isf is-forms]
+     (let [is-args (next isf)
+           n (count is-args)
+           is-arg1 (first is-args)
+           thrown? (and (sequential? is-arg1)
+                        (= 'thrown? (first is-arg1)))
+           thrown-args (and thrown? (rest is-arg1))
+           thrown-arg2 (and thrown? (nth is-arg1 2))
+           is-loc (-> isf first meta)]
+;;       (when thrown?
+;;         (println (format "Found (is (thrown? ...)) with thrown-arg2=%s: %s" thrown-arg2 isf)))
+       (cond
+        (and (= n 2) (string? is-arg1))
+        [{:linter :suspicious-test,
+          :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test")
+          :line (:line is-loc)}]
+        
+        (and (constant-expr-logical-true? is-arg1)
+             (not (list? is-arg1)))
+        [{:linter :suspicious-test,
+          :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test")
+          :line (:line is-loc)}]
+        
+        (and (= n 2) (not (string? (second is-args))))
+        [{:linter :suspicious-test,
+          :msg (format "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.")
+          :line (:line is-loc)}]
+        
+        (and thrown? (instance? java.util.regex.Pattern thrown-arg2))
+        [{:linter :suspicious-test,
+          :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")
+          :line (:line is-loc)}]
+        
+        (and thrown? (string? thrown-arg2))
+        [{:linter :suspicious-test,
+          :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")
+          :line (:line is-loc)}]
+        
+        (and thrown? (some string? thrown-args))
+        [{:linter :suspicious-test,
+          :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")
+          :line (:line is-loc)}]
+        
+        :else nil)))))
+
+(def ^:dynamic *var-info-map* nil)
+
+(defn predicate-forms [forms form-type]
+  (apply
+   concat
+   (for [f forms]
+     (if (sequential? f)
+       (let [ff (first f)
+             cc-sym (symbol "clojure.core" (name ff))
+             var-info (and cc-sym (get *var-info-map* cc-sym))
+;;             _ (println (format "dbx: predicate-forms ff=%s cc-sym=%s var-info=%s"
+;;                                ff cc-sym var-info))
+             ]
+         (cond
+          (and (not (list? f))
+               (constant-expr? f))
+          [{:linter :suspicious-test,
+            :msg (format "Found constant form inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
+                         form-type)
+            :line (-> ff meta :line)}]
+
+          (and var-info (get var-info :predicate))
+          [{:linter :suspicious-test,
+            :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
+                         ff form-type ff)
+            :line (-> ff meta :line)}]
+          
+          (and var-info (get var-info :pure-fn))
+          [{:linter :suspicious-test,
+            :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
+                         ff form-type)
+            :line (-> ff meta :line)}]
+          
+          :else nil))))))
+
+;; Same hack alert for suspicious-test as for keyword-typos above.  We
+;; should probably add this version of forms as another input to all
+;; linters.  Perhaps we should add both the version with no :line
+;; :column :end-line :end-column metadata done here, and another
+;; version that does have that metadata, with documented examples of
+;; what can go weird with a combination of the with-metadata version
+;; and backquoted expressions.
+
+(defn suspicious-test [{:keys [asts source]}]
+  (binding [*var-info-map* (edn/read-string (slurp (io/resource "var-info.edn")))]
+    (doall
+     (let [this-ns (-> (first asts) :env :ns the-ns)
+           forms (util/string->forms source this-ns true)
+           is-forms (subforms-with-first-symbol forms 'is)
+           deftest-forms (subforms-with-first-symbol forms 'deftest)
+           testing-forms (subforms-with-first-symbol forms 'testing)
+           deftest-subexprs (apply concat
+                                   (map #(nthnext % 2) deftest-forms))
+           testing-subexprs (apply concat
+                                   (map #(nthnext % 2) testing-forms))]
+       (concat (suspicious-is-forms is-forms)
+               (predicate-forms deftest-subexprs 'deftest)
+               (predicate-forms testing-subexprs 'testing))))))
