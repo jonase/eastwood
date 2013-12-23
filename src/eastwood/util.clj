@@ -16,6 +16,29 @@
   (fn [ast]
     (= (:op ast) op)))
 
+;; walk and prewalk were copied from Clojure 1.6.0-alpha3.  walk
+;; includes the case for clojure.lang.IRecord, without which it will
+;; throw exceptions when walking forms containing record instances.
+(defn walk
+  "Traverses form, an arbitrary data structure.  inner and outer are
+  functions.  Applies inner to each element of form, building up a
+  data structure of the same type, then applies outer to the result.
+  Recognizes all Clojure data structures. Consumes seqs as with doall."
+  [inner outer form]
+  (cond
+   (list? form) (outer (apply list (map inner form)))
+   (instance? clojure.lang.IMapEntry form) (outer (vec (map inner form)))
+   (seq? form) (outer (doall (map inner form)))
+   (instance? clojure.lang.IRecord form)
+     (outer (reduce (fn [r x] (conj r (inner x))) form form))
+   (coll? form) (outer (into (empty form) (map inner form)))
+   :else (outer form)))
+
+(defn prewalk
+  "Like postwalk, but does pre-order traversal."
+  [f form]
+  (walk (partial prewalk f) identity (f form)))
+
 (defn enhance-extend-args [extend-args]
   (let [[atype-ast & proto+mmaps-asts] extend-args
         atype-sym (:form atype-ast)]

@@ -2,8 +2,7 @@
   (:require [clojure.pprint :as pp])
   (:require [eastwood.util :as util]
             [clojure.java.io :as io]
-            [clojure.tools.reader.edn :as edn]
-            [clojure.walk :as w])
+            [clojure.tools.reader.edn :as edn])
   (:import [name.fraser.neil.plaintext diff_match_patch]))
 
 ;; Typos in keywords
@@ -98,13 +97,13 @@
 
 (defn subforms-with-first-symbol [form sym]
   (let [a (atom [])]
-    (w/prewalk (fn [form]
-                 (when (and (sequential? form)
-                            (not (vector? form))
-                            (= sym (first form)))
-                   (swap! a conj form))
-                 form)
-               form)
+    (util/prewalk (fn [form]
+                    (when (and (sequential? form)
+                               (not (vector? form))
+                               (= sym (first form)))
+                      (swap! a conj form))
+                    form)
+                  form)
     @a))
 
 (defn constant-expr-logical-true? [expr]
@@ -182,34 +181,40 @@
   (apply
    concat
    (for [f forms]
-     (if (sequential? f)
-       (let [ff (first f)
-             cc-sym (symbol "clojure.core" (name ff))
-             var-info (and cc-sym (get *var-info-map* cc-sym))
+     (cond
+      (and (not (list? f))
+           (constant-expr? f))
+      [(let [line (-> f meta :line)]
+         {:linter :suspicious-test,
+          :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
+                       (cond line ""
+                             (string? f) (str " \"" f "\"")
+                             :else (str " " f))
+                       (if f (.getName (class f)) "nil") form-type)
+          :line line})]
+      
+      (sequential? f)
+      (let [ff (first f)
+            cc-sym (and ff (symbol "clojure.core" (name ff)))
+            var-info (and cc-sym (get *var-info-map* cc-sym))
 ;;             _ (println (format "dbx: predicate-forms ff=%s cc-sym=%s var-info=%s"
 ;;                                ff cc-sym var-info))
-             ]
-         (cond
-          (and (not (list? f))
-               (constant-expr? f))
-          [{:linter :suspicious-test,
-            :msg (format "Found constant form inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
-                         form-type)
-            :line (-> ff meta :line)}]
-
-          (and var-info (get var-info :predicate))
-          [{:linter :suspicious-test,
-            :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
-                         ff form-type ff)
-            :line (-> ff meta :line)}]
-          
-          (and var-info (get var-info :pure-fn))
-          [{:linter :suspicious-test,
-            :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
-                         ff form-type)
-            :line (-> ff meta :line)}]
-          
-          :else nil))))))
+            ]
+        (cond
+         (and var-info (get var-info :predicate))
+         [{:linter :suspicious-test,
+           :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
+                        ff form-type ff)
+           :line (-> ff meta :line)}]
+         
+         (and var-info (get var-info :pure-fn))
+         [{:linter :suspicious-test,
+           :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
+                        ff form-type)
+           :line (-> ff meta :line)}]
+         
+         :else nil))
+      :else nil))))
 
 ;; Same hack alert for suspicious-test as for keyword-typos above.  We
 ;; should probably add this version of forms as another input to all
