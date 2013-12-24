@@ -366,6 +366,10 @@ exception."))))
                          (seq linters-unavailable)))
         (println (format "Known linters are: %s"
                          (seq (sort known-linters)))))
+      (when (contains? (:debug opts) :all)
+        (println (format "Namespaces to be linted:"))
+        (doseq [n namespaces]
+          (println (format "    %s" n))))
       (when (seq linters)
         (doseq [namespace namespaces]
           (try
