@@ -129,13 +129,14 @@ $C https://github.com/michaelklishin/chash.git
 $C https://github.com/michaelklishin/pantomime.git
 $C https://github.com/michaelklishin/quartzite.git
 $C https://github.com/michaelklishin/urly.git
-# Dec 20 2013: vclock passes lein check and lein test, but eastwood
-# throws exception.  Learn why.
 $C https://github.com/michaelklishin/vclock.git
-# Dec 20 2013: welle seems to hang during 'lein eastwood'.  Learn why.
+# Dec 20 2013: welle seems to hang during 'lein eastwood'.  It seems
+# to be because some of the tests are trying to open connections, and
+# those connection attempts hang.
 #$C https://github.com/michaelklishin/welle.git
 $C https://github.com/michalmarczyk/avl.clj
 $C https://github.com/noir-clojure/lib-noir
+$C https://github.com/pjstadig/utf8.git
 $C https://github.com/ptaoussanis/carmine.git
 # Dec 20 2013: timbre latest version fails 'lein check'
 #$C https://github.com/ptaoussanis/timbre.git
@@ -144,6 +145,11 @@ $C https://github.com/ptaoussanis/carmine.git
 $C https://github.com/ptaoussanis/tower.git
 $C https://github.com/weavejester/compojure
 $C https://github.com/weavejester/hiccup
+$C https://github.com/weavejester/medley.git
+# Mostly lints OK, but one namespace throws exception 'No such
+# namespace: simple-check.core.  Learn why.
+#$C https://github.com/ztellman/automat.git
+$C https://github.com/ztellman/collection-check.git
 
 
 cd ..

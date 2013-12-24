@@ -77,6 +77,10 @@ echo
 echo "Linting 3rd party Clojure libraries"
 echo 
 for lib in \
+    collection-check \
+    medley \
+    utf8 \
+    vclock \
     archimedes \
     chash \
     ogre \
