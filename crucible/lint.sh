@@ -27,6 +27,43 @@ do_eastwood()
     if [ "x${ns}" == "x" ]
     then
 	lein eastwood "{:exclude-linters [:keyword-typos]}"
+    elif [ "${ns}" == "clojure-special" ]
+    then
+	# Namespaces to exclude when analyzing namespaces in Clojure itself:
+
+	# These namespaces throw exceptions related to their use of
+	# test.generative:
+	# == Linting clojure.test-clojure.api ==
+	# == Linting clojure.test-clojure.compilation ==
+        # == Linting clojure.test-clojure.data-structures ==
+        # == Linting clojure.test-clojure.edn ==
+        # == Linting clojure.test-clojure.generators == (data.generators for this one)
+        # == Linting clojure.test-clojure.numbers ==
+        # == Linting clojure.test-clojure.reader ==
+
+        # This namespace throws an exception because of something to
+        # do with a use of in-ns:
+
+        # == Linting clojure.test-clojure.evaluation ==
+
+        # This namespace throws an exception because it could not find
+        # the class
+        # clojure.test_clojure.genclass.examples.ExampleClass.
+        # Perhaps this could be avoided by analyzing the namespaces in
+        # a different order.
+
+        # == Linting clojure.test-clojure.genclass ==
+        # == Linting clojure.test-clojure.try-catch == ClassNotFoundException clojure.test.ReflectorTryCatchFixture
+
+        # I am not sure, but perhaps Eastwood hangs trying to analyze
+        # this namespace:
+        # == Linting clojure.test-helper ==
+
+	# Sometimes analyzing this namespace throws an exception, and
+	# then hang, but I think not always:
+        # == Linting clojure.test-clojure.protocols ==
+
+	lein eastwood '{:exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ] :exclude-linters [ :keyword-typos ]}'
     else
 	lein eastwood "{:namespaces [ ${core_ns} ] :exclude-linters [:keyword-typos]}"
     fi
@@ -79,6 +116,7 @@ echo "Linting most, but not all, namespaces in Clojure itself."
 echo "Skipping these namespaces, which tend to throw exceptions:"
 echo "    clojure.core - might not be feasible to analyze this code"
 echo "    clojure.parallel - perhaps only fails if you use JDK < 7"
+echo "This is done from within algo.generic project directory"
 echo
 cd algo.generic
 for core_ns in \
@@ -113,10 +151,18 @@ do
 done
 cd ..
 
+# This mostly seems to work for analyzing Clojure's test namespaces,
+# but it 'hangs' at the end without exiting.  I do not know why yet.
+
+#cd clojure
+#do_eastwood clojure-special
+#cd ..
+
 echo 
 echo "Linting Clojure contrib libraries"
-echo "Leaving out core.typed, which has known reasons for throwing"
-echo "many exceptions."
+echo "Leaving out core.typed, which has known reasons for throwing many"
+echo "exceptions, and jvm.tools.analyzer, which has a namespace that"
+echo "conflicts with Eastwood's tools.analyzer"
 echo 
 for lib in \
     algo.generic \
@@ -143,7 +189,6 @@ for lib in \
     java.data \
     java.jdbc \
     java.jmx \
-    jvm.tools.analyzer \
     math.combinatorics \
     math.numeric-tower \
     test.generative \
