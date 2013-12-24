@@ -1,10 +1,12 @@
 (ns eastwood.linters.unused
+  (:import [java.lang.reflect Method Type])
   (:require [clojure.set :as set]
             [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.tools.reader.edn :as edn]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
+            [eastwood.passes :as pass]
             [clojure.tools.analyzer.ast :as ast]))
 
 ;; Unused private vars
@@ -281,7 +283,16 @@ discarded inside null: null'."
         form (:form stmt)
         line (case stmt-desc-str
                "function call" (-> stmt :meta :line)
-               "static method call" (-> stmt :form meta :line))]
+               "static method call" (-> stmt :form meta :line))
+        action (if (and (= stmt-desc-str "static method call")
+                        (not (#{:side-effect :lazy-fn :pure-fn :pure-fn-if-fn-args-pure :warn-if-ret-val-unused}
+                              action)))
+                 (let [^Method m (pass/get-method stmt)
+                       ^Type ret-val (.getGenericReturnType m)]
+                   (if (= ret-val Void/TYPE)
+                     :side-effect
+                     :warn-if-ret-val-unused))
+                 action)]
     (if (or (and stmt-in-try-body?
                  (= location :inside-try))
             (and (not stmt-in-try-body?)
