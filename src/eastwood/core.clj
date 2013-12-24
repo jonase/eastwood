@@ -144,6 +144,7 @@ entire stack trace if depth is nil).  Does not print ex-data."
         msg (.getMessage exc)]
     (cond
      (or (and (= tag-kind :return-tag) (= (:op ast) :var))
+         (and (= tag-kind :tag)        (= (:op ast) :var))
          (and (= tag-kind :tag)        (= (:op ast) :invoke))
          (and (= tag-kind :tag)        (= (:op ast) :const)))
      (let [form (:form ast)
@@ -151,10 +152,10 @@ entire stack trace if depth is nil).  Does not print ex-data."
                   (first form)
                   form)
            tag (get ast tag-kind)]
-       (println (format "A function, macro, protocol method, etc. named %s has been used here:"
+       (println (format "A function, macro, protocol method, var, etc. named %s has been used here:"
                         form))
        (util/pprint-ast-node (meta form))
-       (println (format "Wherever it is defined, or where it is called, it has a return type of %s"
+       (println (format "Wherever it is defined, or where it is called, it has a type of %s"
                         tag))
        (cond
         (maybe-unqualified-java-class-name? tag)
