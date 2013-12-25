@@ -77,4 +77,6 @@
     (= #{} (disj #{:a} :a)))  ;; Should cause warning for same reason
                               ;; as previous one.
 
+  (contains? #{:foo :bar} :foo)
+
   )

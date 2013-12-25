@@ -283,5 +283,9 @@
      :msg "Found (= ...) form inside testing.  Did you forget to wrap it in 'is', e.g. (is (= ...))?",
      :line 77}
     1,
+    {:linter :suspicious-test,
+     :msg "Found (contains? ...) form inside deftest.  Did you forget to wrap it in 'is', e.g. (is (contains? ...))?",
+     :line 80}
+    1,
     })
   )
