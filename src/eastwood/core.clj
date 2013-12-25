@@ -136,7 +136,21 @@ entire stack trace if depth is nil).  Does not print ex-data."
                          (class (-> dat :ast :form))))
         (util/pprint-ast-node (-> dat :ast :form)))
       (util/pprint-ast-node (-> dat :ast)) )
+    (when (contains? dat :form)
+      (println (format "    (:form dat)="))
+      (util/pprint-ast-node (:form dat)))
     (pst exc nil)))
+
+(defn handle-bad-dot-form [ns-sym opts ^Throwable exc]
+  (let [dat (ex-data exc)
+        {:keys [form]} dat
+        msg (.getMessage exc)]
+    (println (format "Java interop calls should be of the form TBD, but found this instead (line %s):"
+                     (-> form first meta :line)))
+    (binding [*print-level* 7
+              *print-length* 50]
+      (pp/pprint form))
+    :no-more-details-needed))
 
 (defn handle-bad-tag [ns-sym opts ^Throwable exc]
   (let [dat (ex-data exc)
@@ -278,8 +292,13 @@ curious." eastwood-url))
   (let [dat (ex-data exc)
         msg (.getMessage exc)]
     (cond
+     (and (re-find #"method name must be a symbol, had:" msg)
+          (contains? dat :form))
+     (handle-bad-dot-form ns-sym opts exc)
+     
      (contains? dat :tag-kind)
      (handle-bad-tag ns-sym opts exc)
+
      :else
      (do
        (print-ex-data-details ns-sym opts exc)
