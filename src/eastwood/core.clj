@@ -396,4 +396,9 @@ exception."))))
             (lint-ns namespace linters opts)
             (catch RuntimeException e
               (println "Linting failed:")
-              (pst e nil))))))))
+              (pst e nil)))))
+      ;; Eastwood does not use future, pmap, or clojure.shell/sh now
+      ;; (at least not yet), but it may evaluate code that does when
+      ;; linting a project.  Call shutdown-agents to avoid the
+      ;; 1-minute 'hang' that would otherwise occur.
+      (shutdown-agents))))
