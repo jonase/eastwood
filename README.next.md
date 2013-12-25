@@ -331,15 +331,15 @@ the erroneous function call.  However, there are some projects with
 unit tests that intentionally make such calls, to verify that an
 exception is thrown.
 
-There are some libraries that provide macros for defining functions
-that are sneaky in changing their argument lists in ways that
-`tools.analyzer` does not detect.  Eastwood will issue warnings even
-though there would be no exception at run time.  The
+There are some libraries with macros for defining functions that
+change their argument lists, doing so in ways that `tools.analyzer`
+does not detect.  Eastwood will issue warnings even though there would
+be no exception at run time.  A known example of this is the
 [Hiccup](https://github.com/weavejester/hiccup) library's macro
-`defelem` is a known example of this.
+`defelem`.
 
 
-### `:suspicious-test` - Suspicious test that may be written incorrectly
+### `:suspicious-test` - Suspicious tests that may be written incorrectly
 
 It is easy to misunderstand or forget the correct arguments to
 `clojure.test`'s `is` macro, and as a result write unit tests that do
@@ -392,9 +392,9 @@ test.
   (= 5 (my-func 1))       ; warns that = expr occurs directly inside deftest
   (contains? #{2 4 6} 4)) ; similar warning for contains? or any 'predicate'
                           ; function in clojure.core
-
-;; The = and contains? expressions will be evaluated during testing,
-;; but whether the results are true or false, the test will pass.
+;; The = and contains? expressions above will be evaluated during
+;; testing, but whether the results are true or false, the test will
+;; pass.
 (deftest test1
   (is (= 5 (my-func 1)))        ; probably intended
   (is (contains? #{2 4 6} 4)))
