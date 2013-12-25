@@ -389,33 +389,29 @@ test.
 
 
 (deftest test1
-  (= 5 (my-func 1)))   ; warns that = expr occurs directly inside deftest
+  (= 5 (my-func 1))       ; warns that = expr occurs directly inside deftest
+  (contains? #{2 4 6} 4)) ; similar warning for contains? or any 'predicate'
+                          ; function in clojure.core
 
-;; The = expression will be evaluated during testing, but whether the
-;; result is true or false, the test will pass.
+;; The = and contains? expressions will be evaluated during testing,
+;; but whether the results are true or false, the test will pass.
 (deftest test1
-  (is (= 5 (my-func 1))))   ; probably intended
-
-;; TBD: Extend the warning for not only expressions beginning with =,
-;; but with any symbols x such that clojure.core/x is a var for a
-;; function that is a pure function and a predicate, e.g. ==, string?
-;; and many others.  Use data in var-info.edn for this, and just
-;; assume that any non-namespace-qualifed symbol is in clojure.core
-;; for this purpose -- good enough for a linter.
+  (is (= 5 (my-func 1)))        ; probably intended
+  (is (contains? #{2 4 6} 4)))
 
 
 (is (thrown? Throwable #"There were 2 vertices returned."
-             (my-fn-that-i-expect-to-throw-exception)))
+             (expr-i-expect-to-throw-exception)))
 ;; The above warns that the second arg to thrown? is a regex, but that
 ;; (is (thrown? ...)) ignores this regex.  Why is it ignored?  Because
-;; thrown? can take any number of expressions.  If the first such
-;; expression is a regex, it is evaluated and then it goes on to
-;; evaluate the other expressions.  It was probably intended to use
+;; thrown? can take any number of expressions.  If any of them is a
+;; regex, it is evaluated, and then Clojure goes on to evaluate the
+;; other expressions.  The developer probably intended to use
 ;; thrown-with-msg? so that not only is it verified that an exception
 ;; is thrown, but also that the message in the exception matches the
 ;; given regex.
 (is (thrown-with-msg? Throwable #"There were 2 vertices returned."
-                      (my-fn-that-i-expect-to-throw-exception)))
+                      (expr-i-expect-to-throw-exception)))
 
 
 ```
