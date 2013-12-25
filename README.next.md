@@ -152,6 +152,15 @@ cannot be analyzed.  `core.typed` use `jvm.tools.analyzer`, and both
 it and `tools.analyzer` (used by Eastwood) share the same
 `clojure.tools.analyzer` namespace.
 
+### simple-check
+
+The [`simple-check`](https://github.com/reiddraper/simple-check) test
+library contains a cyclic dependency that the current `tools.analyzer`
+library cannot analyze.  A
+[ticket](http://dev.clojure.org/jira/browse/TANAL-37) has been filed
+against `tools.analyzer` to see if this can be improved.
+
+
 ### Other Issues
 
 Currently, the Clojure Contrib libraries
@@ -412,11 +421,7 @@ test.
 ;; given regex.
 (is (thrown-with-msg? Throwable #"There were 2 vertices returned."
                       (expr-i-expect-to-throw-exception)))
-
-
 ```
-
-
 
 
 ### `:unused-ret-vals` and `:unused-ret-vals-in-try` - Function return values that are not used
