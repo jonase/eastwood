@@ -113,7 +113,7 @@
       (number? expr)
       (keyword? expr)
       (string? expr)
-      (instance? java.util.regex.Pattern expr)
+      (util/regex? expr)
       (list? expr)
       (map? expr)
       (set? expr)
@@ -158,7 +158,7 @@
           :msg (format "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.")
           :line (:line is-loc)}]
         
-        (and thrown? (instance? java.util.regex.Pattern thrown-arg2))
+        (and thrown? (util/regex? thrown-arg2))
         [{:linter :suspicious-test,
           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")
           :line (:line is-loc)}]
@@ -224,24 +224,16 @@
 ;; what can go weird with a combination of the with-metadata version
 ;; and backquoted expressions.
 
-(defn suspicious-test [{:keys [asts source]}]
+(defn suspicious-test [{:keys [forms]}]
   (binding [*var-info-map* (edn/read-string (slurp (io/resource "var-info.edn")))]
     (doall
-     (let [this-ns-sym (-> (first asts) :env :ns)
-           this-ns (try (the-ns this-ns-sym)
-                        (catch Exception e nil))]
-       (if (nil? this-ns)
-         (throw (ex-info (format "Could not find namespace '%s'" this-ns-sym)
-                         {:missing-namespace this-ns-sym,
-                          :ast (first asts)}))
-         (let [forms (util/string->forms source this-ns true)
-               is-forms (subforms-with-first-symbol forms 'is)
-               deftest-forms (subforms-with-first-symbol forms 'deftest)
-               testing-forms (subforms-with-first-symbol forms 'testing)
-               deftest-subexprs (apply concat
-                                       (map #(nthnext % 2) deftest-forms))
-               testing-subexprs (apply concat
-                                       (map #(nthnext % 2) testing-forms))]
-           (concat (suspicious-is-forms is-forms)
-                   (predicate-forms deftest-subexprs 'deftest)
-                   (predicate-forms testing-subexprs 'testing))))))))
+     (let [is-forms (subforms-with-first-symbol forms 'is)
+           deftest-forms (subforms-with-first-symbol forms 'deftest)
+           testing-forms (subforms-with-first-symbol forms 'testing)
+           deftest-subexprs (apply concat
+                                   (map #(nthnext % 2) deftest-forms))
+           testing-subexprs (apply concat
+                                   (map #(nthnext % 2) testing-forms))]
+       (concat (suspicious-is-forms is-forms)
+               (predicate-forms deftest-subexprs 'deftest)
+               (predicate-forms testing-subexprs 'testing))))))

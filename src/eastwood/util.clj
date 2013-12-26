@@ -78,6 +78,9 @@
 (defn enhance-extend-invocations [ast]
   (ast/prewalk ast enhance-extend-invocations-prewalk))
 
+(defn regex? [x]
+  (instance? java.util.regex.Pattern x))
+
 (defn interface? [obj]
   (and (= Class (class obj))
        (.isInterface ^Class obj)))

@@ -41,14 +41,14 @@
 (defn all-ns-names-set []
   (set (map str (all-ns))))
 
-(defn pre-analyze-debug [out form *ns* opt]
+(defn pre-analyze-debug [asts form *ns* opt]
   (let [print-normally? (or (contains? (:debug opt) :all)
                             (contains? (:debug opt) :forms))
         pprint? (or (contains? (:debug opt) :all)
                     (contains? (:debug opt) :forms-pprint))]
   (when (or print-normally? pprint?)
     (println (format "dbg pre-analyze #%d *ns*=%s"
-                     (count out) (str *ns*)))
+                     (count asts) (str *ns*)))
     (when pprint?
       (println "    form before macroexpand:")
       (pp/pprint form))
@@ -65,11 +65,11 @@
         (binding [*print-meta* true] (pr exp))))
     (println "\n    --------------------"))))
 
-(defn post-analyze-debug [out _form _analysis _exception *ns* opt]
+(defn post-analyze-debug [asts _form _analysis _exception *ns* opt]
   (when (or (contains? (:debug opt) :progress)
             (contains? (:debug opt) :all))
     (println (format "dbg anal'd %d *ns*=%s"
-                     (count out)
+                     (count asts)
                      (str *ns*)))))
 
 (defn namespace-changes-debug [old-nss _opt]
@@ -142,6 +142,14 @@
                   (swap! a conj class-name))))
     @a))
 
+(defn remaining-forms [pushback-reader forms]
+  (let [eof (reify)]
+    (loop [forms forms]
+      (let [form (tr/read pushback-reader nil eof)]
+        (if (identical? form eof)
+          forms
+          (recur (conj forms form)))))))
+
 ;; analyze-file was copied from library jvm.tools.analyzer and then
 ;; modified
 
@@ -195,9 +203,10 @@
               *file* (str source-path)]
       (loop [nss (if debug-ns (all-ns-names-set))
              form (tr/read pushback-reader nil eof)
-             out []]
+             forms []
+             asts []]
         (if (identical? form eof)
-          {:analyze-results out, :exception nil}
+          {:forms forms, :asts asts, :exception nil}
           (if-let [eval-ns-exc
                    (when (and eval? (ns-form? form))
                      (try
@@ -207,18 +216,20 @@
                        nil  ; return no exception
                        (catch Exception e
                          e)))]
-            {:analyze-results out, :exception eval-ns-exc,
+            {:forms (remaining-forms pushback-reader (conj forms form)),
+             :asts asts, :exception eval-ns-exc,
              :exception-phase :eval-ns, :exception-form form}
-            (let [_ (pre-analyze-debug out form *ns* opt)
+            (let [_ (pre-analyze-debug asts form *ns* opt)
                   ;; TBD: ana.jvm/empty-env uses *ns*.  Is that what
                   ;; is needed here?  Is there some way to call
                   ;; empty-env once and then update it as needed as
                   ;; forms are analyzed?
                   env (ana.jvm/empty-env)
                   {:keys [analysis exception]} (analyze-form form env)]
-              (post-analyze-debug out form analysis exception *ns* opt)
+              (post-analyze-debug asts form analysis exception *ns* opt)
               (if exception
-                {:analyze-results out, :exception exception
+                {:forms (remaining-forms pushback-reader (conj forms form)),
+                 :asts asts, :exception exception,
                  :exception-phase :analyze, :exception-form form}
                 (if-let [[exc-phase exc]
                          (when (and eval? (not (ns-form? form)))
@@ -234,12 +245,13 @@
                                      [:eval-form e])))
                                (catch Exception e
                                  [:emit-form e]))))]
-                  {:analyze-results out, :exception exc
+                  {:forms (remaining-forms pushback-reader (conj forms form)),
+                   :asts asts, :exception exc,
                    :exception-phase exc-phase, :exception-form form}
                   (recur (if debug-ns (namespace-changes-debug nss opt))
                          (tr/read pushback-reader nil eof)
-                         (conj out {:form form
-                                    :ast analysis})))))))))))
+                         (conj forms form)
+                         (conj asts analysis)))))))))))
 
 
 ;; analyze-ns was copied from library jvm.tools.analyzer and then
@@ -260,8 +272,8 @@
   (let [source-path (munge-ns source-nsym)
         {:keys [analyze-results] :as m}
         (analyze-file source-path :reader reader :opt opt)]
-    (assoc m
+    (assoc (dissoc m :forms :asts)
       :analyze-results {:source (slurp (io/resource source-path))
                         :namespace source-nsym
-                        :forms (mapv :form analyze-results)
-                        :asts (mapv :ast analyze-results)})))
+                        :forms (:forms m)
+                        :asts (:asts m)})))
