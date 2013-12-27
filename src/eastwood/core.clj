@@ -44,6 +44,7 @@ return value followed by the time it took to evaluate in millisec."
    :def-in-def misc/def-in-def
    :wrong-arity misc/wrong-arity
    :suspicious-test typos/suspicious-test
+   :suspicious-expression typos/suspicious-expression
    :unused-ret-vals unused/unused-ret-vals
    :unused-ret-vals-in-try unused/unused-ret-vals-in-try
    :unused-private-vars unused/unused-private-vars
@@ -61,6 +62,7 @@ return value followed by the time it took to evaluate in millisec."
     :def-in-def
     :wrong-arity
     :suspicious-test
+    :suspicious-expression
     :unused-ret-vals
     :unused-ret-vals-in-try
     ;;:unused-private-vars

@@ -1,6 +1,7 @@
 (ns eastwood.linters.typos
   (:require [clojure.pprint :as pp])
   (:require [eastwood.util :as util]
+            [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.tools.reader.edn :as edn])
   (:import [name.fraser.neil.plaintext diff_match_patch]))
@@ -95,12 +96,12 @@
 ;; wrapped inside (is (= ...)) inside deftest, even if they are nested
 ;; within a (testing ...) form.
 
-(defn subforms-with-first-symbol [form sym]
+(defn subforms-with-first-symbol-in-set [form sym-set]
   (let [a (atom [])]
     (util/prewalk (fn [form]
                     (when (and (sequential? form)
                                (not (vector? form))
-                               (= sym (first form)))
+                               (contains? sym-set (first form)))
                       (swap! a conj form))
                     form)
                   form)
@@ -227,9 +228,9 @@
 (defn suspicious-test [{:keys [forms]}]
   (binding [*var-info-map* (edn/read-string (slurp (io/resource "var-info.edn")))]
     (doall
-     (let [is-forms (subforms-with-first-symbol forms 'is)
-           deftest-forms (subforms-with-first-symbol forms 'deftest)
-           testing-forms (subforms-with-first-symbol forms 'testing)
+     (let [is-forms (subforms-with-first-symbol-in-set forms #{'is})
+           deftest-forms (subforms-with-first-symbol-in-set forms #{'deftest})
+           testing-forms (subforms-with-first-symbol-in-set forms #{'testing})
            deftest-subexprs (apply concat
                                    (map #(nthnext % 2) deftest-forms))
            testing-subexprs (apply concat
@@ -237,3 +238,84 @@
        (concat (suspicious-is-forms is-forms)
                (predicate-forms deftest-subexprs 'deftest)
                (predicate-forms testing-subexprs 'testing))))))
+
+;; Suspicious function calls
+
+(def core-fns-that-do-little
+  '{
+    =        {1 {:args [x] :ret-val true}}
+    ==       {1 {:args [x] :ret-val true}}
+    not=     {1 {:args [x] :ret-val false}}
+    <        {1 {:args [x] :ret-val true}}
+    <=       {1 {:args [x] :ret-val true}}
+    >        {1 {:args [x] :ret-val true}}
+    >=       {1 {:args [x] :ret-val true}}
+    min      {1 {:args [x] :ret-val x}}
+    max      {1 {:args [x] :ret-val x}}
+    min-key  {2 {:args [f x] :ret-val x}}
+    max-key  {2 {:args [f x] :ret-val x}}
+    +        {0 {:args []  :ret-val 0},
+              1 {:args [x] :ret-val x}}
+    +'       {0 {:args []  :ret-val 0},
+              1 {:args [x] :ret-val x}}
+    *        {0 {:args []  :ret-val 1},
+              1 {:args [x] :ret-val x}}
+    *'       {0 {:args []  :ret-val 1},
+              1 {:args [x] :ret-val x}}
+    ;; Note: (- x) and (/ x) do something useful
+    dissoc   {1 {:args [map] :ret-val map}}
+    disj     {1 {:args [set] :ret-val set}}
+    merge    {0 {:args [] :ret-val nil},
+              1 {:args [map] :ret-val map}}
+    merge-with {1 {:args [f] :ret-val nil},
+                2 {:args [f map] :ret-val map}}
+    interleave {0 {:args [] :ret-val ()}}
+    pr-str   {0 {:args [] :ret-val ""}}
+    print-str {0 {:args [] :ret-val ""}}
+    with-out-str {0 {:args [] :ret-val ""}}
+    pr       {0 {:args [] :ret-val nil}}
+    print    {0 {:args [] :ret-val nil}}
+
+    comp     {0 {:args [] :ret-val identity}}
+    partial  {1 {:args [f] :ret-val f}}
+    lazy-cat {0 {:args [] :ret-val ()}}
+
+    ;; Note: (->> x) throws arity exception, so no lint warning for it.
+    ->       {1 {:args [x] :ret-val x}}
+    ;; Note: (if x) is a compiler error, as is (if a b c d) or more args
+    cond     {0 {:args [] :ret-val nil}}
+    case     {2 {:args [x y] :ret-val y}}
+    condp    {3 {:args [pred test-expr expr] :ret-val expr}}  ;; TBD: correct?
+    when     {1 {:args [test] :ret-val nil}}
+    when-not {1 {:args [test] :ret-val nil}}
+    when-let {1 {:args [[x y]] :ret-val nil}}
+    doseq    {1 {:args [[x coll]] :ret-val nil}}
+    dotimes  {1 {:args [[i n]] :ret-val nil}}
+    and      {0 {:args []  :ret-val true},
+              1 {:args [x] :ret-val x}}
+    or       {0 {:args []  :ret-val nil},
+              1 {:args [x] :ret-val x}}
+    doto     {1 {:args [x] :ret-val x}}
+    declare  {0 {:args []  :ret-val nil}}
+
+    })
+
+(defn suspicious-expression [{:keys [forms]}]
+  (apply
+   concat
+   (let [fs (subforms-with-first-symbol-in-set
+             forms (set (keys core-fns-that-do-little)))]
+     (for [f fs]
+       (let [fn-sym (first f)
+             num-args (dec (count f))
+             suspicious-args (get core-fns-that-do-little fn-sym)
+             info (get suspicious-args num-args)]
+         (if (contains? suspicious-args num-args)
+           [{:linter :suspicious-expression,
+             :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
+                          fn-sym num-args fn-sym
+                          (if (> num-args 0)
+                            (str " " (str/join " " (:args info)))
+                            "")
+                          (:ret-val info))
+             :line (-> fn-sym meta :line)}]))))))
