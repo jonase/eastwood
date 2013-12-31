@@ -3,7 +3,8 @@
   (:require [eastwood.util :as util]
             [clojure.string :as str]
             [clojure.java.io :as io]
-            [clojure.tools.reader.edn :as edn])
+            [clojure.tools.reader.edn :as edn]
+            [clojure.tools.analyzer.ast :as ast])
   (:import [name.fraser.neil.plaintext diff_match_patch]))
 
 ;; Typos in keywords
@@ -239,83 +240,148 @@
                (predicate-forms deftest-subexprs 'deftest)
                (predicate-forms testing-subexprs 'testing))))))
 
-;; Suspicious function calls
+;; Suspicious function calls and macro invocations
 
-(def core-fns-that-do-little
+(def core-first-vars-that-do-little
   '{
     =        {1 {:args [x] :ret-val true}}
     ==       {1 {:args [x] :ret-val true}}
     not=     {1 {:args [x] :ret-val false}}
-    <        {1 {:args [x] :ret-val true}}
-    <=       {1 {:args [x] :ret-val true}}
-    >        {1 {:args [x] :ret-val true}}
-    >=       {1 {:args [x] :ret-val true}}
-    min      {1 {:args [x] :ret-val x}}
-    max      {1 {:args [x] :ret-val x}}
-    min-key  {2 {:args [f x] :ret-val x}}
-    max-key  {2 {:args [f x] :ret-val x}}
-    +        {0 {:args []  :ret-val 0},
-              1 {:args [x] :ret-val x}}
-    +'       {0 {:args []  :ret-val 0},
-              1 {:args [x] :ret-val x}}
-    *        {0 {:args []  :ret-val 1},
-              1 {:args [x] :ret-val x}}
-    *'       {0 {:args []  :ret-val 1},
-              1 {:args [x] :ret-val x}}
-    ;; Note: (- x) and (/ x) do something useful
-    dissoc   {1 {:args [map] :ret-val map}}
-    disj     {1 {:args [set] :ret-val set}}
-    merge    {0 {:args [] :ret-val nil},
-              1 {:args [map] :ret-val map}}
-    merge-with {1 {:args [f] :ret-val nil},
-                2 {:args [f map] :ret-val map}}
-    interleave {0 {:args [] :ret-val ()}}
-    pr-str   {0 {:args [] :ret-val ""}}
-    print-str {0 {:args [] :ret-val ""}}
-    with-out-str {0 {:args [] :ret-val ""}}
-    pr       {0 {:args [] :ret-val nil}}
-    print    {0 {:args [] :ret-val nil}}
-
-    comp     {0 {:args [] :ret-val identity}}
-    partial  {1 {:args [f] :ret-val f}}
-    lazy-cat {0 {:args [] :ret-val ()}}
-
+    lazy-cat {0 {:args [] :ret-val ()}}  ; macro where (lazy-cat) expands to (concat).  TBD: add concat to this list?
     ;; Note: (->> x) throws arity exception, so no lint warning for it.
-    ->       {1 {:args [x] :ret-val x}}
+    ->       {1 {:args [x] :ret-val x}}  ; macro where (-> x) expands to x
     ;; Note: (if x) is a compiler error, as is (if a b c d) or more args
-    cond     {0 {:args [] :ret-val nil}}
-    case     {2 {:args [x y] :ret-val y}}
-    condp    {3 {:args [pred test-expr expr] :ret-val expr}}  ;; TBD: correct?
-    when     {1 {:args [test] :ret-val nil}}
-    when-not {1 {:args [test] :ret-val nil}}
-    when-let {1 {:args [[x y]] :ret-val nil}}
-    doseq    {1 {:args [[x coll]] :ret-val nil}}
-    dotimes  {1 {:args [[i n]] :ret-val nil}}
-    and      {0 {:args []  :ret-val true},
-              1 {:args [x] :ret-val x}}
-    or       {0 {:args []  :ret-val nil},
-              1 {:args [x] :ret-val x}}
-    doto     {1 {:args [x] :ret-val x}}
-    declare  {0 {:args []  :ret-val nil}}
-
+    cond     {0 {:args [] :ret-val nil}}  ; macro where (cond) -> nil
+    case     {2 {:args [x y] :ret-val y}}  ; macro (case 5 2) -> (let* [x 5] 2)
+    condp    {3 {:args [pred test-expr expr] :ret-val expr}}  ;; macro (condp = 5 2) -> (let* [pred = expr 5] 2)
+    when     {1 {:args [test] :ret-val nil}} ; macro (when 5) -> (if 5 (do))
+    when-not {1 {:args [test] :ret-val nil}} ; macro (when-not 5) -> (if 5 nil (do))
+    when-let {1 {:args [[x y]] :ret-val nil}} ; macro (when-let [x 5]) -> (let* [temp 5] (when temp (let [x temp])))
+    doseq    {1 {:args [[x coll]] :ret-val nil}} ; macro (doseq [x [1 2 3]]) has big expansion
+    dotimes  {1 {:args [[i n]] :ret-val nil}} ; macro (dotimes [i 10]) has medium-sized expansion using loop
+    with-out-str {0 {:args [] :ret-val ""}}
+    and      {0 {:args []  :ret-val true},  ; macro (and) -> true
+              1 {:args [x] :ret-val x}}     ; macro (and 5) -> 5
+    or       {0 {:args []  :ret-val nil},   ; macro (or) -> nil
+              1 {:args [x] :ret-val x}}     ; macro (or 5) -> 5
+    doto     {1 {:args [x] :ret-val x}}     ; macro (doto x) -> (let* [temp x] temp)
+    declare  {0 {:args []  :ret-val nil}}   ; macro (declare) -> (do)
     })
 
-(defn suspicious-expression [{:keys [forms]}]
+;; Note that suspicious-expression-forms is implemented on the
+;; original source code, before macro expansion, so it can give false
+;; positives for expressions like this:
+
+;; (-> x (doto (method args)))     ; macro expands to (doto x (method args))
+
+;; For most suspicious function calls, we check for them in the ast in
+;; suspicious-expression-asts below, but that will not find suspicious
+;; calls on macros, or on (is (= expr)) forms because of how is
+;; macro-expands.
+
+;; Another possibility is to avoid issuing warnings on the original
+;; un-macro-expanded code if one of these expressions appears directly
+;; inside of a -> or ->> macro, which is a bit hackish, but should
+;; avoid most of the incorrect warnings I have seen so far in real
+;; code.
+
+(defn suspicious-expression-forms [{:keys [forms]}]
   (apply
    concat
    (let [fs (subforms-with-first-symbol-in-set
-             forms (set (keys core-fns-that-do-little)))]
+             forms (set (keys core-first-vars-that-do-little)))]
      (for [f fs]
        (let [fn-sym (first f)
              num-args (dec (count f))
-             suspicious-args (get core-fns-that-do-little fn-sym)
+             suspicious-args (get core-first-vars-that-do-little fn-sym)
              info (get suspicious-args num-args)]
          (if (contains? suspicious-args num-args)
            [{:linter :suspicious-expression,
+             :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"
+                          fn-sym num-args fn-sym
+                          (if (> num-args 0)
+                            (str " " (str/join " " (:args info)))
+                            "")
+                          (if (= "" (:ret-val info))
+                            "\"\""
+                            (print-str (:ret-val info))))
+             :line (-> fn-sym meta :line)}]))))))
+
+;; Note: Looking for asts that contain :invoke nodes for the function
+;; #'clojure.core/= will not find expressions like (clojure.test/is (=
+;; (+ 1 1))), because the is macro changes that to an apply on
+;; function = with one arg, which is a sequence of expressions.
+;; Finding one-arg = can probably only be done at the source form
+;; level.
+
+(def core-fns-that-do-little
+  {
+   #'clojure.core/=        '{1 {:args [x] :ret-val true}}
+   #'clojure.core/==       '{1 {:args [x] :ret-val true}}
+   #'clojure.core/not=     '{1 {:args [x] :ret-val false}}
+   #'clojure.core/<        '{1 {:args [x] :ret-val true}}
+   #'clojure.core/<=       '{1 {:args [x] :ret-val true}}
+   #'clojure.core/>        '{1 {:args [x] :ret-val true}}
+   #'clojure.core/>=       '{1 {:args [x] :ret-val true}}
+   #'clojure.core/min      '{1 {:args [x] :ret-val x}}
+   #'clojure.core/max      '{1 {:args [x] :ret-val x}}
+   #'clojure.core/min-key  '{2 {:args [f x] :ret-val x}}
+   #'clojure.core/max-key  '{2 {:args [f x] :ret-val x}}
+   #'clojure.core/dissoc   '{1 {:args [map] :ret-val map}}
+   #'clojure.core/disj     '{1 {:args [set] :ret-val set}}
+   #'clojure.core/merge    '{0 {:args [] :ret-val nil},
+                             1 {:args [map] :ret-val map}}
+   #'clojure.core/merge-with '{1 {:args [f] :ret-val nil},
+                               2 {:args [f map] :ret-val map}}
+   #'clojure.core/interleave '{0 {:args [] :ret-val ()}}
+   #'clojure.core/pr-str   '{0 {:args [] :ret-val ""}}
+   #'clojure.core/print-str '{0 {:args [] :ret-val ""}}
+   #'clojure.core/pr       '{0 {:args [] :ret-val nil}}
+   #'clojure.core/print    '{0 {:args [] :ret-val nil}}
+   
+   #'clojure.core/comp     '{0 {:args [] :ret-val identity}}
+   #'clojure.core/partial  '{1 {:args [f] :ret-val f}}
+   #'clojure.core/+        '{0 {:args []  :ret-val 0},   ; inline
+                             1 {:args [x] :ret-val x}}
+   #'clojure.core/+'       '{0 {:args []  :ret-val 0},   ; inline
+                             1 {:args [x] :ret-val x}}
+   #'clojure.core/*        '{0 {:args []  :ret-val 1},   ; inline
+                             1 {:args [x] :ret-val x}}
+   #'clojure.core/*'       '{0 {:args []  :ret-val 1},   ; inline
+                             1 {:args [x] :ret-val x}}
+   ;; Note: (- x) and (/ x) do something useful
+   })
+
+(defn suspicious-expression-asts [{:keys [asts]}]
+  (let [fn-var-set (set (keys core-fns-that-do-little))
+        invoke-asts (->> asts
+                         (mapcat ast/nodes)
+                         (filter #(and (= (:op %) :invoke)
+                                       (let [v (-> % :fn :var)]
+                                         (contains? fn-var-set v)))))]
+    (doall
+     (remove
+      nil?
+      (for [ast invoke-asts]
+        (let [^clojure.lang.Var fn-var (-> ast :fn :var)
+              fn-sym (.sym fn-var)
+              num-args (count (-> ast :args))
+              form (-> ast :form)
+              suspicious-args (get core-fns-that-do-little fn-var)
+              info (get suspicious-args num-args)]
+          (if (contains? suspicious-args num-args)
+            {:linter :suspicious-expression,
              :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
                           fn-sym num-args fn-sym
                           (if (> num-args 0)
                             (str " " (str/join " " (:args info)))
                             "")
-                          (:ret-val info))
-             :line (-> fn-sym meta :line)}]))))))
+                          (if (= "" (:ret-val info))
+                            "\"\""
+                            (print-str (:ret-val info))))
+             :line (-> form meta :line)})))))))
+
+(defn suspicious-expression [& args]
+  (concat
+   (apply suspicious-expression-forms args)
+   (apply suspicious-expression-asts args)))

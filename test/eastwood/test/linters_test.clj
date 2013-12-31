@@ -292,15 +292,11 @@
      :line 82}
     1,
     {:linter :suspicious-expression,
-     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?",
+     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>",
      :line 82}
     1,
     {:linter :suspicious-test,
      :msg "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.",
-     :line 83}
-    1,
-    {:linter :suspicious-expression,
-     :msg "> called with 1 args.  (> x) always returns true.  Perhaps there are misplaced parentheses?",
      :line 83}
     1,
     {:linter :suspicious-expression,
@@ -309,9 +305,15 @@
     1,
     {:line 86, :linter :suspicious-expression, :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?"}
     1,
+    {:line 86, :linter :suspicious-expression, :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+    1,
     {:line 87, :linter :suspicious-expression, :msg "== called with 1 args.  (== x) always returns true.  Perhaps there are misplaced parentheses?"}
     1,
+    {:line 87, :linter :suspicious-expression, :msg "== called with 1 args.  (== x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+    1,
     {:line 88, :linter :suspicious-expression, :msg "not= called with 1 args.  (not= x) always returns false.  Perhaps there are misplaced parentheses?"}
+    1,
+    {:line 88, :linter :suspicious-expression, :msg "not= called with 1 args.  (not= x) always returns false.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
     {:line 89, :linter :suspicious-expression, :msg "< called with 1 args.  (< x) always returns true.  Perhaps there are misplaced parentheses?"}
     1,
@@ -349,61 +351,61 @@
     1,
     {:line 106, :linter :suspicious-expression, :msg "disj called with 1 args.  (disj set) always returns set.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 107, :linter :suspicious-expression, :msg "merge called with 0 args.  (merge) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 107, :linter :suspicious-expression, :msg "merge called with 0 args.  (merge) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
     {:line 108, :linter :suspicious-expression, :msg "merge called with 1 args.  (merge map) always returns map.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 109, :linter :suspicious-expression, :msg "merge-with called with 1 args.  (merge-with f) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 109, :linter :suspicious-expression, :msg "merge-with called with 1 args.  (merge-with f) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
     {:line 110, :linter :suspicious-expression, :msg "merge-with called with 2 args.  (merge-with f map) always returns map.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 113, :linter :suspicious-expression, :msg "interleave called with 0 args.  (interleave) always returns clojure.lang.PersistentList$EmptyList@1.  Perhaps there are misplaced parentheses?"}
+    {:line 113, :linter :suspicious-expression, :msg "interleave called with 0 args.  (interleave) always returns ().  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 114, :linter :suspicious-expression, :msg "pr-str called with 0 args.  (pr-str) always returns .  Perhaps there are misplaced parentheses?"}
+    {:line 114, :linter :suspicious-expression, :msg "pr-str called with 0 args.  (pr-str) always returns \"\".  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 115, :linter :suspicious-expression, :msg "print-str called with 0 args.  (print-str) always returns .  Perhaps there are misplaced parentheses?"}
+    {:line 115, :linter :suspicious-expression, :msg "print-str called with 0 args.  (print-str) always returns \"\".  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 116, :linter :suspicious-expression, :msg "with-out-str called with 0 args.  (with-out-str) always returns .  Perhaps there are misplaced parentheses?"}
+    {:line 116, :linter :suspicious-expression, :msg "with-out-str called with 0 args.  (with-out-str) always returns \"\".  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 117, :linter :suspicious-expression, :msg "pr called with 0 args.  (pr) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 117, :linter :suspicious-expression, :msg "pr called with 0 args.  (pr) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 118, :linter :suspicious-expression, :msg "print called with 0 args.  (print) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 118, :linter :suspicious-expression, :msg "print called with 0 args.  (print) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
     {:line 119, :linter :suspicious-expression, :msg "comp called with 0 args.  (comp) always returns identity.  Perhaps there are misplaced parentheses?"}
     1,
     {:line 120, :linter :suspicious-expression, :msg "partial called with 1 args.  (partial f) always returns f.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 121, :linter :suspicious-expression, :msg "lazy-cat called with 0 args.  (lazy-cat) always returns clojure.lang.PersistentList$EmptyList@1.  Perhaps there are misplaced parentheses?"}
+    {:line 121, :linter :suspicious-expression, :msg "lazy-cat called with 0 args.  (lazy-cat) always returns ().  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 122, :linter :suspicious-expression, :msg "-> called with 1 args.  (-> x) always returns x.  Perhaps there are misplaced parentheses?"}
+    {:line 122, :linter :suspicious-expression, :msg "-> called with 1 args.  (-> x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 123, :linter :suspicious-expression, :msg "cond called with 0 args.  (cond) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 123, :linter :suspicious-expression, :msg "cond called with 0 args.  (cond) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 124, :linter :suspicious-expression, :msg "case called with 2 args.  (case x y) always returns y.  Perhaps there are misplaced parentheses?"}
+    {:line 124, :linter :suspicious-expression, :msg "case called with 2 args.  (case x y) always returns y.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 125, :linter :suspicious-expression, :msg "condp called with 3 args.  (condp pred test-expr expr) always returns expr.  Perhaps there are misplaced parentheses?"}
+    {:line 125, :linter :suspicious-expression, :msg "condp called with 3 args.  (condp pred test-expr expr) always returns expr.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 126, :linter :suspicious-expression, :msg "when called with 1 args.  (when test) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 126, :linter :suspicious-expression, :msg "when called with 1 args.  (when test) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 127, :linter :suspicious-expression, :msg "when-not called with 1 args.  (when-not test) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 127, :linter :suspicious-expression, :msg "when-not called with 1 args.  (when-not test) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 128, :linter :suspicious-expression, :msg "when-let called with 1 args.  (when-let [x y]) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 128, :linter :suspicious-expression, :msg "when-let called with 1 args.  (when-let [x y]) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 129, :linter :suspicious-expression, :msg "doseq called with 1 args.  (doseq [x coll]) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 129, :linter :suspicious-expression, :msg "doseq called with 1 args.  (doseq [x coll]) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 130, :linter :suspicious-expression, :msg "dotimes called with 1 args.  (dotimes [i n]) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 130, :linter :suspicious-expression, :msg "dotimes called with 1 args.  (dotimes [i n]) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 131, :linter :suspicious-expression, :msg "and called with 0 args.  (and) always returns true.  Perhaps there are misplaced parentheses?"}
+    {:line 131, :linter :suspicious-expression, :msg "and called with 0 args.  (and) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 132, :linter :suspicious-expression, :msg "and called with 1 args.  (and x) always returns x.  Perhaps there are misplaced parentheses?"}
+    {:line 132, :linter :suspicious-expression, :msg "and called with 1 args.  (and x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 133, :linter :suspicious-expression, :msg "or called with 0 args.  (or) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 133, :linter :suspicious-expression, :msg "or called with 0 args.  (or) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 134, :linter :suspicious-expression, :msg "or called with 1 args.  (or x) always returns x.  Perhaps there are misplaced parentheses?"}
+    {:line 134, :linter :suspicious-expression, :msg "or called with 1 args.  (or x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 135, :linter :suspicious-expression, :msg "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?"}
+    {:line 135, :linter :suspicious-expression, :msg "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
-    {:line 136, :linter :suspicious-expression, :msg "declare called with 0 args.  (declare) always returns null.  Perhaps there are misplaced parentheses?"}
+    {:line 136, :linter :suspicious-expression, :msg "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
     })
   )
