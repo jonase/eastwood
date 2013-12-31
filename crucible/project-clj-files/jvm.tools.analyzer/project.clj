@@ -1,4 +1,4 @@
-(defproject org.clojure/jvm.tools.analyzer "0.4.5-SNAPSHOT"
+(defproject org.clojure/jvm.tools.analyzer "0.6.0-SNAPSHOT"
   :description "Interface to Clojure Analyzer"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}

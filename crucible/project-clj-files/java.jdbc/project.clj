@@ -1,4 +1,4 @@
-(defproject org.clojure/java.jdbc "0.3.0-SNAPSHOT"
+(defproject org.clojure/java.jdbc "0.3.3-SNAPSHOT"
   :description "A low-level Clojure wrapper for JDBC-based access to databases."
   :parent [org.clojure/pom.contrib "0.1.2"]
   :url "https://github.com/clojure/java.jdbc"
