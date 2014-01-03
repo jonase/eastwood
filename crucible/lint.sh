@@ -77,7 +77,10 @@ echo
 echo "Linting 3rd party Clojure libraries"
 echo 
 for lib in \
+    stencil \
+    clj-ns-browser \
     collection-check \
+    fs \
     medley \
     utf8 \
     vclock \

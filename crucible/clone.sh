@@ -3,12 +3,6 @@
 # Clone git repositories containing Clojure code useful for testing
 # Eastwood with.
 
-# TBD: Add some commands to copy in project.clj files for those
-# contrib libraries that do not have them, or that need modifications
-# to their project.clj file to run Eastwood.
-
-# TBD: Add 
-
 C="git clone"
 
 # Create a subdirectory for the pulled repos.  This makes it easier to
@@ -99,6 +93,8 @@ $C https://github.com/clojure/tools.trace
 # Some other Clojure libraries that are not Clojure contrib libraries
 
 $C https://github.com/cgrand/enlive
+# TBD whether to add liberator to crucible
+$C https://github.com/clojure-liberator/liberator.git
 $C https://github.com/clojurewerkz/archimedes.git
 $C https://github.com/clojurewerkz/buffy
 $C https://github.com/clojurewerkz/cassaforte
@@ -109,47 +105,106 @@ $C https://github.com/clojurewerkz/money
 $C https://github.com/clojurewerkz/ogre.git
 $C https://github.com/clojurewerkz/scrypt.git
 $C https://github.com/clojurewerkz/serialism.git
+
 # Dec 20 2013: romulan considered deprecated project by ClojureWerkz
 #$C https://github.com/clojurewerkz/romulan
+
 # Dec 20 2013: Latest spyglass passes 'lein check', but fails to make
 # connection attempts even when only doing eastwood analysis on some
 # its test namespaces.
 #$C https://github.com/clojurewerkz/spyglass.git
+
 $C https://github.com/clojurewerkz/support.git
 $C https://github.com/clojurewerkz/titanium
 $C https://github.com/dakrone/cheshire
 $C https://github.com/daveray/seesaw
+$C https://github.com/davidsantiago/stencil.git
 $C https://github.com/flatland/useful
+$C https://github.com/franks42/clj-ns-browser.git
+# TBD whether to add http-kit to crucible
+$C https://github.com/http-kit/http-kit.git
 $C https://github.com/hugoduncan/criterium
+
+# TBD: Decide whether to add Midje to lint.sh
+$C https://github.com/marick/Midje.git
+
 $C https://github.com/michaelklishin/chash.git
+
 # Dec 20 2013: Latest neocons passes 'lein check', but 'lein eastwood'
 # throws exceptions because it fails to make network connections.
 # Save it for later.
 #$C https://github.com/michaelklishin/neocons
+
 $C https://github.com/michaelklishin/pantomime.git
 $C https://github.com/michaelklishin/quartzite.git
 $C https://github.com/michaelklishin/urly.git
 $C https://github.com/michaelklishin/vclock.git
+
 # Dec 20 2013: welle seems to hang during 'lein eastwood'.  It seems
 # to be because some of the tests are trying to open connections, and
 # those connection attempts hang.
 #$C https://github.com/michaelklishin/welle.git
 $C https://github.com/michalmarczyk/avl.clj
+
 $C https://github.com/noir-clojure/lib-noir
 $C https://github.com/pjstadig/utf8.git
+
+# Dec 24 2013: 'lein with-profile dev,test check' required to get lein
+# check to pass without missing dependencies.  'lein with-profile
+# dev,test eastwood' throws an exception for one namespace, I think
+# because of funky type hints that tools.analyzer does not handle.  I
+# have tried to boil down a shorter test case in file
+# testcases/f09.clj.  Filed ticket
+# http://dev.clojure.org/jira/browse/TANAL-36 for it, and Nicola gave
+# some suggestions on what to do about it.
 $C https://github.com/ptaoussanis/carmine.git
-# Dec 20 2013: timbre latest version fails 'lein check'
-#$C https://github.com/ptaoussanis/timbre.git
+
+# Dec 24 2013: timbre latest version fails 'lein check' because of
+# lack of android.util.Log class.  It can run tests with 'lein
+# with-profile +test test', and 'lein with-profile +test eastwood'
+# works.  I customed project.clj to include dependencies on projects
+# needed by the different timbre appenders.  TBD: Add to lint.sh after
+# I add a way for projects to have customized 'lein eastwood' command
+# line options, or I change project.clj to not need the different
+# profile.
+$C https://github.com/ptaoussanis/timbre.git
+
 # Dec 20 2013: tower requires 'lein with-profile test eastwood' to get
-# needed test dependencies from project.clj
+# needed test dependencies on expectations library from its
+# project.clj.  It also seems to run the unit tests while analyzing
+# the test source files.  TBD whether that is normal for expectations
+# library.
 $C https://github.com/ptaoussanis/tower.git
+
+# Dec 24 2013: Fixed incorrect Java interop form (. this (toFile)
+# (toUrl)), and Nicola added a more informative exception to
+# tools.analyzer than it was throwing before, which Eastwood now
+# catches and recognizes specially.  'lein midje' runs unit tests
+# quickly, but 'lein eastwood' has the 1-minute delay before exiting
+# at the end, I think because 'zip' uses a future, and there is no
+# (shutdown-agents) call.  I guess 'lein midje' does a call to
+# shutdown-agents internally to avoid that delay.  Maybe Eastwood
+# should, too?
+$C https://github.com/Raynes/fs.git
+
+# Dec 24 2013: Lots of exceptions about *runner* not being bound while
+# linting, I think limited to the test namespaces.  These are likely
+# due to the use of speclj for writing tests.  I do not know how to
+# avoid those errors when linting.
+$C https://github.com/trptcolin/reply.git
+
 $C https://github.com/weavejester/compojure
 $C https://github.com/weavejester/hiccup
 $C https://github.com/weavejester/medley.git
-# Mostly lints OK, but one namespace throws exception 'No such
-# namespace: simple-check.core.  Learn why.
-#$C https://github.com/ztellman/automat.git
+
+# automat uses simple-check, which has a cyclic dependency from
+# namespace simple-check.clojure-test back to simple-check.core.
+# Filed ticket http://dev.clojure.org/jira/browse/TANAL-37 to track
+# the issue.
+$C https://github.com/ztellman/automat.git
+
 $C https://github.com/ztellman/collection-check.git
+
 
 
 cd ..
