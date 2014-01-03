@@ -1,4 +1,4 @@
-(defproject org.clojure/tools.cli "0.3.0-SNAPSHOT"
+(defproject org.clojure/tools.cli "0.3.2-SNAPSHOT"
   :description "Command line arguments library."
   :parent [org.clojure/pom.contrib "0.1.2"]
   :url "https://github.com/clojure/tools.cli"
@@ -23,7 +23,7 @@
                    :cljsbuild {:builds [{:source-paths ["src/main/clojure/cljs"
                                                         "src/test/clojure/cljs"]
                                          :compiler {:output-to "target/cli_test.js"
-                                                    :optimizations :simple
+                                                    :optimizations :whitespace
                                                     :pretty-print true}}]
                                :test-commands {"phantomjs" ["phantomjs"
                                                             :runner
