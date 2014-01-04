@@ -6,11 +6,9 @@
 # things so that they all use Clojure 1.5.1 if you do not specify a
 # profile.
 #
-# Thus change the commands below from:
-#     lein eastwood ...
-# to:
-#     lein with-profile 1.6 eastwood ...
-# to use Clojure 1.6.0-master-SNAPSHOT for all of these.
+# Thus change the value of the shell variable PROFILE below to
+# "with-profile +1.6" to use Clojure 1.6.0-master-SNAPSHOT for all of
+# these.
 
 
 # set -e    exit immediately if a command exits with a non-0 exit status
