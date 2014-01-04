@@ -3,7 +3,7 @@
   :url "https://github.com/franks42/clj-ns-browser"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.5.0"]
+  :dependencies [[org.clojure/clojure "1.5.1"]
                  [seesaw "1.4.3"]
                  [org.clojure/tools.namespace "0.1.3"]
                  [org.clojure/tools.trace "0.7.3"]
