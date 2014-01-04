@@ -14,4 +14,5 @@
                              {:source-paths ["src/cljs" "test/clj" "test/cljs"]
                               :compiler {:output-to "out/test.js"
                                          :optimizations :advanced
-                                         :pretty-print false}}}}}})
+                                         :pretty-print false}}}}}
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}})

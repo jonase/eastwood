@@ -16,7 +16,8 @@
              :clj1.2 {:dependencies [[org.clojure/clojure "1.2.1"]]}
              :clj1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}
              :clj1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
-             :clj1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}}
+             :clj1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
+             :1.6    {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
   :aliases {"all" ["with-profile" "dev:dev,clj1.4:dev,clj1.5"]
             "test-no-cache" ["with-profile" "+cacheless-test" "test"]}
   :repositories {"sonatype" {:url "http://oss.sonatype.org/content/repositories/releases"
