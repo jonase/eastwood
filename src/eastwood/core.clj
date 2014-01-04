@@ -6,6 +6,14 @@
             [clojure.string :as str]
             [clojure.pprint :as pp]
             [clojure.repl :as repl]
+            ;; The latest version of tools.namespace (0.2.4 as of this
+            ;; writing) has function find-namespaces-in-dir in
+            ;; namespace c.t.n.find, but that namespace does not exist
+            ;; in older versions of tools.namespace.  If we continue
+            ;; to use the deprecated version in namespace c.t.n, then
+            ;; it will avoid the problem of not being able to find
+            ;; namespace c.t.n.find when running Eastwood on a project
+            ;; that uses an older version of tools.namespace.
             [clojure.tools.namespace :as clj-ns]
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
@@ -65,11 +73,11 @@ return value followed by the time it took to evaluate in millisec."
     :suspicious-expression
     :unused-ret-vals
     :unused-ret-vals-in-try
-    ;;:unused-private-vars
-    ;; :unused-fn-args    ; updated, but don't use it by default
-    ;; :unused-namespaces ; updated, but don't use it by default
-    ;;:naked-use
-    :keyword-typos
+    ;;:unused-private-vars  ; not yet updated to tools.analyzer(.jvm)
+    ;; :unused-fn-args      ; updated, but don't use it by default
+    ;; :unused-namespaces   ; updated, but don't use it by default
+    ;;:naked-use            ; not yet updated to tools.analyzer(.jvm)
+    ;; :keyword-typos       ; updated, but don't use it by default
     })
 
 (defn- lint [exprs kw]

@@ -26,7 +26,7 @@ Eastwood warns when it finds:
 - unused function arguments (disabled by default)
 - unused namespaces (disabled by default)
 - naked (:use ...) (to be updated)
-- keyword typos
+- keyword typos (disabled by default)
 
 Because Eastwood evaluates the code it is linting, you must use a
 version of Clojure that is capable of loading your code, and it can
@@ -533,6 +533,10 @@ in this map will never cause one of these warnings.
 
 ### `:unused-fn-args` - Unused arguments of functions, macros, methods
 
+This linter is disabled by default, because it often produces a large
+number of warnings that are not errors.  You must explicitly enable it
+if you wish to see these warnings.
+
 Writing a function that does not use some of its arguments is not
 necessarily a mistake.  In particular, it is common for multimethods
 defined with `defmulti` to have a dispatch function that only uses
@@ -552,6 +556,10 @@ warnings.
 
 
 ### `:keyword-typos` - Keywords that may have typographical errors
+
+This linter is disabled by default, because it often produces a large
+number of warnings that are not errors.  You must explicitly enable it
+if you wish to see these warnings.
 
 If you use a keyword like `:frangible` in several places in your
 source code, but then in one place you accidentally type `:frangable`
