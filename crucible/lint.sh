@@ -19,6 +19,9 @@
 # set -x    echo expanded commands before executing them
 # set +x    stop doing that
 
+PROFILE=""
+#PROFILE="with-profile +1.6"
+
 do_eastwood()
 {
     local ns="$1"
@@ -26,7 +29,7 @@ do_eastwood()
     set +e   # Do not stop if an eastwood run returns a non-0 exit status.  Keep going with more checking, if any.
     if [ "x${ns}" == "x" ]
     then
-	lein eastwood "{:exclude-linters [:keyword-typos]}"
+	lein ${PROFILE} eastwood "{:exclude-linters [:keyword-typos]}"
     elif [ "${ns}" == "clojure-special" ]
     then
 	# Namespaces to exclude when analyzing namespaces in Clojure itself:
@@ -63,9 +66,9 @@ do_eastwood()
 	# then hang, but I think not always:
         # == Linting clojure.test-clojure.protocols ==
 
-	lein eastwood '{:exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ] :exclude-linters [ :keyword-typos ]}'
+	lein ${PROFILE} eastwood '{:exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ] :exclude-linters [ :keyword-typos ]}'
     else
-	lein eastwood "{:namespaces [ ${core_ns} ] :exclude-linters [:keyword-typos]}"
+	lein ${PROFILE} eastwood "{:namespaces [ ${core_ns} ] :exclude-linters [:keyword-typos]}"
     fi
     set -e
 }
