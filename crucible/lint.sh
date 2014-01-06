@@ -78,6 +78,8 @@ echo
 echo "Linting 3rd party Clojure libraries"
 echo 
 for lib in \
+    potemkin \
+    automat \
     stencil \
     clj-ns-browser \
     collection-check \
@@ -95,7 +97,6 @@ for lib in \
     support \
     urly \
     vclock \
-    avl.clj \
     cheshire \
     criterium \
     elastisch \
@@ -174,6 +175,7 @@ echo "conflicts with Eastwood's tools.analyzer"
 echo 
 for lib in \
     algo.generic \
+    algo.graph \
     algo.monads \
     core.async \
     core.cache \
@@ -184,6 +186,7 @@ for lib in \
     core.memoize \
     core.rrb-vector \
     core.unify \
+    data.avl \
     data.codec \
     data.csv \
     data.finger-tree \

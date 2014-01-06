@@ -14,6 +14,7 @@ cd repos
 # The repos that say 'No code yet' were last checked on Dec 6 2013
 
 $C https://github.com/clojure/algo.generic
+$C https://github.com/clojure/algo.graph
 $C https://github.com/clojure/algo.monads
 # Build infrastructure, not Clojure code https://github.com/clojure/build.ci
 # Build infrastructure, not Clojure code https://github.com/clojure/build.poms
@@ -47,6 +48,7 @@ $C https://github.com/clojure/core.rrb-vector
 # core.typed uses &env in source code
 $C https://github.com/clojure/core.typed
 $C https://github.com/clojure/core.unify
+$C https://github.com/clojure/data.avl
 $C https://github.com/clojure/data.codec
 $C https://github.com/clojure/data.csv
 # No code yet https://github.com/clojure/data.enlive
@@ -126,6 +128,9 @@ $C https://github.com/http-kit/http-kit.git
 $C https://github.com/hugoduncan/criterium
 
 # TBD: Decide whether to add Midje to lint.sh
+# Many exceptions are thrown because of symbols with names like ...foo...
+# Also takes a long time to lint, I think mostly because it runs all
+# of the voluminous tests while linting.
 $C https://github.com/marick/Midje.git
 
 $C https://github.com/michaelklishin/chash.git
@@ -144,7 +149,6 @@ $C https://github.com/michaelklishin/vclock.git
 # to be because some of the tests are trying to open connections, and
 # those connection attempts hang.
 #$C https://github.com/michaelklishin/welle.git
-$C https://github.com/michalmarczyk/avl.clj
 
 $C https://github.com/noir-clojure/lib-noir
 $C https://github.com/pjstadig/utf8.git
@@ -175,16 +179,6 @@ $C https://github.com/ptaoussanis/timbre.git
 # the test source files.  TBD whether that is normal for expectations
 # library.
 $C https://github.com/ptaoussanis/tower.git
-
-# Dec 24 2013: Fixed incorrect Java interop form (. this (toFile)
-# (toUrl)), and Nicola added a more informative exception to
-# tools.analyzer than it was throwing before, which Eastwood now
-# catches and recognizes specially.  'lein midje' runs unit tests
-# quickly, but 'lein eastwood' has the 1-minute delay before exiting
-# at the end, I think because 'zip' uses a future, and there is no
-# (shutdown-agents) call.  I guess 'lein midje' does a call to
-# shutdown-agents internally to avoid that delay.  Maybe Eastwood
-# should, too?
 $C https://github.com/Raynes/fs.git
 
 # Dec 24 2013: Lots of exceptions about *runner* not being bound while
@@ -204,7 +198,7 @@ $C https://github.com/weavejester/medley.git
 $C https://github.com/ztellman/automat.git
 
 $C https://github.com/ztellman/collection-check.git
-
+$C https://github.com/ztellman/potemkin.git
 
 
 cd ..
