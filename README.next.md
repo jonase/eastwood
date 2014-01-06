@@ -88,8 +88,17 @@ Available linters are:
 
 Available options are:
 
-* `:namespaces` Namespaces to lint
-* `:exclude-namespaces` Namespaces to exclude
+* `:namespaces` Vector of namespaces to lint.  A keyword
+  `:source-paths` in this vector will be replaced with a list of
+  namespaces in your Leiningen `:source-paths` and their
+  subdirectories.  These namespaces will be in an order that honors
+  inter-namespace dependencies as determined by `:require` and `:use`
+  keys in `ns` forms.  Similarly for a keyword `:test-paths`.  If you
+  do not specify `:namespaces`, it defaults to `[:source-paths
+  :test-paths]`.
+* `:exclude-namespaces` Vector of namespaces to exclude.
+  `:source-paths` and `:test-paths` may be used here as they can be
+  for `:namespaces`.
 * `:linters` Linters to use
 * `:exclude-linters` Linters to exclude
 
