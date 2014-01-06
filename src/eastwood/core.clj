@@ -14,7 +14,9 @@
             ;; it will avoid the problem of not being able to find
             ;; namespace c.t.n.find when running Eastwood on a project
             ;; that uses an older version of tools.namespace.
-            [clojure.tools.namespace :as clj-ns]
+            [clojure.tools.namespace.find :as find]
+            [clojure.tools.namespace.track :as track]
+            [clojure.tools.namespace.dir :as dir]
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.unused :as unused]
@@ -366,49 +368,138 @@ exception."))))
         (analyze/analyze-ns ns-sym :opt opts)]
     (mapcat #(lint analyze-results %) linters)))
 
+(defn unknown-ns-keywords [namespaces known-ns-keywords desc]
+  (let [keyword-set (set (filter keyword? namespaces))
+        unknown-ns-keywords (set/difference keyword-set known-ns-keywords)]
+    (if (empty? unknown-ns-keywords)
+      nil
+      {:err :unknown-ns-keywords,
+       :msg
+       (with-out-str
+         (println (format "The following keywords appeared in the namespaces specified after %s :"
+                          desc))
+         (println (format "    %s" (seq unknown-ns-keywords)))
+         (println (format "The only keywords allowed in this list of namespaces are: %s"
+                          (seq known-ns-keywords))))})))
+
+(defn nss-in-dirs [dir-name-strs]
+  (let [tracker (apply dir/scan-all (track/tracker) dir-name-strs)]
+    (:clojure.tools.namespace.track/load tracker)))
+
+(defn replace-ns-keywords [namespaces source-paths test-paths]
+  (mapcat (fn [x]
+            (if (keyword? x)
+              (case x
+                :source-paths source-paths
+                :test-paths test-paths
+                ;;:force-order []
+                )
+              [x]))
+          namespaces))
+
+;; If you do not specify :namespaces in the options, it defaults to
+;; the same as if you specified [:source-paths :test-paths].  If you
+;; specify a list of namespaces explicitly, perhaps mingled with
+;; occurrences of :source-paths and/or :test-paths, then the
+;; namespaces will be linted in the order you specify, even if this
+;; violates dependency order according to the ns statement contents.
+;; No warning will be detected or printed about this.
+
+;; TBD: It would be nice if the default behavior would instead be to
+;; put the specified namespaces into an order that honors all declared
+;; dependencies between namespaces.  If this is implemented, it might
+;; also be nice (perhaps only for debugging purposes) to implement a
+;; keyword :force-order that preserves the specified namespace order
+;; regardless of dependencies.
+
+;; TBD: Abort with an easily understood error message if a namespace
+;; is given that cannot be found.
+
+(defn opts->namespaces [opts]
+  (let [namespaces (distinct (or (:namespaces opts)
+                                 [:source-paths :test-paths]))
+        excluded-namespaces (set (:exclude-namespaces opts))]
+    ;; Return an error if any keywords appear in the namespace lists
+    ;; that are not recognized.
+    (or
+     (unknown-ns-keywords namespaces #{:source-paths :test-paths}
+                          ":namespaces")
+     (unknown-ns-keywords excluded-namespaces #{:source-paths :test-paths}
+                          ":exclude-namespaces")
+     ;; If keyword :source-paths occurs in namespaces or
+     ;; excluded-namespaces, replace it with all namespaces found in
+     ;; the directories in (:source-paths opts), in an order that
+     ;; honors dependencies, and similarly for :test-paths.
+     ;; nss-in-dirs traverses part of the file system, so only call it
+     ;; once for each of :source-paths and :test-paths, and only if
+     ;; needed.
+     (let [source-paths (if (some #(= % :source-paths)
+                                  (concat namespaces excluded-namespaces))
+                          (nss-in-dirs (:source-paths opts)))
+           test-paths (if (some #(= % :test-paths)
+                                (concat namespaces excluded-namespaces))
+                        (nss-in-dirs (:test-paths opts)))
+           namespaces (replace-ns-keywords namespaces source-paths test-paths)
+           namespaces (distinct namespaces)
+           excluded-namespaces (set (replace-ns-keywords excluded-namespaces
+                                                         source-paths
+                                                         test-paths))
+           namespaces (remove excluded-namespaces namespaces)]
+       {:err nil, :namespaces namespaces}))))
+
+(defn opts->linters [opts available-linters default-linters]
+  (let [linters (set (or (:linters opts)
+                         default-linters))
+        excluded-linters (set (:exclude-linters opts))
+        add-linters (set (:add-linters opts))
+        linters-requested (-> (set/difference linters excluded-linters)
+                              (set/union add-linters))
+        known-linters (set (keys available-linters))
+        linters-unavailable (set/difference (set/union linters-requested
+                                                       excluded-linters)
+                                            known-linters)
+        linters (set/intersection linters-requested known-linters)]
+    (if (seq linters-unavailable)
+      {:err :unknown-linter,
+       :msg
+       (with-out-str
+         (println (format "The following requested or excluded linters are unknown: %s"
+                          (seq linters-unavailable)))
+         (println (format "Known linters are: %s"
+                          (seq (sort known-linters)))))}
+      ;; else
+      {:err nil, :linters linters})))
+
 (defn run-eastwood [opts]
-  ;; Note: Preserve order of (:namespaces opts) if specified, in case
-  ;; it is important.
   (binding [*out* (java.io.PrintWriter. *out* true)]
-    (let [namespaces (distinct
-                      (or (:namespaces opts)
-                          (mapcat #(-> % io/file clj-ns/find-namespaces-in-dir)
-                                  (concat (:source-paths opts) (:test-paths opts)))))
-          excluded-namespaces (set (:exclude-namespaces opts))
-          namespaces (remove excluded-namespaces namespaces)
-          linters (set (or (:linters opts)
-                           default-linters))
-          excluded-linters (set (:exclude-linters opts))
-          add-linters (set (:add-linters opts))
-          linters-requested (-> (set/difference linters excluded-linters)
-                                (set/union add-linters))
-          known-linters (set (keys available-linters))
-          linters-unavailable (set/difference (set/union linters-requested
-                                                         excluded-linters)
-                                              known-linters)
-          linters (set/intersection linters-requested known-linters)]
-      (println (format "== Eastwood %s Clojure %s JVM %s"
-                       (eastwood-version)
-                       (clojure-version)
-                       (get (System/getProperties) "java.version")))
-      (when (seq linters-unavailable)
-        (println (format "The following requested or excluded linters are unknown: %s"
-                         (seq linters-unavailable)))
-        (println (format "Known linters are: %s"
-                         (seq (sort known-linters)))))
-      (when (contains? (:debug opts) :all)
-        (println (format "Namespaces to be linted:"))
-        (doseq [n namespaces]
-          (println (format "    %s" n))))
-      (when (seq linters)
-        (doseq [namespace namespaces]
-          (try
-            (lint-ns namespace linters opts)
-            (catch RuntimeException e
-              (println "Linting failed:")
-              (pst e nil)))))
-      ;; Eastwood does not use future, pmap, or clojure.shell/sh now
-      ;; (at least not yet), but it may evaluate code that does when
-      ;; linting a project.  Call shutdown-agents to avoid the
-      ;; 1-minute 'hang' that would otherwise occur.
-      (shutdown-agents))))
+    (println (format "== Eastwood %s Clojure %s JVM %s"
+                     (eastwood-version)
+                     (clojure-version)
+                     (get (System/getProperties) "java.version")))
+    (let [{:keys [err msg namespaces]} (opts->namespaces opts)]
+      (when err
+        (print msg)
+        (flush)
+        (System/exit 1))
+      (let [{:keys [err msg linters]} (opts->linters opts available-linters
+                                                     default-linters)]
+        (when err
+          (print msg)
+          (flush)
+          (System/exit 1))
+        (when (contains? (:debug opts) :all)
+          (println (format "Namespaces to be linted:"))
+          (doseq [n namespaces]
+            (println (format "    %s" n))))
+        (when (seq linters)
+          (doseq [namespace namespaces]
+            (try
+              (lint-ns namespace linters opts)
+              (catch RuntimeException e
+                (println "Linting failed:")
+                (pst e nil)))))
+        ;; Eastwood does not use future, pmap, or clojure.shell/sh now
+        ;; (at least not yet), but it may evaluate code that does when
+        ;; linting a project.  Call shutdown-agents to avoid the
+        ;; 1-minute 'hang' that would otherwise occur.
+        (shutdown-agents)))))
