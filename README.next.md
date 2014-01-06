@@ -98,7 +98,8 @@ Available options are:
   :test-paths]`.
 * `:exclude-namespaces` Vector of namespaces to exclude.
   `:source-paths` and `:test-paths` may be used here as they can be
-  for `:namespaces`.
+  for `:namespaces`.  Defaults to an empty list if you do not specify
+  `:exclude-namespaces`.
 * `:linters` Linters to use
 * `:exclude-linters` Linters to exclude
 
