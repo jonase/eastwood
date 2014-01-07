@@ -58,14 +58,14 @@
 (defn all-ns-names-set []
   (set (map str (all-ns))))
 
-(defn pre-analyze-debug [asts form *ns* opt]
+(defn pre-analyze-debug [asts form ns opt]
   (let [print-normally? (or (contains? (:debug opt) :all)
                             (contains? (:debug opt) :forms))
         pprint? (or (contains? (:debug opt) :all)
                     (contains? (:debug opt) :forms-pprint))]
   (when (or print-normally? pprint?)
-    (println (format "dbg pre-analyze #%d *ns*=%s"
-                     (count asts) (str *ns*)))
+    (println (format "dbg pre-analyze #%d ns=%s"
+                     (count asts) (str ns)))
     (when pprint?
       (println "    form before macroexpand:")
       (pp/pprint form))
@@ -82,12 +82,12 @@
         (binding [*print-meta* true] (pr exp))))
     (println "\n    --------------------"))))
 
-(defn post-analyze-debug [asts _form _analysis _exception *ns* opt]
+(defn post-analyze-debug [asts _form _analysis _exception ns opt]
   (when (or (contains? (:debug opt) :progress)
             (contains? (:debug opt) :all))
-    (println (format "dbg anal'd %d *ns*=%s"
+    (println (format "dbg anal'd %d ns=%s"
                      (count asts)
-                     (str *ns*)))))
+                     (str ns)))))
 
 (defn namespace-changes-debug [old-nss _opt]
   (let [new-nss (all-ns-names-set)
