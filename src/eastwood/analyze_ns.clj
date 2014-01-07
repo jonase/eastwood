@@ -58,14 +58,14 @@
 (defn all-ns-names-set []
   (set (map str (all-ns))))
 
-(defn pre-analyze-debug [asts form ns opt]
+(defn pre-analyze-debug [at-top-level? asts form env ns opt]
   (let [print-normally? (or (contains? (:debug opt) :all)
                             (contains? (:debug opt) :forms))
         pprint? (or (contains? (:debug opt) :all)
                     (contains? (:debug opt) :forms-pprint))]
   (when (or print-normally? pprint?)
-    (println (format "dbg pre-analyze #%d ns=%s"
-                     (count asts) (str ns)))
+    (println (format "dbg pre-analyze #%d at-top-level?=%s ns=%s"
+                     (count asts) at-top-level? (str ns)))
     (when pprint?
       (println "    form before macroexpand:")
       (pp/pprint form))
@@ -82,12 +82,11 @@
         (binding [*print-meta* true] (pr exp))))
     (println "\n    --------------------"))))
 
-(defn post-analyze-debug [asts _form _analysis _exception ns opt]
+(defn post-analyze-debug [at-top-level? asts _form _analysis _exception ns opt]
   (when (or (contains? (:debug opt) :progress)
             (contains? (:debug opt) :all))
-    (println (format "dbg anal'd %d ns=%s"
-                     (count asts)
-                     (str ns)))))
+    (println (format "dbg anal'd %d at-top-level?=%s ns=%s"
+                     (count asts) at-top-level? (str ns)))))
 
 (defn namespace-changes-debug [old-nss _opt]
   (let [new-nss (all-ns-names-set)
@@ -111,8 +110,12 @@
   "Keep this really simple-minded for now.  It will miss ns forms
   nested inside of other forms."
   [form]
-  (and (list? form)
+  (and (sequential? form)
        (= 'ns (first form))))
+
+(defn do-form? [form]
+  (and (sequential? form)
+       (= 'do (first form))))
 
 (defn macroexpand-1
   [form env]
@@ -237,9 +240,9 @@
         eval? (get opt :eval true)
         eof (reify)
         ^LineNumberingPushbackReader
-        pushback-reader (if (instance? LineNumberingPushbackReader reader)
-                          reader
-                          (LineNumberingPushbackReader. reader))
+        pbrdr (if (instance? LineNumberingPushbackReader reader)
+                reader
+                (LineNumberingPushbackReader. reader))
         loaded-namespaces (atom (loaded-libs))]
     (when debug-ns
       (println (format "all-ns before (analyze-file \"%s\") begins:"
@@ -251,12 +254,20 @@
     (binding [*ns* *ns*
               *file* (str source-path)]
       (loop [forms []
-             asts []]
-        (let [form (tr/read pushback-reader nil eof)]
-          (if (identical? form eof)
+             asts []
+             unanalyzed-forms []]
+        (let [at-top-level? (empty? unanalyzed-forms)
+              [form unanalyzed-forms] (if at-top-level?
+                                        [(tr/read pbrdr nil eof) []]
+                                        [(first unanalyzed-forms)
+                                         (rest unanalyzed-forms)])
+              done? (and at-top-level?
+                         (identical? form eof))
+              top-level-ns-form? (and (not done?) at-top-level? (ns-form? form))]
+          (if done?
             {:forms forms, :asts asts, :exception nil}
             (if-let [eval-ns-exc
-                     (when (and eval? (ns-form? form))
+                     (when (and eval? top-level-ns-form?)
                        (try
                          (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader))
                          (eval form)
@@ -264,43 +275,50 @@
                          nil  ; return no exception
                          (catch Exception e
                            e)))]
-              {:forms (remaining-forms pushback-reader (conj forms form)),
+              {:forms (remaining-forms
+                       pbrdr (into forms (concat [form] unanalyzed-forms))),
                :asts asts, :exception eval-ns-exc,
                :exception-phase :eval-ns, :exception-form form}
-              (let [_ (pre-analyze-debug asts form *ns* opt)
-                    ;; TBD: ana.jvm/empty-env uses *ns*.  Is that what
-                    ;; is needed here?  Is there some way to call
-                    ;; empty-env once and then update it as needed as
-                    ;; forms are analyzed?
-                    env (ana.jvm/empty-env)
-                    {:keys [analysis exception]} (analyze-form form env)]
-                (post-analyze-debug asts form analysis exception *ns* opt)
-                (if exception
-                  {:forms (remaining-forms pushback-reader (conj forms form)),
-                   :asts asts, :exception exception,
-                   :exception-phase :analyze, :exception-form form}
-                  (if-let [[exc-phase exc]
-                           (when (and eval? (not (ns-form? form)))
-                             (when (seq (deftype-classnames analysis))
-                               (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
-                             (when (not (@loaded-namespaces (ns-name *ns*)))
-                               (try
-                                 (let [f (emit-form analysis)]
+              (let [env (ana.jvm/empty-env)
+                    expanded (if at-top-level? (macroexpand-1 form env))
+                    top-level-do? (and at-top-level? (do-form? expanded))]
+                (if top-level-do?
+                  (recur forms asts (rest expanded))
+                  (let [_ (pre-analyze-debug at-top-level? asts form env *ns* opt)
+                        {:keys [analysis exception]} (analyze-form form env)]
+                    (post-analyze-debug at-top-level? asts form analysis exception
+                                        *ns* opt)
+                    (if exception
+                      {:forms (remaining-forms
+                               pbrdr
+                               (into forms (concat [form] unanalyzed-forms))),
+                       :asts asts, :exception exception,
+                       :exception-phase :analyze, :exception-form form}
+                      (if-let [[exc-phase exc]
+                               (when (and eval? (not top-level-ns-form?))
+                                 (when (seq (deftype-classnames analysis))
+                                   (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
+                                 (when (not (@loaded-namespaces (ns-name *ns*)))
                                    (try
-                                     (eval f)
-                                     nil   ; no exception
+                                     (let [f (emit-form analysis)]
+                                       (try
+                                         (eval f)
+                                         nil   ; no exception
+                                         (catch Exception e
+                                           [:eval-form e])))
                                      (catch Exception e
-                                       [:eval-form e])))
-                                 (catch Exception e
-                                   [:emit-form e]))))]
-                    {:forms (remaining-forms pushback-reader (conj forms form)),
-                     :asts asts, :exception exc,
-                     :exception-phase exc-phase, :exception-form form}
-                    (do
-                      (when debug-ns
-                        (reset! nss (namespace-changes-debug @nss opt)))
-                      (recur (conj forms form)
-                             (conj asts analysis)))))))))))))
+                                       [:emit-form e]))))]
+                        {:forms (remaining-forms
+                                 pbrdr
+                                 (into forms (concat [form] unanalyzed-forms))),
+                         :asts asts, :exception exc,
+                         :exception-phase exc-phase, :exception-form form}
+                        (do
+                          (when debug-ns
+                            (reset! nss (namespace-changes-debug @nss opt)))
+                          (recur (conj forms form)
+                                 (conj asts analysis)
+                                 unanalyzed-forms))))))))))))))
 
 
 ;; analyze-ns was copied from library jvm.tools.analyzer and then

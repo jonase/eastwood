@@ -126,7 +126,7 @@
      :line nil}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [f (line 64) coll (line 63)] of (or within) protocol CollReduce type nil method coll-reduce are never used",
+     :msg "Function args [f (line 64) coll (line 64)] of (or within) protocol CollReduce type nil method coll-reduce are never used",
      :line nil}
     1,
     })
