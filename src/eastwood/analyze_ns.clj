@@ -233,6 +233,7 @@
                                (io/reader (io/resource source-path)))}}]
   (let [debug-ns (or (contains? (:debug opt) :ns)
                      (contains? (:debug opt) :all))
+        nss (if debug-ns (atom (all-ns-names-set)))
         eval? (get opt :eval true)
         eof (reify)
         ^LineNumberingPushbackReader
@@ -249,8 +250,7 @@
     ;; want it to go back to the original before returning.
     (binding [*ns* *ns*
               *file* (str source-path)]
-      (loop [nss (if debug-ns (all-ns-names-set))
-             form (tr/read pushback-reader nil eof)
+      (loop [form (tr/read pushback-reader nil eof)
              forms []
              asts []]
         (if (identical? form eof)
@@ -296,10 +296,12 @@
                   {:forms (remaining-forms pushback-reader (conj forms form)),
                    :asts asts, :exception exc,
                    :exception-phase exc-phase, :exception-form form}
-                  (recur (if debug-ns (namespace-changes-debug nss opt))
-                         (tr/read pushback-reader nil eof)
-                         (conj forms form)
-                         (conj asts analysis)))))))))))
+                  (do
+                    (when debug-ns
+                      (reset! nss (namespace-changes-debug @nss opt)))
+                    (recur (tr/read pushback-reader nil eof)
+                           (conj forms form)
+                           (conj asts analysis))))))))))))
 
 
 ;; analyze-ns was copied from library jvm.tools.analyzer and then
