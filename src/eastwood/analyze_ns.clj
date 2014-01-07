@@ -9,8 +9,25 @@
             [clojure.tools.analyzer.jvm :as ana.jvm]
             [clojure.tools.analyzer.passes.jvm.emit-form :refer [emit-form]]
             [clojure.tools.analyzer.utils :refer [resolve-var]]
-            [clojure.tools.analyzer.ast :refer [postwalk]]
-            [clojure.tools.analyzer :as ana :refer [analyze] :rename {analyze -analyze}]))
+            [clojure.tools.analyzer.ast :refer [postwalk prewalk cycling]]
+            [clojure.tools.analyzer :as ana :refer [analyze] :rename {analyze -analyze}]
+            [clojure.tools.analyzer.passes.source-info :refer [source-info]]
+            [clojure.tools.analyzer.passes.cleanup :refer [cleanup]]
+            [clojure.tools.analyzer.passes.elide-meta :refer [elide-meta]]
+            [clojure.tools.analyzer.passes.constant-lifter :refer [constant-lift]]
+            [clojure.tools.analyzer.passes.warn-earmuff :refer [warn-earmuff]]
+            [clojure.tools.analyzer.passes.add-binding-atom :refer [add-binding-atom]]
+            [clojure.tools.analyzer.passes.uniquify :refer [uniquify-locals]]
+            [clojure.tools.analyzer.passes.jvm.box :refer [box]]
+            [clojure.tools.analyzer.passes.jvm.annotate-branch :refer [annotate-branch]]
+            [clojure.tools.analyzer.passes.jvm.annotate-methods :refer [annotate-methods]]
+            [clojure.tools.analyzer.passes.jvm.fix-case-test :refer [fix-case-test]]
+            [clojure.tools.analyzer.passes.jvm.classify-invoke :refer [classify-invoke]]
+            [clojure.tools.analyzer.passes.jvm.validate :refer [validate]]
+            [clojure.tools.analyzer.passes.jvm.infer-tag :refer [infer-tag]]
+            [clojure.tools.analyzer.passes.jvm.annotate-tag :refer [annotate-literal-tag annotate-binding-tag]]
+            [clojure.tools.analyzer.passes.jvm.validate-loop-locals :refer [validate-loop-locals]]
+            [clojure.tools.analyzer.passes.jvm.analyze-host-expr :refer [analyze-host-expr]]))
 
 ;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer verbatim
@@ -119,13 +136,44 @@
                      (meta sym))))
     (intern ns sym)))
 
+(defn run-passes
+  [ast]
+  (-> ast
+
+    uniquify-locals
+    add-binding-atom
+
+    (prewalk (fn [ast]
+               (-> ast
+                 warn-earmuff
+                 annotate-branch
+                 source-info
+                 elide-meta
+                 annotate-methods
+                 fix-case-test)))
+
+    ((fn analyze [ast]
+       (-> ast
+         (postwalk
+          (comp classify-invoke
+             (cycling constant-lift
+                      annotate-literal-tag
+                      annotate-binding-tag
+                      infer-tag
+                      analyze-host-expr
+                      validate)))
+         (prewalk
+          (comp box
+             (validate-loop-locals analyze))))))
+    (prewalk cleanup)))
+
 (defn analyze
   [form env]
   (binding [ana/macroexpand-1 macroexpand-1
             ana/create-var    create-var
             ana/parse         ana.jvm/parse
             ana/var?          var?]
-    (ana.jvm/run-passes (-analyze form env))))
+    (run-passes (-analyze form env))))
 
 (defn analyze-form [form env]
   (try
