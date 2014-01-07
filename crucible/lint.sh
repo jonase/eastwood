@@ -64,7 +64,7 @@ do_eastwood()
 	# then hang, but I think not always:
         # == Linting clojure.test-clojure.protocols ==
 
-	lein ${PROFILE} eastwood '{:exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ] :exclude-linters [ :keyword-typos ]}'
+	lein ${PROFILE} eastwood '{:namespaces [ :test-paths ] :exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ] :exclude-linters [ :keyword-typos ]}'
     else
 	lein ${PROFILE} eastwood "{:namespaces [ ${core_ns} ] :exclude-linters [:keyword-typos]}"
     fi
@@ -113,7 +113,7 @@ for lib in \
     useful
 do
     echo
-    echo $lib
+    echo "=== $lib"
     echo
     cd $lib
     do_eastwood
@@ -215,7 +215,7 @@ for lib in \
     tools.trace
 do
     echo
-    echo $lib
+    echo "=== $lib"
     echo
     cd $lib
     do_eastwood
