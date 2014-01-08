@@ -194,6 +194,7 @@ a (defonce foo val) expression.  If it is, return [foo val]."
 (defn def-walker-pre1 [ast]
   (let [{:keys [ancestor-op-vec ancestor-op-set
                 ancestor-op-set-stack top-level-defs
+                ancestor-defs-vec
                 nested-defs defonce-or-defmulti-match-stack]} *def-walker-data*
         defonce-or-defmulti-expr? (defonce-or-defmulti-macro-expansion?
                                     (:form ast))
@@ -208,6 +209,9 @@ a (defonce foo val) expression.  If it is, return [foo val]."
             :ancestor-op-vec (conj ancestor-op-vec (:op ast))
             :ancestor-op-set-stack (conj ancestor-op-set-stack ancestor-op-set)
             :ancestor-op-set (conj ancestor-op-set (:op ast))
+            :ancestor-defs-vec (if def?
+                                 (conj ancestor-defs-vec ast)
+                                 ancestor-defs-vec)
             ;; We want to remember that a var def'd inside of a
             ;; defonce or defmulti was def'd, but only once, not
             ;; multiple times.  Fortunately all macroexpansions of
@@ -224,7 +228,9 @@ a (defonce foo val) expression.  If it is, return [foo val]."
                 (conj top-level-defs ast)
                 top-level-defs))
             :nested-defs (if nested-def?
-                           (conj nested-defs ast)
+                           (conj nested-defs (assoc ast
+                                               :eastwood/enclosing-def-ast
+                                               (peek ancestor-defs-vec)))
                            nested-defs)
             :defonce-or-defmulti-match-stack (conj defonce-or-defmulti-match-stack
                                                    defonce-or-defmulti-expr?))))
@@ -234,12 +240,16 @@ a (defonce foo val) expression.  If it is, return [foo val]."
 (defn def-walker-post1 [ast]
   (let [{:keys [ancestor-op-vec ancestor-op-set
                 ancestor-op-set-stack top-level-defs
+                ancestor-defs-vec
                 nested-defs defonce-or-defmulti-match-stack]} *def-walker-data*]
     (set! *def-walker-data*
           (assoc *def-walker-data*
             :ancestor-op-vec (pop ancestor-op-vec)
             :ancestor-op-set-stack (pop ancestor-op-set-stack)
             :ancestor-op-set (peek ancestor-op-set-stack)
+            :ancestor-defs-vec (if (= :def (peek ancestor-op-vec))
+                                 (pop ancestor-defs-vec)
+                                 ancestor-defs-vec)
             :defonce-or-defmulti-match-stack (pop defonce-or-defmulti-match-stack))))
   ast)
 
@@ -261,6 +271,7 @@ a (defonce foo val) expression.  If it is, return [foo val]."
       (assert (empty? (:ancestor-op-vec *def-walker-data*)))
       (assert (empty? (:ancestor-op-set *def-walker-data*)))
       (assert (empty? (:ancestor-op-set-stack *def-walker-data*)))
+      (assert (empty? (:ancestor-defs-vec *def-walker-data*)))
       (assert (empty? (:defonce-or-defmulti-match-stack *def-walker-data*))))
     (select-keys *def-walker-data* [:top-level-defs :nested-defs])))
 
@@ -310,17 +321,20 @@ a (defonce foo val) expression.  If it is, return [foo val]."
 ;; tests.
 
 (defn- def-in-def-vars [exprs]
-  (let [nested-vars (:nested-defs (def-walker exprs))]
-    (map var-info nested-vars)))
+  (:nested-defs (def-walker exprs)))
 
 
 (defn def-in-def [{:keys [asts]}]
   (let [nested-vars (def-in-def-vars asts)]
-    (for [nested-var nested-vars]
+    (for [nested-var-ast nested-vars]
       {:linter :def-in-def
-       :msg (format "There is a def of %s nested inside def TBD"
-                    (:var nested-var))
-       :line (-> nested-var :env :line)})))
+       :msg (format "There is a def of %s nested inside def %s"
+                    (-> nested-var-ast :form second)
+                    (-> nested-var-ast
+                        :eastwood/enclosing-def-ast
+                        :form
+                        second))
+       :line (-> nested-var-ast :form second meta :line)})))
 
 
 ;; Wrong arity

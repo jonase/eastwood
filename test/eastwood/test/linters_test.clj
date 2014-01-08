@@ -47,7 +47,7 @@
      :line 73}
     1,
     {:linter :def-in-def,
-     :msg "There is a def of #'eastwood.test.testcases.f01/def-in-def1 nested inside def TBD",
+     :msg "There is a def of def-in-def1 nested inside def bar",
      :line 82}
     1,
     })
@@ -68,8 +68,8 @@
      :line nil}
     1,
     {:linter :def-in-def,
-     :msg "There is a def of #'eastwood.test.testcases.f02/i-am-inner-defonce-sym nested inside def TBD",
-     :line nil}
+     :msg "There is a def of i-am-inner-defonce-sym nested inside def i-am-outer-defonce-sym",
+     :line 20}
     2,
     }
    )
