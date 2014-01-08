@@ -284,6 +284,11 @@ discarded inside null: null'."
         line (case stmt-desc-str
                "function call" (-> stmt :meta :line)
                "static method call" (-> stmt :form meta :line))
+        ;; If there is no info about the method m in
+        ;; *warning-if-static-ret-val-unused*, use reflection to see
+        ;; if the return type of the method is void.  That is a fairly
+        ;; sure sign that it is intended to be called for side
+        ;; effects.
         action (if (and (= stmt-desc-str "static method call")
                         (not (#{:side-effect :lazy-fn :pure-fn :pure-fn-if-fn-args-pure :warn-if-ret-val-unused}
                               action)))
@@ -386,11 +391,6 @@ discarded inside null: null'."
                                 (:form stmt))
                    :line (-> stmt :env :name meta :line)})
 
-                ;; TBD: If there is no info about the method m in
-                ;; *warning-if-static-ret-val-unused*, use reflection
-                ;; to see if the return type of the method is void.
-                ;; That is a fairly sure sign that it is intended to
-                ;; be called for side effects.
                 (util/static-call? stmt)
                 (let [cls (:class stmt)
                       method (:method stmt)

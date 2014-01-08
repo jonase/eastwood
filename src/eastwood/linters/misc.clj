@@ -82,12 +82,6 @@
 ;; line numbers?
 
 
-;; TBD: defonce-or-defmulti-macro-expansion? is a bit of a hackish way
-;; to recognize the macroexpansion of a defonce or defmulti
-;; declaration.  Without doing something to recognize these forms, the
-;; two occurrences of (def foo ...) in the expansion leads to a
-;; :redefd-vars warning.
-
 (defn count-at-most-n+1
   "Return (count s) if it is at most n+1, otherwise return n+1.  Do
 this without counting past n+1 elements in s.  Significantly faster
@@ -134,8 +128,14 @@ significantly faster than the otherwise equivalent (= (count s) n)"
        [(nth form 1) (nth form 2)]))
 
 
-;; TBD: I am sure defonce-or-defmulti-macro-expansion? can be written
-;; more clearly and concisely using core.match or core.logic.
+;; defonce-or-defmulti-macro-expansion? is a bit of a hackish way to
+;; recognize the macroexpansion of a defonce or defmulti declaration.
+;; However, without doing something to recognize these forms, the two
+;; occurrences of (def foo ...) in the expansion leads to a
+;; :redefd-vars warning.
+
+;; I am sure defonce-or-defmulti-macro-expansion? can be written more
+;; clearly and concisely using core.match or core.logic.
 
 ;; Why doesn't macroexpand replace clojure.core/when-not with
 ;; equivalent if?  Answer: Because macroexpand is explicitly
@@ -208,7 +208,7 @@ a (defonce foo val) expression.  If it is, return [foo val]."
             :ancestor-op-vec (conj ancestor-op-vec (:op ast))
             :ancestor-op-set-stack (conj ancestor-op-set-stack ancestor-op-set)
             :ancestor-op-set (conj ancestor-op-set (:op ast))
-            ;; TBD: We want to remember that a var def'd inside of a
+            ;; We want to remember that a var def'd inside of a
             ;; defonce or defmulti was def'd, but only once, not
             ;; multiple times.  Fortunately all macroexpansions of
             ;; defonce and defmulti in Clojure 1.5.1 have exactly one
@@ -305,9 +305,9 @@ a (defonce foo val) expression.  If it is, return [foo val]."
 ;; Def-in-def
 
 ;; TBD: The former implementation of def-in-def only signaled a
-;; warnings if the parent def was not a macro.  Should that be done
-;; here, too?  Try to find a small example, if so, and add it to
-;; tryanalyzer.
+;; warning if the parent def was not a macro.  Should that be done
+;; here, too?  Try to find a small example, if so, and add it to the
+;; tests.
 
 (defn- def-in-def-vars [exprs]
   (let [nested-vars (:nested-defs (def-walker exprs))]

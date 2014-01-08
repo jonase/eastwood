@@ -100,11 +100,9 @@
                        (seq removed))))
     new-nss))
 
-;; TBD: Hack alert.  I am looking at the pre-macroexpanded form and
+;; Hack alert.  I am looking at the pre-macroexpanded form and
 ;; assuming if the first symbol is 'ns', then this is clojure.core/ns.
 ;; A more robust way from looking at post-analyzed result is tricker.
-;; Maybe everything should just be eval'd all of them time, not only
-;; ns statements?
 
 (defn ns-form?
   "Keep this really simple-minded for now.  It will miss ns forms
@@ -322,7 +320,7 @@
 
 
 ;; analyze-ns was copied from library jvm.tools.analyzer and then
-;; modified (TBD: maybe doesn't need any modification)
+;; modified
 
 (defn analyze-ns
   "Takes a LineNumberingPushbackReader and a namespace symbol.
