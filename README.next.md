@@ -162,6 +162,14 @@ cannot be analyzed.  `core.typed` use `jvm.tools.analyzer`, and both
 it and `tools.analyzer` (used by Eastwood) share the same
 `clojure.tools.analyzer` namespace.
 
+If a project uses
+[`tools.namespace`](https://github.com/clojure/tools.namespace)
+versions older than 0.2.0, there will be a similar conflict that
+causes an exception to be thrown.
+
+TBD: `jvm.tools.analyzer` may have had its namespace
+`clojure.tools.analyzer` renamed specificaly to avoid this problem.
+
 ### simple-check
 
 The [`simple-check`](https://github.com/reiddraper/simple-check) test
@@ -350,12 +358,22 @@ the erroneous function call.  However, there are some projects with
 unit tests that intentionally make such calls, to verify that an
 exception is thrown.
 
-There are some libraries with macros for defining functions that
-change their argument lists, doing so in ways that `tools.analyzer`
-does not detect.  Eastwood will issue warnings even though there would
-be no exception at run time.  A known example of this is the
-[Hiccup](https://github.com/weavejester/hiccup) library's macro
-`defelem`.
+Some libraries explicitly set the `:arglists` metadata on their public
+functions for documentation purposes, because `:arglists` are what is
+shown by `doc` in the REPL.  This `:arglists` metadata is also used by
+Eastwood to determine whether a function is being called with a wrong
+arity, so such functions can lead to incorrect warnings from Eastwood.
+This is known to affect several functions in
+[`java.jdbc`](https://github.com/clojure/java.jdbc) 0.3.x, the
+[Midje](https://github.com/marick/Midje) test library, and functions
+created with the [Hiccup](https://github.com/weavejester/hiccup)
+library's macro `defelem`.
+
+A good potential future enhancement to this linter would be to allow a
+developer to specify a list of functions that should never have
+`:wrong-arity` warnings generated for calls to the function, or to use
+`:arglists` specified in a different place so the warnings are
+accurate.
 
 
 ### `:suspicious-test` - Suspicious tests that may be written incorrectly
