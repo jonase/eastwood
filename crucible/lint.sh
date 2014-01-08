@@ -38,10 +38,14 @@ do_eastwood()
     then
         case ${project} in
 	    http-kit)
+		set -x
 		lein ${p} eastwood '{:exclude-namespaces [ org.httpkit.client-test org.httpkit.server-test org.httpkit.ws-test ]}'
+		set +x
 		;;
 	    reply|neocons)
+		set -x
 		lein ${p} eastwood '{:namespaces [ :source-paths ]}'
+		set +x
 		;;
 	    timbre)
 		local q
@@ -51,10 +55,14 @@ do_eastwood()
 		else
 		    q="with-profile +test"
 		fi
+		set -x
 		lein ${q} eastwood '{:exclude-namespaces [ taoensso.timbre.appenders.android ]}'
+		set +x
 		;;
 	    *)
+		set -x
 		lein ${p} eastwood
+		set +x
 		;;
         esac
     elif [ "${project}" = "clojure" -a "${ns}" = "clojure-special" ]
@@ -93,10 +101,14 @@ do_eastwood()
 	# then hang, but I think not always:
         # == Linting clojure.test-clojure.protocols ==
 
+	set -x
 	lein ${p} eastwood '{:namespaces [ :test-paths ] :exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ]}'
+	set +x
     elif [ "${project}" = "clojure" ]
     then
+	set -x
 	lein ${p} eastwood "{:namespaces [ ${ns} ]}"
+	set +x
     else
 	echo "do_eastwood called with unknown combo project=${project} ns=${ns}"
 	exit 1
