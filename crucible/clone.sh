@@ -121,9 +121,14 @@ $C https://github.com/clojurewerkz/titanium
 $C https://github.com/dakrone/cheshire
 $C https://github.com/daveray/seesaw
 $C https://github.com/davidsantiago/stencil.git
+# TBD whether to add irclj to crucible
+$C https://github.com/flatland/irclj.git
 $C https://github.com/flatland/useful
 $C https://github.com/franks42/clj-ns-browser.git
-# TBD whether to add http-kit to crucible
+
+# Jan 7 2014: http-kit throws exception during linting because of
+# failures to make connections.  Added to lint.sh excluding 3 test
+# namespaces that open connections.
 $C https://github.com/http-kit/http-kit.git
 $C https://github.com/hugoduncan/criterium
 
@@ -137,8 +142,9 @@ $C https://github.com/michaelklishin/chash.git
 
 # Dec 20 2013: Latest neocons passes 'lein check', but 'lein eastwood'
 # throws exceptions because it fails to make network connections.
-# Save it for later.
-#$C https://github.com/michaelklishin/neocons
+# Added to lint.sh so that it only lints :source-paths, not
+# :test-paths.
+$C https://github.com/michaelklishin/neocons
 
 $C https://github.com/michaelklishin/pantomime.git
 $C https://github.com/michaelklishin/quartzite.git
@@ -166,11 +172,8 @@ $C https://github.com/ptaoussanis/carmine.git
 # Dec 24 2013: timbre latest version fails 'lein check' because of
 # lack of android.util.Log class.  It can run tests with 'lein
 # with-profile +test test', and 'lein with-profile +test eastwood'
-# works.  I customed project.clj to include dependencies on projects
-# needed by the different timbre appenders.  TBD: Add to lint.sh after
-# I add a way for projects to have customized 'lein eastwood' command
-# line options, or I change project.clj to not need the different
-# profile.
+# works.  I customized project.clj to include dependencies on projects
+# needed by the different timbre appenders.
 $C https://github.com/ptaoussanis/timbre.git
 
 # Dec 20 2013: tower requires 'lein with-profile test eastwood' to get
@@ -184,9 +187,14 @@ $C https://github.com/Raynes/fs.git
 # Dec 24 2013: Lots of exceptions about *runner* not being bound while
 # linting, I think limited to the test namespaces.  These are likely
 # due to the use of speclj for writing tests.  I do not know how to
-# avoid those errors when linting.
+# avoid those errors when linting.  Added to lint.sh so that it only
+# lints :source-paths, not :test-paths.
 $C https://github.com/trptcolin/reply.git
 
+# Jan 7 2014: NoClassDefFoundError exception thrown while linting
+# compojure.handler because source file
+# ring/middleware/multipart_params.clj:39:5 mentions Java class
+# javax.servlet.http.HttpServletRequest
 $C https://github.com/weavejester/compojure
 $C https://github.com/weavejester/hiccup
 $C https://github.com/weavejester/medley.git
@@ -194,7 +202,8 @@ $C https://github.com/weavejester/medley.git
 # automat uses simple-check, which has a cyclic dependency from
 # namespace simple-check.clojure-test back to simple-check.core.
 # Filed ticket http://dev.clojure.org/jira/browse/TANAL-37 to track
-# the issue.
+# the issue.  It seems to work now after fixing this Eastwood issue:
+# https://github.com/jonase/eastwood/issues/44
 $C https://github.com/ztellman/automat.git
 
 $C https://github.com/ztellman/collection-check.git

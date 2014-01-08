@@ -18,17 +18,46 @@
 # set +x    stop doing that
 
 PROFILE=""
-#PROFILE="with-profile +1.6"
+#PROFILE="+1.6"
 
 do_eastwood()
 {
-    local ns="$1"
+    local project="$1"
+    local ns="$2"
+
+    local p
+    if [ "x${PROFILE}" != "x" ]
+    then
+	p="with-profile ${PROFILE}"
+    else
+	p=""
+    fi
 
     set +e   # Do not stop if an eastwood run returns a non-0 exit status.  Keep going with more checking, if any.
-    if [ "x${ns}" == "x" ]
+    if [ "x${ns}" = "x" ]
     then
-	lein ${PROFILE} eastwood "{:exclude-linters [:keyword-typos]}"
-    elif [ "${ns}" == "clojure-special" ]
+        case ${project} in
+	    http-kit)
+		lein ${p} eastwood '{:exclude-namespaces [ org.httpkit.client-test org.httpkit.server-test org.httpkit.ws-test ]}'
+		;;
+	    reply|neocons)
+		lein ${p} eastwood '{:namespaces [ :source-paths ]}'
+		;;
+	    timbre)
+		local q
+		if [ "x${p}" != "x" ]
+		then
+		    q="$p,+test"
+		else
+		    q="with-profile +test"
+		fi
+		lein ${q} eastwood '{:exclude-namespaces [ taoensso.timbre.appenders.android ]}'
+		;;
+	    *)
+		lein ${p} eastwood
+		;;
+        esac
+    elif [ "${project}" = "clojure" -a "${ns}" = "clojure-special" ]
     then
 	# Namespaces to exclude when analyzing namespaces in Clojure itself:
 
@@ -64,9 +93,13 @@ do_eastwood()
 	# then hang, but I think not always:
         # == Linting clojure.test-clojure.protocols ==
 
-	lein ${PROFILE} eastwood '{:namespaces [ :test-paths ] :exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ] :exclude-linters [ :keyword-typos ]}'
+	lein ${p} eastwood '{:namespaces [ :test-paths ] :exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ]}'
+    elif [ "${project}" = "clojure" ]
+    then
+	lein ${p} eastwood "{:namespaces [ ${ns} ]}"
     else
-	lein ${PROFILE} eastwood "{:namespaces [ ${core_ns} ] :exclude-linters [:keyword-typos]}"
+	echo "do_eastwood called with unknown combo project=${project} ns=${ns}"
+	exit 1
     fi
     set -e
 }
@@ -78,6 +111,10 @@ echo
 echo "Linting 3rd party Clojure libraries"
 echo 
 for lib in \
+    http-kit \
+    neocons \
+    reply \
+    timbre \
     potemkin \
     automat \
     stencil \
@@ -116,7 +153,7 @@ do
     echo "=== $lib"
     echo
     cd $lib
-    do_eastwood
+    do_eastwood $lib
     cd ..
 done
 
@@ -156,7 +193,7 @@ for core_ns in \
     clojure.xml \
     clojure.zip
 do
-    do_eastwood ${core_ns}
+    do_eastwood clojure ${core_ns}
 done
 cd ..
 
@@ -164,7 +201,7 @@ cd ..
 # but it 'hangs' at the end without exiting.  I do not know why yet.
 
 #cd clojure
-#do_eastwood clojure-special
+#do_eastwood clojure clojure-special
 #cd ..
 
 echo 
@@ -218,6 +255,6 @@ do
     echo "=== $lib"
     echo
     cd $lib
-    do_eastwood
+    do_eastwood $lib
     cd ..
 done
