@@ -3,7 +3,7 @@
   :url "https://github.com/ptaoussanis/timbre"
   :license {:name "Eclipse Public License"
             :url  "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure     "1.4.0"]
+  :dependencies [[org.clojure/clojure     "1.5.1"]
                  [org.clojure/tools.macro "0.1.5"]
                  [io.aviso/pretty         "0.1.8"]
                  ;; Dependencies added so that various 'appenders' can
@@ -15,7 +15,7 @@
                  [server-socket "1.0.0"]]
   :profiles {:1.4  {:dependencies [[org.clojure/clojure "1.4.0"]]}
              :1.5  {:dependencies [[org.clojure/clojure "1.5.1"]]}
-             :1.6  {:dependencies [[org.clojure/clojure "1.6.0-alpha2"]]}
+             :1.6  {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}
              :dev  {:dependencies [[com.draines/postal        "1.11.1"]
                                    [com.taoensso/carmine      "2.4.0"]
                                    [com.taoensso/nippy        "2.5.2"] ; nb .1+
