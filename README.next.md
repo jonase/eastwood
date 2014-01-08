@@ -48,6 +48,9 @@ are using Leiningen 1:
 
 TBD: Does eastwood really still work with Leiningen 1?  Do we care?
 
+See section "For Eastwood developers" below for instructions on trying
+out the latest unreleased version of Eastwood.
+
 
 ## Usage
 
@@ -605,6 +608,27 @@ expression in the file is an `ns` expression, and the namespace
 remains the same throughout the file.  This is a common convention
 followed by most Clojure source code, and required by several other
 Clojure development tools.
+
+
+## For Eastwood developers
+
+To be on the bleeding edge (with all that phrase implies, e.g. you are
+more likely to run across new undiscovered bugs), install the latest
+versions of the tools.analyzer(.jvm) libraries in your local Maven
+repository.
+
+    $ cd path/to/tools.analyzer
+    $ lein install
+    $ cd path/to/tools.analyzer.jvm
+    $ lein install
+    $ cd path/to/eastwood
+    $ LEIN_SNAPSHOTS_IN_RELEASE=1 lein install
+
+Then add `[jonase/eastwood "0.0.3"]` (or whatever is the current
+version number in the defproject line of `project.clj`) to your
+`:plugins` vector in your `:user` profile, perhaps in your
+`~/.lein/profiles.clj` file.
+
 
 ## License
 
