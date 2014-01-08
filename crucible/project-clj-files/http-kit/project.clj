@@ -1,6 +1,6 @@
 (defproject http-kit "2.1.16"
   :description "High-performance event-driven HTTP client/server for Clojure"
-  :dependencies [[org.clojure/clojure "1.4.0"]]
+  :dependencies [[org.clojure/clojure "1.5.1"]]
 ;  :warn-on-reflection true
   :min-lein-version "2.0.0"
   :url "http://http-kit.org/"
