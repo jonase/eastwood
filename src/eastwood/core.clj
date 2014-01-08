@@ -323,7 +323,7 @@ curious." eastwood-url))
       (pst e nil)
       :show-more-details)))
 
-(defn lint-ns [ns-sym linters opts]
+(defn lint-ns [ns-sym linters opts warning-count exception-count]
   (println "== Linting" ns-sym "==")
   (let [[{:keys [analyze-results exception exception-phase exception-form]}
          analyze-time-msec]
@@ -339,12 +339,16 @@ curious." eastwood-url))
             (do
               (println (format "Exception thrown by linter %s on namespace %s"
                                linter ns-sym))
+              (swap! exception-count inc)
               (show-exception ns-sym opts result))
-            (pp/pprint result))
+            (do
+              (swap! warning-count inc)
+              (pp/pprint result)))
           (println))
         (when print-time?
           (println (format "Linter %s took %.1f millisec" linter time-msec)))))
     (when exception
+      (swap! exception-count inc)
       (println "Exception thrown during phase" exception-phase
                "of linting namespace" ns-sym)
       (when (= (show-exception ns-sym opts exception) :show-more-details)
@@ -482,7 +486,9 @@ exception."))))
         (flush)
         (System/exit 1))
       (let [{:keys [err msg linters]} (opts->linters opts available-linters
-                                                     default-linters)]
+                                                     default-linters)
+            warning-count (atom 0)
+            exception-count (atom 0)]
         (when err
           (print msg)
           (flush)
@@ -494,10 +500,16 @@ exception."))))
         (when (seq linters)
           (doseq [namespace namespaces]
             (try
-              (lint-ns namespace linters opts)
+              (lint-ns namespace linters opts warning-count exception-count)
               (catch RuntimeException e
                 (println "Linting failed:")
                 (pst e nil)))))
+        (when (or (> @warning-count 0)
+                  (> @exception-count 0))
+          (println (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
+                           @warning-count @exception-count))
+          (flush)
+          (System/exit 1))
         ;; Eastwood does not use future, pmap, or clojure.shell/sh now
         ;; (at least not yet), but it may evaluate code that does when
         ;; linting a project.  Call shutdown-agents to avoid the
