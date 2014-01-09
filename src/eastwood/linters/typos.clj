@@ -147,33 +147,39 @@
         (and (= n 2) (string? is-arg1))
         [{:linter :suspicious-test,
           :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test")
-          :line (:line is-loc)}]
+          :line (:line is-loc)
+          :column (:column is-loc)}]
         
         (and (constant-expr-logical-true? is-arg1)
              (not (list? is-arg1)))
         [{:linter :suspicious-test,
           :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test")
-          :line (:line is-loc)}]
+          :line (:line is-loc)
+          :column (:column is-loc)}]
         
         (and (= n 2) (not (string? (second is-args))))
         [{:linter :suspicious-test,
           :msg (format "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.")
-          :line (:line is-loc)}]
+          :line (:line is-loc)
+          :column (:column is-loc)}]
         
         (and thrown? (util/regex? thrown-arg2))
         [{:linter :suspicious-test,
           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")
-          :line (:line is-loc)}]
+          :line (:line is-loc)
+          :column (:column is-loc)}]
         
         (and thrown? (string? thrown-arg2))
         [{:linter :suspicious-test,
           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")
-          :line (:line is-loc)}]
+          :line (:line is-loc)
+          :column (:column is-loc)}]
         
         (and thrown? (some string? thrown-args))
         [{:linter :suspicious-test,
           :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")
-          :line (:line is-loc)}]
+          :line (:line is-loc)
+          :column (:column is-loc)}]
         
         :else nil)))))
 
@@ -186,14 +192,16 @@
      (cond
       (and (not (list? f))
            (constant-expr? f))
-      [(let [line (-> f meta :line)]
+      [(let [line (-> f meta :line)
+             column (-> f meta :column)]
          {:linter :suspicious-test,
           :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
                        (cond line ""
                              (string? f) (str " \"" f "\"")
                              :else (str " " f))
                        (if f (.getName (class f)) "nil") form-type)
-          :line line})]
+          :line line
+          :column column})]
       
       (sequential? f)
       (let [ff (first f)
@@ -207,13 +215,15 @@
          [{:linter :suspicious-test,
            :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
                         ff form-type ff)
-           :line (-> ff meta :line)}]
+           :line (-> ff meta :line)
+           :column (-> ff meta :column)}]
          
          (and var-info (get var-info :pure-fn))
          [{:linter :suspicious-test,
            :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
                         ff form-type)
-           :line (-> ff meta :line)}]
+           :line (-> ff meta :line)
+           :column (-> ff meta :column)}]
          
          :else nil))
       :else nil))))
@@ -305,7 +315,8 @@
                           (if (= "" (:ret-val info))
                             "\"\""
                             (print-str (:ret-val info))))
-             :line (-> fn-sym meta :line)}]))))))
+             :line (-> fn-sym meta :line)
+             :column (-> fn-sym meta :column)}]))))))
 
 ;; Note: Looking for asts that contain :invoke nodes for the function
 ;; #'clojure.core/= will not find expressions like (clojure.test/is (=
@@ -379,7 +390,8 @@
                           (if (= "" (:ret-val info))
                             "\"\""
                             (print-str (:ret-val info))))
-             :line (-> form meta :line)})))))))
+             :line (-> form meta :line)
+             :column (-> form meta :column)})))))))
 
 (defn suspicious-expression [& args]
   (concat

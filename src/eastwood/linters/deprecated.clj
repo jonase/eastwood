@@ -52,7 +52,9 @@
 
 (defn deprecations [{:keys [asts]}]
   (for [ast (map #(ast/postwalk % pass/reflect-validated) asts)
-        dexpr (filter deprecated (ast/nodes ast))]
+        dexpr (filter deprecated (ast/nodes ast))
+        :let [loc (-> dexpr :env)]]
     {:linter :deprecations
      :msg (msg dexpr)
-     :line (-> dexpr :env :line)}))
+     :line (-> loc :line)
+     :column (-> loc :column)}))

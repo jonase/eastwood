@@ -76,12 +76,12 @@ return value followed by the time it took to evaluate in millisec."
     :suspicious-expression
     :unused-ret-vals
     :unused-ret-vals-in-try
-    ;;:unused-private-vars  ; not yet updated to tools.analyzer(.jvm)
+    ;;:unused-private-vars  ; not yet updated to t.a(.jvm).  Also needs cols
     ;; :unused-fn-args      ; updated, but don't use it by default
-    ;; :unused-namespaces   ; updated, but don't use it by default
-    ;;:naked-use            ; not yet updated to tools.analyzer(.jvm)
-    ;; :keyword-typos       ; updated, but don't use it by default
-    ;;:non-dynamic-earmuffs ; not yet updated to tools.analyzer(.jvm)
+    ;; :unused-namespaces   ; updated, but don't use it by default. no line/col
+    ;;:naked-use            ; not yet updated to t.a(.jvm).  Also needs cols
+    ;; :keyword-typos       ; updated, but don't use it by default. no line/col
+    ;;:non-dynamic-earmuffs ; not yet updated to t.a(.jvm).  Also needs cols
     })
 
 (defn- lint [exprs kw]

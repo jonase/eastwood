@@ -70,17 +70,21 @@ selectively disable such warnings if they wish."
           :let [unused (->> (unused-fn-args* expr)
                             (map :form)
                             (remove ignore-arg?)
-                            set)]
+                            set)
+                loc (-> expr :env :name meta)]
           :when (not-empty unused)]
       {:linter :unused-fn-args
        :msg (format "Function args [%s] of (or within) %s are never used"
                     (str/join " " (map (fn [sym]
                                          (if-let [l (-> sym meta :line)]
-                                           (format "%s (line %s)" sym l)
+                                           (format "%s (line %s, column %s)"
+                                                   sym l
+                                                   (-> sym meta :column))
                                            sym))
                                        unused))
                     (-> expr :env :name))
-       :line (-> expr :env :name meta :line)})))
+       :line (-> loc :line)
+       :column (-> loc :column)})))
 
 
 ;; Unused namespaces
@@ -281,9 +285,11 @@ discarded inside null: null'."
                     " inside body of try"
                     "")
         form (:form stmt)
-        line (case stmt-desc-str
-               "function call" (-> stmt :meta :line)
-               "static method call" (-> stmt :form meta :line))
+        [line column] (case stmt-desc-str
+                        "function call" [(-> stmt :meta :line)
+                                         (-> stmt :meta :column)]
+                        "static method call" [(-> stmt :form meta :line)
+                                              (-> stmt :form meta :column)])
         ;; If there is no info about the method m in
         ;; *warning-if-static-ret-val-unused*, use reflection to see
         ;; if the return type of the method is void.  That is a fairly
@@ -326,7 +332,8 @@ discarded inside null: null'."
            :warn-if-ret-val-unused
            (format "Should use return value of %s, but it is discarded%s: %s"
                    stmt-desc-str extra-msg form))
-         :line line}
+         :line line,
+         :column column}
 
         ;; default case, where we have no information about the type
         ;; of function or method it is.  TBD: Consider adding 'opts'
@@ -389,7 +396,8 @@ discarded inside null: null'."
                                   :local "Local")
                                 (-> stmt :env :name)
                                 (:form stmt))
-                   :line (-> stmt :env :name meta :line)})
+                   :line (-> stmt :env :name meta :line)
+                   :column (-> stmt :env :name meta :column)})
 
                 (util/static-call? stmt)
                 (let [cls (:class stmt)
