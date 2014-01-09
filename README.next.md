@@ -22,11 +22,11 @@ Eastwood warns when it finds:
 - tests using `clojure.test` that may be written incorrectly
 - unused return values of pure functions, or some others where it
   rarely makes sense to discard its return value
-- unused private vars (not yet)
-- unused function arguments (disabled by default)
-- unused namespaces (disabled by default)
-- naked (:use ...) (to be updated)
-- keyword typos (disabled by default)
+- unused private vars
+- unused function arguments
+- unused namespaces
+- naked (:use ...)
+- keyword typos
 
 Because Eastwood evaluates the code it is linting, you must use a
 version of Clojure that is capable of loading your code, and it can
@@ -83,11 +83,11 @@ Available linters are:
 * `:suspicious-test`
 * `:unused-ret-vals`
 * `:unused-ret-vals-in-try`
-* `:unused-private-vars`
-* `:unused-fn-args`
-* `:unused-namespaces`
-* `:naked-use`
-* `:keyword-typos`
+* `:unused-private-vars` (needs updating)
+* `:unused-fn-args` (disabled by default)
+* `:unused-namespaces` (disabled by default)
+* `:naked-use` (needs updating)
+* `:keyword-typos` (disabled by default)
 
 Available options for specifying namespaces and paths are:
 
@@ -420,9 +420,9 @@ test.
 
 ```clojure
 (is ["josh"] names)    ; warns that first arg is a constant
-;; Vector values anything except nil or false are always treated as
-;; logical true in if conditions, so the test above will always pass.
-;; Probably what was intended was:
+;; Any values except nil or false are treated as logical true in if
+;; conditions, so the test above will always pass.  Probably what was
+;; intended was:
 (is (= ["josh"] names))   ; probably intended
 
 
@@ -440,7 +440,9 @@ test.
 ;; Instead of being a constant string, it is one constructed by
 ;; evaluating an expression.  This is most likely what was intended,
 ;; but the linter does not currently have a special check for this
-;; kind of string-constructing expression.
+;; kind of string-constructing expression.  (TBD: Add some checks to
+;; this linter for forms beginning with functions like str, format,
+;; and maybe a few others).
 
 
 (deftest test1
@@ -629,8 +631,8 @@ Clojure development tools.
 
 To be on the bleeding edge (with all that phrase implies, e.g. you are
 more likely to run across new undiscovered bugs), install the latest
-versions of the tools.analyzer(.jvm) libraries in your local Maven
-repository.
+versions of the tools.analyzer(.jvm) libraries, and Eastwood, in your
+local Maven repository:
 
     $ cd path/to/tools.analyzer
     $ lein install
