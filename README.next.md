@@ -20,6 +20,8 @@ Eastwood warns when it finds:
 - def's nested inside other def's
 - function calls that seem to have the wrong number of arguments
 - tests using `clojure.test` that may be written incorrectly
+- suspicious expressions that appear incorrect, because they always
+  return trivial values
 - unused return values of pure functions, or some others where it
   rarely makes sense to discard its return value
 - unused private vars
@@ -81,6 +83,7 @@ Available linters are:
 * `:def-in-def`
 * `:wrong-arity`
 * `:suspicious-test`
+* `:suspicious-expression`
 * `:unused-ret-vals`
 * `:unused-ret-vals-in-try`
 * `:unused-private-vars` (needs updating)
@@ -470,6 +473,11 @@ test.
 (is (thrown-with-msg? Throwable #"There were 2 vertices returned."
                       (expr-i-expect-to-throw-exception)))
 ```
+
+
+### `:suspicious-expression` - Suspicious expressions that may be incorrect
+
+TBD.  Explain and give a few examples.
 
 
 ### `:unused-ret-vals` and `:unused-ret-vals-in-try` - Function return values that are not used
