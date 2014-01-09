@@ -103,7 +103,7 @@ Available options for specifying namespaces and paths are:
   `:source-paths` and `:test-paths` may be used here as they can be
   for `:namespaces`.  Defaults to an empty list if you do not specify
   `:exclude-namespaces`.
-* `:source-paths` is normally taken from your Leininge `project.clj`
+* `:source-paths` is normally taken from your Leiningen `project.clj`
   file, which is `[ "src" ]` by default if not specified there.  You
   can also specify `:source-paths` in the Eastwood option map to
   override what Leiningen uses.
