@@ -157,7 +157,11 @@
           :line (:line is-loc)
           :column (:column is-loc)}]
         
-        (and (= n 2) (not (string? (second is-args))))
+        (and (= n 2)
+             (let [arg2 (second is-args)]
+               (not (or (string? arg2)
+                        (and (sequential? arg2)
+                             (contains? '#{str format} (first arg2)))))))
         [{:linter :suspicious-test,
           :msg (format "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.")
           :line (:line is-loc)
