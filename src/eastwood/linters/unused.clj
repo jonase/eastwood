@@ -395,7 +395,12 @@ discarded inside null: null'."
                                   :var "Var"
                                   :local "Local")
                                 (-> stmt :env :name)
-                                (:form stmt))
+                                (if (nil? (:form stmt))
+                                  "nil (nil value is returned by comment and gen-class expressions)"
+                                  (str/trim-newline
+                                   (with-out-str
+                                     (binding [pp/*print-right-margin* nil]
+                                       (pp/pprint (:form stmt)))))))
                    :line (-> stmt :env :name meta :line)
                    :column (-> stmt :env :name meta :column)})
 

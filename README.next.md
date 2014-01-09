@@ -22,8 +22,9 @@ Eastwood warns when it finds:
 - tests using `clojure.test` that may be written incorrectly
 - suspicious expressions that appear incorrect, because they always
   return trivial values
-- unused return values of pure functions, or some others where it
-  rarely makes sense to discard its return value
+- unused values, including unused return values of pure functions, and
+  some others functions where it rarely makes sense to discard its
+  return value
 - unused private vars
 - unused function arguments
 - unused namespaces
@@ -480,7 +481,21 @@ test.
 TBD.  Explain and give a few examples.
 
 
-### `:unused-ret-vals` and `:unused-ret-vals-in-try` - Function return values that are not used
+### `:unused-ret-vals` and `:unused-ret-vals-in-try` - values that are not used
+
+Values which are unused are sometimes a sign of a problem in your
+code.  These can be constant values, values of locally bound symbols
+like let symbols or function arguments, values of vars, or return
+values of functions.
+
+```clojure
+(defn unused-val [a b]
+  a b)   ; b is returned.  a's value is ignored
+```
+
+`comment` expressions in Clojure always return nil, and Eastwood will
+warn if this nil value is ignored.  This may be improved in the
+future.
 
 Many of Clojure's core functions are 'pure' functions, meaning that
 they do not modify any state of the system other than perhaps
