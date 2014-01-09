@@ -89,7 +89,7 @@ Available linters are:
 * `:naked-use`
 * `:keyword-typos`
 
-Available options are:
+Available options for specifying namespaces and paths are:
 
 * `:namespaces` Vector of namespaces to lint.  A keyword
   `:source-paths` in this vector will be replaced with a list of
@@ -103,12 +103,27 @@ Available options are:
   `:source-paths` and `:test-paths` may be used here as they can be
   for `:namespaces`.  Defaults to an empty list if you do not specify
   `:exclude-namespaces`.
-* `:linters` Linters to use
+* `:source-paths` is normally taken from your Leininge `project.clj`
+  file, which is `[ "src" ]` by default if not specified there.  You
+  can also specify `:source-paths` in the Eastwood option map to
+  override what Leiningen uses.
+* `:test-paths` is similar in behavior to `:source-paths`, except it
+  defaults to `[ "test" ]` if not specified in your `project.clj`
+  file.
+
+Available options for specifying linters are:
+
+* `:linters` Linters to use.  If not specified, all linters except
+  those mentioned as 'disabled by default' above are used.
 * `:exclude-linters` Linters to exclude
+* `:add-linters` Linters to add.  The final list of linters is the set
+  specified by `:linters`, taking away all in `:excluded-linters`,
+  then adding all in `:add-linters`.
 
 Note that you can add e.g., `{:eastwood {:exclude-linters
 [:keyword-typos]}}` to `.lein/profiles.clj` to disable linters you
-don't like.
+don't like, or add the key `:eastwood` with options to your project's
+`project.clj` file.
 
 
 ## Known issues
