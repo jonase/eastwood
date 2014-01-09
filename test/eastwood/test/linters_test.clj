@@ -13,10 +13,11 @@
   (clojure.walk/postwalk to-sorted-map c))
 
 (defmacro lint-test [ns-sym linters opts expected-lint-result]
-  `(is (= (make-sorted (data/diff
-                        (frequencies (lint-ns-noprint ~ns-sym ~linters ~opts))
-                        ~expected-lint-result))
-          (make-sorted [nil nil ~expected-lint-result]))))
+  `(is (= (make-sorted (take 2 (data/diff
+                                (frequencies (lint-ns-noprint ~ns-sym ~linters
+                                                              ~opts))
+                                ~expected-lint-result)))
+          (make-sorted [nil nil]))))
 
 
 (deftest test1
