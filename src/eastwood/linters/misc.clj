@@ -4,6 +4,9 @@
             [clojure.tools.analyzer.ast :as ast]
             [eastwood.util :as util]))
 
+(defn var-of-ast [ast]
+  (-> ast :form second))
+
 ;; Naked use
 
 (defn- use? [expr]
@@ -33,12 +36,14 @@
             (string? (-> first-expr :form))))))
 
 (defn misplaced-docstrings [{:keys [asts]}]
-  (for [expr (mapcat ast/nodes asts)
-        :when (and (= (:op expr) :def)
-                   (misplaced-docstring? expr))]
+  (for [ast (mapcat ast/nodes asts)
+        :when (and (= (:op ast) :def)
+                   (misplaced-docstring? ast))
+        :let [loc (-> ast var-of-ast meta)]]
     {:linter :misplaced-docstrings
-     :msg (format "Possibly misplaced docstring, %s" (:var expr))
-     :line (-> expr :env :line)}))
+     :msg (format "Possibly misplaced docstring, %s" (var-of-ast ast))
+     :line (-> loc :line)
+     :column (-> loc :column)}))
 
 ;; Nondynamic earmuffed var
 
@@ -276,41 +281,34 @@ a (defonce foo val) expression.  If it is, return [foo val]."
     (select-keys *def-walker-data* [:top-level-defs :nested-defs])))
 
 
-(defn var-info [var-ast]
-  (select-keys var-ast [:var :env]))
-
-
 (defn- defd-vars [exprs]
-  (let [top-level-vars (:top-level-defs (def-walker exprs))]
-;;    (println (format "dbg top-level-vars %s"
-;;                     (class top-level-vars)))
-    (map var-info top-level-vars)))
+  (:top-level-defs (def-walker exprs)))
 
+(defn redefd-var-loc [ast]
+  ;; For some macro expansions, their expansions do not have :line and
+  ;; :column info in (-> ast var-of-ast meta).  Try another place it
+  ;; can sometimes be found.
+  (let [loc1 (-> ast var-of-ast meta)]
+    (if (-> loc1 :line)
+      loc1
+      (-> ast :env))))
 
 (defn redefd-vars [{:keys [asts]}]
-  (let [defd-vars (defd-vars asts)
-        defd-var-groups (group-by :var defd-vars)
-;;        _ (do
-;;            (println (format "dbg all (:op :name) keys of exprs=%s"
-;;                             (seq (map (juxt :op :name) exprs))))
-;;            (println (format "dbg # defd-vars=%d, unique defd-vars=%d"
-;;                             (count defd-vars)
-;;                             (count defd-var-groups)))
-            ;;(println (format " defd-var-freq="))
-            ;;(pp/pprint defd-var-groups)
-;;            (println (format "All defd-vars with their line numbers:"))
-;;            (doseq [{:keys [var env]} defd-vars]
-;;              (println (format "    %s LINE=%d COL=%d FILE=%s"
-;;                               var (:line env) (:column env) (:file env)))))
-        ]
-    (for [[defd-var vlist] defd-var-groups
-          :when (> (count vlist) 1)]
-      {:linter :redefd-vars
-       :msg (format "Var %s def'd %d times at lines: %s"
-                    defd-var (count vlist)
-                    (string/join " "
-                                 (map #(get-in % [:env :line]) vlist)))
-       :line (-> (second vlist) :env :line)})))
+  (let [defd-var-asts (defd-vars asts)
+        defd-var-groups (group-by #(-> % :form second) defd-var-asts)]
+    (for [[defd-var-ast ast-list] defd-var-groups
+          :when (> (count ast-list) 1)]
+      (let [ast2 (second ast-list)
+            loc2 (redefd-var-loc ast2)]
+        {:linter :redefd-vars
+         :msg (format "Var %s def'd %d times at lines: %s"
+                      (var-of-ast ast2)
+                      (count ast-list)
+                      (string/join
+                       " "
+                       (map #(-> % redefd-var-loc :line) ast-list)))
+         :line (-> loc2 :line)
+         :column (-> loc2 :column)}))))
 
 
 ;; Def-in-def
@@ -326,15 +324,16 @@ a (defonce foo val) expression.  If it is, return [foo val]."
 
 (defn def-in-def [{:keys [asts]}]
   (let [nested-vars (def-in-def-vars asts)]
-    (for [nested-var-ast nested-vars]
+    (for [nested-var-ast nested-vars
+          :let [loc (-> nested-var-ast var-of-ast meta)]]
       {:linter :def-in-def
        :msg (format "There is a def of %s nested inside def %s"
-                    (-> nested-var-ast :form second)
+                    (var-of-ast nested-var-ast)
                     (-> nested-var-ast
                         :eastwood/enclosing-def-ast
-                        :form
-                        second))
-       :line (-> nested-var-ast :form second meta :line)})))
+                        var-of-ast))
+       :line (-> loc :line)
+       :column (-> loc :column)})))
 
 
 ;; Wrong arity
@@ -343,14 +342,12 @@ a (defonce foo val) expression.  If it is, return [foo val]."
   (let [exprs (->> asts
                    (mapcat ast/nodes)
                    (filter :maybe-mismatch-arity))]
-    (for [expr exprs]
-      (do
-;        (println (format "dbgx: Maybe wrong # args:"))
-;        (util/pprint-ast-node expr)
-        {:linter :wrong-arity
-         :msg (format "Function on var %s called with %s args, but it is only known to take one of the following args: %s"
-                      (-> expr :fn :var)
-                      (count (-> expr :args))
-                      (string/join "  " (-> expr :fn :arglists)))
-         :line (-> expr :fn :form meta :line)}
-        ))))
+    (for [expr exprs
+          :let [loc (-> expr :fn :form meta)]]
+      {:linter :wrong-arity
+       :msg (format "Function on var %s called with %s args, but it is only known to take one of the following args: %s"
+                    (-> expr :fn :var)
+                    (count (-> expr :args))
+                    (string/join "  " (-> expr :fn :arglists)))
+       :line (-> loc :line)
+       :column (-> loc :column)})))

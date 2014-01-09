@@ -22,33 +22,41 @@
 (deftest test1
   (lint-test
    'eastwood.test.testcases.f01
-   [:misplaced-docstrings :def-in-def :redefd-vars]
+   [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity]
    {}
    {
     {:linter :redefd-vars,
      :msg
-     "Var #'eastwood.test.testcases.f01/i-am-redefd def'd 2 times at lines: 4 5",
-     :line 5}
+     "Var i-am-redefd def'd 2 times at lines: 4 5",
+     :line 5, :column 6}
     1,
     {:linter :misplaced-docstrings,
-     :msg "Possibly misplaced docstring, #'eastwood.test.testcases.f01/foo2",
-     :line 12}
+     :msg "Possibly misplaced docstring, foo2",
+     :line 12, :column 7}
     1,
     {:linter :misplaced-docstrings,
-     :msg "Possibly misplaced docstring, #'eastwood.test.testcases.f01/foo5",
-     :line 31}
+     :msg "Possibly misplaced docstring, foo5",
+     :line 31, :column 7}
     1,
     {:linter :redefd-vars,
-     :msg "Var #'eastwood.test.testcases.f01/test1-redefd def'd 3 times at lines: 42 46 49",
-     :line 46}
+     :msg "Var test1-redefd def'd 3 times at lines: 42 46 49",
+     :line 46, :column 10}
     1,
     {:linter :redefd-vars,
-     :msg "Var #'eastwood.test.testcases.f01/i-am-redefd2 def'd 2 times at lines: 70 73",
-     :line 73}
+     :msg "Var i-am-redefd2 def'd 2 times at lines: 70 73",
+     :line 73, :column 8}
     1,
     {:linter :def-in-def,
      :msg "There is a def of def-in-def1 nested inside def bar",
-     :line 82}
+     :line 82, :column 10}
+    1,
+    {:linter :wrong-arity,
+     :msg "Function on var #'clojure.core/assoc called with 1 args, but it is only known to take one of the following args: [map key val]  [map key val & kvs]",
+     :line 91, :column 4}
+    1,
+    {:linter :wrong-arity,
+     :msg "Function on var #'clojure.core/assoc called with 0 args, but it is only known to take one of the following args: [map key val]  [map key val & kvs]",
+     :line 94, :column 4}
     1,
     })
 
@@ -56,20 +64,20 @@
   ;; twice in the result.  Once would be enough.
   (lint-test
    'eastwood.test.testcases.f02
-   [:misplaced-docstrings :def-in-def :redefd-vars]
+   [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity]
    {}
    {
     {:linter :redefd-vars,
-     :msg "Var #'eastwood.test.testcases.f02/i-am-defonced-and-defmultid def'd 2 times at lines:  ",
-     :line nil}
+     :msg "Var i-am-defonced-and-defmultid def'd 2 times at lines: 8 10",
+     :line 10, :column 11}
     1,
     {:linter :redefd-vars,
-     :msg "Var #'eastwood.test.testcases.f02/i-am-a-redefd-defmulti def'd 2 times at lines:  ",
-     :line nil}
+     :msg "Var i-am-a-redefd-defmulti def'd 2 times at lines: 16 18",
+     :line 18, :column 11}
     1,
     {:linter :def-in-def,
      :msg "There is a def of i-am-inner-defonce-sym nested inside def i-am-outer-defonce-sym",
-     :line 20}
+     :line 20, :column 42}
     2,
     }
    )
@@ -77,12 +85,12 @@
   (lint-test
    'eastwood.test.testcases.f03
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try]
+    :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try :wrong-arity]
    {}
    {})
   (lint-test
    'eastwood.test.testcases.f04
-   [:misplaced-docstrings :def-in-def :redefd-vars]
+   [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity]
    {}
    {})
   ;; The following test is known to fail with Clojure 1.5.1 because of
@@ -93,12 +101,12 @@
              (>= (:minor *clojure-version*) 6))
     (lint-test
      'eastwood.test.testcases.f05
-     [:misplaced-docstrings :def-in-def :redefd-vars]
+     [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity]
      {}
      {}))
   (lint-test
    'eastwood.test.testcases.f06
-   [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars]
+   [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars :wrong-arity]
    {}
    {
     {:linter :unused-fn-args,
@@ -132,7 +140,7 @@
     })
   (lint-test
    'eastwood.test.testcases.f07
-   [:unused-ret-vals :unused-ret-vals-in-try]
+   [:unused-ret-vals :unused-ret-vals-in-try :wrong-arity]
    {}
    {
     {:line 10, :linter :unused-ret-vals-in-try, :msg "Pure static method call return value is discarded inside body of try: (. clojure.lang.Numbers (add 5 7))"}
@@ -194,7 +202,7 @@
     })
   (lint-test
    'eastwood.test.testcases.deprecated
-   [:deprecations]
+   [:deprecations :wrong-arity]
    {}
    {
     {:linter :deprecations,
@@ -220,18 +228,18 @@
   (lint-test
    'eastwood.test.testcases.tanal-9
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
-    :unused-ret-vals]
+    :unused-ret-vals :wrong-arity]
    {}
    {})
   (lint-test
    'eastwood.test.testcases.tanal-27
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
-    :unused-ret-vals]
+    :unused-ret-vals :wrong-arity]
    {}
    {})
   (lint-test
    'eastwood.test.testcases.keyword-typos
-   [:keyword-typos]
+   [:keyword-typos :wrong-arity]
    {}
    {
     {:linter :keyword-typos,

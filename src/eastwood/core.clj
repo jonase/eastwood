@@ -62,6 +62,7 @@ return value followed by the time it took to evaluate in millisec."
    :unused-namespaces unused/unused-namespaces
    :naked-use misc/naked-use
    :keyword-typos typos/keyword-typos
+   :non-dynamic-earmuffs misc/non-dynamic-earmuffs
    })
 
 (def ^:private default-linters
@@ -80,6 +81,7 @@ return value followed by the time it took to evaluate in millisec."
     ;; :unused-namespaces   ; updated, but don't use it by default
     ;;:naked-use            ; not yet updated to tools.analyzer(.jvm)
     ;; :keyword-typos       ; updated, but don't use it by default
+    ;;:non-dynamic-earmuffs ; not yet updated to tools.analyzer(.jvm)
     })
 
 (defn- lint [exprs kw]

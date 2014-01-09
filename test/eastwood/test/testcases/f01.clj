@@ -83,3 +83,12 @@
     {:x x
      :def-in-def1-before def-in-def1
      :def-in-def1-now def-in-def1}))
+
+
+;; :wrong-arity test cases
+
+(defn call-with-wrong-num-of-args [x]
+  (assoc x))
+
+(defn call-with-wrong-num-of-args-2 [x]
+  (assoc))
