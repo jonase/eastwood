@@ -60,7 +60,7 @@ return value followed by the time it took to evaluate in millisec."
    :unused-private-vars unused/unused-private-vars
    :unused-fn-args unused/unused-fn-args
    :unused-namespaces unused/unused-namespaces
-   :naked-use misc/naked-use
+   :unlimited-use misc/unlimited-use
    :keyword-typos typos/keyword-typos
    :non-dynamic-earmuffs misc/non-dynamic-earmuffs
    })
@@ -79,7 +79,7 @@ return value followed by the time it took to evaluate in millisec."
     ;;:unused-private-vars  ; not yet updated to t.a(.jvm).  Also needs cols
     ;; :unused-fn-args      ; updated, but don't use it by default
     ;; :unused-namespaces   ; updated, but don't use it by default. no line/col
-    ;;:naked-use            ; not yet updated to t.a(.jvm).  Also needs cols
+    :unlimited-use
     ;; :keyword-typos       ; updated, but don't use it by default. no line/col
     ;;:non-dynamic-earmuffs ; not yet updated to t.a(.jvm).  Also needs cols
     })

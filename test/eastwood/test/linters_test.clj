@@ -586,4 +586,21 @@
      :msg "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
     })
+  ;; It is strange that the :unlimited-use linter has nil for :line
+  ;; and :column here, but integer values when I use it from the
+  ;; command line.  What is going on here?
+  (lint-test
+   'eastwood.test.testcases.unlimiteduse
+   [:unlimited-use]
+   {}
+   {
+    {:linter :unlimited-use,
+     :msg "Unlimited use of (clojure.test [clojure.reflect] [clojure inspector] [clojure [set]] [clojure.java.io :as io]) in eastwood.test.testcases.unlimiteduse",
+     :line nil, :column nil}
+    1,
+    {:linter :unlimited-use,
+     :msg "Unlimited use of ((clojure [pprint :as pp] [uuid :as u])) in eastwood.test.testcases.unlimiteduse",
+     :line nil, :column nil}
+    1,
+    })
   )

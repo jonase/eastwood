@@ -7,21 +7,68 @@
 (defn var-of-ast [ast]
   (-> ast :form second))
 
-;; Naked use
+;; Unlimited use
 
-(defn- use? [expr]
-  (and (= :invoke (:op expr))
-       (= :var (-> expr :fexpr :op))
-       (= 'use (-> expr :fexpr :var meta :name))))
+;; Any use statement that does not include a keyword :only or :refer
+;; that limits the symbols referred from the other namespace is an
+;; 'unlimited' use.  The only use args that will be considered "safe"
+;; are the ones that have a :only or :refer keyword in them, to limit
+;; the symbols that are referred.
 
-(defn naked-use [exprs]
-  (for [expr (mapcat ast/nodes exprs)
-        :when (use? expr)
-        :let [s (filter symbol? (map :val (:args expr)))]
-        :when (not-empty s)]
-    {:linter :naked-use
-     :msg (format "Naked use of %s in %s" (seq s) (-> expr :env :ns :name))
-     :line (-> expr :env :line)}))
+;; These are all OK:
+
+;; [clojure.string :only [replace]]
+;; [clojure.string :refer [replace]]
+;; [clojure.string :as str :refer [replace]]
+;; [clojure [xml :only [emit]] [edn :only [read-string]]]
+
+;; These are all unlimited:
+
+;; name.space
+;; [name.space]
+;; [name space1 space2]
+;; [name [space1] space2]
+;; [name [space1] [space2]]
+;; [name :as alias]
+;; [name1 [name2 :as alias2] [name3 :as alias3]]
+
+(defn- use-arg-ok?
+  ([arg] (use-arg-ok? arg 0))
+  ([arg depth]
+     ;; keyword covers things like :reload or :reload-all typically
+     ;; put at the end of a use or require
+     (or (keyword? arg)
+         (and (sequential? arg)
+              (>= (count arg) 2)
+              (symbol? (first arg))
+              (or (and (keyword? (second arg))
+                       (let [opt-map (apply hash-map (rest arg))]
+                         (or (contains? opt-map :refer)
+                             (contains? opt-map :only))))
+                  (and (zero? depth)
+                       (every? #(use-arg-ok? % 1) (rest arg))))))))
+
+(defn- use? [ast]
+  (and (= :invoke (:op ast))
+       (= :var (-> ast :fn :op))
+       (= #'clojure.core/use (-> ast :fn :var))))
+
+(defn- remove-quote-wrapper [x]
+  (if (and (sequential? x)
+           (= 'quote (first x)))
+    (second x)
+    x))
+
+(defn unlimited-use [{:keys [asts]}]
+  (for [ast (mapcat ast/nodes asts)
+        :when (use? ast)
+        :let [use-args (map remove-quote-wrapper (rest (-> ast :form)))
+              s (remove use-arg-ok? use-args)]
+        :when (seq s)]
+    {:linter :unlimited-use
+     :msg (format "Unlimited use of %s in %s" (seq s) (-> ast :env :ns))
+     :line (-> ast :env :ns meta :line)
+     :column (-> ast :env :ns meta :column)}))
 
 ;; Misplaced docstring
 
