@@ -5,6 +5,31 @@
             [clojure.tools.analyzer.ast :as ast])
   (:import (java.lang.reflect Method Constructor Field)))
 
+(defn no-constructor-found [ctor-info]
+  (if (map? ctor-info)
+    (let [{:keys [arg-types]} ctor-info]
+      (println (format "Error: Eastwood found no constructor for class %s taking %d args with types (%s).  This may occur because Eastwood does not yet do type matching in the same way that Clojure does."
+                       (.getName ^Class (:class ctor-info))
+                       (count arg-types)
+                       (pass/arg-type-str arg-types))))))
+
+(defn no-method-found [kind method-info]
+  (if (map? method-info)
+    (let [{:keys [arg-types]} method-info]
+      (println (format "Error: Eastwood found no %s method named %s for class %s taking %d args with types (%s).  This may occur because Eastwood does not yet do type matching in the same way that Clojure does."
+                       (name kind)
+                       (:method-name method-info)
+                       (.getName ^Class (:class method-info))
+                       (count arg-types)
+                       (pass/arg-type-str arg-types))))))
+
+(defn no-field-found [kind field-info]
+  (if (map? field-info)
+    (println (format "Error: Eastwood found no %s field for %s with name %s"
+                     (name kind)
+                     (.getName ^Class (:class field-info))
+                     (:field-name field-info)))))
+
 (defmulti deprecated :op)
 
 (defmethod deprecated :default [_] false)
@@ -14,21 +39,38 @@
 
 (defmethod deprecated :new [ast]
   (when-let [ctor (:reflected-ctor ast)]
-    (.isAnnotationPresent ^Constructor ctor Deprecated)))
+    (if (instance? Constructor ctor)
+      (.isAnnotationPresent ^Constructor ctor Deprecated)
+      (do (no-constructor-found ctor)
+          false))))
 
 (defmethod deprecated :instance-field [ast]
-  (.isAnnotationPresent ^Field (:reflected-field ast) Deprecated))
+  (when-let [fld (:reflected-field ast)]
+    (if (instance? Field fld)
+      (.isAnnotationPresent ^Field fld Deprecated)
+      (do (no-field-found :instance fld)
+          false))))
 
 (defmethod deprecated :instance-call [ast]
   (when-let [method (:reflected-method ast)]
-    (.isAnnotationPresent ^Method method Deprecated)))
+    (if (instance? Method method)
+      (.isAnnotationPresent ^Method method Deprecated)
+      (do (no-method-found :instance method)
+          false))))
 
 (defmethod deprecated :static-field [ast]
-  (.isAnnotationPresent ^Field (:reflected-field ast) Deprecated))
+  (when-let [fld (:reflected-field ast)]
+    (if (instance? Field fld)
+      (.isAnnotationPresent ^Field (:reflected-field ast) Deprecated)
+      (do (no-field-found :static fld)
+          false))))
 
 (defmethod deprecated :static-call [ast]
   (when-let [method (:reflected-method ast)]
-    (.isAnnotationPresent ^Method method Deprecated)))
+    (if (instance? Method method)
+      (.isAnnotationPresent ^Method method Deprecated)
+      (do (no-method-found :static method)
+          false))))
 
 (defmulti msg :op)
 
