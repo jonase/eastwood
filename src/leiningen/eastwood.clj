@@ -18,6 +18,6 @@
            global-opts (:eastwood project)
            opts (merge global-opts opts)]
        (leval/eval-in-project (add-if-missing project '[jonase/eastwood "0.0.3"])
-                              `(eastwood.core/run-eastwood '~opts)
-                              '(require 'eastwood.core)))))
+                              `(eastwood.versioncheck/run-eastwood '~opts)
+                              '(require 'eastwood.versioncheck)))))
 
