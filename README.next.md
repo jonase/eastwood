@@ -28,7 +28,8 @@ Eastwood warns when it finds:
 - unused private vars
 - unused function arguments
 - unused namespaces
-- naked (:use ...)
+- unlimited (:use ...) without :refer or :only to limit the symbols
+  referred by it
 - keyword typos
 
 Because Eastwood evaluates the code it is linting, you must use a
@@ -90,7 +91,7 @@ Available linters are:
 * `:unused-private-vars` (needs updating)
 * `:unused-fn-args` (disabled by default)
 * `:unused-namespaces` (disabled by default)
-* `:naked-use` (needs updating)
+* `:unlimited-use`
 * `:keyword-typos` (disabled by default)
 
 Available options for specifying namespaces and paths are:
@@ -624,6 +625,64 @@ and extended by Eastwood.  If you wish to enable the `:unused-fn-args`
 linter, but have several unused arguments that are acceptable to you,
 consider prepending an underscore to their names to silence the
 warnings.
+
+
+### `:unlimited-use` - Use statements that do not explicitly limit the symbols they refer
+
+An `ns` statement like the one below will refer all of the public
+symbols in the namespace `clojure.string`:
+
+```clojure
+(ns my.namespace
+  (:use clojure.string))
+```
+
+Any symbols you use from namespace `clojure.string` will typically
+have no namespace qualifier before them, which is likely your reason
+for using `use` instead of `require`.  This can make it difficult for
+people to determine which namespace the symbols are defined in.  A
+`require` followed by `:refer` and a list of symbols makes it clearer
+to readers the origin of such symbols.  You can also put in an `:as
+str` in the same `require` so you have an alias to prefix any other
+symbols you need from the namespace:
+
+```clojure
+(ns my.namespace
+  (:require [clojure.string :as str :refer [replace join]]))
+```
+
+The `:unlimited-use` linter will not warn about 'limited' `use`
+statements, i.e. those with explicit `:only` or `:refer` keywords to
+limit their effects, such as these:
+
+```clojure
+(ns my.namespace
+  (:use [clojure.string :as str :only [replace]]
+        [clojure.walk :refer [prewalk]]
+        [clojure [xml :only [emit]]]))
+```
+
+If you still want the refer-all-public-symbols effect of `use` without
+a warning from this linter, it is recommended that you use `require`
+with `:refer :all`, like so:
+
+```clojure
+(ns my.namespace
+  (:require [clojure.string :refer :all]))
+```
+
+
+For an infrequently-changing namespace like `clojure.string`, the set
+of symbols referred by this `use` is pretty stable across Clojure
+versions, but even so, it only takes one symbol added to shadow an
+existing symbol in your code to ruin your day.
+
+TBD: Is it the default behavior of some/all Clojure versions to abort
+in such a case?  Or perhaps it is some versions of Leiningen that
+enable this option?  If a developer uses such an environment, a new
+version of the namespace would get an explicit description of what had
+changed and their code would not run, which is better than a subtle
+bug in running code.
 
 
 ### `:keyword-typos` - Keywords that may have typographical errors
