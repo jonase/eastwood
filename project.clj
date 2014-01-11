@@ -13,4 +13,7 @@
   ;; test' and get a Clojure version later than 1.5.1, even if you
   ;; have an explicit org.clojure/clojure in the :dependencies
   :eval-in-leiningen true
+  ;; Eastwood may work with earlier Leininge versions, but this is
+  ;; close to the earliest version that it was most tested with.
+  :min-lein-version "2.3.0"
   :resource-paths ["resource"])
