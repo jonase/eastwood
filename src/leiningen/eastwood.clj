@@ -1,6 +1,6 @@
 (ns leiningen.eastwood
-  (:use [leinjacker.eval :as leval]
-        [leinjacker.deps :only [add-if-missing]]))
+  (:require [leinjacker.eval :as leval]
+            [leinjacker.deps :refer [add-if-missing]]))
 
 (defn eastwood
   ([project] (eastwood project "{}"))
