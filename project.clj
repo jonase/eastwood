@@ -1,4 +1,4 @@
-(defproject jonase/eastwood "0.0.3"
+(defproject jonase/eastwood "0.1.0"
   :description "A Clojure lint tool"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/tools.analyzer "0.1.0-alpha1"]

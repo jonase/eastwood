@@ -44,13 +44,11 @@ machine, etc.
 
 ## Installation
 
-Eastwood is a Leiningen plugin.  Add `[jonase/eastwood "0.0.3"]` to
-your `:plugins` vector in your `:user` profile (Leiningen 2) or if you
-are using Leiningen 1:
+Eastwood is a [Leiningen](http://leiningen.org) plugin, tested with
+Leiningen 2.3.x.  Merge the following into your `~/.lein/profiles.clj`
+file:
 
-    $ lein plugin install jonase/eastwood 0.0.3
-
-TBD: Does eastwood really still work with Leiningen 1?  Do we care?
+    {:user {:plugins [[jonase/eastwood "0.1.0"]] }}
 
 See section "For Eastwood developers" below for instructions on trying
 out the latest unreleased version of Eastwood.
@@ -192,15 +190,6 @@ causes an exception to be thrown.
 
 TBD: `jvm.tools.analyzer` may have had its namespace
 `clojure.tools.analyzer` renamed specificaly to avoid this problem.
-
-### simple-check
-
-The [`simple-check`](https://github.com/reiddraper/simple-check) test
-library contains a cyclic dependency that the current `tools.analyzer`
-library cannot analyze.  A
-[ticket](http://dev.clojure.org/jira/browse/TANAL-37) has been filed
-against `tools.analyzer` to see if this can be improved.
-
 
 ### Other Issues
 
@@ -723,7 +712,7 @@ local Maven repository:
     $ cd path/to/eastwood
     $ LEIN_SNAPSHOTS_IN_RELEASE=1 lein install
 
-Then add `[jonase/eastwood "0.0.3"]` (or whatever is the current
+Then add `[jonase/eastwood "0.1.0"]` (or whatever is the current
 version number in the defproject line of `project.clj`) to your
 `:plugins` vector in your `:user` profile, perhaps in your
 `~/.lein/profiles.clj` file.

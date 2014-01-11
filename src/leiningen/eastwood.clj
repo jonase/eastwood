@@ -17,7 +17,8 @@
                                                    [(:java-source-path project)]))
            global-opts (:eastwood project)
            opts (merge global-opts opts)]
-       (leval/eval-in-project (add-if-missing project '[jonase/eastwood "0.0.3"])
+       ;; eastwood-version on next line
+       (leval/eval-in-project (add-if-missing project '[jonase/eastwood "0.1.0"])
                               `(eastwood.versioncheck/run-eastwood '~opts)
                               '(require 'eastwood.versioncheck)))))
 
