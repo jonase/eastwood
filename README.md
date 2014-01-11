@@ -720,6 +720,6 @@ version number in the defproject line of `project.clj`) to your
 
 ## License
 
-Copyright (C) 2012-2013 Jonas Enlund
+Copyright (C) 2012-2014 Jonas Enlund
 
 Distributed under the Eclipse Public License, the same as Clojure.
