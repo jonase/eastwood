@@ -1,8 +1,8 @@
 (defproject jonase/eastwood "0.1.1-SNAPSHOT"
   :description "A Clojure lint tool"
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/tools.analyzer "0.1.0-alpha1"]
-                 [org.clojure/tools.analyzer.jvm "0.1.0-alpha1"]
+                 [org.clojure/tools.analyzer "0.1.0-SNAPSHOT"]
+                 [org.clojure/tools.analyzer.jvm "0.1.0-SNAPSHOT"]
                  [org.clojure/tools.namespace "0.2.4"]
                  [org.clojure/tools.reader "0.8.3"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
