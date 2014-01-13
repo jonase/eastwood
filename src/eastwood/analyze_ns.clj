@@ -288,7 +288,9 @@
                :exception-phase :eval-ns, :exception-form form}
               (let [env (ana.jvm/empty-env)
                     expanded (if at-top-level? (macroexpand-1 form env))
-                    top-level-do? (and at-top-level? (do-form? expanded))]
+                    top-level-do? (and at-top-level?
+                                       (not top-level-ns-form?)
+                                       (do-form? expanded))]
                 (if top-level-do?
                   (recur forms asts (rest expanded))
                   (let [_ (pre-analyze-debug at-top-level? asts form env *ns* opt)
