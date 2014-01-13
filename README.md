@@ -191,6 +191,21 @@ causes an exception to be thrown.
 TBD: `jvm.tools.analyzer` may have had its namespace
 `clojure.tools.analyzer` renamed specificaly to avoid this problem.
 
+### Unreliable reflection warnings during linting
+
+For additional testing of the `tools.analyzer.jvm` library, while
+analyzing your source code it is read into an intermediate abstract
+syntax tree (AST) data structure, and then forms are generated from
+the AST and evaluated.  There are some issues with type hints being
+different or missing from these forms, such that when Clojure is used
+to eval the forms, the reflection warnings produced (if they are
+enabled) will be different than what you get from compiling your code
+normally.
+
+Until this issue is corrected, we recommend that you ignore reflection
+warnings produced during linting, and instead rely on those from `lein
+check`.
+
 ### Other Issues
 
 Currently, the Clojure Contrib libraries
