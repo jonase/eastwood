@@ -3,6 +3,7 @@
   (:import (clojure.lang LineNumberingPushbackReader))
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
+            [eastwood.util :as util]
             [clojure.set :as set]
             [clojure.java.io :as io]
             [clojure.tools.reader :as tr]
@@ -87,6 +88,13 @@
             (contains? (:debug opt) :all))
     (println (format "dbg anal'd %d at-top-level?=%s ns=%s"
                      (count asts) at-top-level? (str ns)))))
+
+(defn pre-eval-debug [at-top-level? asts form ns opt desc]
+  (when (or (contains? (:debug opt) :all)
+            (contains? (:debug opt) :eval))
+    (println (format "Form about to be eval'd with %d ast's *warn-on-reflection*=%s (%s):"
+                     (count asts) *warn-on-reflection* desc))
+    (util/pprint-ast-node form)))
 
 (defn namespace-changes-debug [old-nss _opt]
   (let [new-nss (all-ns-names-set)
@@ -268,6 +276,7 @@
                      (when (and eval? top-level-ns-form?)
                        (try
                          (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader))
+                         (pre-eval-debug at-top-level? asts form *ns* opt "top level ns")
                          (eval form)
                          (swap! loaded-namespaces into (disj (loaded-libs) (ns-name *ns*)))
                          nil  ; return no exception
@@ -300,6 +309,7 @@
                                    (try
                                      (let [f (emit-form analysis)]
                                        (try
+                                         (pre-eval-debug at-top-level? asts f *ns* opt "not top level ns")
                                          (eval f)
                                          nil   ; no exception
                                          (catch Exception e
