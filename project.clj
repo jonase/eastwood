@@ -12,8 +12,13 @@
   ;; Note: comment out the following line if you want to do 'lein
   ;; test' and get a Clojure version later than 1.5.1, even if you
   ;; have an explicit org.clojure/clojure in the :dependencies
-  :eval-in-leiningen true
-  ;; Eastwood may work with earlier Leininge versions, but this is
+  ;; Also: Having the following line uncommented causes a problem when
+  ;; doing 'lein test', I think because of a different version of
+  ;; core.cache or core.memoize on which the latest tools.analyzer.jvm
+  ;; 0.1.0-SNAPSHOT depends, versus what Leiningen itself probably
+  ;; depends on.
+;;  :eval-in-leiningen true
+  ;; Eastwood may work with earlier Leiningen versions, but this is
   ;; close to the earliest version that it was most tested with.
   :min-lein-version "2.3.0"
   :resource-paths ["resource"])
