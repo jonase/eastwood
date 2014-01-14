@@ -59,6 +59,30 @@
 (defn all-ns-names-set []
   (set (map str (all-ns))))
 
+;; Hack alert.  I am looking at the pre-macroexpanded form and
+;; assuming if the first symbol is 'ns', then this is clojure.core/ns.
+;; A more robust way from looking at post-analyzed result is tricker.
+
+(defn ns-form?
+  "Keep this really simple-minded for now.  It will miss ns forms
+  nested inside of other forms."
+  [form]
+  (and (sequential? form)
+       (= 'ns (first form))))
+
+(defn do-form? [form]
+  (and (sequential? form)
+       (= 'do (first form))))
+
+(defn gen-interface-form? [form]
+  (and (sequential? form)
+       (= 'clojure.core/gen-interface (first form))))
+
+;; Avoid macroexpand'ing a gen-interface form more than once, since it
+;; causes an exception to be thrown.
+(defn dont-expand-twice? [form]
+  (gen-interface-form? form))
+
 (defn pre-analyze-debug [at-top-level? asts form env ns opt]
   (let [print-normally? (or (contains? (:debug opt) :all)
                             (contains? (:debug opt) :forms))
@@ -74,13 +98,16 @@
       (println "    form before macroexpand, with metadata:")
       (binding [*print-meta* true] (pr form)))
     (println "\n    --------------------")
-    (let [exp (macroexpand form)]
-      (when pprint?
-        (println "    form after macroexpand:")
-        (pp/pprint exp))
+    (if (dont-expand-twice? form)
       (when print-normally?
-        (println "    form after macroexpand, with metadata:")
-        (binding [*print-meta* true] (pr exp))))
+        (println "    form is gen-interface, so avoiding macroexpand on it"))
+      (let [exp (macroexpand form)]
+        (when pprint?
+          (println "    form after macroexpand:")
+          (pp/pprint exp))
+        (when print-normally?
+          (println "    form after macroexpand, with metadata:")
+          (binding [*print-meta* true] (pr exp)))))
     (println "\n    --------------------"))))
 
 (defn post-analyze-debug [at-top-level? asts _form _analysis _exception ns opt]
@@ -92,8 +119,8 @@
 (defn pre-eval-debug [at-top-level? asts form ns opt desc]
   (when (or (contains? (:debug opt) :all)
             (contains? (:debug opt) :eval))
-    (println (format "Form about to be eval'd with %d ast's *warn-on-reflection*=%s (%s):"
-                     (count asts) *warn-on-reflection* desc))
+    (println (format "Form about to be eval'd with %d ast's *warn-on-reflection*=%s ns=%s (%s):"
+                     (count asts) *warn-on-reflection* ns desc))
     (util/pprint-ast-node form)))
 
 (defn namespace-changes-debug [old-nss _opt]
@@ -107,21 +134,6 @@
       (println (format "Namespaces removed recently: %s"
                        (seq removed))))
     new-nss))
-
-;; Hack alert.  I am looking at the pre-macroexpanded form and
-;; assuming if the first symbol is 'ns', then this is clojure.core/ns.
-;; A more robust way from looking at post-analyzed result is tricker.
-
-(defn ns-form?
-  "Keep this really simple-minded for now.  It will miss ns forms
-  nested inside of other forms."
-  [form]
-  (and (sequential? form)
-       (= 'ns (first form))))
-
-(defn do-form? [form]
-  (and (sequential? form)
-       (= 'do (first form))))
 
 (defn macroexpand-1
   [form env]
@@ -287,12 +299,12 @@
                :asts asts, :exception eval-ns-exc,
                :exception-phase :eval-ns, :exception-form form}
               (let [env (ana.jvm/empty-env)
-                    expanded (if at-top-level? (macroexpand-1 form env))
-                    top-level-do? (and at-top-level?
-                                       (not top-level-ns-form?)
-                                       (do-form? expanded))]
-                (if top-level-do?
-                  (recur forms asts (rest expanded))
+                    expanded (if (or top-level-ns-form?
+                                     (dont-expand-twice? form))
+                               form
+                               (macroexpand-1 form env))]
+                (if (and (not top-level-ns-form?) (do-form? expanded))
+                  (recur forms asts (concat (rest expanded) unanalyzed-forms))
                   (let [_ (pre-analyze-debug at-top-level? asts form env *ns* opt)
                         {:keys [analysis exception]} (analyze-form form env)]
                     (post-analyze-debug at-top-level? asts form analysis exception
