@@ -33,6 +33,7 @@ do_eastwood()
 	p=""
     fi
 
+    lein clean
     set +e   # Do not stop if an eastwood run returns a non-0 exit status.  Keep going with more checking, if any.
     if [ "x${ns}" = "x" ]
     then
