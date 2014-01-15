@@ -1,6 +1,6 @@
 # eastwood - a Clojure lint tool
 
-Eastwood is a Clojure lint tool which uses the
+Eastwood is a Clojure lint tool that uses the
 [tools.analyzer](https://github.com/clojure/tools.analyzer) and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.  It has
@@ -33,12 +33,14 @@ no more dangerous.  To confine linting to files in your
 
     $ lein eastwood '{:namespaces [:source-paths]}'
 
-See the "Usage" section below for more notes on side effects an test
+See the "Usage" section below for more notes on side effects in test
 code.
 
 Eastwood can only finish linting a file if Clojure itself can compile
 it.  It is recommended to use a command like `lein check` to check for
-compiler errors before running Eastwood.
+compiler errors before running Eastwood.  Even better, `lein test`
+will compile files in your source paths and test paths, not merely
+your source paths as `lein check` does.
 
 See section "For Eastwood developers" below for instructions on trying
 out the latest unreleased version of Eastwood.
@@ -140,13 +142,13 @@ Available options for specifying linters are:
   then adding all in `:add-linters`.
 
 Note that you can add e.g., `{:eastwood {:exclude-linters
-[:keyword-typos]}}` to `.lein/profiles.clj` to disable linters you
+[:unlimited-use]}}` to `.lein/profiles.clj` to disable linters you
 don't like, or add the key `:eastwood` with options to your project's
 `project.clj` file.
 
 As mentioned in the "Installation & Quick usage" section above, using
 Eastwood causes any and all side effects that loading the file would
-cause (i.e. by doing `use` or `require` on the file's namespace).
+cause (e.g. by doing `use` or `require` on the file's namespace).
 Eastwood is able to find potential problems in test code, too.  If you
 wish to use Eastwood on test files without such side effects, consider
 modifying your tests so that merely performing `require`/`use` on the
