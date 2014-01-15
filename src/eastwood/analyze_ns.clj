@@ -76,7 +76,8 @@
 
 (defn gen-interface-form? [form]
   (and (sequential? form)
-       (= 'clojure.core/gen-interface (first form))))
+       (contains? #{'gen-interface 'clojure.core/gen-interface}
+                  (first form))))
 
 ;; Avoid macroexpand'ing a gen-interface form more than once, since it
 ;; causes an exception to be thrown.
