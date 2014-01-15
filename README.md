@@ -8,6 +8,42 @@ been tested with Clojure 1.4.0 and 1.5.1.  It does not work with
 Clojure versions earlier than 1.4.0.
 
 
+## Installation & Quick usage
+
+Eastwood is a [Leiningen](http://leiningen.org) plugin, tested with
+Leiningen 2.3.x.  Merge the following into your `~/.lein/profiles.clj`
+file:
+
+```clojure
+{:user {:plugins [[jonase/eastwood "0.1.0"]] }}
+```
+
+To run Eastwood with the default set of lint warnings on all of the
+Clojure files in the source _and_ test paths of your project, use the
+command:
+
+    $ lein eastwood
+
+WARNING: If loading your code (particularly test files) causes side
+effects like writing files, opening connections to servers, modifying
+databases, etc., running Eastwood on your code will do that, too.
+Eastwood is _no less dangerous_ than loading your code, and should be
+no more dangerous.  To confine linting to files in your
+`:source-paths`, use this command instead:
+
+    $ lein eastwood '{:namespaces [:source-paths]}'
+
+See the "Usage" section below for more notes on side effects an test
+code.
+
+Eastwood can only finish linting a file if Clojure itself can compile
+it.  It is recommended to use a command like `lein check` to check for
+compiler errors before running Eastwood.
+
+See section "For Eastwood developers" below for instructions on trying
+out the latest unreleased version of Eastwood.
+
+
 ## What's there?
 
 Eastwood warns when it finds:
@@ -32,27 +68,6 @@ Eastwood warns when it finds:
   referred by it
 - keyword typos
 
-Because Eastwood evaluates the code it is linting, you must use a
-version of Clojure that is capable of loading your code, and it can
-only finish if Clojure can compile your code without throwing any
-exceptions.  Using Eastwood will cause any side effects to occur that
-loading your code normally does -- Eastwood is no more and _no less_
-dangerous than loading your code normally.  If you have a code base
-you do not trust to load, consider a sandbox, throwaway virtual
-machine, etc.
-
-
-## Installation
-
-Eastwood is a [Leiningen](http://leiningen.org) plugin, tested with
-Leiningen 2.3.x.  Merge the following into your `~/.lein/profiles.clj`
-file:
-
-    {:user {:plugins [[jonase/eastwood "0.1.0"]] }}
-
-See section "For Eastwood developers" below for instructions on trying
-out the latest unreleased version of Eastwood.
-
 
 ## Usage
 
@@ -60,8 +75,9 @@ Running
 
     $ lein eastwood
 
-in the root of your project will lint your project's namespaces.  You
-can also lint your project's dependencies:
+in the root of your project will lint your project's namespaces -- all
+of those in your `:source-paths` and `:test-paths` directories and
+their subdirectories.  You can also lint your project's dependencies:
 
     $ lein eastwood '{:namespaces [clojure.set clojure.java.io] :exclude-linters [:unused-fn-args]}'
     == Linting clojure.set ==
@@ -127,6 +143,26 @@ Note that you can add e.g., `{:eastwood {:exclude-linters
 [:keyword-typos]}}` to `.lein/profiles.clj` to disable linters you
 don't like, or add the key `:eastwood` with options to your project's
 `project.clj` file.
+
+As mentioned in the "Installation & Quick usage" section above, using
+Eastwood causes any and all side effects that loading the file would
+cause (i.e. by doing `use` or `require` on the file's namespace).
+Eastwood is able to find potential problems in test code, too.  If you
+wish to use Eastwood on test files without such side effects, consider
+modifying your tests so that merely performing `require`/`use` on the
+files does not cause the side effects.  If you can arrange things so
+that running your tests requires loading the files and then calling
+some function(s) (e.g. as tests written using
+[`clojure.test/deftest`](http://clojure.github.io/clojure/#clojure.test)
+do), then you can run Eastwood on those files without the side
+effects.
+
+If you know how to write tests using other Clojure test libraries
+besides `clojure.test` so that merely loading the file does not run
+the tests, please create an Issue for Eastwood on Github.
+
+If you have a code base you do not trust to load, consider a sandbox,
+throwaway virtual machine, etc.
 
 
 ## Known issues
