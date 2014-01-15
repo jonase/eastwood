@@ -1,5 +1,6 @@
 (defproject clojurewerkz/serialism "1.1.0-SNAPSHOT"
   :description "A tiny Clojure library that serializes and deserializes values into popular formats based on provided content type"
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [clojurewerkz/support "0.15.0"]
                  [cheshire             "5.0.2"]]

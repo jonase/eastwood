@@ -1,6 +1,7 @@
 (defproject midje "1.6.0"
   :description "A TDD library for Clojure that supports top-down ('mockish') TDD, encourages readable tests, provides a smooth migration path from clojure.test, balances abstraction and concreteness, and strives for graciousness."
   :url "https://github.com/marick/Midje"
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.4.0"]
                  [ordered "1.2.0" :exclusions [org.clojure/clojure]]
                  [org.clojure/math.combinatorics "0.0.1"]

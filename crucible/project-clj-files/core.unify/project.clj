@@ -1,5 +1,6 @@
 (defproject core.unify "0.5.6-SNAPSHOT"
   :description "Clojure unification library."
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]
   :dev-dependencies [[jline "0.9.94"]
                      [lein-marginalia "0.7.1"]

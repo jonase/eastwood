@@ -29,5 +29,5 @@
                  {:url "http://clojars.org/repo"
                   :snapshots true
                   :releases {:checksum :fail :update :always}}}
-  ;;  :warn-on-reflection true
+  :warn-on-reflection true
   )

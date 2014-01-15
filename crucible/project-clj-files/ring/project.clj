@@ -3,6 +3,7 @@
   :url "https://github.com/ring-clojure/ring"
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"}
+  :global-vars {*warn-on-reflection* true}
   :dependencies
     [[org.clojure/clojure "1.3.0"]
      [ring/ring-core "1.2.1"]

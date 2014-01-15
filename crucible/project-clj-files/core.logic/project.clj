@@ -2,6 +2,7 @@
   :description "A logic/relational programming library for Clojure"
   :parent [org.clojure/pom.contrib "0.0.25"]
 
+  :global-vars {*warn-on-reflection* true}
   :jvm-opts ^:replace ["-Xmx512m" "-server"]
 
   :source-paths ["src/main/clojure"]

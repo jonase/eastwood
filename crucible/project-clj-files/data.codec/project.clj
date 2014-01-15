@@ -1,5 +1,6 @@
 (defproject data.codec "0.1.1-SNAPSHOT"
   :description "data.codec 0.1.1-SNAPSHOT"
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [commons-codec "1.5"]]
   :profiles {:1.2 {:dependencies [[org.clojure/clojure "1.2.1"]]}

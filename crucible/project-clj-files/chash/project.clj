@@ -2,6 +2,7 @@
   :description "A yet another consistent hashing library for Clojure"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [clojurewerkz/support "0.20.0"]]
+  :global-vars {*warn-on-reflection* true}
   :profiles {:1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}
              :master {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}

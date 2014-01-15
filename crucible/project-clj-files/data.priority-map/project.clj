@@ -1,6 +1,7 @@
 (defproject data.priority-map "0.0.3-SNAPSHOT"
   ;;:description "clojure.data.priority-map 0.0.3-SNAPSHOT"
   ;;:main clojure.data.priority-map
+  :global-vars {*warn-on-reflection* true}
   :dependencies [
                  [org.clojure/clojure "1.5.1"]
                  ;;[org.clojure/clojure "1.6.0-master-SNAPSHOT"]

@@ -3,6 +3,7 @@
 
   (defproject reply "0.3.1-SNAPSHOT"
     :description "REPL-y: A fitter, happier, more productive REPL for Clojure."
+    :global-vars {*warn-on-reflection* true}
     :dependencies [[org.clojure/clojure "1.5.1"]
                    [jline "2.11"]
                    [org.thnetos/cd-client "0.3.6"]

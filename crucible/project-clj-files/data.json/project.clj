@@ -4,6 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :parent [org.clojure/pom.contrib "0.1.2"]
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]
   :profiles {:1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}
              :1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}

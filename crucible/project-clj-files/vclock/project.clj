@@ -1,5 +1,6 @@
 (defproject clojurewerkz/vclock "1.1.0-SNAPSHOT"
   :description "A vector clock implementation roughly ported from Riak Core"
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure  "1.5.1"]
                  [clojurewerkz/support "0.7.0-beta1"]]
   :profiles {:1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}

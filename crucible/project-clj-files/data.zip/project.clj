@@ -1,5 +1,6 @@
 (defproject data.zip "0.1.2-SNAPSHOT"
   :description "data.zip 0.1.2-SNAPSHOT"
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]
   :profiles {:1.2 {:dependencies [[org.clojure/clojure "1.2.1"]]}
              :1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}

@@ -3,6 +3,7 @@
   :description "a HTML selector-based (à la CSS) templating and transformation system for Clojure"
   :url "http://github.com/cgrand/enlive/"
   :profiles     {:dev {:resource-paths ["test/resources"]}}
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.ccil.cowan.tagsoup/tagsoup "1.2.1"]
                  [org.jsoup/jsoup "1.7.2"]]

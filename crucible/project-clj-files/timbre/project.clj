@@ -30,7 +30,7 @@
             [lein-ancient      "0.5.4"]
             [codox             "0.6.6"]]
   :min-lein-version "2.0.0"
-;  :global-vars {*warn-on-reflection* true}
+  :global-vars {*warn-on-reflection* true}
   :repositories
   {"sonatype"
    {:url "http://oss.sonatype.org/content/repositories/releases"

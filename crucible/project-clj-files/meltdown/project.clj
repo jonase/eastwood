@@ -28,6 +28,7 @@
   :jvm-opts           ["-Dfile.encoding=utf-8"]
   :source-paths       ["src/clojure"]
   :java-source-paths  ["src/java"]
+  :global-vars {*warn-on-reflection* true}
   :test-selectors     {:default     (fn [m] (not (:performance m)))
                        :performance :performance
                        :focus       :focus

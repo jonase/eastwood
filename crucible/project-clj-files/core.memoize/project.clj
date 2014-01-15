@@ -1,5 +1,6 @@
 (defproject core.memoize "0.5.7-SNAPSHOT"
   :description "A memoization library for Clojure."
+  :global-vars {*warn-on-reflection* true}
   :dependencies [;;[org.clojure/pom.contrib "0.1.2"]
                  [org.clojure/clojure "1.5.1"]
                  [org.clojure/core.cache "0.6.3"]]

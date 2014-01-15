@@ -1,4 +1,4 @@
-(defproject org.clojure/data.avl "0.0.11-SNAPSHOT"
+(defproject org.clojure/data.avl "0.0.12-SNAPSHOT"
   :description "Persistent sorted maps and sets with log-time rank queries"
   :url "https://github.com/clojure/data.avl"
   :license {:name "Eclipse Public License"

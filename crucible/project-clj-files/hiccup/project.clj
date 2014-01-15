@@ -1,6 +1,7 @@
 (defproject hiccup "1.0.4"
   :description "A fast library for rendering HTML in Clojure"
   :url "http://github.com/weavejester/hiccup"
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]
   :plugins [[codox "0.6.4"]]
   :codox {:exclude [hiccup.compiler]

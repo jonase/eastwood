@@ -1,6 +1,7 @@
 (defproject stencil "0.3.3"
   :description "Mustache in Clojure"
   :url "https://github.com/davidsantiago/stencil"
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [scout "0.1.0"]
                  [quoin "0.1.0"]

@@ -1,5 +1,6 @@
 (defproject core.cache "0.6.4-SNAPSHOT"
   :description "Cache library for Clojure."
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/data.priority-map "0.0.2"]]
   :profiles {:1.2   {:dependencies [[org.clojure/clojure "1.2.0"]]}

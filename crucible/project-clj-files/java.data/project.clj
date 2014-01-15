@@ -1,5 +1,6 @@
 (defproject algo.generic "0.1.2-SNAPSHOT"
   :description "algo.generic 0.1.2-SNAPSHOT"
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/tools.logging "0.2.3"]]
   :profiles {:1.2 {:dependencies [[org.clojure/clojure "1.2.1"]]}

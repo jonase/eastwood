@@ -1,5 +1,6 @@
 (defproject math.numeric-tower "0.0.3-SNAPSHOT"
   :description "math.numeric-tower 0.0.3-SNAPSHOT"
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]
   :profiles {:1.2 {:dependencies [[org.clojure/clojure "1.2.1"]]}
              :1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}

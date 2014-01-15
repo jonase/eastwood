@@ -1,5 +1,6 @@
 (defproject clojurewerkz/scrypt "1.1.0-SNAPSHOT"
   :description "A Clojure library for scrypt encryption"
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure    "1.5.1"]
                  [com.lambdaworks/scrypt "1.3.3"]]
   :profiles {:1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}

@@ -3,6 +3,7 @@
   :url "http://github.com/clojurewerkz/buffy"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [io.netty/netty-buffer "4.0.12.Final"]
                  [reiddraper/simple-check "0.5.3"]]

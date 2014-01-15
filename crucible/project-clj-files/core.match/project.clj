@@ -1,6 +1,7 @@
 (defproject org.clojure/core.match "0.2.1-SNAPSHOT"
   :description "Optimized pattern matching and predicate dispatch for Clojure"
 
+  :global-vars {*warn-on-reflection* true}
   :jvm-opts ^:replace ["-Xmx512m" "-server"]
 
   :test-paths ["src/test/clojure"]
