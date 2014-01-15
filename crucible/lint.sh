@@ -17,8 +17,8 @@
 # set -x    echo expanded commands before executing them
 # set +x    stop doing that
 
-PROFILE=""
-#PROFILE="+1.6"
+#PROFILE=""
+PROFILE="+1.6"
 
 do_eastwood()
 {
