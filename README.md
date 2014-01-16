@@ -216,10 +216,16 @@ there's no way for `tools.analyzer.jvm` to provide a compatible `&env`
 
 The Clojure Contrib libraries
 [`core.typed`](https://github.com/clojure/core.typed) and
-[`jvm.tools.analyzer`](https://github.com/clojure/jvm.tools.analyzer)
-cannot be analyzed.  `core.typed` use `jvm.tools.analyzer`, and both
-it and `tools.analyzer` (used by Eastwood) share the same
-`clojure.tools.analyzer` namespace.
+[`jvm.tools.analyzer`](https://github.com/clojure/jvm.tools.analyzer),
+and projects that depend upon them, cannot be analyzed.  `core.typed`
+use `jvm.tools.analyzer`, and both it and `tools.analyzer` (used by
+Eastwood) share the same `clojure.tools.analyzer` namespace.
+
+Updating to the latest version of these libraries (e.g. `core.typed`
+version 0.2.21 or later) should solve this for you, although that may
+cause conflicts with other code.  See [this
+message](https://groups.google.com/d/msg/clojure-dev/N4Ld3dc17_o/e1Ww2i7YbroJ)
+for an alternate approach.
 
 If a project uses
 [`tools.namespace`](https://github.com/clojure/tools.namespace)
