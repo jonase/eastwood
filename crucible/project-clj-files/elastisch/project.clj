@@ -1,13 +1,13 @@
-(defproject clojurewerkz/elastisch "1.4.0-SNAPSHOT"
+(defproject clojurewerkz/elastisch "1.5.0-beta2-SNAPSHOT"
   :url "http://clojureelasticsearch.info"
   :description "Minimalistic fully featured well documented Clojure ElasticSearch client"
   :license {:name "Eclipse Public License"}
   :dependencies [[org.clojure/clojure   "1.5.1"]
-                 [cheshire              "5.2.0"]
+                 [cheshire              "5.3.1"]
                  [clj-http              "0.7.8" :exclusions [org.clojure/clojure]]
                  [clojurewerkz/support  "0.20.0"]
                  ;; used by the native client
-                 [org.elasticsearch/elasticsearch "0.90.8"]]
+                 [org.elasticsearch/elasticsearch "0.90.10"]]
   :min-lein-version "2.0.0"
   :profiles     {:dev {:resource-paths ["test/resources"]
                        :dependencies [[clj-time            "0.4.4" :exclusions [org.clojure/clojure]]]

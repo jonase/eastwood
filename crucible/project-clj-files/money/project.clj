@@ -1,4 +1,4 @@
-(defproject clojurewerkz/money "1.5.0-SNAPSHOT"
+(defproject clojurewerkz/money "1.6.0-SNAPSHOT"
   :description "A Clojure library that deals with monetary values and currencies. Built on top of Joda Money."
   :min-lein-version "2.0.0"
   :url "http://github.com/clojurewerkz/money"
@@ -23,4 +23,4 @@
   :source-paths      ["src/clojure"]
   :java-source-paths ["src/java"]
   :resource-paths    ["src/resources"]
-  :warn-on-reflection true)
+  :global-vars {*warn-on-reflection* true})
