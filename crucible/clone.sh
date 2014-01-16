@@ -228,4 +228,4 @@ echo "Remove an empty file from data.zip that interferes with Leiningen ..."
 /bin/rm -f repos/data.zip/src/test/clojure/clojure/data/zip.clj
 
 echo "1-line change to hiccup file that eliminates many analyzer exceptions ..."
-/bin/cp -f project-clj-files/hiccup/hiccup.clj repos/hiccup/src/hiccup/util.clj
+/bin/cp -f project-clj-files/hiccup/util.clj repos/hiccup/src/hiccup/util.clj
