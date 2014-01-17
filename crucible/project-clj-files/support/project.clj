@@ -24,4 +24,4 @@
   :aliases {"all" ["with-profile" "dev:dev,1.3:dev,1.4:dev,1.6:dev,master:dev,cdj01x:dev,cdj02x"]}
   :source-paths ["src/clojure"]
   :java-source-paths ["src/java"]
-  :warn-on-reflection true)
+  :global-vars {*warn-on-reflection* true})

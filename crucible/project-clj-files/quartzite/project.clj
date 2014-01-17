@@ -24,7 +24,7 @@
                  "sonatype-snapshots" {:url "http://oss.sonatype.org/content/repositories/snapshots"
                                        :snapshots true
                                        :releases {:checksum :fail :update :always}}}
-  :warn-on-reflection true
+  :global-vars {*warn-on-reflection* true}
   :mailing-list {:name "clojure-quartz"
                  :archive "https://groups.google.com/group/clojure-quartz"
                  :post "clojure-quartz@googlegroups.com"}

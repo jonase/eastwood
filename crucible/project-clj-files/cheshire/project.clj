@@ -4,7 +4,7 @@
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"
             :distribution :repo}
-  :warn-on-reflection false
+  :global-vars {*warn-on-reflection* true}
   :dependencies [[com.fasterxml.jackson.core/jackson-core "2.3.1"]
                  [com.fasterxml.jackson.dataformat/jackson-dataformat-smile "2.3.1"]
                  [tigris "0.1.1"]]

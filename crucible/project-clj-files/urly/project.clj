@@ -24,4 +24,4 @@
                    :core       :core
                    :mutation   :mutation
                    :resolution :resolution}
-  :warn-on-reflection true)
+  :global-vars {*warn-on-reflection* true})
