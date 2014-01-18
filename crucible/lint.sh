@@ -34,18 +34,19 @@ do_eastwood()
     fi
 
     lein clean
+    /bin/rm -f eastwood-out.txt
     set +e   # Do not stop if an eastwood run returns a non-0 exit status.  Keep going with more checking, if any.
     if [ "x${ns}" = "x" ]
     then
         case ${project} in
 	    http-kit)
 		set -x
-		lein ${p} eastwood '{:exclude-namespaces [ org.httpkit.client-test org.httpkit.server-test org.httpkit.ws-test ]}'
+		lein ${p} eastwood '{:exclude-namespaces [ org.httpkit.client-test org.httpkit.server-test org.httpkit.ws-test ]}' >& eastwood-out.txt
 		set +x
 		;;
 	    reply|neocons)
 		set -x
-		lein ${p} eastwood '{:namespaces [ :source-paths ]}'
+		lein ${p} eastwood '{:namespaces [ :source-paths ]}' >& eastwood-out.txt
 		set +x
 		;;
 	    timbre)
@@ -57,12 +58,12 @@ do_eastwood()
 		    q="with-profile +test"
 		fi
 		set -x
-		lein ${q} eastwood '{:exclude-namespaces [ taoensso.timbre.appenders.android ]}'
+		lein ${q} eastwood '{:exclude-namespaces [ taoensso.timbre.appenders.android ]}' >& eastwood-out.txt
 		set +x
 		;;
 	    *)
 		set -x
-		lein ${p} eastwood
+		lein ${p} eastwood >& eastwood-out.txt
 		set +x
 		;;
         esac
@@ -103,18 +104,19 @@ do_eastwood()
         # == Linting clojure.test-clojure.protocols ==
 
 	set -x
-	lein ${p} eastwood '{:namespaces [ :test-paths ] :exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ]}'
+	lein ${p} eastwood '{:namespaces [ :test-paths ] :exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ]}' >& eastwood-out.txt
 	set +x
     elif [ "${project}" = "clojure" ]
     then
 	set -x
-	lein ${p} eastwood "{:namespaces [ ${ns} ]}"
+	lein ${p} eastwood "{:namespaces [ ${ns} ]}" >& eastwood-out.txt
 	set +x
     else
 	echo "do_eastwood called with unknown combo project=${project} ns=${ns}"
 	exit 1
     fi
     set -e
+    cat eastwood-out.txt
 }
 
 set -e   # Fail if any of the directories do not exist, so this script can be fixed
