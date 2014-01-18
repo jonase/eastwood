@@ -166,6 +166,30 @@ the tests, please create an Issue for Eastwood on Github.
 If you have a code base you do not trust to load, consider a sandbox,
 throwaway virtual machine, etc.
 
+There are also options that enable printing of additional debug
+messages during linting.  These are only intended for tracking down
+the cause of errors in Eastwood.  You specify the key `:debug` with a
+value that is a set of keywords, e.g.
+
+    lein eastwood '{:exclude-linters [:wrong-arity] :debug #{:eval :ns}}'
+
+* `:all` - enable all debug messages.  This also enables showing the
+  list of namespaces near the beginning of the output, before linting
+  begins.
+* `:time` - print messages about the elapsed time taken during
+  analysis, and for each individual linter.
+* `:forms` - print the forms as read, before they are analyzed
+* `:forms-pprint` - like `:forms` except pretty-print the forms
+* `:progress` - show a brief debug message after each top-level form
+  is read
+* `:eval` - prett-print each form after it has been read, analyzed
+  into an AST (abstract syntax tree), and converted back into form
+  from the AST, but before that form is evaluated with `eval`.
+* `:ns` - print the initial set of namespaces loaded into the Clojure
+  run-time at the beginning of each file being linted, and then after
+  each top level form print any changes to that list of loaded
+  namespaces (typically as the result of evaluating a `require` or
+  `use` form).
 
 ## Known issues
 
