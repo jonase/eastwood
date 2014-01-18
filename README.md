@@ -512,14 +512,11 @@ test.
 
 
 (is (= ["josh"] names) (str "error when testing with josh and " names))
-;; This gives the same warning as the previous case, except here it is
-;; clear to the developer that the second arg is a message string.
-;; Instead of being a constant string, it is one constructed by
-;; evaluating an expression.  This is most likely what was intended,
-;; but the linter does not currently have a special check for this
-;; kind of string-constructing expression.  (TBD: Add some checks to
-;; this linter for forms beginning with functions like str, format,
-;; and maybe a few others).
+;; This linter has a special case that if the 2nd arg to 'is' is a
+;; form beginning with str or format, it will not issue a warning,
+;; under the assumption that this symbol has not been redefined to
+;; return something other than a string.  (TBD: Should add
+;; with-out-str and a few others in the next version.)
 
 
 (deftest test1
