@@ -53,6 +53,7 @@ return value followed by the time it took to evaluate in millisec."
    :redefd-vars misc/redefd-vars
    :def-in-def misc/def-in-def
    :wrong-arity misc/wrong-arity
+   :bad-arglists misc/bad-arglists
    :suspicious-test typos/suspicious-test
    :suspicious-expression typos/suspicious-expression
    :unused-ret-vals unused/unused-ret-vals
@@ -72,6 +73,7 @@ return value followed by the time it took to evaluate in millisec."
     :redefd-vars
     :def-in-def
     :wrong-arity
+    :bad-arglists
     :suspicious-test
     :suspicious-expression
     :unused-ret-vals

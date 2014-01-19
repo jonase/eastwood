@@ -398,3 +398,113 @@ a (defonce foo val) expression.  If it is, return [foo val]."
                     (string/join "  " (-> expr :fn :arglists)))
        :line (-> loc :line)
        :column (-> loc :column)})))
+
+;; Bad :arglists
+
+(defn argvec-kind [argvec]
+  (let [n (count argvec)
+        variadic? (and (>= n 2)
+                       (= '& (argvec (- n 2))))]
+    (if variadic?
+      ['>= (- n 2)]
+      [n])))
+
+(defn cmp-argvec-kinds [kind1 kind2]
+  (if (= '>= (first kind1))
+    (if (= '>= (first kind2))
+      (compare (second kind1) (second kind2))
+      1)
+    (if (= '>= (first kind2))
+      -1
+      (compare (first kind1) (first kind2)))))
+
+(defn all-sigs [arglists]
+  (->> arglists
+       (map argvec-kind)
+       (sort cmp-argvec-kinds)
+       (mapcat (fn [kind]
+                 (if (= '>= (first kind))
+                   [(second kind) :or-more]
+                   [(first kind)])))
+       vec))
+
+;; TBD: Try to make this *not* warn for macros with custom :arglists,
+;; but only for non-macro functions.  Perhaps even better, separate
+;; linter names for each type of warning.
+
+;; The code as is will warn about this macro in timbre's namespace
+;; taoensso.timbre.utils:
+
+;;(defmacro defonce*
+;;  "Like `clojure.core/defonce` but supports optional docstring and attributes
+;;  map for name symbol."
+;;  {:arglists '([name expr])}
+;;  [name & sigs]
+;;  (let [[name [expr]] (macro/name-with-attributes name sigs)]
+;;    `(clojure.core/defonce ~name ~expr)))
+
+;; TBD: This also does not catch fns created via hiccup's defelem
+;; macro, because when def'd they are fine, and then later the macro
+;; alters the :arglists metadata on the var.  One way to catch that
+;; would be to look at the final value of :arglists after eval'ing the
+;; entire namespace.
+
+;; Case 2 handles functions created by deftest, which have no
+;; :arglists in the metadata of the var they create, but they do have
+;; a :test key.
+             
+;; Case 3 handles at least the following cases, and maybe more that I
+;; have not seen examples of yet.
+             
+;; (def fun1 #(string? %))
+;; (def fun2 map)
+;; (def fun3 (fn [y] (inc y)))
+;; (defn ^Class fun4 "docstring" {:seesaw {:class `Integer}} [x & y] ...)
+
+(defn bad-arglists [{:keys [asts]}]
+  (let [def-fn-asts (->> asts
+                         (mapcat ast/nodes)
+                         (filter (fn [a]
+                                   (and (= :def (:op a))
+                                        (not (-> a :name meta :declared true?))
+                                        (= :fn (-> a :init :op))))))]
+    (apply concat
+     (for [a def-fn-asts]
+       (let [macro? (-> a :var meta :macro)
+             fn-arglists (-> a :arglists)
+             fn-arglists2 (-> a :init :arglists)
+             macro-args? (or (not macro?)
+                             (and (every? #(= '(&form &env) (take 2 %)) fn-arglists)
+                                  (every? #(= '(&form &env) (take 2 %)) fn-arglists2)))
+             meta-arglists (cond (contains? (-> a :meta :val) :arglists)
+                                 (-> a :meta :val :arglists)
+                                 ;; see case 2 notes above
+                                 (and (contains? (-> a :meta) :keys)
+                                      (->> (-> a :meta :keys)
+                                           (some #(= :test (get % :val)))))
+                                 [[]]
+                                 ;; see case 3 notes above
+                                 :else nil)
+             fn-arglists (if (and macro? macro-args?)
+                           (map #(subvec % 2) fn-arglists)
+                           fn-arglists)
+             fn-arglists2 (if (and macro? macro-args?)
+                            (map #(subvec % 2) fn-arglists2)
+                            fn-arglists2)
+             fn-sigs (all-sigs fn-arglists)
+             fn-sigs2 (all-sigs fn-arglists2)
+             meta-sigs (all-sigs meta-arglists)
+             loc (-> a var-of-ast meta)
+             _ (when (not= fn-sigs fn-sigs2)
+                 (println (format "Eastwood internal error: fn-sigs=%s != fn-sigs2=%s"
+                                  fn-sigs2 (seq fn-arglists2))))]
+         (if (and (not (nil? meta-arglists))
+                  (not= fn-sigs meta-sigs))
+           [{:linter :bad-arglists
+             :msg (format "%s on var %s defined taking # args %s but :arglists metadata has # args %s"
+                          (if macro? "Macro" "Function")
+                          (-> a :name)
+                          fn-sigs
+                          meta-sigs)
+             :line (-> loc :line)
+             :column (-> loc :column)}]))))))
