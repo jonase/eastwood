@@ -158,6 +158,12 @@
                      (meta sym))))
     (intern ns sym)))
 
+;; run-passes is a cut-down version of run-passes in
+;; tools.analyzer.jvm.  It eliminates phases that are not needed for
+;; linting, and which can cause analysis to fail for code that we
+;; would prefer to give linter warnings for, rather than throw an
+;; exception.
+
 (defn run-passes
   [ast]
   (-> ast
@@ -220,8 +226,8 @@
           forms
           (recur (conj forms form)))))))
 
-;; analyze-file was copied from library jvm.tools.analyzer and then
-;; modified
+;; analyze-file was copied from library jvm.tools.analyzer and has
+;; been modified heavily since then.
 
 ;; We need to eval forms for side effects, e.g. changing the
 ;; namespace, importing Java classes, etc.  If it sets the namespace,
@@ -229,9 +235,43 @@
 ;; calling empty-env in the form reading loop below, we achieve that.
 
 (defn analyze-file
-  "Takes a file path and optionally a pushback reader.
-  Returns a vector of maps with keys :form and :ast (representing the
-  ASTs of the forms in the target file).
+  "Takes a file path and optionally a pushback reader.  Returns a map
+  with at least the following keys:
+
+  :forms - a sequence of forms as read in, with any forms within a
+      top-level do, or do forms nested within a top-level do,
+      'flattened' to the top level themselves.  This sequence will
+      include all forms in the file, as far as the file could be
+      successfully read, even if an exception was thrown earlier than
+      that during analysis or evaluation of the forms.
+
+  :asts - a sequence of ASTs of the forms that were successfully
+      analyzed without exception.  They correspond one-to-one with
+      forms in the :forms sequence.
+
+  :exception - nil if no exception occurred.  An Exception object if
+      an exception was thrown during analysis, emit-form, or eval.
+
+  If :exception is not nil, then the following keys will also be part
+  of the returned map:
+
+  :exception-phase - If an exception was thrown, this is a keyword
+      indicating in what portion of analyze-file's operation this
+      exception occurred.  One of:
+      :analyze - during analysis of the form, i.e. the call to
+          analyze-form
+      :emit-form - after form analysis completed and an AST was
+          constructed, but during conversion of that AST back into a
+          form, i.e. the call to emit-form
+      :eval-form - after form analysis and conversion back into a
+          form, but during evaluation of that form, i.e. the call to
+          eval
+      :eval-ns - during eval of a top level 'ns' form.  For such
+          forms, neither analysis nor conversion back into a form are
+          performed.  The form originally read in is evaluated.
+
+  :exception-form - If an exception was thrown, the current form being
+      processed when the exception occurred.
 
   Options:
   - :reader  a pushback reader to use to read the namespace forms
@@ -349,8 +389,17 @@
 
 (defn analyze-ns
   "Takes a LineNumberingPushbackReader and a namespace symbol.
-  Returns a vector of maps, with keys :op, :env. If expressions
-  have children, will have :children entry.
+  Returns a map of results of analyzing the namespace.  The map
+  contains these keys:
+
+  :analyze-results - The value associated with this key is itself a
+      map with the following keys:
+      :namespace - The source-nsym argument to this fn
+      :source - A string containing the source read in from the
+          namespace's source file.
+      :forms - See analyze-file docs for details
+      :asts - See analyze-file
+  :exception, :exception-phase, :exception-form - See analyze-file
 
   Options:
   - :reader  a pushback reader to use to read the namespace forms
