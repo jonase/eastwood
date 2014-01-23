@@ -8,7 +8,7 @@
 
 (defn pprint-ast-node [ast]
   (binding [*print-meta* true
-            *print-level* 9
+            ;;*print-level* 12
             *print-length* 50]
     (pp/pprint ast)))
 
@@ -119,6 +119,29 @@
           (if (identical? x eof)
             forms
             (recur (conj forms x))))))))
+
+(defn subforms-with-first-in-set [form sym-set]
+  (let [a (atom [])]
+    (prewalk (fn [form]
+               (when (and (sequential? form)
+                          (not (vector? form))
+                          (contains? sym-set (first form)))
+                 (swap! a conj form))
+               form)
+             form)
+    @a))
+
+(defn replace-subforms-with-first-in-set [form sym-set replace-fn]
+  (prewalk (fn [form]
+             (if (and (sequential? form)
+                      (not (vector? form))
+                      (contains? sym-set (first form)))
+               (replace-fn form)
+               form))
+           form))
+
+(defn replace-comments-with-nil [form]
+  (replace-subforms-with-first-in-set form #{'comment} (constantly nil)))
 
 (defn- mark-statements-in-try-body-post [ast]
   (if (and (= :try (:op ast))

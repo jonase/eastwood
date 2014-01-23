@@ -68,6 +68,7 @@
 ;                           (-> (first asts) :env :ns the-ns)))
         forms (util/string->forms source this-ns false)
         freqs (->> forms
+                   util/replace-comments-with-nil
                    flatten-also-colls
                    (filter keyword?)
                    frequencies)]
@@ -96,17 +97,6 @@
 ;; TBD: Consider trying to find forms like (= ...) that are not
 ;; wrapped inside (is (= ...)) inside deftest, even if they are nested
 ;; within a (testing ...) form.
-
-(defn subforms-with-first-symbol-in-set [form sym-set]
-  (let [a (atom [])]
-    (util/prewalk (fn [form]
-                    (when (and (sequential? form)
-                               (not (vector? form))
-                               (contains? sym-set (first form)))
-                      (swap! a conj form))
-                    form)
-                  form)
-    @a))
 
 (defn constant-expr-logical-true? [expr]
   (or (char? expr)
@@ -243,9 +233,10 @@
 (defn suspicious-test [{:keys [forms]}]
   (binding [*var-info-map* (edn/read-string (slurp (io/resource "var-info.edn")))]
     (doall
-     (let [is-forms (subforms-with-first-symbol-in-set forms #{'is})
-           deftest-forms (subforms-with-first-symbol-in-set forms #{'deftest})
-           testing-forms (subforms-with-first-symbol-in-set forms #{'testing})
+     (let [forms (util/replace-comments-with-nil forms)
+           is-forms (util/subforms-with-first-in-set forms #{'is})
+           deftest-forms (util/subforms-with-first-in-set forms #{'deftest})
+           testing-forms (util/subforms-with-first-in-set forms #{'testing})
            deftest-subexprs (apply concat
                                    (map #(nthnext % 2) deftest-forms))
            testing-subexprs (apply concat
@@ -302,8 +293,10 @@
 (defn suspicious-expression-forms [{:keys [forms]}]
   (apply
    concat
-   (let [fs (subforms-with-first-symbol-in-set
-             forms (set (keys core-first-vars-that-do-little)))]
+   (let [fs (-> forms
+                util/replace-comments-with-nil
+                (util/subforms-with-first-in-set
+                 (set (keys core-first-vars-that-do-little))))]
      (for [f fs]
        (let [fn-sym (first f)
              num-args (dec (count f))

@@ -141,3 +141,9 @@
   (is (= 6 (+ 2 4)) (str "2+4" "is" "6"))
   (is (= 6 (+ 2 4)) (format "%s is %s" 2 6))
   )
+
+(comment
+  ;; Best not to warn for things inside of (comment ...)
+  (= 5)
+  (is "2+4 is 6 in the wrong place" (= (count [:flood :flood :floob :flood :gates :agtes]) (+ 2 4)))  ; backwards args, but test passes because string is logical true
+  )

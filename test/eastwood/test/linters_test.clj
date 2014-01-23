@@ -314,7 +314,7 @@
     })
   (lint-test
    'eastwood.test.testcases.testtest
-   [:suspicious-test :suspicious-expression]
+   [:keyword-typos :suspicious-test :suspicious-expression]
    {}
    {
     {:linter :suspicious-test,
@@ -603,4 +603,16 @@
      :line nil, :column nil}
     1,
     })
+  ;; I would prefer if this threw an exception, but I think it does
+  ;; not because Clojure reads, analyzes, and evaluates the namespace
+  ;; before lint-test does, and thus the namespace is already there
+  ;; when analyze-ns re-analyzes it.  I tried a variation of the
+  ;; lint-test macro that did remove-ns first, but that caused other
+  ;; tests to fail for reasons that I did not spend long enough to
+  ;; learn the reason for.
+;;  (lint-test
+;;   'eastwood.test.testcases.topleveldo
+;;   [:redefd-vars :unlimited-use]
+;;   {}
+;;   {})
   )
