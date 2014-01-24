@@ -14,14 +14,14 @@
             ;; it will avoid the problem of not being able to find
             ;; namespace c.t.n.find when running Eastwood on a project
             ;; that uses an older version of tools.namespace.
-            [clojure.tools.namespace.find :as find]
+            [clojure.tools.namespace.file :as file]
             [clojure.tools.namespace.track :as track]
             [clojure.tools.namespace.dir :as dir]
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.unused :as unused]
             [eastwood.linters.typos :as typos])
-  (:import [java.io PushbackReader]
+  (:import [java.io File PushbackReader]
            [clojure.lang LineNumberingPushbackReader]))
 
 
@@ -390,7 +390,54 @@ exception."))))
          (println (format "The only keywords allowed in this list of namespaces are: %s"
                           (seq known-ns-keywords))))})))
 
+(defn filename-to-ns [fname]
+  (-> fname
+      (str/replace-first #".clj$" "")
+      (str/replace "_" "-")
+      (str/replace File/separator ".")
+      symbol))
+
+(defn ns-to-filename [namespace]
+  (str (-> namespace
+           str
+           (str/replace "-" "_")
+           (str/replace "." File/separator))
+       ".clj"))
+
+(defn filename-namespace-mismatches [dir-name-strs]
+  (let [files-by-dir (into {} (for [dir-name-str dir-name-strs]
+                                [dir-name-str (#'dir/find-files [dir-name-str])]))
+        fd-by-dir (util/map-vals (fn [files]
+                                   (#'file/files-and-deps files))
+                                 files-by-dir)]
+    (into
+     {}
+     (for [[dir fd] fd-by-dir,
+           [f namespace] (:filemap fd)
+           :let [fname (str f)
+                 fname (if (.startsWith fname dir)
+                         (subs fname (inc (count dir))) ; inc to get rid of a separator
+                         fname)
+                 desired-ns (filename-to-ns fname)
+                 desired-fname (ns-to-filename namespace)]
+           :when (not= fname desired-fname)]
+       [fname {:dir dir, :namespace namespace,
+               :recommended-fname desired-fname,
+               :recommended-namespace desired-ns}]))))
+
 (defn nss-in-dirs [dir-name-strs]
+  (let [mismatches (filename-namespace-mismatches dir-name-strs)]
+    (when (seq mismatches)
+      (println (format "The following file(s) contain ns forms with namespaces that do not correspond
+with their file names:"))
+      (doseq [[fname {:keys [dir namespace recommended-fname recommended-namespace]}]
+              mismatches]
+        (println (format "Directory: %s" dir))
+        (println (format "    File                 : %s" fname))
+        (println (format "    has namespace        : %s" namespace))
+        (println (format "    should have namespace: %s" recommended-namespace))
+        (println (format "    or should be in file : %s" recommended-fname)))
+      (System/exit 1)))
   (let [tracker (apply dir/scan-all (track/tracker) dir-name-strs)]
     (:clojure.tools.namespace.track/load tracker)))
 
