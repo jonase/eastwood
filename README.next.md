@@ -1,3 +1,26 @@
+### Check consistency of namespace and file names
+
+When doing `require` or `use` on a namespace like `foo.bar.baz-tests`,
+it is searched for in the Java classpath in a file named
+`foo/bar/baz_tests.clj` (on Unix-like systems) or
+`foo\bar\baz_tests.clj` (on Windows).  Dots become path separator
+characters and dashes become underscores.
+
+Such a file will normally have an `ns` form with the specified
+namespace.  If it does not match the file it is in, then undesirable
+things can happen.  For example, `require` could fail to find the
+namespace, or Leiningen could fail to run the tests defined in a test
+namespace.
+
+Eastwood checks all Clojure files in `:source-paths` and `:test-paths`
+when starting up (or only one of them, if only one is specified in the
+`:namespaces` sequence in the command options).  If there are any
+mismatches between file names and the namespace names in the `ns`
+forms, an error message will be printed and no linting will be done at
+all.  This helps avoid some cases of printing error messages that make
+it difficult to determine what went wrong.  Fix the problems indicated
+and try again.
+
 
 ### `:bad-arglists` - arglists that does not match the actual number of arguments that a function/macro was defined to take
 
