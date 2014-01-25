@@ -1,4 +1,4 @@
-(defproject core.contracts "0.0.5-SNAPSHOT"
+(defproject org.clojure/core.contracts "0.0.5-SNAPSHOT"
   :description "Contracts programming for Clojure."
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]

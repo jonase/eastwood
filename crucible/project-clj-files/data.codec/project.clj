@@ -1,4 +1,4 @@
-(defproject data.codec "0.1.1-SNAPSHOT"
+(defproject org.clojure/data.codec "0.1.1-SNAPSHOT"
   :description "data.codec 0.1.1-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]

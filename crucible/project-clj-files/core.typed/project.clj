@@ -1,4 +1,4 @@
-(defproject org.clojure/core.typed "0.2.20-SNAPSHOT"
+(defproject org.clojure/core.typed "0.2.26-SNAPSHOT"
   :description "Gradual typing for Clojure"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
@@ -37,7 +37,6 @@
                "src/test/cljs"]
 
   :profiles {:dev {:repl-options {:port 64394}}
-             :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
 
   :cljsbuild {:builds {}}

@@ -1,4 +1,4 @@
-(defproject math.combinatorics "0.0.8-SNAPSHOT"
+(defproject org.clojure/math.combinatorics "0.0.8-SNAPSHOT"
   ;;:description "clojure.math.combinatorics 0.0.7-SNAPSHOT"
   ;;:main clojure.math.combinatorics
   :global-vars {*warn-on-reflection* true}

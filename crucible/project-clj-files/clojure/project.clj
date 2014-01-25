@@ -1,4 +1,4 @@
-(defproject clojure.core "1.6.0-SNAPSHOT"
+(defproject org.clojure/clojure.core "1.6.0-SNAPSHOT"
   :description "clojure.core 1.6.0-SNAPSHOT"
   :dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]
   :source-paths [ "src/clj" ]

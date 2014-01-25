@@ -1,4 +1,4 @@
-(defproject data.fressian "0.2.1-SNAPSHOT"
+(defproject org.clojure/data.fressian "0.2.1-SNAPSHOT"
   :description "Read/write Fressian from Clojure"
   :url "https://github.com/clojure/data.fressian"
   :license {:name "Eclipse Public License"

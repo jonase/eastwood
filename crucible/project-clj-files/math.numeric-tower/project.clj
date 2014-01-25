@@ -1,4 +1,4 @@
-(defproject math.numeric-tower "0.0.3-SNAPSHOT"
+(defproject org.clojure/math.numeric-tower "0.0.3-SNAPSHOT"
   :description "math.numeric-tower 0.0.3-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]

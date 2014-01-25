@@ -1,4 +1,4 @@
-(defproject tools.logging "0.2.7-SNAPSHOT"
+(defproject org.clojure/tools.logging "0.2.7-SNAPSHOT"
   :description "tools.logging 0.2.7-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]

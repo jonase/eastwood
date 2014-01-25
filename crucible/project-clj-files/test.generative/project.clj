@@ -1,4 +1,4 @@
-(defproject data.json "0.5.2-SNAPSHOT"
+(defproject org.clojure/data.json "0.5.2-SNAPSHOT"
   :description "Generative test runner."
   :url "https://github.com/clojure/test.generators"
   :license {:name "Eclipse Public License"

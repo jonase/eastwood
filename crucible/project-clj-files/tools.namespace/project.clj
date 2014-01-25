@@ -1,4 +1,4 @@
-(defproject tools.namespace "0.2.5-SNAPSHOT"
+(defproject org.clojure/tools.namespace "0.2.5-SNAPSHOT"
   :description "tools.namespace 0.2.5-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]

@@ -6,7 +6,9 @@
   :min-lein-version "2.2.0"
   :parent [org.clojure/pom.contrib "0.1.2"]
   :dependencies [[org.clojure/clojure "1.5.1"]]
-  :jvm-opts ^:replace []
+  :jvm-opts ^:replace ["-Dorg.clojure.data.avl.test.large-tree-size=100000"
+                       "-Dorg.clojure.data.avl.test.medium-tree-size=100000"
+                       "-Dorg.clojure.data.avl.test.small-tree-size=300"]
   :source-paths ["src/main/clojure" "src/main/cljs"]
   :test-paths ["src/test/clojure"]
   :global-vars {*warn-on-reflection* true}

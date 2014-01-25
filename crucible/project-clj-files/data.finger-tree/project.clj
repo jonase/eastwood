@@ -1,4 +1,4 @@
-(defproject data.finger-tree "0.0.2-SNAPSHOT"
+(defproject org.clojure/data.finger-tree "0.0.2-SNAPSHOT"
   :description "data.finger-tree 0.0.2-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]

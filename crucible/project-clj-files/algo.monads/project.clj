@@ -1,4 +1,4 @@
-(defproject algo.monads "0.1.5-SNAPSHOT"
+(defproject org.clojure/algo.monads "0.1.5-SNAPSHOT"
   :description "algo.monads 0.1.5-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]

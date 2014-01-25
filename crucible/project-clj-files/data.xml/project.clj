@@ -1,4 +1,4 @@
-(defproject data.xml "0.0.8-SNAPSHOT"
+(defproject org.clojure/data.xml "0.0.8-SNAPSHOT"
   :description "data.xml 0.0.8-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]

@@ -1,4 +1,4 @@
-(defproject java.jmx "0.3.0-SNAPSHOT"
+(defproject org.clojure/java.jmx "0.3.0-SNAPSHOT"
   :description "java.jmx 0.3.0-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]

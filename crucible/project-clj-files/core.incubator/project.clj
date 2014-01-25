@@ -1,4 +1,4 @@
-(defproject core.incubator "0.1.4-SNAPSHOT"
+(defproject org.clojure/core.incubator "0.1.4-SNAPSHOT"
   :description "core.incubator 0.1.4-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]

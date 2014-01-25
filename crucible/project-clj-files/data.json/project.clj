@@ -1,4 +1,4 @@
-(defproject data.json "0.2.3-SNAPSHOT"
+(defproject org.clojure/data.json "0.2.3-SNAPSHOT"
   :description "Generating/parsing JSON from/to Clojure data structures"
   :url "https://github.com/clojure/data.json"
   :license {:name "Eclipse Public License"

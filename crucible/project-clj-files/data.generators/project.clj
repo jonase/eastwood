@@ -1,4 +1,4 @@
-(defproject data.json "0.1.3-SNAPSHOT"
+(defproject org.clojure/data.json "0.1.3-SNAPSHOT"
   :description "Data generators for Clojure."
   :url "https://github.com/clojure/data.generators"
   :license {:name "Eclipse Public License"

@@ -1,4 +1,4 @@
-(defproject tools.nrepl "0.2.4-SNAPSHOT"
+(defproject org.clojure/tools.nrepl "0.2.4-SNAPSHOT"
   :description "tools.nrepl 0.2.4-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]

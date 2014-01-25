@@ -1,4 +1,4 @@
-(defproject core.unify "0.5.6-SNAPSHOT"
+(defproject org.clojure/core.unify "0.5.6-SNAPSHOT"
   :description "Clojure unification library."
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]

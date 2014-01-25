@@ -1,4 +1,4 @@
-(defproject data.csv "0.1.3-SNAPSHOT"
+(defproject org.clojure/data.csv "0.1.3-SNAPSHOT"
   :description "data.csv 0.1.3-SNAPSHOT"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.5.1"]]
