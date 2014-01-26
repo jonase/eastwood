@@ -143,8 +143,6 @@ entire stack trace if depth is nil).  Does not print ex-data."
     (println (format "Got exception with extra ex-data:"))
     (println (format "    msg='%s'" msg))
     (println (format "    (keys dat)=%s" (keys dat)))
-    (when (contains? dat :tag-kind)
-      (println (format "    (:tag-kind dat)=%s" (:tag-kind dat))))
     (when (contains? dat :ast)
       (println (format "     (:op ast)=%s" (-> dat :ast :op)))
       (when (contains? (:ast dat) :form)
@@ -170,18 +168,15 @@ entire stack trace if depth is nil).  Does not print ex-data."
 
 (defn handle-bad-tag [ns-sym opts ^Throwable exc]
   (let [dat (ex-data exc)
-        {:keys [tag-kind ast]} dat
+        ast (:ast dat)
         msg (.getMessage exc)]
     (cond
-     (or (and (= tag-kind :return-tag) (= (:op ast) :var))
-         (and (= tag-kind :tag)        (= (:op ast) :var))
-         (and (= tag-kind :tag)        (= (:op ast) :invoke))
-         (and (= tag-kind :tag)        (= (:op ast) :const)))
+     (#{:var :invoke :const} (:op ast))
      (let [form (:form ast)
            form (if (= (:op ast) :invoke)
                   (first form)
                   form)
-           tag (get ast tag-kind)]
+           tag (-> form meta :tag)]
        (println (format "A function, macro, protocol method, var, etc. named %s has been used here:"
                         form))
        (util/pprint-ast-node (meta form))
@@ -236,9 +231,9 @@ For supported type hints, it should be just before the arg vector, like this:
                            (= tag clojure.core/long)))
           :show-more-details)))
      
-     (and (= tag-kind :tag)
-          (#{:local :binding} (:op ast)))
-     (let [{:keys [form tag]} ast]
+     (#{:local :binding} (:op ast))
+     (let [form (:form ast)
+           tag (-> form meta :tag)]
        (println (format "Local name '%s' has been given a type tag '%s' here:"
                         form tag))
        (util/pprint-ast-node (meta tag))
@@ -294,8 +289,8 @@ curious." eastwood-url))
 
         :else
         (do
-          (println (format "dbgx for case tag-kind=:tag :op :local tag=%s (class form)=%s (sequential? form) form="
-                           (class form) (sequential? form) tag))
+          (println (format "dbgx for case :op %s tag=%s (class form)=%s (sequential? form)=%s form="
+                           (:op ast) tag (class form) (sequential? form)))
           (util/pprint-ast-node form)
           :show-more-details)))
 
@@ -312,7 +307,7 @@ curious." eastwood-url))
           (contains? dat :form))
      (handle-bad-dot-form ns-sym opts exc)
      
-     (contains? dat :tag-kind)
+     (re-find #"Class not found: " msg)
      (handle-bad-tag ns-sym opts exc)
 
      :else
