@@ -6,9 +6,8 @@
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
   :global-vars {*warn-on-reflection* true}
+  :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/core.memoize "0.5.6"]
                  [org.clojure/tools.analyzer "0.1.0-SNAPSHOT"]
-                 [org.ow2.asm/asm-all "4.1"]]
-  :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
-  )
+                 [org.ow2.asm/asm-all "4.1"]])
