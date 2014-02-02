@@ -26,7 +26,7 @@
             [clojure.tools.analyzer.passes.jvm.classify-invoke :refer [classify-invoke]]
             [clojure.tools.analyzer.passes.jvm.validate :refer [validate]]
             [clojure.tools.analyzer.passes.jvm.infer-tag :refer [infer-tag]]
-            [clojure.tools.analyzer.passes.jvm.annotate-tag :refer [annotate-literal-tag annotate-binding-tag]]
+            [clojure.tools.analyzer.passes.jvm.annotate-tag :refer [annotate-tag]]
             [clojure.tools.analyzer.passes.jvm.validate-loop-locals :refer [validate-loop-locals]]
             [clojure.tools.analyzer.passes.jvm.analyze-host-expr :refer [analyze-host-expr]]))
 
@@ -174,7 +174,6 @@
     (prewalk (fn [ast]
                (-> ast
                  warn-earmuff
-                 annotate-branch
                  source-info
                  elide-meta
                  annotate-methods
@@ -183,16 +182,17 @@
     ((fn analyze [ast]
        (-> ast
          (postwalk
-          (comp classify-invoke
-             (cycling constant-lift
-                      annotate-literal-tag
-                      annotate-binding-tag
-                      infer-tag
-                      analyze-host-expr
-                      validate)))
+          (fn [ast]
+            (-> ast
+              annotate-tag
+              analyze-host-expr
+              infer-tag
+              validate
+              classify-invoke)))
          (prewalk
           (comp box
              (validate-loop-locals analyze))))))
+
     (prewalk cleanup)))
 
 (defn analyze
