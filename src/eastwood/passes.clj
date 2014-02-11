@@ -1,6 +1,7 @@
 (ns eastwood.passes
   (:refer-clojure :exclude [get-method])
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [eastwood.util :as util]))
 
 (defmulti reflect-validated :op)
 
@@ -40,6 +41,12 @@
         arg-type-arr (into-array Class arg-type-vec)]
 ;;    (println (format "dbgx: get-method cls=%s method=%s arg-types=%s"
 ;;                     cls method-name (arg-type-str arg-type-vec)))
+    (when (some nil? arg-type-vec)
+      (println (format "Error: Bad arg-type nil for method named %s for class %s, full arg type list (%s).  ast pprinted below for debugging tools.analyzer:"
+                       method-name
+                       (.getName ^Class cls)
+                       (arg-type-str arg-type-vec)))
+      (util/pprint-ast-node ast))
     (try
       (.getMethod ^Class cls method-name arg-type-arr)
       (catch NoSuchMethodException e
