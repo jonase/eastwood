@@ -7,5 +7,6 @@
              :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
   :source-paths [ "src/main/clojure" ]
+  :java-source-paths [ "src/main/java" ]
   :test-paths [ "src/test/clojure" ]
   )

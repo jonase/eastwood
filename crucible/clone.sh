@@ -224,5 +224,11 @@ do
 done
 cd ..
 
+# Filed a data.zip ticket DZIP-2 suggesting this change
 echo "Remove an empty file from data.zip that interferes with Leiningen ..."
 /bin/rm -f repos/data.zip/src/test/clojure/clojure/data/zip.clj
+
+echo "Apply core.async patch for ticket ASYNC-54 ..."
+cd repos/core.async
+patch -p1 < ../../project-clj-files/core.async/0001-Fix-MAX-QUEUE-SIZE-type-hint-def-evaluates-the-metad.patch
+cd ../..
