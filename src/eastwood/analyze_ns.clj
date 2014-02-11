@@ -25,7 +25,7 @@
             [clojure.tools.analyzer.passes.jvm.fix-case-test :refer [fix-case-test]]
             [clojure.tools.analyzer.passes.jvm.classify-invoke :refer [classify-invoke]]
             [clojure.tools.analyzer.passes.jvm.validate :refer [validate]]
-            [clojure.tools.analyzer.passes.jvm.infer-tag :refer [infer-tag]]
+            [clojure.tools.analyzer.passes.jvm.infer-tag :refer [infer-tag ensure-tag]]
             [clojure.tools.analyzer.passes.jvm.annotate-tag :refer [annotate-tag]]
             [clojure.tools.analyzer.passes.jvm.validate-loop-locals :refer [validate-loop-locals]]
             [clojure.tools.analyzer.passes.jvm.analyze-host-expr :refer [analyze-host-expr]]))
@@ -190,10 +190,11 @@
               validate
               classify-invoke)))
          (prewalk
-          (comp box
-             (validate-loop-locals analyze))))))
+          (validate-loop-locals analyze)))))
 
-    (prewalk cleanup)))
+    (prewalk (comp cleanup
+                ensure-tag
+                box))))
 
 (defn analyze
   [form env]
