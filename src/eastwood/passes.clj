@@ -6,7 +6,7 @@
 
 (defn arg-type-str [arg-types]
   (str/join ", "
-            (map #(.getName ^Class %) arg-types)))
+            (map #(if (nil? %) "nil" (.getName ^Class %)) arg-types)))
 
 (defn get-ctor [ast]
   (let [cls (:class ast)

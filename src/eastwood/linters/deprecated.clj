@@ -13,7 +13,7 @@
                        (count arg-types)
                        (pass/arg-type-str arg-types))))))
 
-(defn no-method-found [kind method-info]
+(defn no-method-found [kind method-info ast]
   (if (map? method-info)
     (let [{:keys [arg-types]} method-info]
       (println (format "Error: Eastwood found no %s method named %s for class %s taking %d args with types (%s).  This may occur because Eastwood does not yet do type matching in the same way that Clojure does."
@@ -21,7 +21,14 @@
                        (:method-name method-info)
                        (.getName ^Class (:class method-info))
                        (count arg-types)
-                       (pass/arg-type-str arg-types))))))
+                       (pass/arg-type-str arg-types)))
+      (when (some nil? arg-types)
+        (println (format "Error: Bad arg-type nil for %s method named %s for class %s, full arg type list (%s).  ast pprinted below for debugging tools.analyzer:"
+                         (name kind)
+                         (:method-name method-info)
+                         (.getName ^Class (:class method-info))
+                         (pass/arg-type-str arg-types)))
+        (util/pprint-ast-node ast)))))
 
 (defn no-field-found [kind field-info]
   (if (map? field-info)
@@ -55,7 +62,7 @@
   (when-let [method (:reflected-method ast)]
     (if (instance? Method method)
       (.isAnnotationPresent ^Method method Deprecated)
-      (do (no-method-found :instance method)
+      (do (no-method-found :instance method ast)
           false))))
 
 (defmethod deprecated :static-field [ast]
@@ -69,7 +76,7 @@
   (when-let [method (:reflected-method ast)]
     (if (instance? Method method)
       (.isAnnotationPresent ^Method method Deprecated)
-      (do (no-method-found :static method)
+      (do (no-method-found :static method ast)
           false))))
 
 (defmulti msg :op)
