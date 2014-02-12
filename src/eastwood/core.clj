@@ -176,7 +176,8 @@ entire stack trace if depth is nil).  Does not print ex-data."
            form (if (= (:op ast) :invoke)
                   (first form)
                   form)
-           tag (-> form meta :tag)]
+           tag (or (-> form meta :tag)
+                   (:tag ast))]
        (println (format "A function, macro, protocol method, var, etc. named %s has been used here:"
                         form))
        (util/pprint-ast-node (meta form))
