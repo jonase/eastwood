@@ -1,17 +1,16 @@
-(defproject clojurewerkz/scrypt "1.1.0-SNAPSHOT"
+(defproject clojurewerkz/scrypt "1.2.0-SNAPSHOT"
   :description "A Clojure library for scrypt encryption"
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure    "1.5.1"]
-                 [com.lambdaworks/scrypt "1.3.3"]]
-  :profiles {:1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}
-             :1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
+                 [com.lambdaworks/scrypt "1.4.0"]]
+  :profiles {:1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}
              :master {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}
              :dev {:resource-paths ["test/resources"]
                    :plugins [[codox "0.6.4"]]
                    :codox {:sources ["src/clojure"]
                            :output-dir "doc/api"}}}
-  :aliases {"all" ["with-profile" "dev:dev,1.3:dev,1.5:dev,1.6:dev,master"]}
+  :aliases {"all" ["with-profile" "dev:dev,1.5:dev,1.6:dev,master"]}
   :repositories {"sonatype" {:url "http://oss.sonatype.org/content/repositories/releases"
                              :snapshots false
                              :releases {:checksum :fail}}
