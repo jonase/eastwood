@@ -152,12 +152,10 @@
 
 (defn create-var
   [sym {:keys [ns]}]
-  (if-let [v (find-var (symbol (str ns) (name sym)))]
+  (let [v (or (find-var (symbol (str ns) (name sym)))
+              (intern ns (with-meta sym {})))]
     (doto v
-      (reset-meta! (if (bound? v)
-                     (merge (meta sym) (meta v))
-                     (meta sym))))
-    (intern ns sym)))
+      (reset-meta! (or (meta sym) {})))))
 
 ;; run-passes is a cut-down version of run-passes in
 ;; tools.analyzer.jvm.  It eliminates phases that are not needed for
