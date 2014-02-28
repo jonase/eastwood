@@ -211,14 +211,6 @@
     (catch Exception e
       {:exception e :analysis nil})))
 
-(defn deftype-classnames [analysis]
-  (let [a (atom #{})]
-    (postwalk analysis
-              (fn [{:keys [op class-name]}]
-                (when (= :deftype op)
-                  (swap! a conj class-name))))
-    @a))
-
 (defn remaining-forms [pushback-reader forms]
   (let [eof (reify)]
     (loop [forms forms]
@@ -329,7 +321,6 @@
             (if-let [eval-ns-exc
                      (when (and eval? top-level-ns-form?)
                        (try
-                         (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader))
                          (pre-eval-debug at-top-level? asts form *ns* opt "top level ns")
                          (eval form)
                          (swap! loaded-namespaces into (disj (loaded-libs) (ns-name *ns*)))
@@ -359,8 +350,6 @@
                        :exception-phase :analyze, :exception-form form}
                       (if-let [[exc-phase exc]
                                (when (and eval? (not top-level-ns-form?))
-                                 (when (seq (deftype-classnames analysis))
-                                   (.set clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)))
                                  (when (not (@loaded-namespaces (ns-name *ns*)))
                                    (try
                                      (let [f (emit-form analysis)]
