@@ -4,6 +4,7 @@
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
+            [eastwood.passes :refer [propagate-def-name]]
             [clojure.set :as set]
             [clojure.java.io :as io]
             [clojure.tools.reader :as tr]
@@ -177,7 +178,8 @@
                  source-info
                  elide-meta
                  annotate-methods
-                 fix-case-test)))
+                 fix-case-test
+                 propagate-def-name)))
 
     ((fn analyze [ast]
        (-> ast

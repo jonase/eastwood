@@ -1,6 +1,7 @@
 (ns eastwood.passes
   (:refer-clojure :exclude [get-method])
   (:require [clojure.string :as str]
+            [clojure.tools.analyzer.ast :refer [update-children]]
             [eastwood.util :as util]))
 
 (defmulti reflect-validated :op)
@@ -78,3 +79,15 @@
   (if (:validated? ast)
     (assoc ast :reflected-method (get-method ast))
     ast))
+
+(defmulti propagate-def-name :op)
+
+(defmethod propagate-def-name :default
+  [{:keys [env] :as ast}]
+  (if-let [def-name (:name env)]
+    (update-children ast (fn [ast] (assoc-in ast [:env :name] def-name)))
+    ast))
+
+(defmethod propagate-def-name :def
+  [{:keys [name] :as ast}]
+  (update-children ast (fn [ast] (assoc-in ast [:env :name] name))))
