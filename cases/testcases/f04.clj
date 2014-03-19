@@ -1,4 +1,4 @@
-(ns eastwood.test.testcases.f04)
+(ns testcases.f04)
 
 
 ;; This case used to cause tools.analyzer to throw an exception before

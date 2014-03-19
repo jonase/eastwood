@@ -1,4 +1,4 @@
-(ns eastwood.test.testcases.deprecated
+(ns testcases.deprecated
   (:import java.util.Date
            java.awt.Frame))
 

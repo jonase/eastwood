@@ -22,7 +22,7 @@
 
 (deftest test1
   (lint-test
-   'eastwood.test.testcases.f01
+   'testcases.f01
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity]
    {}
@@ -65,7 +65,7 @@
   ;; TBD: I do not know why the i-am-inner-defonce-sym warning appears
   ;; twice in the result.  Once would be enough.
   (lint-test
-   'eastwood.test.testcases.f02
+   'testcases.f02
    [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity]
    {}
    {
@@ -85,13 +85,13 @@
    )
 
   (lint-test
-   'eastwood.test.testcases.f03
+   'testcases.f03
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try :wrong-arity]
    {}
    {})
   (lint-test
-   'eastwood.test.testcases.f04
+   'testcases.f04
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity]
    {}
@@ -103,13 +103,13 @@
   (when (and (>= (:major *clojure-version*) 1)
              (>= (:minor *clojure-version*) 6))
     (lint-test
-     'eastwood.test.testcases.f05
+     'testcases.f05
      [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
       :wrong-arity]
      {}
      {}))
   (lint-test
-   'eastwood.test.testcases.f06
+   'testcases.f06
    [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity]
    {}
@@ -144,7 +144,7 @@
     1,
     })
   (lint-test
-   'eastwood.test.testcases.f07
+   'testcases.f07
    [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
    {}
    {
@@ -266,7 +266,7 @@
     1,
     })
   (lint-test
-   'eastwood.test.testcases.deprecated
+   'testcases.deprecated
    [:deprecations :wrong-arity]
    {}
    {
@@ -291,19 +291,20 @@
     1,
     })
   (lint-test
-   'eastwood.test.testcases.tanal-9
+   'testcases.tanal-9
+   [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
+    :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
+;;   [:misplaced-docstrings]
+   {}  ;{:debug #{:all}}
+   {})
+  (lint-test
+   'testcases.tanal-27
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
    {}
    {})
   (lint-test
-   'eastwood.test.testcases.tanal-27
-   [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
-    :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
-   {}
-   {})
-  (lint-test
-   'eastwood.test.testcases.keyword-typos
+   'testcases.keyword-typos
    [:keyword-typos :unused-ret-vals :unused-ret-vals-in-try
     :deprecations :wrong-arity]
    {}
@@ -313,7 +314,7 @@
     1,
     })
   (lint-test
-   'eastwood.test.testcases.testtest
+   'testcases.testtest
    [:keyword-typos :suspicious-test :suspicious-expression]
    {}
    {
@@ -590,17 +591,17 @@
   ;; and :column here, but integer values when I use it from the
   ;; command line.  What is going on here?
   (lint-test
-   'eastwood.test.testcases.unlimiteduse
+   'testcases.unlimiteduse
    [:unlimited-use]
    {}
    {
     {:linter :unlimited-use,
-     :msg "Unlimited use of (clojure.test [clojure.reflect] [clojure inspector] [clojure [set]] [clojure.java.io :as io]) in eastwood.test.testcases.unlimiteduse",
-     :line nil, :column nil}
+     :msg "Unlimited use of (clojure.test [clojure.reflect] [clojure inspector] [clojure [set]] [clojure.java.io :as io]) in testcases.unlimiteduse",
+     :line 3, :column 5}
     1,
     {:linter :unlimited-use,
-     :msg "Unlimited use of ((clojure [pprint :as pp] [uuid :as u])) in eastwood.test.testcases.unlimiteduse",
-     :line nil, :column nil}
+     :msg "Unlimited use of ((clojure [pprint :as pp] [uuid :as u])) in testcases.unlimiteduse",
+     :line 3, :column 5}
     1,
     })
   ;; I would prefer if this threw an exception, but I think it does
@@ -611,7 +612,7 @@
   ;; tests to fail for reasons that I did not spend long enough to
   ;; learn the reason for.
 ;;  (lint-test
-;;   'eastwood.test.testcases.topleveldo
+;;   'testcases.topleveldo
 ;;   [:redefd-vars :unlimited-use]
 ;;   {}
 ;;   {})

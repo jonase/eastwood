@@ -1,4 +1,4 @@
-(ns eastwood.test.testcases.testtest
+(ns testcases.testtest
   (:use [clojure.test]))
 
 

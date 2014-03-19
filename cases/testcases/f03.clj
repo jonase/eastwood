@@ -1,4 +1,4 @@
-(ns eastwood.test.testcases.f03
+(ns testcases.f03
   (:import (java.io InputStream File FileOutputStream)
            (java.net URI))
   (:require clojure.main)

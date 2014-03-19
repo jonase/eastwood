@@ -1,4 +1,4 @@
-(ns eastwood.test.testcases.keyword-typos)
+(ns testcases.keyword-typos)
 
 ;; Just a simple test that the :keyword-typos linter can actually
 ;; issue warnings.

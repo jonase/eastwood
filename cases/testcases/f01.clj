@@ -1,4 +1,4 @@
-(ns eastwood.test.testcases.f01
+(ns testcases.f01
   (:use clojure.test))
 
 (def i-am-redefd 1)

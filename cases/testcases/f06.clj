@@ -1,4 +1,4 @@
-(ns eastwood.test.testcases.f06)
+(ns testcases.f06)
 
 
 ;; y is obviously unused here
@@ -76,7 +76,7 @@
 (require '[eastwood.util :as util] :reload)
 (require '[eastwood.linters.unused :as un] :reload)
 
-(def a (ana/analyze-ns 'eastwood.test.testcases.f06 :opt {}))
+(def a (ana/analyze-ns 'testcases.f06 :opt {}))
 (insp/inspect-tree a)
 
 (def fn1 (:init (nth a 1)))

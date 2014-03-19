@@ -1,6 +1,6 @@
 
 
-(ns eastwood.test.testcases.unlimiteduse
+(ns testcases.unlimiteduse
   (:refer-clojure :exclude [read-string])
   (:use clojure.test       ; warn
         [clojure.reflect]   ; warn

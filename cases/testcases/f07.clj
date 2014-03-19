@@ -1,4 +1,4 @@
-(ns eastwood.test.testcases.f07
+(ns testcases.f07
   (:use clojure.test)
   (:require [clojure.set :as set]
             [clojure.string :as str]

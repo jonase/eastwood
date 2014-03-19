@@ -1,4 +1,4 @@
-(ns eastwood.test.testcases.tanal-27)
+(ns testcases.tanal-27)
 
 
 ;; tools.analyzer.jvm threw an exception when analyzing the following

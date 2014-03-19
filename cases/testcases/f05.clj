@@ -1,4 +1,4 @@
-(ns eastwood.test.testcases.f05
+(ns testcases.f05
   (:require [clojure.set :as set]))
 
 ;; The combination of two classes named IInterval and IIntervals, with
