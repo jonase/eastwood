@@ -4,6 +4,16 @@
   (:require [clojure.data :as data]
             [eastwood.test.cc-compare :as ccmp]))
 
+;; TBD: It would be cleaner to make Eastwood's error reporting code
+;; independent of Clojure's hash order, but I am going to do the
+;; expedient thing and make a couple of tests expect different values
+;; depending on the Clojure version.
+
+(def clojure-1-6-or-later
+  (>= (compare ((juxt :major :minor) *clojure-version*)
+               [1 6])
+      0))
+
 (defn to-sorted-map [c]
   (if (map? c)
     (into (sorted-map-by ccmp/cc-cmp) c)
@@ -100,8 +110,7 @@
   ;; protocol method names that begin with "-".  See
   ;; http://dev.clojure.org/jira/browse/TANAL-17 and
   ;; http://dev.clojure.org/jira/browse/CLJ-1202
-  (when (and (>= (:major *clojure-version*) 1)
-             (>= (:minor *clojure-version*) 6))
+  (when clojure-1-6-or-later
     (lint-test
      'testcases.f05
      [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
@@ -139,7 +148,9 @@
      :line nil, :column nil}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [f (line 64, column 11) coll (line 64, column 6)] of (or within) protocol CollReduce type nil method coll-reduce are never used",
+     :msg (if clojure-1-6-or-later
+            "Function args [coll (line 63, column 6) f (line 64, column 11)] of (or within) protocol CollReduce type nil method coll-reduce are never used"
+            "Function args [f (line 64, column 11) coll (line 64, column 6)] of (or within) protocol CollReduce type nil method coll-reduce are never used"),
      :line nil, :column nil}
     1,
     })
@@ -202,7 +213,9 @@
     1,
     {:line 35, :column 3,
      :linter :unused-ret-vals,
-     :msg "Should use return value of function call, but it is discarded: (disj! (transient #{:a :b}) :a)"}
+     :msg (if clojure-1-6-or-later
+            "Should use return value of function call, but it is discarded: (disj! (transient #{:b :a}) :a)"
+            "Should use return value of function call, but it is discarded: (disj! (transient #{:a :b}) :a)")}
     1,
     {:line 36, :column 3,
      :linter :unused-ret-vals,
