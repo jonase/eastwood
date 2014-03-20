@@ -889,9 +889,9 @@ local Maven repository:
     $ cd path/to/eastwood
     $ LEIN_SNAPSHOTS_IN_RELEASE=1 lein install
 
-Then add `[jonase/eastwood "0.1.1"]` (or whatever is the current
-version number in the defproject line of `project.clj`) to your
-`:plugins` vector in your `:user` profile, perhaps in your
+Then add `[jonase/eastwood "0.1.2-SNAPSHOT"]` (or whatever is the
+current version number in the defproject line of `project.clj`) to
+your `:plugins` vector in your `:user` profile, perhaps in your
 `~/.lein/profiles.clj` file.
 
 
