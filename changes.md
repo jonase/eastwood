@@ -9,8 +9,9 @@
   in the docs.
 
 * Added `:bad-arglists` linter.  See [this
-  section](https://github.com/jonase/eastwood/#bad-arglists---Functionmacro-definitions-with-arg-vectors-differing-from-their-arglists-metadata)
+  section](https://github.com/jonase/eastwood/#bad-arglists---functionmacro-definitions-with-arg-vectors-differing-from-their-arglists-metadata)
   in the docs.
+
 
 * No longer issue warnings for code inside of `comment` forms.  Fixes
   issue [#47](https://github.com/jonase/eastwood/issues/47)
