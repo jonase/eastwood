@@ -196,7 +196,52 @@ value that is a set of keywords, e.g.
   namespaces (typically as the result of evaluating a `require` or
   `use` form).
 
+
 ## Known issues
+
+### Warning messages near beginning of Eastwood output
+
+With Eastwood version 0.1.1, it is unfortunately perfectly normal to
+see these warning messages near the beginning of the output:
+
+    Reflection warning, clojure/data/priority_map.clj:215:19 - call to equiv can't be resolved.
+    Reflection warning, clojure/core/memoize.clj:72:23 - reference to field cache can't be resolved.
+
+Eastwood will still work correctly despite these warnings.
+
+Recommendation: Ignore the warnings.  If you want them to be
+eliminated in a future version of Eastwood, consider creating a
+Clojure JIRA account and voting for the tickets below to be fixed.
+
+[Link](http://dev.clojure.org/jira/secure/Signup!default.jspa) where
+you can create a Clojure JIRA account.
+
+Tickets to vote for:
+* [CCACHE-34](http://dev.clojure.org/jira/browse/CCACHE-34)
+* [CMEMOIZE-13](http://dev.clojure.org/jira/browse/CMEMOIZE-13)
+
+Why this happens: `tools.analyzer.jvm` uses the library
+`core.memoize`, which uses `core.cache`, which in turn uses an older
+version of `data.priority-map`, which has this reflection warning in
+it.
+
+
+If you use Eastwood version 0.1.0 and Clojure 1.6.0, it is normal to
+see these messages near the beginning of the Eastwood output:
+
+    WARNING: record? already refers to: #'clojure.core/record? in namespace: clojure.tools.analyzer.utils, being replaced by: #'clojure.tools.analyzer.utils/record?
+    WARNING: record? already refers to: #'clojure.core/record? in namespace: clojure.tools.analyzer, being replaced by: #'clojure.tools.analyzer.utils/record?
+
+The presence of these warnings does not otherwise impair Eastwood's
+ability to find problems in your code.
+
+Recommendation: Upgrade to Eastwood version 0.1.1, but see above for
+other warning messages you will see instead.
+
+Why this happens: Eastwood 0.1.0 uses an older version of the
+`tools.analyzer` library that defines a function `record?` that has
+the same name as a new function introduced in Clojure 1.6.0.
+
 
 ### Code analysis engine is more picky than the Clojure compiler
 
