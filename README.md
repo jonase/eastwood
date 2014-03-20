@@ -15,7 +15,7 @@ Leiningen 2.3.x.  Merge the following into your `~/.lein/profiles.clj`
 file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.1.0"]] }}
+{:user {:plugins [[jonase/eastwood "0.1.1"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -889,7 +889,7 @@ local Maven repository:
     $ cd path/to/eastwood
     $ LEIN_SNAPSHOTS_IN_RELEASE=1 lein install
 
-Then add `[jonase/eastwood "0.1.0"]` (or whatever is the current
+Then add `[jonase/eastwood "0.1.1"]` (or whatever is the current
 version number in the defproject line of `project.clj`) to your
 `:plugins` vector in your `:user` profile, perhaps in your
 `~/.lein/profiles.clj` file.
