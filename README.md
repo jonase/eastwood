@@ -50,6 +50,8 @@ out the latest unreleased version of Eastwood.
 
 Eastwood warns when it finds:
 
+- inconsistencies between file names and the namespaces declared
+  within them (new in version 0.1.1)
 - misplaced docstrings
 - deprecated java instance methods, static fields, static methods and
   constructors
@@ -57,6 +59,8 @@ Eastwood warns when it finds:
 - redefinitions of the same name in the same namespace
 - def's nested inside other def's
 - function calls that seem to have the wrong number of arguments
+- function/macro `:arglists` metadata that does not match the number
+  of args it is defined with (new in version 0.1.1)
 - tests using `clojure.test` that may be written incorrectly
 - suspicious expressions that appear incorrect, because they always
   return trivial values
@@ -100,6 +104,7 @@ Available linters are:
 * `:redefd-vars`
 * `:def-in-def`
 * `:wrong-arity`
+* `:bad-arglists` (new in version 0.1.1)
 * `:suspicious-test`
 * `:suspicious-expression`
 * `:unused-ret-vals`
@@ -259,6 +264,12 @@ causes an exception to be thrown.
 TBD: `jvm.tools.analyzer` may have had its namespace
 `clojure.tools.analyzer` renamed specificaly to avoid this problem.
 
+Linting libraries which Eastwood uses in its implementation often
+causes strange warnings or exceptions.  These include
+`tools.analyzer`, `tools.analyzer.jvm`, `core.memoize`, and
+`core.cache`.
+
+
 ### Unreliable reflection warnings during linting
 
 For additional testing of the `tools.analyzer.jvm` library, while
@@ -270,9 +281,10 @@ to eval the forms, the reflection warnings produced (if they are
 enabled) will be different than what you get from compiling your code
 normally.
 
-Until this issue is corrected, we recommend that you ignore reflection
-warnings produced during linting, and instead rely on those from `lein
-check`.
+This issue was worse in Eastwood 0.1.0, and has been improved in
+version 0.1.1.  There are likely to be a few differences in reflection
+warnings from `lein eastwood` that remain, so trust the `lein check`
+output if there are differences.
 
 ### Other Issues
 
@@ -294,6 +306,35 @@ A lint warning is not always a sign of a problem with your program.
 Your code may be doing exactly what it needs to do, but the lint tool
 is not able to figure that out.  It often errs on the side of being
 too noisy.
+
+
+### Check consistency of namespace and file names
+
+New in Eastwood version 0.1.1
+
+This is not a linter like the others, in that it has no name, cannot
+be disabled, and the check is always performed by Eastwood before any
+other linter checks are done.
+
+When doing `require` or `use` on a namespace like `foo.bar.baz-tests`,
+it is searched for in the Java classpath in a file named
+`foo/bar/baz_tests.clj` (on Unix-like systems) or
+`foo\bar\baz_tests.clj` (on Windows).  Dots become path separator
+characters and dashes become underscores.
+
+Such a file will normally have an `ns` form with the specified
+namespace.  If the namespace name is not consistent with the file
+name, then undesirable things can happen.  For example, `require`
+could fail to find the namespace, or Leiningen could fail to run the
+tests defined in a test namespace.
+
+Eastwood checks all Clojure files in `:source-paths` and `:test-paths`
+when starting up (or in whatever files are specified by the
+:namespaces option).  If there are any mismatches between file names
+and the namespace names in the `ns` forms, an error message will be
+printed and no linting will be done at all.  This helps avoid some
+cases of printing error messages that make it difficult to determine
+what went wrong.  Fix the problems indicated and try again.
 
 
 ### `:misplaced-docstrings` - Strings that appear to be misplaced documentation strings
@@ -469,6 +510,55 @@ developer to specify a list of functions that should never have
 `:wrong-arity` warnings generated for calls to the function, or to use
 `:arglists` specified in a different place so the warnings are
 accurate.
+
+
+### `:bad-arglists` - Function/macro definitions with arg vectors differing from their `:arglists` metadata
+
+New in Eastwood version 0.1.1
+
+Clearly this linter needs to be better documented.
+
+TBD: Give examples of function/macro definitions from Clojure and
+other libraries that will cause this warning, and some that will not,
+even though they explicitly specify a value for :arglists.
+
+TBD: Perhaps also give this example.  Is it possible for Eastwood to
+ever warn about a function defined in this way?  I am guessing it
+would not be practical to do so, and whatever :arglists is specified
+will never cause a :bad-arglists warning, but verify that.
+
+```clojure
+(def
+ ^{:tag Boolean
+   :doc "Returns false if (pred x) is logical true for every x in
+  coll, else true."
+   :arglists '([pred coll])
+   :added "1.0"}
+ not-every? (comp not every?))
+```
+
+This linter was created because of the belief that it is better if
+the value of `:arglists` for vars accurately represents the number of
+arguments that can be used to call the function/macro, as opposed
+to some other thing used purely for documentation purposes.
+
+It is true that even Clojure itself does not conform to this
+restriction.  For example, the arglists of `defn`, `defmacro`, and
+several other macros override `:arglists` for purposes of clearer
+documentation.  However, all but these few exceptional macros 
+
+Other facts supporting this belief are:
+
+The value of metadata key :arglists is set automatically by macros
+like defn and defmacro.
+
+The Clojure compiler uses these arglists to determine things like
+the type of the return value of a function call.
+
+It would be nice if Eastwood (in particular its :wrong-arity
+linter) and other Clojure development tools could rely upon
+:arglists matching the actual arities of the function or macro that
+have been defined.
 
 
 ### `:suspicious-test` - Suspicious tests that may be written incorrectly
@@ -776,6 +866,13 @@ expression in the file is an `ns` expression, and the namespace
 remains the same throughout the file.  This is a common convention
 followed by most Clojure source code, and required by several other
 Clojure development tools.
+
+
+## Change log
+
+See the
+[changes.md](https://github.com/jonase/eastwood/blob/master/changes.md)
+file.
 
 
 ## For Eastwood developers
