@@ -43,6 +43,6 @@ For other options, see the full documentation on-line here:
              global-opts (:eastwood project)
              opts (merge global-opts opts)]
          ;; eastwood-version on next line
-         (leval/eval-in-project (add-if-missing project '[jonase/eastwood "0.1.1-SNAPSHOT"])
+         (leval/eval-in-project (add-if-missing project '[jonase/eastwood "0.1.1"])
                                 `(eastwood.versioncheck/run-eastwood '~opts)
                                 '(require 'eastwood.versioncheck))))))
