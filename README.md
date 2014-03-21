@@ -4,8 +4,9 @@ Eastwood is a Clojure lint tool that uses the
 [tools.analyzer](https://github.com/clojure/tools.analyzer) and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.  It has
-been tested with Clojure 1.4.0 and 1.5.1.  It does not work with
-Clojure versions earlier than 1.4.0.
+been tested with Clojure 1.4.0, 1.5.1, and pre-release versions of
+Clojure 1.6.0.  It does not work with Clojure versions earlier than
+1.4.0.
 
 
 ## Installation & Quick usage
@@ -53,9 +54,9 @@ Eastwood warns when it finds:
 - inconsistencies between file names and the namespaces declared
   within them (new in version 0.1.1)
 - misplaced docstrings
-- deprecated java instance methods, static fields, static methods and
+- deprecated Java instance methods, static fields, static methods and
   constructors
-- deprecated clojure vars
+- deprecated Clojure vars
 - redefinitions of the same name in the same namespace
 - def's nested inside other def's
 - function calls that seem to have the wrong number of arguments
