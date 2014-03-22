@@ -9,7 +9,7 @@
                  [leinjacker "0.4.1"]]
   :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.2"]]
                    :source-paths [ "cases" ]}
-             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-SNAPSHOT"]]}}
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
   ;; Note: comment out the following line if you want to do 'lein
   ;; test' and get a Clojure version later than 1.5.1, even if you
   ;; have an explicit org.clojure/clojure in the :dependencies
