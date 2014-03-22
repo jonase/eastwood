@@ -8,7 +8,8 @@
 cd repos
 for repo in *
 do
-    echo $repo
+    echo
+    echo "=== $repo"
     cd $repo
     $*
     cd ..
