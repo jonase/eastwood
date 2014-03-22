@@ -6,7 +6,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.joda/joda-money "0.8"]]
-  :profiles {:dev {:plugins      [[codox "0.6.4"]]
+  :profiles {:dev {:plugins      [[codox "0.6.6"]]
                    :dependencies [[com.novemberain/monger "1.5.0"]
                                   [cheshire               "5.1.1"]
                                   [hiccup                 "1.0.3"]]}

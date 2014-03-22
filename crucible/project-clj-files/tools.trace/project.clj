@@ -1,4 +1,4 @@
-(defproject org.clojure/tools.trace "0.7.6-SNAPSHOT"
+(defproject org.clojure/tools.trace "0.7.7-SNAPSHOT"
   :description "A Clojure tracing facility in Clojure"
   :parent [org.clojure/pom.contrib "0.1.2"]
   :url "https://github.com/clojure/tools.trace"

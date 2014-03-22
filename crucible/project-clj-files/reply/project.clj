@@ -7,13 +7,13 @@
     :dependencies [[org.clojure/clojure "1.5.1"]
                    [jline "2.11"]
                    [org.thnetos/cd-client "0.3.6"]
-                   [clj-stacktrace "0.2.4"]
+                   [clj-stacktrace "0.2.7"]
                    [org.clojure/tools.nrepl "0.2.3"]
-                   [org.clojure/tools.cli "0.2.1"]
+                   [org.clojure/tools.cli "0.3.1"]
                    [com.cemerick/drawbridge "0.0.6"]
-                   [trptcolin/versioneer "0.1.0"]
+                   [trptcolin/versioneer "0.1.1"]
                    [clojure-complete "0.2.3"]
-                   [org.clojars.trptcolin/sjacket "0.1.0.3"
+                   [org.clojars.trptcolin/sjacket "0.1.0.5"
                     :exclusions [org.clojure/clojure]]]
     :min-lein-version "2.0.0"
     :profiles {:dev {:dependencies ~dev-deps}

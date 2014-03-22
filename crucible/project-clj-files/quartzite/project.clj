@@ -27,6 +27,6 @@
   :mailing-list {:name "clojure-quartz"
                  :archive "https://groups.google.com/group/clojure-quartz"
                  :post "clojure-quartz@googlegroups.com"}
-  :plugins [[codox "0.6.4"]]
+  :plugins [[codox "0.6.6"]]
   :codox {:sources ["src/clojure"]
           :output-dir "doc/api"})

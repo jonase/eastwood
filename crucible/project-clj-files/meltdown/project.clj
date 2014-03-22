@@ -1,14 +1,13 @@
-(defproject clojurewerkz/meltdown "1.0.0-beta4-SNAPSHOT"
+(defproject clojurewerkz/meltdown "1.0.0-beta10-SNAPSHOT"
   :description "Clojure interface to Reactor, an event-driven programming toolkit for the JVM"
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.projectreactor/reactor-core "1.1.0.BUILD-SNAPSHOT"]
-                 ]
+                 [org.projectreactor/reactor-core "1.1.0.M2"]]
   :profiles {:1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}
              :master {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}
              :dev {:resource-paths ["test/resources"]
-                   :dependencies   [[com.lmax/disruptor "3.2.0"]]
-                   :plugins [[codox "0.6.4"]]
+                   :dependencies   [[com.lmax/disruptor "3.2.1"]]
+                   :plugins [[codox "0.6.6"]]
                    :codox {:sources ["src/clojure"]
                            :output-dir "doc/api"}}}
   :aliases {"all" ["with-profile" "dev:dev,1.4:dev,1.6:dev,master"]}

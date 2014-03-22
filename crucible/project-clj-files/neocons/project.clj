@@ -5,7 +5,7 @@
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure  "1.5.1"]
                  [cheshire             "5.3.1"]
-                 [clj-http             "0.7.8"]
+                 [clj-http             "0.9.1"]
                  [clojurewerkz/support "0.20.0"]
                  [clojurewerkz/urly    "2.0.0-alpha5"]]
   :test-selectors {:default        (fn [m] (and (not (:time-consuming m))
@@ -33,10 +33,14 @@
                    :master {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}
                    :dev {:plugins [[codox "0.6.6"]]
                          :codox {:sources ["src/clojure"]
-                                 :output-dir "doc/api"}}}
+                                 :output-dir "doc/api"}}
+                   ;; this version of clj-http depends on HTTPCore 4.2.x which
+                   ;; some projects (e.g. using Spring's RestTemplate) can rely on,
+                   ;; so we test for compatibility with it. MK.
+                   :cljhttp076 {:dependencies [[clj-http "0.7.6"]]}}
   :codox {:src-dir-uri "https://github.com/michaelklishin/neocons/blob/master/"
           :src-linenum-anchor-prefix "L"}
-  :aliases        {"all" ["with-profile" "dev:dev,1.4:dev,1.6:dev,master"]}
+  :aliases        {"all" ["with-profile" "dev:dev,1.4:dev,1.6:dev,master:dev,cljhttp076:dev,1.6,cljhttp076"]}
   :repositories {"sonatype" {:url "http://oss.sonatype.org/content/repositories/releases"
                              :snapshots false
                              :releases {:checksum :fail :update :always}}
