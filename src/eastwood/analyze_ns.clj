@@ -319,60 +319,46 @@
               top-level-ns-form? (and (not done?) at-top-level? (ns-form? form))]
           (if done?
             {:forms forms, :asts asts, :exception nil}
-            (if-let [eval-ns-exc
-                     (when (and eval? top-level-ns-form?)
-                       (try
-                         (pre-eval-debug at-top-level? asts form *ns* opt "top level ns")
-                         (eval form)
-                         (swap! loaded-namespaces into (disj (loaded-libs) (ns-name *ns*)))
-                         nil  ; return no exception
-                         (catch Exception e
-                           e)))]
-              {:forms (remaining-forms
-                       pbrdr (into forms (concat [form] unanalyzed-forms))),
-               :asts asts, :exception eval-ns-exc,
-               :exception-phase :eval-ns, :exception-form form}
-              (let [env (ana.jvm/empty-env)
-                    expanded (if (or top-level-ns-form?
-                                     (dont-expand-twice? form))
-                               form
-                               (macroexpand-1 form env))]
-                (if (and (not top-level-ns-form?) (do-form? expanded))
-                  (recur forms asts (concat (rest expanded) unanalyzed-forms))
-                  (let [_ (pre-analyze-debug at-top-level? asts form env *ns* opt)
-                        {:keys [analysis exception]} (analyze-form form env)]
-                    (post-analyze-debug at-top-level? asts form analysis exception
-                                        *ns* opt)
-                    (if exception
+            (let [env (ana.jvm/empty-env)
+                  expanded (if (or top-level-ns-form?
+                                   (dont-expand-twice? form))
+                             form
+                             (macroexpand-1 form env))]
+              (if (and (not top-level-ns-form?) (do-form? expanded))
+                (recur forms asts (concat (rest expanded) unanalyzed-forms))
+                (let [_ (pre-analyze-debug at-top-level? asts form env *ns* opt)
+                      {:keys [analysis exception]} (analyze-form form env)]
+                  (post-analyze-debug at-top-level? asts form analysis exception
+                                      *ns* opt)
+                  (if exception
+                    {:forms (remaining-forms
+                             pbrdr
+                             (into forms (concat [form] unanalyzed-forms))),
+                     :asts asts, :exception exception,
+                     :exception-phase :analyze, :exception-form form}
+                    (if-let [[exc-phase exc]
+                             (when eval?
+                               (try
+                                 (let [f (emit-form analysis)]
+                                   (try
+                                     (pre-eval-debug at-top-level? asts f *ns* opt "not top level ns")
+                                     (eval f)
+                                     nil   ; no exception
+                                     (catch Exception e
+                                       [:eval-form e])))
+                                 (catch Exception e
+                                   [:emit-form e])))]
                       {:forms (remaining-forms
                                pbrdr
                                (into forms (concat [form] unanalyzed-forms))),
-                       :asts asts, :exception exception,
-                       :exception-phase :analyze, :exception-form form}
-                      (if-let [[exc-phase exc]
-                               (when (and eval? (not top-level-ns-form?))
-                                 (when (not (@loaded-namespaces (ns-name *ns*)))
-                                   (try
-                                     (let [f (emit-form analysis)]
-                                       (try
-                                         (pre-eval-debug at-top-level? asts f *ns* opt "not top level ns")
-                                         (eval f)
-                                         nil   ; no exception
-                                         (catch Exception e
-                                           [:eval-form e])))
-                                     (catch Exception e
-                                       [:emit-form e]))))]
-                        {:forms (remaining-forms
-                                 pbrdr
-                                 (into forms (concat [form] unanalyzed-forms))),
-                         :asts asts, :exception exc,
-                         :exception-phase exc-phase, :exception-form form}
-                        (do
-                          (when debug-ns
-                            (reset! nss (namespace-changes-debug @nss opt)))
-                          (recur (conj forms form)
-                                 (conj asts analysis)
-                                 unanalyzed-forms))))))))))))))
+                       :asts asts, :exception exc,
+                       :exception-phase exc-phase, :exception-form form}
+                      (do
+                        (when debug-ns
+                          (reset! nss (namespace-changes-debug @nss opt)))
+                        (recur (conj forms form)
+                               (conj asts analysis)
+                               unanalyzed-forms)))))))))))))
 
 
 ;; analyze-ns was copied from library jvm.tools.analyzer and then
