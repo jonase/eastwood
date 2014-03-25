@@ -315,16 +315,14 @@
                                         [(first unanalyzed-forms)
                                          (rest unanalyzed-forms)])
               done? (and at-top-level?
-                         (identical? form eof))
-              top-level-ns-form? (and (not done?) at-top-level? (ns-form? form))]
+                         (identical? form eof))]
           (if done?
             {:forms forms, :asts asts, :exception nil}
             (let [env (ana.jvm/empty-env)
-                  expanded (if (or top-level-ns-form?
-                                   (dont-expand-twice? form))
+                  expanded (if (dont-expand-twice? form)
                              form
                              (macroexpand-1 form env))]
-              (if (and (not top-level-ns-form?) (do-form? expanded))
+              (if (do-form? expanded)
                 (recur forms asts (concat (rest expanded) unanalyzed-forms))
                 (let [_ (pre-analyze-debug at-top-level? asts form env *ns* opt)
                       {:keys [analysis exception]} (analyze-form form env)]
