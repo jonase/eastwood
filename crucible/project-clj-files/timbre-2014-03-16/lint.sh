@@ -7,4 +7,5 @@ else
     q="with-profile +test"
 fi
 
+set -x
 lein ${q} eastwood '{:exclude-namespaces [ taoensso.timbre.appenders.android ]}'

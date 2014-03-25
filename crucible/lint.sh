@@ -41,7 +41,7 @@ do_eastwood()
 	if [ -x ./lint.sh ]
 	then
 	    set -x
-	    ./lint.sh >& eastwood-out.txt
+	    LEIN_PROFILE="${LEIN_PROFILE}" ./lint.sh >& eastwood-out.txt
 	    set +x
 	else
 	    set -x
