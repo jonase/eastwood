@@ -2,11 +2,18 @@
   (:require [leinjacker.eval :as leval]
             [leinjacker.deps :refer [add-if-missing]]))
 
+(def eastwood-version-string "0.1.2-SNAPSHOT")
+
 (defn help []
   "Lint your Clojure code.")
 
 (defn eastwood-help []
-  (println "lein eastwood: Lint your Clojure code.
+  (println "lein eastwood: Lint your Clojure code.")
+  (println (format "== Eastwood %s Clojure %s JVM %s"
+                   eastwood-version-string
+                   (clojure-version)
+                   (get (System/getProperties) "java.version")))
+  (println "
 Usage: To lint all Clojure files in your :source-paths and :test-paths:
 
     lein eastwood
@@ -43,6 +50,6 @@ For other options, see the full documentation on-line here:
              global-opts (:eastwood project)
              opts (merge global-opts opts)]
          ;; eastwood-version on next line
-         (leval/eval-in-project (add-if-missing project '[jonase/eastwood "0.1.2-SNAPSHOT"])
+         (leval/eval-in-project (add-if-missing project ['jonase/eastwood eastwood-version-string])
                                 `(eastwood.versioncheck/run-eastwood '~opts)
                                 '(require 'eastwood.versioncheck))))))
