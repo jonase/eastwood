@@ -25,12 +25,12 @@ do_eastwood()
     local project="$1"
     local ns="$2"
 
-    local p
+    local LEIN_PROFILE
     if [ "x${PROFILE}" != "x" ]
     then
-	p="with-profile ${PROFILE}"
+	LEIN_PROFILE="with-profile ${PROFILE}"
     else
-	p=""
+	LEIN_PROFILE=""
     fi
 
     lein clean
@@ -38,35 +38,16 @@ do_eastwood()
     set +e   # Do not stop if an eastwood run returns a non-0 exit status.  Keep going with more checking, if any.
     if [ "x${ns}" = "x" ]
     then
-        case ${project} in
-	    http-kit)
-		set -x
-		lein ${p} eastwood '{:exclude-namespaces [ org.httpkit.client-test org.httpkit.server-test org.httpkit.ws-test ]}' >& eastwood-out.txt
-		set +x
-		;;
-	    reply|neocons)
-		set -x
-		lein ${p} eastwood '{:namespaces [ :source-paths ]}' >& eastwood-out.txt
-		set +x
-		;;
-	    timbre)
-		local q
-		if [ "x${p}" != "x" ]
-		then
-		    q="$p,+test"
-		else
-		    q="with-profile +test"
-		fi
-		set -x
-		lein ${q} eastwood '{:exclude-namespaces [ taoensso.timbre.appenders.android ]}' >& eastwood-out.txt
-		set +x
-		;;
-	    *)
-		set -x
-		lein ${p} eastwood >& eastwood-out.txt
-		set +x
-		;;
-        esac
+	if [ -x ./lint.sh ]
+	then
+	    set -x
+	    ./lint.sh >& eastwood-out.txt
+	    set +x
+	else
+	    set -x
+	    lein ${LEIN_PROFILE} eastwood >& eastwood-out.txt
+	    set +x
+	fi
     elif [ "${project}" = "clojure" -a "${ns}" = "clojure-special" ]
     then
 	# Namespaces to exclude when analyzing namespaces in Clojure itself:
@@ -104,12 +85,12 @@ do_eastwood()
         # == Linting clojure.test-clojure.protocols ==
 
 	set -x
-	lein ${p} eastwood '{:namespaces [ :test-paths ] :exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ]}' >& eastwood-out.txt
+	lein ${LEIN_PROFILE} eastwood '{:namespaces [ :test-paths ] :exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ]}' >& eastwood-out.txt
 	set +x
     elif [ "${project}" = "clojure" ]
     then
 	set -x
-	lein ${p} eastwood "{:namespaces [ ${ns} ]}" >& eastwood-out.txt
+	lein ${LEIN_PROFILE} eastwood "{:namespaces [ ${ns} ]}" >& eastwood-out.txt
 	set +x
     else
 	echo "do_eastwood called with unknown combo project=${project} ns=${ns}"
@@ -123,47 +104,12 @@ set -e   # Fail if any of the directories do not exist, so this script can be fi
 cd repos
 
 echo 
-echo "Linting 3rd party Clojure libraries"
+echo "Linting crucible projects, which includes most Clojure contrib"
+echo "libraries, and several 3rd party libraries."
 echo 
-for lib in \
-    http-kit \
-    neocons \
-    reply \
-    timbre \
-    potemkin \
-    automat \
-    stencil \
-    clj-ns-browser \
-    collection-check \
-    fs \
-    medley \
-    utf8 \
-    vclock \
-    archimedes \
-    chash \
-    ogre \
-    pantomime \
-    quartzite \
-    scrypt \
-    serialism \
-    support \
-    urly \
-    vclock \
-    cheshire \
-    criterium \
-    elastisch \
-    enlive \
-    hiccup \
-    lib-noir \
-    mailer \
-    meltdown \
-    money \
-    buffy \
-    cassaforte \
-    seesaw \
-    titanium \
-    useful
+for p in */project.clj
 do
+    lib=`dirname ${p}`
     echo
     echo "=== $lib"
     echo
@@ -179,7 +125,7 @@ echo "    clojure.core - might not be feasible to analyze this code"
 echo "    clojure.parallel - perhaps only fails if you use JDK < 7"
 echo "This is done from within algo.generic project directory"
 echo
-cd algo.generic
+cd algo.generic*
 for core_ns in \
     clojure.core.protocols \
     clojure.core.reducers \
@@ -218,58 +164,3 @@ cd ..
 #cd clojure
 #do_eastwood clojure clojure-special
 #cd ..
-
-echo 
-echo "Linting Clojure contrib libraries"
-echo "Leaving out core.typed, which has known reasons for throwing many"
-echo "exceptions, and jvm.tools.analyzer, which has a namespace that"
-echo "conflicts with Eastwood's tools.analyzer"
-echo 
-for lib in \
-    algo.generic \
-    algo.graph \
-    algo.monads \
-    core.async \
-    core.cache \
-    core.contracts \
-    core.incubator \
-    core.logic \
-    core.match \
-    core.memoize \
-    core.rrb-vector \
-    core.unify \
-    data.avl \
-    data.codec \
-    data.csv \
-    data.finger-tree \
-    data.fressian \
-    data.generators \
-    data.json \
-    data.priority-map \
-    data.xml \
-    data.zip \
-    java.classpath \
-    java.data \
-    java.jdbc \
-    java.jmx \
-    math.combinatorics \
-    math.numeric-tower \
-    test.generative \
-    tools.analyzer \
-    tools.analyzer.jvm \
-    tools.cli \
-    tools.emitter.jvm \
-    tools.logging \
-    tools.macro \
-    tools.namespace \
-    tools.nrepl \
-    tools.reader \
-    tools.trace
-do
-    echo
-    echo "=== $lib"
-    echo
-    cd $lib
-    do_eastwood $lib
-    cd ..
-done
