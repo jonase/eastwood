@@ -137,26 +137,6 @@
                        (seq removed))))
     new-nss))
 
-(defn macroexpand-1
-  [form env]
-  (if (seq? form)
-    (let [op (first form)]
-      (if-not (ana.jvm/specials op)
-        (let [v (resolve-var op env)
-              local? (-> env :locals (get op))]
-          (if (and (not local?) (:macro (meta v)))
-           (apply v form (:locals env) (rest form))
-           (ana.jvm/macroexpand-1 form env)))
-        (ana.jvm/macroexpand-1 form env)))
-    (ana.jvm/macroexpand-1 form env)))
-
-(defn create-var
-  [sym {:keys [ns]}]
-  (let [v (or (find-var (symbol (str ns) (name sym)))
-              (intern ns (with-meta sym {})))]
-    (doto v
-      (reset-meta! (or (meta sym) {})))))
-
 ;; run-passes is a cut-down version of run-passes in
 ;; tools.analyzer.jvm.  It eliminates phases that are not needed for
 ;; linting, and which can cause analysis to fail for code that we
@@ -199,8 +179,8 @@
 (defn analyze
   [form env]
   (with-bindings {clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)
-                  #'ana/macroexpand-1          macroexpand-1
-                  #'ana/create-var             create-var
+                  #'ana/macroexpand-1          ana.jvm/macroexpand-1
+                  #'ana/create-var             ana.jvm/create-var
                   #'ana/parse                  ana.jvm/parse
                   #'ana/var?                   var?}
     (run-passes (-analyze form env))))
