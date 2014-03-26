@@ -11,7 +11,8 @@
                                   [reiddraper/simple-check "0.5.2"]
                                   [criterium "0.4.2"]
                                   [codox-md "0.2.0" :exclusions [org.clojure/clojure]]]}
-             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
   :test-selectors {:default #(every? (complement #{:stress :benchmark}) (keys %))
                    :stress :stress
                    :benchmark :benchmark}

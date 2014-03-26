@@ -8,4 +8,5 @@
                  [org.apache.commons/commons-compress "1.4"]]
   :plugins [[lein-midje "3.0-alpha4"]]
   :profiles {:dev {:dependencies [[midje "1.5-alpha8"]]}
-             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}})
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}})

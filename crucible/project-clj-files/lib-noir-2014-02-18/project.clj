@@ -13,6 +13,7 @@
                  [hiccup "1.0.4"]
                  [ring-middleware-format "0.3.2"]
                  [org.mindrot/jbcrypt "0.3m"]]
-  :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
+  :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
   :plugins [[codox "0.6.4"]]
   :codox {:output-dir "doc"})

@@ -7,7 +7,8 @@
                  [log4j "1.2.16"]
                  [commons-logging "1.1.1"]]
   :profiles {:1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
-             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
   :source-paths [ "src/main/clojure" ]
   :test-paths [ "src/test/clojure" ]
   )

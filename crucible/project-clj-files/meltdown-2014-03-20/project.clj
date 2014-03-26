@@ -3,8 +3,9 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.projectreactor/reactor-core "1.1.0.M2"]]
   :profiles {:1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
-             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}
-             :master {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}
+             :master {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}
              :dev {:resource-paths ["test/resources"]
                    :dependencies   [[com.lmax/disruptor "3.2.1"]]
                    :plugins [[codox "0.6.6"]]

@@ -5,4 +5,5 @@
   :global-vars {*warn-on-reflection* true}
   :dependencies [[reiddraper/simple-check "0.5.6"]]
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.5.1"]]}
-             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}})
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}})

@@ -44,7 +44,8 @@
                "src/test/cljs"]
 
   :profiles {:dev {:repl-options {:port 64456}}
-             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
 
   :cljsbuild {:builds {}}
 

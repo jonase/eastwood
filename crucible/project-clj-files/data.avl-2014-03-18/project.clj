@@ -22,6 +22,9 @@
                               :compiler {:output-to "out/test.js"
                                          :optimizations :advanced
                                          :pretty-print false}}}}}
-             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]
+                                  [collection-check "0.1.1"]]
+                   :test-paths ["src/test_local/clojure"]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]
                                   [collection-check "0.1.1"]]
                    :test-paths ["src/test_local/clojure"]}})

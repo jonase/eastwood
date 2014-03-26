@@ -1,14 +1,16 @@
 #! /bin/bash
 
 # All of the Leiningen project.clj files should either already contain
-# a profile called 1.6 that uses Clojure 1.6.0-master-SNAPSHOT, or I
-# have made a modified project.clj file for them that does, and made
-# things so that they all use Clojure 1.5.1 if you do not specify a
-# profile.
+# a profile called 1.6 that uses Clojure 1.6.0, or I have made a
+# modified project.clj file for them that does, and they all use
+# Clojure 1.5.1 if you do not specify a profile.
 #
 # Thus change the value of the shell variable PROFILE below to
 # "with-profile +1.6" to use Clojure 1.6.0-master-SNAPSHOT for all of
 # these.
+#
+# All project.clj files also have a 1.7 profile that uses Clojure
+# 1.7.0-master-SNAPSHOT.
 
 
 # set -e    exit immediately if a command exits with a non-0 exit status
@@ -19,6 +21,7 @@
 
 #PROFILE=""
 PROFILE="+1.6"
+#PROFILE="+1.7"
 
 do_eastwood()
 {

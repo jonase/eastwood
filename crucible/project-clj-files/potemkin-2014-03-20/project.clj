@@ -6,7 +6,8 @@
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.5.1"]
                                   [criterium "0.4.1"]
                                   [collection-check "0.1.1-SNAPSHOT"]]}
-             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
   :global-vars {*warn-on-reflection* true}
   :aliases {"all" ["with-profile" "dev:dev,1.6"]}
   :test-selectors {:default #(not (some #{:benchmark}

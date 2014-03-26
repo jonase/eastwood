@@ -12,7 +12,8 @@
                  [com.taoensso/nippy          "2.5.2"]]
   :profiles {:1.4   {:dependencies [[org.clojure/clojure  "1.4.0"]]}
              :1.5   {:dependencies [[org.clojure/clojure  "1.5.1"]]}
-             :1.6   {:dependencies [[org.clojure/clojure  "1.6.0-alpha2"]]}
+             :1.6   {:dependencies [[org.clojure/clojure  "1.6.0"]]}
+             :1.7   {:dependencies [[org.clojure/clojure  "1.7.0-master-SNAPSHOT"]]}
              :dev   {:dependencies [[ring/ring-core       "1.2.1"]
                                     [com.taoensso/faraday "1.0.1"]]}
              :test  {:dependencies [[expectations         "1.4.56"]

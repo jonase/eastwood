@@ -9,6 +9,7 @@
                  [org.clojure/tools.reader "0.7.2"]]
   :aliases {"testall" ["with-profile" "dev,default:dev,1.3,default:dev,1.4,default" "test"]}
   :global-vars {*warn-on-reflection* true}
-  :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}
+  :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}
              :1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
              :1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}})

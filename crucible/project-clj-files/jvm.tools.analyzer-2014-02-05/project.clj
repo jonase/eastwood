@@ -23,7 +23,8 @@
   ;:repositories {"sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/"}
 
   :profiles {:dev {:repl-options {:port 64363}}
-             :1.6 {:dependencies [[org.clojure/clojure "1.6.0-master-SNAPSHOT"]]}}
+             :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
 
   :source-paths ["src/main/clojure"
                  #_"../clojurescript/src/clj" 
