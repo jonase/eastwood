@@ -301,7 +301,7 @@
             (let [env (ana.jvm/empty-env)
                   expanded (if (dont-expand-twice? form)
                              form
-                             (macroexpand-1 form env))]
+                             (ana.jvm/macroexpand-1 form env))]
               (if (do-form? expanded)
                 (recur forms asts (concat (rest expanded) unanalyzed-forms))
                 (let [_ (pre-analyze-debug at-top-level? asts form env *ns* opt)
