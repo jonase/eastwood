@@ -336,9 +336,13 @@ discarded inside null: null'."
          :column column}
 
         ;; default case, where we have no information about the type
-        ;; of function or method it is.  TBD: Consider adding 'opts'
-        ;; to the API for all linters, so this linter can receive
-        ;; options for what to do in this case.
+        ;; of function or method it is.  Note that for Clojure
+        ;; function invocations on functions that are not known,
+        ;; action will be nil here, and there will be no warning about
+        ;; them.
+        ;; TBD: Consider adding 'opts' to the API for all linters, so
+        ;; this linter can receive options for what to do in this
+        ;; case.
         (if (= stmt-desc-str "static method call")
           (debug-unknown-fn-methods fn-or-method stmt-desc-str stmt))))))
 

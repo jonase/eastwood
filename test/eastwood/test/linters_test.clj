@@ -154,11 +154,8 @@
      :line nil, :column nil}
     1,
     })
-  (lint-test
-   'testcases.f07
-   [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
-   {}
-   {
+  (let [clojure-1-5-expected-warnings
+        {
     {:line 10, :column 5,
      :linter :unused-ret-vals-in-try,
      :msg "Pure static method call return value is discarded inside body of try: (. clojure.lang.Numbers (add 5 7))"}
@@ -277,7 +274,24 @@
      :linter :unused-ret-vals,
      :msg "Var value is discarded inside check-do-let-nesting: gah"}
     1,
-    })
+    }
+
+        ;; Clojure 1.5 does not have clojure.core/some? so it does not
+        ;; warn about calling that function when its return value is
+        ;; unused.  Clojure 1.6 and later should.
+        clojure-1-6-or-later-expected-warnings
+        (assoc clojure-1-5-expected-warnings
+          {:line 135, :column 3,
+           :linter :unused-ret-vals,
+           :msg "Pure function call return value is discarded: (some? a)"}
+          1)]
+    (lint-test
+     'testcases.f07
+     [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
+     {}
+     (if clojure-1-6-or-later
+       clojure-1-6-or-later-expected-warnings
+       clojure-1-5-expected-warnings)))
   (lint-test
    'testcases.deprecated
    [:deprecations :wrong-arity]

@@ -130,3 +130,7 @@
 (defprotocol MarkerProtocol)
 
 (definterface IMarkerInterface)
+
+(defn more-unused-ret-vals [a]
+  (some? a)
+  (true? a))
