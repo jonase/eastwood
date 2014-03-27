@@ -1,12 +1,14 @@
 # eastwood - a Clojure lint tool
 
-Eastwood is a Clojure lint tool that uses the
-[tools.analyzer](https://github.com/clojure/tools.analyzer) and
+Eastwood is a Clojure
+[lint](http://en.wikipedia.org/wiki/Lint_%28software%29) tool that
+uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
+and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.  It has
-been tested with Clojure 1.4.0, 1.5.1, and pre-release versions of
-Clojure 1.6.0.  It does not work with Clojure versions earlier than
-1.4.0.
+been tested with Clojure 1.5.1 and 1.6.0.  It has been very lightly
+tested with Clojure 1.4.0, but it definitely does not work with
+Clojure versions earlier than 1.4.0.
 
 
 ## Installation & Quick usage
