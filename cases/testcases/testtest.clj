@@ -137,9 +137,10 @@
 
   ;; suspicious-test linter should specially recognize that the 2nd
   ;; arg to 'is' are strings, because they are forms that begin with
-  ;; str or format
+  ;; str, format, or a few other similar symbols
   (is (= 6 (+ 2 4)) (str "2+4" "is" "6"))
   (is (= 6 (+ 2 4)) (format "%s is %s" 2 6))
+  (is (= 6 (+ 2 4)) (print-str 5))
   )
 
 (comment

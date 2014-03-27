@@ -119,6 +119,17 @@
   (or (constant-expr-logical-false? expr)
       (constant-expr-logical-true? expr)))
 
+(defn fn-call-returns-string?
+  "sym is a symbol such as 'str or 'foo that appears at the beginning
+of a parenthesized list, in a place where (is ...) expects a string
+message to be printed if the test fails.  Return true if this symbol
+names a function or macro commonly used to produce and return a
+string, since this is sometimes used in clojure.test is expressions to
+generate varying strings while the test is running."
+  [sym]
+  (contains? '#{str format pr-str prn-str print-str println-str with-out-str}
+             sym))
+
 (defn suspicious-is-forms [is-forms]
   (apply
    concat
@@ -151,7 +162,7 @@
              (let [arg2 (second is-args)]
                (not (or (string? arg2)
                         (and (sequential? arg2)
-                             (contains? '#{str format} (first arg2)))))))
+                             (fn-call-returns-string? (first arg2)))))))
         [{:linter :suspicious-test,
           :msg (format "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.")
           :line (:line is-loc)

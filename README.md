@@ -651,10 +651,10 @@ test.
 
 (is (= ["josh"] names) (str "error when testing with josh and " names))
 ;; This linter has a special case that if the 2nd arg to 'is' is a
-;; form beginning with str or format, it will not issue a warning,
-;; under the assumption that this symbol has not been redefined to
-;; return something other than a string.  (TBD: Should add
-;; with-out-str and a few others in the next version.)
+;; form beginning with str, format, or a few other macros and
+;; functions commonly used to return strings, it will not issue a
+;; warning.  It does this with the assumption that this symbol has not
+;; been redefined to return something other than a string.
 
 
 (deftest test1
