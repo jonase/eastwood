@@ -364,13 +364,15 @@ Lint results may be incomplete.  If there are compilation errors in
 your code, try fixing those.  If not, check above for info on the
 exception."))))
 
-;; TBD: Think about what to do with exception in this
-;; function.  Probably just return it to the caller in a map
-;; containing it and the current ret value on different keys.
+;; If an exception occurs during analyze, re-throw it.  This will
+;; cause any test written that calls lint-ns-noprint to fail, unless
+;; it expects the exception.
 (defn lint-ns-noprint [ns-sym linters opts]
   (let [{:keys [exception analyze-results]}
         (analyze/analyze-ns ns-sym :opt opts)]
-    (mapcat #(lint analyze-results %) linters)))
+    (if exception
+      (throw exception)
+      (mapcat #(lint analyze-results %) linters))))
 
 (defn unknown-ns-keywords [namespaces known-ns-keywords desc]
   (let [keyword-set (set (filter keyword? namespaces))

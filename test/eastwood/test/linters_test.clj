@@ -631,6 +631,16 @@
      :line 3, :column 5}
     1,
     })
+  (lint-test
+   'testcases.in-ns-switching
+   [:unlimited-use]
+   {}
+   {
+    {:linter :unlimited-use,
+     :msg "Unlimited use of (clojure.test clojure.set [testcases.f01 :as t1]) in testcases.in-ns-switching",
+     :line 1, :column 5}
+    1,
+    })
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace
   ;; before lint-test does, and thus the namespace is already there
