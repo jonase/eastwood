@@ -3,6 +3,32 @@
 Intended for Eastwood developers to track down when they have time and
 interest.
 
+## Changes from version 0.1.1 to 0.1.2
+
+This appears to be a good change, which doesn't need fixing, but I
+wanted to record it here since I believe I understand the reason for
+the change.
+
+With Eastwood 0.1.1, the crucible linting of namespace
+clojure.stacktrace (and a few others in Clojure core) did not show any
+reflection warnings.  With Eastwood 0.1.2, it does.
+
+The warnings from Eastwood 0.1.2 for these Clojure core namespaces are
+the same (or perhaps with a few minor differences) from those you see
+if you build Clojure using ant after enabling reflection warnings in
+build.xml.
+
+I believe the reason they did not appear in 0.1.1 output, but they do
+appear in 0.1.2 output, is because of the change that was made to fix
+issue [#60](https://github.com/jonase/eastwood/issues/60).
+
+clojure.stacktrace was already loaded at the beginning of linting in
+both cases.  With Eastwood 0.1.1 this caused the eval of
+analyzed-then-emitted-from-AST forms to be suppressed.  With that
+change, the emitted forms are eval'd anyway, even though the namespace
+has already been loaded previously.
+
+
 ## Changes from version 0.1.0 to 0.1.1
 
 Good change, which doesn't need fixing (except perhaps tracking down

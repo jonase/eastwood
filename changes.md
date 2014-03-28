@@ -1,5 +1,31 @@
 # Change log for Eastwood
 
+## Changes from version 0.1.1 to 0.1.2 (so far -- there is no 0.1.2 release yet)
+
+* Changed method of analyzing code that was throwing exception with
+  some projects, e.g. kria.  Fixes issue
+  [#60](https://github.com/jonase/eastwood/issues/60), and I think
+  this same fix also corrected issue
+  [#54](https://github.com/jonase/eastwood/issues/54)
+
+* Fixed analysis problem that caused Eastwood to throw exceptions when
+  analyzing [Midje](https://github.com/marick/Midje), or test code of
+  libraries that used Midje.  Fixes issue
+  [#61](https://github.com/jonase/eastwood/issues/61)
+
+* New functions and macros added to Clojure 1.6.0 will now cause
+  :unused-ret-vals or :unused-ret-vals-in-try warnings if they are
+  called and their return value is ignored, just as happens for other
+  functions in clojure.core.  Fixes issue
+  [#59](https://github.com/jonase/eastwood/issues/59)
+
+* Updates to scripts and files used to test Eastwood, of interest only
+  to Eastwood developers.  Now it is straightforward to ensure that
+  you get the same version of project source code if you use the test
+  scripts on multiple machines, instead of getting whatever the latest
+  happened to be at the time you ran the clone.sh script.
+
+
 ## Changes from version 0.1.0 to 0.1.1
 
 * Added consistency checking between namespace and file names before
