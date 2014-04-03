@@ -28,6 +28,147 @@ analyzed-then-emitted-from-AST forms to be suppressed.  With that
 change, the emitted forms are eval'd anyway, even though the namespace
 has already been loaded previously.
 
+core.cache-2014-01-31 had change in exceptions thrown.
+
+With Eastwood 0.1.1 the first exception was this:
+
+    == Linting clojure.core.cache ==
+    Exception thrown during phase :analyze of linting namespace clojure.core.cache
+    Got exception with extra ex-data:
+        msg='Could not resolve var: cache'
+        (keys dat)=(:file :column :line :var)
+    ExceptionInfo Could not resolve var: cache
+	    clojure.core/ex-info (core.clj:4403)
+	    clojure.tools.analyzer.passes.jvm.validate/eval2644/fn--2646 (validate.clj:32)
+	    clojure.lang.MultiFn.invoke (MultiFn.java:227)
+	    clojure.tools.analyzer.passes.jvm.validate/validate (validate.clj:237)
+	    eastwood.analyze-ns/run-passes/analyze--3856/fn--3857 (analyze_ns.clj:186)
+
+With Eastwood 0.1.2 the first exception is this:
+
+    == Linting clojure.core.cache ==
+    Exception thrown during phase :analyze of linting namespace clojure.core.cache
+    IllegalArgumentException No implementation of method: :has? of protocol: #'clojure.core.cache/CacheProtocol found for class: clojure.core.memoize.PluggableMemoization
+	    clojure.core/-cache-protocol-fn (core_deftype.clj:544)
+	    clojure.core.cache/eval5394/fn--5395/G--5331--5398 (form-init1529996205346131197.clj:1)
+	    clojure.core.cache/through (form-init1529996205346131197.clj:53)
+	    clojure.core.memoize/through* (memoize.clj:52)
+	    clojure.lang.Atom.swap (Atom.java:65)
+	    clojure.core/swap! (core.clj:2234)
+
+I do not know the reason for the change yet, but core.cache typically
+has strange behavior during linting, especially if the version is
+different than the one on which Eastwood itself depends.
+
+Extra line numbers in :redefd-vars warnings from Eastwood 0.1.2:
+
+    == Linting clojure.core.constraints-tests ==
+    {:linter :redefd-vars,
+     :msg "Var ->Foo def'd 2 times at lines: 154 125",
+     :line 125,
+     :column 6}
+    
+    {:linter :redefd-vars,
+     :msg "Var map->Foo def'd 2 times at lines: 154 160",
+     :line 160,
+     :column 8}
+
+Eastwood 0.1.1 did not have the 154 numbers in the output.  Those line
+numbers are not terribly helpful in either of these cases, since they
+are from macro definitions in a different file from the one that
+caused the warnings.  This was due to one of the last commits to
+tools.analyzer before the 0.1.0-beta10 release, or perhaps to
+tools.analyzer.jvm.
+
+Some small differences in the output of exceptions thrown while
+processing core.logic.  I am pretty sure that this is due to Eastwood
+0.1.1 having a special case for analyzing ns forms as a whole, whereas
+0.1.2 treats them like any other form, i.e. macroexpand them and if it
+expands to a do form, analyze each subform independently before the
+next subform.  Similar changes in exception messages occur for other
+crucible projects, too.
+
+core.memoize-2013-08-13 throws an exception with Eastwood 0.1.1 in
+namespace clojure.core.memoize that Eastwood 0.1.2 does not.  Not sure
+exactly which change caused this, but there are plenty of other
+differences in the output, and core.memoize being an Eastwood
+dependency is often troublesome.
+
+Several reflection warnings produced by Eastwood 0.1.1 no longer occur
+in Eastwood 0.1.2:
+
+    == Linting clojure.core.rrb-vector ==
+    Reflection warning, clojure/core/rrb_vector.clj:100:17 - call to method cons on java.lang.Object can't be resolved (no such method).
+    Reflection warning, clojure/core/rrb_vector.clj:150:17 - call to method cons on java.lang.Object can't be resolved (no such method).
+
+These were due to Nicola fixing issues with tools.analyzer(.jvm),
+probably one of these:
+
+* [TANAL-75](http://dev.clojure.org/jira/browse/TANAL-75)
+* [TANAL-78](http://dev.clojure.org/jira/browse/TANAL-78)
+
+Many warnings have improved line:column numbers, strangely enough.
+This was due to a tools.analyzer(.jvm) change.
+
+kria-2014-03-19 threw many exceptions with Eastwood 0.1.1, and no
+longer throws any with Eastwood 0.1.2.
+
+potemkin-2014-03-20 analyzed without exceptions with Eastwood 0.1.1,
+but throws many exceptions with Eastwood 0.1.2.  This is due to some
+changes Nicola made to tools.analyzer(.jvm) shortly before Mar 29
+2014, knowing this breakage would occur.  He submitted a pull request
+to potemkin that would enable it to analyze successfully again:
+
+    https://github.com/ztellman/potemkin/pull/20
+
+ogre-2014-03-11 throws exceptions after this change, too, due to its
+use of the potemkin library.
+
+An exception thrown by Eastwood 0.1.1 analyzing
+tools.analyzer-2014-03-22 namespace clojure.tools.analyzer.query-test
+no longer occurs.
+
+tools.reader-2014-03-05 had these warnings with Eastwood 0.1.1 that
+are now gone with 0.1.2:
+
+    == Linting clojure.tools.reader.impl.utils ==
+    WARNING: ex-info already refers to: #'clojure.core/ex-info in namespace: clojure.tools.reader.impl.utils, being replaced by: #'clojure.tools.reader.impl.utils/ex-info
+    WARNING: ex-data already refers to: #'clojure.core/ex-data in namespace: clojure.tools.reader.impl.utils, being replaced by: #'clojure.tools.reader.impl.utils/ex-data
+    {:linter :redefd-vars,
+     :msg "Var ex-info? def'd 2 times at lines: 41 44",
+     :line 44,
+     :column 11} 
+
+Similarly for several other namespaces in tools.reader-2014-03-05.  An
+exception thrown while analyzing namespace clojure.tools.reader also
+no longer occurs:
+
+    Exception thrown during phase :analyze of linting namespace clojure.tools.reader
+    Got exception with extra ex-data:
+        msg='Can only recur from tail position'
+        (keys dat)=(:file :line :column :exprs :form)
+        (:form dat)=
+    (^{:line 728, :column 33, :end-line 728, :end-column 38} recur)
+    ExceptionInfo Can only recur from tail position
+
+When analyzing the namespace below in Clojure core using Eastwood
+0.1.1, there were no reflection warnings except 'the usual ones' from
+data.priority-map and core.memoize.  With Eastwood 0.1.2 there are the
+same reflection warnings you see when you enable warnings and compile
+Clojure itself.
+
+    clojure.instant
+    clojure.main
+    clojure.repl
+    clojure.stacktrace
+
+I am nearly certain that this is because of the change Nicola made to
+Eastwood where it no longer disables eval of emitted forms if the
+namespace was already loaded.  These namespaces were already loaded,
+and with Eastwood 0.1.1 that caused their emitted forms not to be
+eval'd during analysis, but with Eastwood 0.1.2 they are eval'd
+anyway.  Thus the reflection warnings.
+
 
 ## Changes from version 0.1.0 to 0.1.1
 

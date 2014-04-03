@@ -18,7 +18,7 @@ Leiningen 2.3.x.  Merge the following into your `~/.lein/profiles.clj`
 file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.1.1"]] }}
+{:user {:plugins [[jonase/eastwood "0.1.2"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -202,10 +202,32 @@ value that is a set of keywords, e.g.
 
 ## Known issues
 
+
+### Known libraries Eastwood has difficulty with
+
+[`potemkin`](https://github.com/ztellman/potemkin) and libraries that
+depend on it (e.g. [`ogre`](https://github.com/clojurewerkz/ogre) now
+throw exceptions during linting as of Eastwood 0.1.2.  A suggested
+change to `potemkin` has been submitted that would eliminate this, but
+the change in behavior was due to a conscious design choice in
+`tools.analyzer`.
+
+Currently, the Clojure Contrib libraries
+[`data.fressian`](https://github.com/clojure/data.fressian) and
+[`test.generative`](https://github.com/clojure/test.generative) cannot
+be analyzed due to a known bug in `tools.analyer.jvm`:
+[TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24)
+
+Other libraries known to cause problems for Eastwood because of
+`test.generative`: [Cheshire](https://github.com/dakrone/cheshire)
+(TBD whether this is truly due to `test.generative`, or something
+else).
+
+
 ### Warning messages near beginning of Eastwood output
 
-With Eastwood version 0.1.1, it is unfortunately perfectly normal to
-see these warning messages near the beginning of the output:
+With Eastwood version 0.1.2 and 0.1.1, it is unfortunately perfectly
+normal to see these warning messages near the beginning of the output:
 
     Reflection warning, clojure/data/priority_map.clj:215:19 - call to equiv can't be resolved.
     Reflection warning, clojure/core/memoize.clj:72:23 - reference to field cache can't be resolved.
@@ -238,7 +260,7 @@ see these messages near the beginning of the Eastwood output:
 The presence of these warnings does not otherwise impair Eastwood's
 ability to find problems in your code.
 
-Recommendation: Upgrade to Eastwood version 0.1.1, but see above for
+Recommendation: Upgrade to Eastwood version 0.1.2, but see above for
 other warning messages you will see instead.
 
 Why this happens: Eastwood 0.1.0 uses an older version of the
@@ -253,7 +275,7 @@ Eastwood uses
 [`tools.analyzer.jvm`](https://github.com/clojure/tools.analyzer.jvm)
 to analyze Clojure source code.  It performs some sanity checks on the
 source code that the Clojure compiler does not (at least as of Clojure
-version 1.5.1).
+versions 1.5.1 and 1.6.0).
 
 For example, Eastwood will throw an exception when analyzing code with
 a type hint `^Typename` where the type name is a Java class that has
@@ -263,24 +285,11 @@ message should be given by Eastwood explaining the problem's cause,
 and what you can do to change your code so that Eastwood can analyze
 it.
 
-### Interaction between namespaces
-
-If more than one namespace is analyzed in a single command, settings
-like (set! *warn-on-reflection* true) will be preserved from one
-namespace to the next.  There are some projects with multiple
-namespaces where similar (but different) effects can cause Eastwood to
-throw exceptions.  Feel free to report such problems, but as a
-workaround it may help to do multiple runs with a subset of the
-namespaces, e.g. if only one namespace seems to be causing problems,
-use these two commands to analyze one problem namespace separately:
-
-    $ lein eastwood '{:namespaces [trouble.nspace]}'
-    $ lein eastwood '{:exclude-namespaces [trouble.nspace]}'
 
 ### Explicit use of Clojure environment `&env`
 
 Code that uses the **values of `&env`** feature of the Clojure
-compiler will cause errors when being analyzed. Some known examples
+compiler will cause errors when being analyzed.  Some known examples
 are the libraries
 [`immutable-bitset`](https://github.com/ztellman/immutable-bitset) and
 [`flatland/useful`](https://github.com/flatland/useful).
@@ -288,6 +297,13 @@ are the libraries
 Note that if a library uses simply `(keys &env)` it will be analyzed with
 no problems, however because the values of `&env` are `Compiler$LocalBinding`s,
 there's no way for `tools.analyzer.jvm` to provide a compatible `&env`
+
+The following exception being thrown while linting is a symptom of
+this issue:
+
+    Exception thrown during phase :analyze of linting namespace immutable-bitset
+    ClassCastException clojure.lang.PersistentArrayMap cannot be cast to clojure.lang.Compiler$LocalBinding
+
 
 ### Namespaces collision
 
@@ -330,22 +346,27 @@ enabled) will be different than what you get from compiling your code
 normally.
 
 This issue was worse in Eastwood 0.1.0, and has been improved in
-version 0.1.1.  There are likely to be a few differences in reflection
-warnings from `lein eastwood` that remain, so trust the `lein check`
-output if there are differences.
+versions 0.1.1 and 0.1.2.  There are likely to be a few differences in
+reflection warnings from `lein eastwood` that remain, so trust the
+`lein check` output if there are differences.
 
-### Other Issues
 
-Currently, the Clojure Contrib libraries
-[`data.fressian`](https://github.com/clojure/data.fressian) and
-[`test.generative`](https://github.com/clojure/test.generative) cannot
-be analyzed due to a known bug in `tools.analyer.jvm`:
-[TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24)
+### Interaction between namespaces
 
-Other libraries known to cause problems for Eastwood because of
-`test.generative`: [Cheshire](https://github.com/dakrone/cheshire)
-(TBD whether this is truly due to `test.generative`, or something
-else).
+TBD: This issue might no longer be true as of Eastwood 0.1.1 and
+later.  Need to verify before editing this issue, though.
+
+If more than one namespace is analyzed in a single command, settings
+like (set! *warn-on-reflection* true) will be preserved from one
+namespace to the next.  There are some projects with multiple
+namespaces where similar (but different) effects can cause Eastwood to
+throw exceptions.  Feel free to report such problems, but as a
+workaround it may help to do multiple runs with a subset of the
+namespaces, e.g. if only one namespace seems to be causing problems,
+use these two commands to analyze one problem namespace separately:
+
+    $ lein eastwood '{:namespaces [trouble.nspace]}'
+    $ lein eastwood '{:exclude-namespaces [trouble.nspace]}'
 
 
 ## Notes on linter warnings
@@ -435,6 +456,7 @@ below.
    :deprecated "1.3"}
   [n x] (take n (repeat x)))
 ```
+
 
 ### `:redefd-vars` - Redefinitions of the same name in the same namespace
 
@@ -937,7 +959,7 @@ local Maven repository:
     $ cd path/to/eastwood
     $ LEIN_SNAPSHOTS_IN_RELEASE=1 lein install
 
-Then add `[jonase/eastwood "0.1.2-SNAPSHOT"]` (or whatever is the
+Then add `[jonase/eastwood "0.1.3-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `~/.lein/profiles.clj` file.

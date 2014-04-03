@@ -1,6 +1,11 @@
 # Change log for Eastwood
 
-## Changes from version 0.1.1 to 0.1.2 (so far -- there is no 0.1.2 release yet)
+## Changes from version 0.1.1 to 0.1.2
+
+
+* Updated `tools.analyzer` and `tools.analyzer.jvm` to version
+  0.1.0-beta10.  Most of the Eastwood issues fixed since Eastwood
+  0.1.1 were due to this change.
 
 * Changed method of analyzing code that was throwing exception with
   some projects, e.g. kria.  Fixes issue
@@ -9,14 +14,14 @@
   [#54](https://github.com/jonase/eastwood/issues/54)
 
 * Fixed analysis problem that caused Eastwood to throw exceptions when
-  analyzing [Midje](https://github.com/marick/Midje), or test code of
+  analyzing [Midje](https://github.com/marick/Midje), and test code of
   libraries that used Midje.  Fixes issue
   [#61](https://github.com/jonase/eastwood/issues/61)
 
 * New functions and macros added to Clojure 1.6.0 will now cause
   :unused-ret-vals or :unused-ret-vals-in-try warnings if they are
-  called and their return value is ignored, just as happens for other
-  functions in clojure.core.  Fixes issue
+  called and their return value is ignored, just as that happens for
+  other functions in clojure.core.  Fixes issue
   [#59](https://github.com/jonase/eastwood/issues/59)
 
 * Updates to scripts and files used to test Eastwood, of interest only
@@ -28,6 +33,7 @@
 
 ## Changes from version 0.1.0 to 0.1.1
 
+
 * Added consistency checking between namespace and file names before
   actual linting begins, to avoid hard-to-understand error messages
   that could otherwise result.  See [this
@@ -37,7 +43,6 @@
 * Added `:bad-arglists` linter.  See [this
   section](https://github.com/jonase/eastwood/#bad-arglists---functionmacro-definitions-with-arg-vectors-differing-from-their-arglists-metadata)
   in the docs.
-
 
 * No longer issue warnings for code inside of `comment` forms.  Fixes
   issue [#47](https://github.com/jonase/eastwood/issues/47)
@@ -53,8 +58,10 @@
   differences, so reflection warnings in the output of `lein check`
   are still the ones you want to trust, if there are any differences.
 
-* Updates to track changes in `tools.analyzer` and
-  `tools.analyzer.jvm` libraries.
+* Updated `tools.analyzer` and `tools.analyzer.jvm` to version
+  0.1.0-beta8.  Updated some Eastwood code as a result of changes in
+  those libraries.  (Eastwood version 0.1.0 used version 0.1.0-alpha1
+  of those libraries).
 
 * Top level `do` forms are now analyzed by Eastwood similarly to how
   Clojure itself does it, as if the forms inside the `do` were

@@ -2,7 +2,7 @@
   (:require [leinjacker.eval :as leval]
             [leinjacker.deps :refer [add-if-missing]]))
 
-(def eastwood-version-string "0.1.2-SNAPSHOT")
+(def eastwood-version-string "0.1.2")
 
 (defn help []
   "Lint your Clojure code.")
@@ -49,7 +49,6 @@ For other options, see the full documentation on-line here:
                                                      [(:java-source-path project)]))
              global-opts (:eastwood project)
              opts (merge global-opts opts)]
-         ;; eastwood-version on next line
          (leval/eval-in-project (add-if-missing project ['jonase/eastwood eastwood-version-string])
                                 `(eastwood.versioncheck/run-eastwood '~opts)
                                 '(require 'eastwood.versioncheck))))))
