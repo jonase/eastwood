@@ -206,7 +206,7 @@ value that is a set of keywords, e.g.
 ### Known libraries Eastwood has difficulty with
 
 [`potemkin`](https://github.com/ztellman/potemkin) and libraries that
-depend on it (e.g. [`ogre`](https://github.com/clojurewerkz/ogre) now
+depend on it (e.g. [`ogre`](https://github.com/clojurewerkz/ogre)) now
 throw exceptions during linting as of Eastwood 0.1.2.  A suggested
 change to `potemkin` has been submitted that would eliminate this, but
 the change in behavior was due to a conscious design choice in
