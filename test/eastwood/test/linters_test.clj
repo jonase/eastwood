@@ -154,7 +154,7 @@
      :line nil, :column nil}
     1,
     })
-  (let [clojure-1-5-expected-warnings
+  (let [common-expected-warnings
         {
     {:line 10, :column 5,
      :linter :unused-ret-vals-in-try,
@@ -276,12 +276,19 @@
     1,
     }
 
+        clojure-1-5-expected-warnings
+        (assoc common-expected-warnings
+          {:line 140, :column 3,
+           :linter :unused-ret-vals,
+           :msg "Pure function call return value is discarded: (false? a)"}
+          1)
+
         ;; Clojure 1.5 does not have clojure.core/some? so it does not
         ;; warn about calling that function when its return value is
         ;; unused.  Clojure 1.6 and later should.
         clojure-1-6-or-later-expected-warnings
-        (assoc clojure-1-5-expected-warnings
-          {:line 135, :column 3,
+        (assoc common-expected-warnings
+          {:line 140, :column 3,
            :linter :unused-ret-vals,
            :msg "Pure function call return value is discarded: (some? a)"}
           1)]

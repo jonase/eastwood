@@ -131,6 +131,13 @@
 
 (definterface IMarkerInterface)
 
+(defmacro compile-if [test then else]
+  (if (eval test)
+    then
+    else))
+
 (defn more-unused-ret-vals [a]
-  (some? a)
+  (compile-if (resolve 'clojure.core/some?)
+    (some? a)
+    (false? a))
   (true? a))
