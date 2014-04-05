@@ -39,7 +39,7 @@
    {
     {:linter :redefd-vars,
      :msg
-     "Var i-am-redefd def'd 2 times at lines: 4 5",
+     "Var i-am-redefd def'd 2 times at line:col locations: 4:6 5:6",
      :line 5, :column 6}
     1,
     {:linter :misplaced-docstrings,
@@ -51,11 +51,11 @@
      :line 31, :column 7}
     1,
     {:linter :redefd-vars,
-     :msg "Var test1-redefd def'd 3 times at lines: 42 46 49",
+     :msg "Var test1-redefd def'd 3 times at line:col locations: 42:10 46:10 49:10",
      :line 46, :column 10}
     1,
     {:linter :redefd-vars,
-     :msg "Var i-am-redefd2 def'd 2 times at lines: 70 73",
+     :msg "Var i-am-redefd2 def'd 2 times at line:col locations: 70:6 73:8",
      :line 73, :column 8}
     1,
     {:linter :def-in-def,
@@ -80,11 +80,11 @@
    {}
    {
     {:linter :redefd-vars,
-     :msg "Var i-am-defonced-and-defmultid def'd 2 times at lines: 8 10",
+     :msg "Var i-am-defonced-and-defmultid def'd 2 times at line:col locations: 8:10 10:11",
      :line 10, :column 11}
     1,
     {:linter :redefd-vars,
-     :msg "Var i-am-a-redefd-defmulti def'd 2 times at lines: 16 18",
+     :msg "Var i-am-a-redefd-defmulti def'd 2 times at line:col locations: 16:11 18:11",
      :line 18, :column 11}
     1,
     {:linter :def-in-def,

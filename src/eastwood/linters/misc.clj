@@ -340,6 +340,13 @@ a (defonce foo val) expression.  If it is, return [foo val]."
       loc1
       (-> ast :env))))
 
+(defn redefd-var-loc-desc [var-ast]
+  (let [loc (redefd-var-loc var-ast)]
+    (str (if-let [f (:file loc)]
+           (str f ":")
+           "")
+         (:line loc) ":" (:column loc))))
+
 (defn redefd-vars [{:keys [asts]}]
   (let [defd-var-asts (defd-vars asts)
         defd-var-groups (group-by #(-> % :form second) defd-var-asts)]
@@ -348,12 +355,12 @@ a (defonce foo val) expression.  If it is, return [foo val]."
       (let [ast2 (second ast-list)
             loc2 (redefd-var-loc ast2)]
         {:linter :redefd-vars
-         :msg (format "Var %s def'd %d times at lines: %s"
+         :msg (format "Var %s def'd %d times at line:col locations: %s"
                       (var-of-ast ast2)
                       (count ast-list)
                       (string/join
                        " "
-                       (map #(-> % redefd-var-loc :line) ast-list)))
+                       (map redefd-var-loc-desc ast-list)))
          :line (-> loc2 :line)
          :column (-> loc2 :column)}))))
 
