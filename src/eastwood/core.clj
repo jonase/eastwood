@@ -555,12 +555,23 @@ file and namespace to avoid name collisions.")
           (doseq [n namespaces]
             (println (format "    %s" n))))
         (when (seq linters)
-          (doseq [namespace namespaces]
-            (try
-              (lint-ns namespace linters opts warning-count exception-count)
-              (catch RuntimeException e
-                (println "Linting failed:")
-                (pst e nil)))))
+          (let [record-forms? (or (contains? (:debug opts) :all)
+                                  (contains? (:debug opts) :compare-forms))
+                opts (if record-forms?
+                       (do
+                         (binding [*out* *err*]
+                           (println (format "Writing files forms-read.txt and forms-emitted.txt")))
+                         (assoc opts
+                           :record-forms? true
+                           :forms-read-wrtr (io/writer "forms-read.txt")
+                           :forms-emitted-wrtr (io/writer "forms-emitted.txt")))
+                       opts)]
+            (doseq [namespace namespaces]
+              (try
+                (lint-ns namespace linters opts warning-count exception-count)
+                (catch RuntimeException e
+                  (println "Linting failed:")
+                  (pst e nil))))))
         (when (or (> @warning-count 0)
                   (> @exception-count 0))
           (println (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"

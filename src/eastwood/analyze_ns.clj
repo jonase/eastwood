@@ -118,12 +118,25 @@
     (println (format "dbg anal'd %d at-top-level?=%s ns=%s"
                      (count asts) at-top-level? (str ns)))))
 
-(defn pre-eval-debug [at-top-level? asts form ns opt desc]
+(defn begin-file-debug [filename ns opt]
+  (when (:record-forms? opt)
+    (binding [*out* (:forms-read-wrtr opt)]
+      (println (format "\n\n== Analyzing file '%s'\n" filename)))
+    (binding [*out* (:forms-emitted-wrtr opt)]
+      (println (format "\n\n== Analyzing file '%s'\n" filename)))))
+
+(defn pre-eval-debug [at-top-level? asts macroexpanded-form analysis
+                      emitted-form ns opt desc]
   (when (or (contains? (:debug opt) :all)
             (contains? (:debug opt) :eval))
     (println (format "Form about to be eval'd with %d ast's *warn-on-reflection*=%s ns=%s (%s):"
                      (count asts) *warn-on-reflection* ns desc))
-    (util/pprint-ast-node form)))
+    (util/pprint-ast-node emitted-form))
+  (when (:record-forms? opt)
+    (binding [*out* (:forms-read-wrtr opt)]
+      (util/pprint-ast-node macroexpanded-form))
+    (binding [*out* (:forms-emitted-wrtr opt)]
+      (util/pprint-ast-node emitted-form))))
 
 (defn namespace-changes-debug [old-nss _opt]
   (let [new-nss (all-ns-names-set)
@@ -286,6 +299,7 @@
     ;; want it to go back to the original before returning.
     (binding [*ns* *ns*
               *file* (str source-path)]
+      (begin-file-debug *file* *ns* opt)
       (loop [forms []
              asts []
              unanalyzed-forms []]
@@ -319,7 +333,7 @@
                                (try
                                  (let [f (emit-form analysis)]
                                    (try
-                                     (pre-eval-debug at-top-level? asts f *ns* opt "not top level ns")
+                                     (pre-eval-debug at-top-level? asts expanded analysis f *ns* opt "not top level ns")
                                      (eval f)
                                      nil   ; no exception
                                      (catch Exception e
