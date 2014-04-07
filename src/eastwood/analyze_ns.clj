@@ -181,9 +181,8 @@
               analyze-host-expr
               infer-tag
               validate
-              classify-invoke)))
-         (prewalk
-          (validate-loop-locals analyze)))))
+              classify-invoke
+              (validate-loop-locals analyze)))))))
 
     (prewalk (comp cleanup
                 ensure-tag
