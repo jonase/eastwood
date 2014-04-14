@@ -1,6 +1,5 @@
 (ns eastwood.analyze-ns
   (:refer-clojure :exclude [macroexpand-1])
-  (:import (clojure.lang LineNumberingPushbackReader))
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
@@ -8,6 +7,7 @@
             [clojure.set :as set]
             [clojure.java.io :as io]
             [clojure.tools.reader :as tr]
+            [clojure.tools.reader.reader-types :as rts]
             [clojure.tools.analyzer.jvm :as ana.jvm]
             [clojure.tools.analyzer.passes.jvm.emit-form :refer [emit-form]]
             [clojure.tools.analyzer.utils :refer [resolve-var]]
@@ -32,7 +32,7 @@
             [clojure.tools.analyzer.passes.jvm.analyze-host-expr :refer [analyze-host-expr]]))
 
 ;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library
-;; jvm.tools.analyzer verbatim
+;; jvm.tools.analyzer, then later probably diverged from each other.
 
 (defn ^:private munge-ns [ns-sym]
   (-> (name ns-sym)
@@ -50,12 +50,12 @@
       (throw (Exception. (str "No file found for namespace " ns-sym))))
     uri))
 
-(defn ^LineNumberingPushbackReader
-  pb-reader-for-ns
-  "Returns a LineNumberingPushbackReader for namespace ns-sym"
+(defn pb-reader-for-ns
+  "Returns an IndexingReader for namespace ns-sym"
   [ns-sym]
   (let [uri (uri-for-ns ns-sym)]
-    (LineNumberingPushbackReader. (io/reader uri))))
+    (rts/indexing-push-back-reader (java.io.PushbackReader. (io/reader uri))
+                                   1 (munge-ns ns-sym))))
 
 (defn all-ns-names-set []
   (set (map str (all-ns))))
@@ -276,18 +276,13 @@
             reading the next form.
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
-  [source-path & {:keys [reader opt]
-                  :or {reader (LineNumberingPushbackReader.
-                               (io/reader (io/resource source-path)))}}]
+  [source-path & {:keys [reader opt]}]
   (let [debug-ns (or (contains? (:debug opt) :ns)
                      (contains? (:debug opt) :all))
         nss (if debug-ns (atom (all-ns-names-set)))
         eval? (get opt :eval true)
         eof (reify)
-        ^LineNumberingPushbackReader
-        pbrdr (if (instance? LineNumberingPushbackReader reader)
-                reader
-                (LineNumberingPushbackReader. reader))
+        pbrdr reader
         loaded-namespaces (atom (loaded-libs))]
     (when debug-ns
       (println (format "all-ns before (analyze-file \"%s\") begins:"
@@ -356,7 +351,7 @@
 ;; modified
 
 (defn analyze-ns
-  "Takes a LineNumberingPushbackReader and a namespace symbol.
+  "Takes an IndexingReader and a namespace symbol.
   Returns a map of results of analyzing the namespace.  The map
   contains these keys:
 
