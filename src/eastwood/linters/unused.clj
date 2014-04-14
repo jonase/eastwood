@@ -30,7 +30,9 @@
           :when (nil? (vfreq pvar))]
       {:linter :unused-private-vars
        :msg (format "Private var %s is never used" pvar)
-       :line (-> pvar :env :line)})))
+       :file (-> pvar :env :file)
+       :line (-> pvar :env :line)
+       :column (-> pvar :env :column)})))
 
 ;; Unused fn args
 
@@ -83,6 +85,7 @@ selectively disable such warnings if they wish."
                                            sym))
                                        unused))
                     (-> expr :env :name))
+       :file (-> loc :file)
        :line (-> loc :line)
        :column (-> loc :column)})))
 
@@ -285,11 +288,10 @@ discarded inside null: null'."
                     " inside body of try"
                     "")
         form (:form stmt)
-        [line column] (case stmt-desc-str
-                        "function call" [(-> stmt :meta :line)
-                                         (-> stmt :meta :column)]
-                        "static method call" [(-> stmt :form meta :line)
-                                              (-> stmt :form meta :column)])
+        [file line column] ((juxt :file :line :column)
+                            (case stmt-desc-str
+                              "function call" (-> stmt :meta)
+                              "static method call" (-> stmt :form meta)))
         ;; If there is no info about the method m in
         ;; *warning-if-static-ret-val-unused*, use reflection to see
         ;; if the return type of the method is void.  That is a fairly
@@ -332,7 +334,8 @@ discarded inside null: null'."
            :warn-if-ret-val-unused
            (format "Should use return value of %s, but it is discarded%s: %s"
                    stmt-desc-str extra-msg form))
-         :line line,
+         :file file
+         :line line
          :column column}
 
         ;; default case, where we have no information about the type
@@ -405,6 +408,7 @@ discarded inside null: null'."
                                    (with-out-str
                                      (binding [pp/*print-right-margin* nil]
                                        (pp/pprint (:form stmt)))))))
+                   :file (-> stmt :env :name meta :file)
                    :line (-> stmt :env :name meta :line)
                    :column (-> stmt :env :name meta :column)})
 

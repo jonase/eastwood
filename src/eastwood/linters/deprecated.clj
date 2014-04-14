@@ -98,5 +98,6 @@
         :let [loc (-> dexpr :env)]]
     {:linter :deprecations
      :msg (msg dexpr)
+     :file (-> loc :file)
      :line (-> loc :line)
      :column (-> loc :column)}))

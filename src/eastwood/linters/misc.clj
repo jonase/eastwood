@@ -67,6 +67,7 @@
         :when (seq s)]
     {:linter :unlimited-use
      :msg (format "Unlimited use of %s in %s" (seq s) (-> ast :env :ns))
+     :file (-> ast :env :ns meta :file)
      :line (-> ast :env :ns meta :line)
      :column (-> ast :env :ns meta :column)}))
 
@@ -89,6 +90,7 @@
         :let [loc (-> ast var-of-ast meta)]]
     {:linter :misplaced-docstrings
      :msg (format "Possibly misplaced docstring, %s" (var-of-ast ast))
+     :file (-> loc :file)
      :line (-> loc :line)
      :column (-> loc :column)}))
 
@@ -109,7 +111,9 @@
                    (not (:is-dynamic expr)))]
     {:linter :non-dynamic-earmuffs
      :msg (format "%s should be marked dynamic" v)
-     :line (-> expr :env :line)}))
+     :file (-> expr :env :file)
+     :line (-> expr :env :line)
+     :column (-> expr :env :column)}))
 
 ;; redef'd vars
 
@@ -361,6 +365,7 @@ a (defonce foo val) expression.  If it is, return [foo val]."
                       (string/join
                        " "
                        (map redefd-var-loc-desc ast-list)))
+         :file (-> loc2 :file)
          :line (-> loc2 :line)
          :column (-> loc2 :column)}))))
 
@@ -386,6 +391,7 @@ a (defonce foo val) expression.  If it is, return [foo val]."
                     (-> nested-var-ast
                         :eastwood/enclosing-def-ast
                         var-of-ast))
+       :file (-> loc :file)
        :line (-> loc :line)
        :column (-> loc :column)})))
 
@@ -403,6 +409,7 @@ a (defonce foo val) expression.  If it is, return [foo val]."
                     (-> expr :fn :var)
                     (count (-> expr :args))
                     (string/join "  " (-> expr :fn :arglists)))
+       :file (-> loc :file)
        :line (-> loc :line)
        :column (-> loc :column)})))
 
@@ -513,5 +520,6 @@ a (defonce foo val) expression.  If it is, return [foo val]."
                           (-> a :name)
                           fn-sigs
                           meta-sigs)
+             :file (-> loc :file)
              :line (-> loc :line)
              :column (-> loc :column)}]))))))
