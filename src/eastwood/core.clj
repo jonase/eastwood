@@ -423,8 +423,15 @@ exception."))))
                :recommended-fname desired-fname,
                :recommended-namespace desired-ns}]))))
 
+(defn canonical-filename [fname]
+  (let [^java.io.File f (if (instance? java.io.File fname)
+                          fname
+                          (java.io.File. ^String fname))]
+    (.getCanonicalPath f)))
+
 (defn nss-in-dirs [dir-name-strs]
-  (let [mismatches (filename-namespace-mismatches dir-name-strs)]
+  (let [dir-name-strs (map canonical-filename dir-name-strs)
+        mismatches (filename-namespace-mismatches dir-name-strs)]
     (when (seq mismatches)
       (println "The following file(s) contain ns forms with namespaces that do not correspond
 with their file names:")
