@@ -1,7 +1,7 @@
 (ns eastwood.linters.misc
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
-            [clojure.tools.analyzer.ast :as ast]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
             [eastwood.util :as util]))
 
 (defn var-of-ast [ast]

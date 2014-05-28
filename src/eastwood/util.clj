@@ -1,10 +1,10 @@
 (ns eastwood.util
   (:import [java.io StringReader]
            [clojure.lang LineNumberingPushbackReader])
-  (:require [clojure.tools.analyzer.ast :as ast]
-            [clojure.tools.reader :as trdr]
+  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
+            [eastwood.copieddeps.dep10.clojure.tools.reader :as trdr]
             [clojure.pprint :as pp]
-            [clojure.tools.reader.reader-types :as rdr-types]))
+            [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rdr-types]))
 
 (defn map-keys [f m]
   (into (empty m)

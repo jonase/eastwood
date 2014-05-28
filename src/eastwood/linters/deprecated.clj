@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [get-method])
   (:require [eastwood.passes :as pass]
             [eastwood.util :as util]
-            [clojure.tools.analyzer.ast :as ast])
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast])
   (:import (java.lang.reflect Method Constructor Field)))
 
 (defn no-constructor-found [ctor-info]

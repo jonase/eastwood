@@ -3,11 +3,11 @@
   (:require [clojure.set :as set]
             [clojure.string :as str]
             [clojure.java.io :as io]
-            [clojure.tools.reader.edn :as edn]
+            [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
             [eastwood.passes :as pass]
-            [clojure.tools.analyzer.ast :as ast]))
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]))
 
 ;; Unused private vars
 (defn- private-defs [exprs]

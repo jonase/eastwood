@@ -14,9 +14,9 @@
             ;; it will avoid the problem of not being able to find
             ;; namespace c.t.n.find when running Eastwood on a project
             ;; that uses an older version of tools.namespace.
-            [clojure.tools.namespace.file :as file]
-            [clojure.tools.namespace.track :as track]
-            [clojure.tools.namespace.dir :as dir]
+            [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
+            [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
+            [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.unused :as unused]
@@ -452,7 +452,7 @@ file and namespace to avoid name collisions.")
       (flush)
       (System/exit 1)))
   (let [tracker (apply dir/scan-all (track/tracker) dir-name-strs)]
-    (:clojure.tools.namespace.track/load tracker)))
+    (:eastwood.copieddeps.dep9.clojure.tools.namespace.track/load tracker)))
 
 (defn replace-ns-keywords [namespaces source-paths test-paths]
   (mapcat (fn [x]

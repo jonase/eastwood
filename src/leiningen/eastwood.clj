@@ -1,6 +1,6 @@
 (ns leiningen.eastwood
-  (:require [leinjacker.eval :as leval]
-            [leinjacker.deps :refer [add-if-missing]]))
+  (:require [eastwood.copieddeps.dep6.leinjacker.eval :as leval]
+            [eastwood.copieddeps.dep6.leinjacker.deps :refer [add-if-missing]]))
 
 (def eastwood-version-string "0.1.3-SNAPSHOT")
 

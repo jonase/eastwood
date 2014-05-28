@@ -1,7 +1,7 @@
 (ns eastwood.passes
   (:refer-clojure :exclude [get-method])
   (:require [clojure.string :as str]
-            [clojure.tools.analyzer.ast :refer [update-children]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children]]
             [eastwood.util :as util]))
 
 (defmulti reflect-validated :op)

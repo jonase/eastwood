@@ -1,12 +1,9 @@
 (defproject jonase/eastwood "0.1.3-SNAPSHOT"
   :description "A Clojure lint tool"
+  :aot [eastwood.copieddeps.dep10.clojure.tools.reader.impl.ExceptionInfo]
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/tools.analyzer "0.1.0-SNAPSHOT"]
-                 [org.clojure/tools.analyzer.jvm "0.1.0-SNAPSHOT"]
-                 [org.clojure/tools.namespace "0.2.4"]
-                 [org.clojure/tools.reader "0.8.4"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
-                 [leinjacker "0.4.1"]]
+                 [org.ow2.asm/asm-all "4.1"]]
   :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.2"]]
                    :source-paths [ "cases" ]}
              :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}

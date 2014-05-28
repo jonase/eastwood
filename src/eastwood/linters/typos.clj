@@ -3,8 +3,8 @@
   (:require [eastwood.util :as util]
             [clojure.string :as str]
             [clojure.java.io :as io]
-            [clojure.tools.reader.edn :as edn]
-            [clojure.tools.analyzer.ast :as ast])
+            [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast])
   (:import [name.fraser.neil.plaintext diff_match_patch]))
 
 ;; Typos in keywords
