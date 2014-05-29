@@ -69,7 +69,7 @@
   [memoized-fn]
   (when-let [cache (::cache (meta memoized-fn))]
     (into {}
-          (for [[k v] (.cache @cache)]
+          (for [[k v] (.cache ^PluggableMemoization @cache)]
             [(vec k) @v]))))
 
 (defn memoized?
