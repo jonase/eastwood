@@ -984,7 +984,7 @@ Copyright (c) Rich Hickey, Michael Fogus and contributors, 2012. All rights rese
 
 ### core.contracts
 
-[core.contracts](https://github.com/clojure/core.contracts
+[core.contracts](https://github.com/clojure/core.contracts)
 
 Copyright (c) Rich Hickey, Michael Fogus and contributors, 2012. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound bythe terms of this license.  You must not remove this notice, or any other, from this software.
 
@@ -996,7 +996,7 @@ Copyright (c) Rich Hickey and Michael Fogus, 2012, 2013. All rights reserved.  T
 
 ### core.unify
 
-+ [core.unify](https://github.com/clojure/core.unify)
+[core.unify](https://github.com/clojure/core.unify)
 
 Copyright © 2011 Rich Hickey
 
@@ -1008,11 +1008,11 @@ Copyright (C) 2013 Mark Engelberg
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
-+ [data.priority-map](https://github.com/clojure/data.priority-map)
+[data.priority-map](https://github.com/clojure/data.priority-map)
 
 ### leinjacker
 
-+ [leinjacker](https://github.com/sattvik/leinjacker)
+[leinjacker](https://github.com/sattvik/leinjacker)
 
 Copyright © 2012 Sattvik Software & Technology Resources, Ltd. Co.
 All rights reserved.
@@ -1021,7 +1021,7 @@ Distributed under the Eclipse Public License, the same as Clojure.
 
 ### tools.analyzer
 
-+ [tools.analyzer](https://github.com/clojure/tools.analyzer)
+[tools.analyzer](https://github.com/clojure/tools.analyzer)
 
 Copyright © 2013-2014 Nicola Mometto, Rich Hickey & contributors.
 
@@ -1029,7 +1029,7 @@ Distributed under the Eclipse Public License, the same as Clojure.
 
 ### tools.analyzer.jvm
 
-+ [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
+[tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 
 Copyright © 2013-2014 Nicola Mometto, Rich Hickey & contributors.
 
@@ -1037,7 +1037,7 @@ Distributed under the Eclipse Public License, the same as Clojure.
 
 ### tools.namespace
 
-+ [tools.namespace](https://github.com/clojure/tools.namespace)
+[tools.namespace](https://github.com/clojure/tools.namespace)
 
 Copyright © 2012 Stuart Sierra All rights reserved. The use and
 distribution terms for this software are covered by the
@@ -1051,7 +1051,7 @@ software.
 
 ### tools.reader
 
-+ [tools.reader](https://github.com/clojure/tools.reader)
+[tools.reader](https://github.com/clojure/tools.reader)
 
 Copyright © 2013-2014 Nicola Mometto, Rich Hickey & contributors.
 
