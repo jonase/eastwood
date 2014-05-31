@@ -3,6 +3,122 @@
 Intended for Eastwood developers to track down when they have time and
 interest.
 
+## Changes from version 0.1.2 to 0.1.3
+
+GOOD CHANGE: The formerly-normal 2 reflection warnings from
+clojure/data/priority_map.clj and clojure/core/memoize.clj are now
+gone, because these libraries have been copied into Eastwood, and
+updated to no longer generate those reflection warnings.  Note that
+for projects that use these versions of core.memoize and/or
+data.priority-map, they now have their own reflection warnings for
+these namespaces, whereas before these were 'masked' by the ones from
+Eastwood.
+
+GOOD CHANGE: clj-ns-browser-2013-03-04 formerly caused an exception to
+be thrown early during linting, due to that project using a version of
+tools.namespace with a different API than the version used by
+Eastwood.  Eastwood copying tools.namespace and renaming its namespace
+helps in 0.1.3 to do normal linting of this project.
+
+Similarly for these projects:
++ core.cache-2014-01-31
++ core.memoize-2013-08-13
+
+GOOD CHANGE: Linting data.priority-map-2014-03-20 had an
+:unlimited-use warning that used to have :line nil and :column nil,
+but now it has numbers there instead of nil, and they are correct.
+This is probably because of the same change, and thus now Eastwood's
+reader is actually reading the source code from the files, instead of
+skipping reading them because the namespaces were already there?
+Something like that, I would guess.
+
+Similarly in these projects:
++ tools.reader-2014-03-05
+
+
+COULD BE BETTER: core.constracts-2013-07-24 has a :redefd-vars
+warning, now with file names and column numbers, that gives wrong a
+line number in a file that does not have that many lines in it.
+Probably some macro expansion issue that Eastwood doesn't handle well.
+
+WEIRD: core.logic-2014-02-21 throws IllegalStateException in both
+versions, but in 0.1.3 the "Shown again with metadata for debugging"
+has no :line :column etc. metadata, whereas it did in 0.1.2.  I don't
+know yet why this change occurs.
+
+Similarly for these projects:
++ ogre-(tbd-date-here)
++ potemkin - difference here is *no* output at all for with-metadata version
++ useful-2013-11-19 - difference here is part of output expression
+  does not appear at all, which might be similar to potemkin change
+
+
+BUG?: java.jdbc-2014-03-07 used to have these warnings in the output,
+but no longer.  I do not know why, but suspect it is due to some kind
+of change in tools.analyzer(.jvm).
+
+    Error: Eastwood found no instance method named getTables for class java.sql.DatabaseMetaData taking 4 args with types (java.lang.Object, java.lang.Object, java.lang.Object, [Ljava.lang.String;).  This may occur because Eastwood does not yet do type matching in the same way that Clojure does.
+    Error: Eastwood found no instance method named getTables for class java.sql.DatabaseMetaData taking 4 args with types (java.lang.Object, java.lang.Object, java.lang.Object, [Ljava.lang.String;).  This may occur because Eastwood does not yet do type matching in the same way that Clojure does.
+
+BUG?: seeaw-2014-02-21 used to have this warning in the output, but no
+longer.  Seems similar to the java.jdbc change.
+
+    Error: Eastwood found no instance method named addStyle for class javax.swing.JTextPane taking 2 args with types (java.lang.String, java.lang.Object).  This may occur because Eastwood does not yet do type matching in the same way that Clojure does.
+
+
+BUG?: tools.analyzer.jvm-2014-03-11 formerly had fairly clean output
+from Eastwood, but now I see this exception.  I do not know yet why
+this new behavior occurs.
+
+Additional info: tools.analyzer.jvm-2014-03-11/project.clj depends
+upon version 0.1.0-SNAPSHOT of tools.analyzer.  Thus it depends upon
+what version of tools.analyzer happens to be in my local Maven repo at
+the time.  By doing 'lein install' on the version of tools.analyzer in
+the crucible repo first, this problem about not finding rseqv
+disappears.
+
+    == Linting clojure.tools.analyzer.passes.jvm.clear-locals ==
+    Exception in thread "main" java.lang.IllegalAccessError: rseqv does not exist, compiling:(/private/var/folders/c1/gpfcdwt14075pr80tsshkws40000gn/T/form-init5513266052110466476.clj:1:142)
+    Caused by: java.lang.IllegalAccessError: rseqv does not exist
+	    ... 11 more
+    Error encountered performing task 'eastwood' with profile(s): 'default,1.6'
+    Subprocess failed
+
+BUG?: Perhaps similar is a new exception in useful-2013-11-19 shown
+below:
+
+Additional info: This error does not occur if you lint only the
+namespace flatland.useful.deftype-test.  The function alist is defined
+in namespace flatland.useful.deftype, and Eastwood throws an exception
+while linting that namespace, probably before successfully defining fn
+alist, thus causing the problem below later on.
+
+    == Linting flatland.useful.deftype-test ==
+    {:linter :unlimited-use,
+     :msg
+     "Unlimited use of (clojure.test flatland.useful.deftype) in flatland.useful.deftype-test",
+     :line 1,
+     :column 5}
+    
+    Exception thrown during phase :analyze of linting namespace flatland.useful.deftype-test
+    Got exception with extra ex-data:
+        msg='Could not resolve var: alist'
+        (keys dat)=(:file :column :line :var)
+    ExceptionInfo Could not resolve var: alist
+
+BUG?: Project useful-2013-11-19 now also throws "RuntimeException
+Method code too large!" that it did not throw before while linting
+namespace flatland.useful.deftype.  I do not know the reason, but
+would guess it might be because of line/col metadata being inside of a
+backquote expression and getting expanded out into something even
+larger than it was in the older version.
+
+BUG IN TOOLS.READER?: Project useful-2013-11-19 used to have bad
+line/col numbers for some warnings, and they have been made better.
+Perhaps this is due to bug fixes in tools.reader, or Eastwood's new
+use of the IndexingReader to get the file names in metadata.
+
+
 ## Changes from version 0.1.1 to 0.1.2
 
 This appears to be a good change, which doesn't need fixing, but I

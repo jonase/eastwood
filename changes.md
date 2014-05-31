@@ -1,5 +1,40 @@
 # Change log for Eastwood
 
+## Changes from version 0.1.2 to 0.1.3
+
+* Added file name to all linter warnings.  Issue
+  [#64](https://github.com/jonase/eastwood/issues/64).
+
+* Added column numbers to :redefd-vars warnings.
+
+* Handle "./" at beginning of :source-paths or :test-paths dir names.
+  Fixes issue [#66](https://github.com/jonase/eastwood/issues/66).
+
+* Most of the Clojure contrib libraries upon which Eastwood depends
+  are now copied into Eastwood itself, and then renamed to have
+  different namespace names.  This helps to avoid potential conflicts
+  between the version used by Eastwood, and the version used by
+  Clojure projects being linted.  Fixes issue
+  [#67](https://github.com/jonase/eastwood/issues/67).
+
+* Updated `tools.analyzer` and `tools.analyzer.jvm` to version
+  0.1.0-beta13.
+
+* Updated `data.priority-map` to 0.0.5, and `core.memoize` to 0.5.6
+  plus a local patch, both to avoid spurious reflection warnings from
+  Eastwood itself.
+
+* Added :compare-forms debug option, only intended for use by Eastwood
+  developers for debugging Eastwood itself.  Causes Eastwood to write
+  two files forms-read.txt and forms-emitted.txt.  forms-read.txt
+  contains the forms after they have been read, top-level do forms are
+  recognized and each subform analyzed separately, and after calling
+  macroexpand-1 on them, at the top level only.  forms-emitted.txt
+  contains the forms after all of those steps, plus being analyzed
+  with tools.analyzer(.jvm) to produce an AST, and then emit-form
+  called on the AST to produce a form.
+
+
 ## Changes from version 0.1.1 to 0.1.2
 
 
