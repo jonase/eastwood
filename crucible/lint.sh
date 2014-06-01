@@ -19,6 +19,7 @@
 # set -x    echo expanded commands before executing them
 # set +x    stop doing that
 
+# Use PROFILE="" to test with Clojure 1.5.1
 #PROFILE=""
 PROFILE="+1.6"
 #PROFILE="+1.7"
