@@ -1,6 +1,6 @@
-(defproject org.clojure/tools.analyzer.jvm "0.1.0-SNAPSHOT"
-  :description "Additional jvm-specific passes for tools.analyzer."
-  :url "https://github.com/clojure/tools.analyzer.jvm"
+(defproject org.clojure/tools.analyzer "0.1.0-SNAPSHOT"
+  :description "An analyzer for Clojure code, written in Clojure and producing AST in EDN."
+  :url "https://github.com/clojure/tools.analyzer"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ["src/main/clojure"]
@@ -9,6 +9,4 @@
   :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [org.clojure/core.memoize "0.5.6"]
-                 [org.clojure/tools.analyzer "0.1.0-SNAPSHOT"]
-                 [org.ow2.asm/asm-all "4.1"]])
+                 [com.datomic/datomic-free "0.9.4699" :scope "provided"]])
