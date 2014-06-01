@@ -279,31 +279,16 @@ this issue:
 
 ### Namespaces collision
 
-The Clojure Contrib libraries
-[`core.typed`](https://github.com/clojure/core.typed) and
-[`jvm.tools.analyzer`](https://github.com/clojure/jvm.tools.analyzer),
-and projects that depend upon them, cannot be analyzed.  `core.typed`
-use `jvm.tools.analyzer`, and both it and `tools.analyzer` (used by
-Eastwood) share the same `clojure.tools.analyzer` namespace.
+As of Eastwood version 0.1.3, it no longer depends upon common Clojure
+contrib libraries such as `core.cache`, `core.memoize`, and
+`tools.analyzer`.  Instead, it contains a local copy of those
+libraries that have been renamed to have a different namespace within
+the `eastwood.*` namespace hierarchy.
 
-Updating to the latest version of these libraries (e.g. `core.typed`
-version 0.2.21 or later) should solve this for you, although that may
-cause conflicts with other code.  See [this
-message](https://groups.google.com/d/msg/clojure-dev/N4Ld3dc17_o/e1Ww2i7YbroJ)
-for an alternate approach.
-
-If a project uses
-[`tools.namespace`](https://github.com/clojure/tools.namespace)
-versions older than 0.2.0, there will be a similar conflict that
-causes an exception to be thrown.
-
-TBD: `jvm.tools.analyzer` may have had its namespace
-`clojure.tools.analyzer` renamed specificaly to avoid this problem.
-
-Linting libraries which Eastwood uses in its implementation often
-causes strange warnings or exceptions.  These include
-`tools.analyzer`, `tools.analyzer.jvm`, `core.memoize`, and
-`core.cache`.
+This should successfully avoid all (or most) of the namespace
+collision issues that existed with Eastwood 0.1.2 and earlier when
+linting projects that depended upon different versions of these
+libraries.
 
 
 ### Unreliable reflection warnings during linting
