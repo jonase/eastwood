@@ -1,4 +1,4 @@
-(defproject jonase/eastwood "0.1.3-SNAPSHOT"
+(defproject jonase/eastwood "0.1.3"
   :description "A Clojure lint tool"
   :aot [eastwood.copieddeps.dep10.clojure.tools.reader.impl.ExceptionInfo]
   :dependencies [[org.clojure/clojure "1.6.0"]

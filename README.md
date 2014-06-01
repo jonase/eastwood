@@ -18,7 +18,7 @@ Leiningen 2.3.x.  Merge the following into your `~/.lein/profiles.clj`
 file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.1.2"]] }}
+{:user {:plugins [[jonase/eastwood "0.1.3"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -205,11 +205,13 @@ value that is a set of keywords, e.g.
 
 ### Known libraries Eastwood has difficulty with
 
-[`potemkin`](https://github.com/ztellman/potemkin) and libraries that
-depend on it (e.g. [`ogre`](https://github.com/clojurewerkz/ogre)) now
-throw exceptions during linting as of Eastwood 0.1.2.  A suggested
-change to `potemkin` has been submitted that would eliminate this, but
-the change in behavior was due to a conscious design choice in
+[`potemkin`](https://github.com/ztellman/potemkin) version 0.3.4 and
+earlier, and libraries that depend on it
+(e.g. [`ogre`](https://github.com/clojurewerkz/ogre)) now throw
+exceptions during linting as of Eastwood 0.1.3 (and 0.1.2).  A
+suggested change to `potemkin` has been incorporated into what will
+become potemkin 0.3.5 (not released as of this writing).  The change
+in Eastwood behavior was due to a conscious design choice in
 `tools.analyzer`.
 
 Currently, the Clojure Contrib libraries
@@ -234,38 +236,8 @@ normal to see these warning messages near the beginning of the output:
 
 Eastwood will still work correctly despite these warnings.
 
-Recommendation: Ignore the warnings.  If you want them to be
-eliminated in a future version of Eastwood, consider creating a
-Clojure JIRA account and voting for the tickets below to be fixed.
-
-[Link](http://dev.clojure.org/jira/secure/Signup!default.jspa) where
-you can create a Clojure JIRA account.
-
-Tickets to vote for:
-* [CCACHE-34](http://dev.clojure.org/jira/browse/CCACHE-34)
-* [CMEMOIZE-13](http://dev.clojure.org/jira/browse/CMEMOIZE-13)
-
-Why this happens: `tools.analyzer.jvm` uses the library
-`core.memoize`, which uses `core.cache`, which in turn uses an older
-version of `data.priority-map`, which has this reflection warning in
-it.
-
-
-If you use Eastwood version 0.1.0 and Clojure 1.6.0, it is normal to
-see these messages near the beginning of the Eastwood output:
-
-    WARNING: record? already refers to: #'clojure.core/record? in namespace: clojure.tools.analyzer.utils, being replaced by: #'clojure.tools.analyzer.utils/record?
-    WARNING: record? already refers to: #'clojure.core/record? in namespace: clojure.tools.analyzer, being replaced by: #'clojure.tools.analyzer.utils/record?
-
-The presence of these warnings does not otherwise impair Eastwood's
-ability to find problems in your code.
-
-Recommendation: Upgrade to Eastwood version 0.1.2, but see above for
-other warning messages you will see instead.
-
-Why this happens: Eastwood 0.1.0 uses an older version of the
-`tools.analyzer` library that defines a function `record?` that has
-the same name as a new function introduced in Clojure 1.6.0.
+Recommendation: Ignore the warnings, or upgrade to Eastwood 0.1.3,
+which eliminates them.
 
 
 ### Code analysis engine is more picky than the Clojure compiler
@@ -346,9 +318,9 @@ enabled) will be different than what you get from compiling your code
 normally.
 
 This issue was worse in Eastwood 0.1.0, and has been improved in
-versions 0.1.1 and 0.1.2.  There are likely to be a few differences in
-reflection warnings from `lein eastwood` that remain, so trust the
-`lein check` output if there are differences.
+versions 0.1.1 through 0.1.3.  There are likely to be a few
+differences in reflection warnings from `lein eastwood` that remain,
+so trust the `lein check` output if there are differences.
 
 
 ### Interaction between namespaces
@@ -959,7 +931,7 @@ local Maven repository:
     $ cd path/to/eastwood
     $ LEIN_SNAPSHOTS_IN_RELEASE=1 lein install
 
-Then add `[jonase/eastwood "0.1.3-SNAPSHOT"]` (or whatever is the
+Then add `[jonase/eastwood "0.1.4-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `~/.lein/profiles.clj` file.
