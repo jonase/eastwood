@@ -117,6 +117,13 @@ copied into Eastwood, it would be good to verify that reflection
 warning has been eliminated, or apply that one-line patch by hand
 again.
 
+tools.namespace 0.2.4 uses an exponential run time algorithm to find
+transitive dependencies, where a linear time algorithm is possible.  I
+have applied the patch named linear-time-no-debug.patch attached to
+this ticket after copying it:
+
+    http://dev.clojure.org/jira/browse/TNS-18
+
 For all others, the versions output by 'lein deps :tree' are copied in
 with no changes other than editing the namespace names.  See clone.sh
 for details.
