@@ -561,6 +561,8 @@ file and namespace to avoid name collisions.")
           (println (format "Namespaces to be linted:"))
           (doseq [n namespaces]
             (println (format "    %s" n))))
+        (doseq [n namespaces]
+          (create-ns n))
         (when (seq linters)
           (let [record-forms? (or (contains? (:debug opts) :all)
                                   (contains? (:debug opts) :compare-forms))
