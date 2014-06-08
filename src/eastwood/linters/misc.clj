@@ -65,11 +65,16 @@
         :let [use-args (map remove-quote-wrapper (rest (-> ast :form)))
               s (remove use-arg-ok? use-args)]
         :when (seq s)]
-    {:linter :unlimited-use
-     :msg (format "Unlimited use of %s in %s" (seq s) (-> ast :env :ns))
-     :file (-> ast :env :ns meta :file)
-     :line (-> ast :env :ns meta :line)
-     :column (-> ast :env :ns meta :column)}))
+    (let [first-bad-use (first s)
+          first-bad-use-sym (if (symbol? first-bad-use)
+                              first-bad-use
+                              (first first-bad-use))
+          loc (meta first-bad-use-sym)]
+      {:linter :unlimited-use
+       :msg (format "Unlimited use of %s in %s" (seq s) (-> ast :env :ns))
+       :file (-> loc :file)
+       :line (-> loc :line)
+       :column (-> loc :column)})))
 
 ;; Misplaced docstring
 
