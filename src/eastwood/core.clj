@@ -561,6 +561,11 @@ file and namespace to avoid name collisions.")
           (println (format "Namespaces to be linted:"))
           (doseq [n namespaces]
             (println (format "    %s" n))))
+        ;; Create all namespaces to be analyzed.  This can help in
+        ;; some (unusual) situations, such as when namespace A
+        ;; requires B, so Eastwood analyzes B first, but eval'ing B
+        ;; assumes that A's namespace has been created first because B
+        ;; contains (alias 'x 'A)
         (doseq [n namespaces]
           (create-ns n))
         (when (seq linters)
