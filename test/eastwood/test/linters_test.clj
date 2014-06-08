@@ -752,12 +752,12 @@
     {:linter :unlimited-use,
      :msg "Unlimited use of (clojure.test [clojure.reflect] [clojure inspector] [clojure [set]] [clojure.java.io :as io]) in testcases.unlimiteduse",
      :file "testcases/unlimiteduse.clj",
-     :line 3, :column 5}
+     :line 5, :column 9}
     1,
     {:linter :unlimited-use,
      :msg "Unlimited use of ((clojure [pprint :as pp] [uuid :as u])) in testcases.unlimiteduse",
      :file "testcases/unlimiteduse.clj",
-     :line 3, :column 5}
+     :line 14, :column 10}
     1,
     })
   (lint-test
@@ -768,7 +768,7 @@
     {:linter :unlimited-use,
      :msg "Unlimited use of (clojure.test clojure.set [testcases.f01 :as t1]) in testcases.in-ns-switching",
      :file "testcases/in_ns_switching.clj",
-     :line 1, :column 5}
+     :line 3, :column 9}
     1,
     })
   ;; I would prefer if this threw an exception, but I think it does
