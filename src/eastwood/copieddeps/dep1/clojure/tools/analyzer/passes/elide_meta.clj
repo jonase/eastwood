@@ -47,7 +47,9 @@
         (if (= new-meta (:form meta))
           ast
           (assoc ast :meta (replace-meta meta new-meta)))
-        (assoc-in expr [:env :context] (:context env))))
+        (-> expr
+          (assoc-in [:env :context] (:context env))
+          (update-in [:form] with-meta {}))))
     :def
     (let [new-meta (apply dissoc (:form meta) elides)]
       (if (not (empty? new-meta))

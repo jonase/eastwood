@@ -18,9 +18,12 @@
    * create-var
    * var?
 
+   Setting up the global env is also required, see clojure.tools.analyzer.env
+
    See clojure.tools.analyzer.core-test for an example on how to setup the analyzer."
   (:refer-clojure :exclude [macroexpand-1 macroexpand var? record?])
-  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer :all]))
+  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer :all])
+  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]))
 
 (defmulti -analyze (fn [op form env & _] op))
 (defmulti -parse
@@ -29,27 +32,55 @@
   (fn [[op & rest] env] op)
   :default :invoke)
 
-(defn analyze-form
+(defmulti -analyze-form (fn [form _] (class form)))
+
+(def ^:dynamic analyze-form
   "Like analyze, but does not mark the form with :top-level true"
+  -analyze-form)
+
+(defmethod -analyze-form clojure.lang.Symbol
   [form env]
-  (let [form (if (seq? form)
-               (or (seq form) ()) ;; force evaluation for analysis
-               form)]
-    (cond
+  (-analyze :symbol form env))
 
-     (symbol? form)          (-analyze :symbol form env)
+(defmethod -analyze-form clojure.lang.IPersistentVector
+  [form env]
+  (-analyze :vector form env))
 
-     (type? form)            (-analyze :const  form env :type)
-     (record? form)          (-analyze :const  form env :record) ;; since recors are maps too, record? *needs*
-     ;; to be before map?
-     (and (seq? form)
-          (not (empty? form))) (-analyze :seq    form env) ;; handles function/macro/special-form invocations
+(defmethod -analyze-form clojure.lang.IPersistentMap
+  [form env]
+  (-analyze :map form env))
 
-     (vector? form)          (-analyze :vector form env)
-     (map? form)             (-analyze :map    form env)
-     (set? form)             (-analyze :set    form env)
+(defmethod -analyze-form clojure.lang.IPersistentSet
+  [form env]
+  (-analyze :set form env))
 
-     :else                   (-analyze :const  form env))))
+(defmethod -analyze-form clojure.lang.ISeq
+  [form env]
+  (if-let [form (seq form)]
+    (-analyze :seq form env)
+    (-analyze :const form env)))
+
+(defmethod -analyze-form clojure.lang.IType
+  [form env]
+  (-analyze :const form env :type))
+
+(prefer-method -analyze-form clojure.lang.IType clojure.lang.IPersistentMap)
+(prefer-method -analyze-form clojure.lang.IType clojure.lang.IPersistentVector)
+(prefer-method -analyze-form clojure.lang.IType clojure.lang.IPersistentSet)
+(prefer-method -analyze-form clojure.lang.IType clojure.lang.ISeq)
+
+(defmethod -analyze-form clojure.lang.IRecord
+  [form env]
+  (-analyze :const form env :record))
+
+(prefer-method -analyze-form clojure.lang.IRecord clojure.lang.IPersistentMap)
+(prefer-method -analyze-form clojure.lang.IRecord clojure.lang.IPersistentVector)
+(prefer-method -analyze-form clojure.lang.IRecord clojure.lang.IPersistentSet)
+(prefer-method -analyze-form clojure.lang.IRecord clojure.lang.ISeq)
+
+(defmethod -analyze-form :default
+  [form env]
+  (-analyze :const form env))
 
 (defn analyze
   "Given a form to analyze and an environment, a map containing:
@@ -59,12 +90,7 @@
     ** :statement  the return value of the form is not needed
     ** :expr       everything else
    * :ns         a symbol representing the current namespace of the form to be
-                 analyzed, must be present in the :namespaces map
-   * :namespaces an atom containing a map from namespace symbol to namespace map,
-                 the namespace map contains the following keys:
-    ** :mappings   a map of mappings of the namespace, symbol to var/class
-    ** :aliases    a map of the aliases of the namespace, symbol to symbol
-    ** :ns         a symbol representing the namespace
+                 analyzed
 
    returns an AST for that form.
 
@@ -90,11 +116,7 @@
   []
   {:context    :expr
    :locals     {}
-   :ns         'user
-   :namespaces (atom
-                {'user {:mappings {}
-                        :aliases  {}
-                        :ns       'user}})})
+   :ns         'user})
 
 (defn analyze-in-env
   "Takes an env map and returns a function that analyzes a form in that env"
@@ -250,9 +272,10 @@
                       (merge {:form form}
                              (-source-info form env)))))
     (let [mform (macroexpand-1 form env)]
-      (if (= form mform)  ;; function/special-form invocation
+      (if (= form mform) ;; function/special-form invocation
         (parse mform env)
-        (analyze-form mform env)))))
+        (-> (analyze-form mform env)
+          (update-in [:raw-forms] (fnil conj ()) form)))))) ;; TODO: should passes propagate this?
 
 (defmethod -parse 'do
   [[_ & exprs :as form] env]
@@ -649,7 +672,7 @@
            {:children `[~@(when n [:local]) :methods]})))
 
 (defmethod -parse 'def
-  [[_ sym & expr :as form] {:keys [ns namespaces] :as env}]
+  [[_ sym & expr :as form] {:keys [ns] :as env}]
   (when (not (symbol? sym))
     (throw (ex-info (str "First argument to def must be a symbol, had: " (class sym))
                     (merge {:form form}
@@ -682,7 +705,8 @@
                      (-source-info form env)))
 
         var (create-var sym env) ;; interned var will have quoted arglists, replaced on evaluation
-        _ (swap! namespaces assoc-in [ns :mappings sym] var)
+        _ (env/deref-env) ;; make sure *env* is bound
+        _ (swap! env/*env* assoc-in [:namespaces ns :mappings sym] var)
 
         meta (merge (meta sym)
                     (when arglists

@@ -7,8 +7,7 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.annotate-tag
-  (:require [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :refer [unbox maybe-class]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [prewalk]])
+  (:require [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :refer [unbox maybe-class]])
   (:import (clojure.lang ISeq Var AFunction)))
 
 (defmulti -annotate-tag :op)

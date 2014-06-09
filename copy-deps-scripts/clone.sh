@@ -11,12 +11,13 @@ cd repos
 
 git clone https://github.com/clojure/tools.analyzer.git
 cd tools.analyzer
-git checkout tools.analyzer-0.1.0-beta13
+git checkout tools.analyzer-0.2.1
+
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
-git checkout tools.analyzer.jvm-0.1.0-beta13
+git checkout tools.analyzer.jvm-0.2.1
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git

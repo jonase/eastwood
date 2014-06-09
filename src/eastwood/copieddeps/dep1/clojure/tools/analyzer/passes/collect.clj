@@ -94,6 +94,11 @@
 (defn -collect-closed-overs
   [ast]
   (-> (case (:op ast)
+       :letfn ;; seed letfn bindings
+       (let [bindings (:bindings ast)]
+         (doseq [{:keys [name]} bindings]
+           (swap! *collects* #(update-in % [:locals] conj name)))
+         ast)
        :binding
        (let [name (:name ast)]
          (if (= :field (:local ast))

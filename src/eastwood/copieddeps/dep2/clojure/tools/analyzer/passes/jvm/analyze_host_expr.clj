@@ -149,8 +149,7 @@
                       (= :class (:type target))
                       (:form target))
           target-type (if class? :static :instance)]
-      (merge {:form form
-              :env  env}
+      (merge ast
              (case op
 
                :host-call

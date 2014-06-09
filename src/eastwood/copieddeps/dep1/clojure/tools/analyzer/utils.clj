@@ -8,6 +8,7 @@
 
 (ns eastwood.copieddeps.dep1.clojure.tools.analyzer.utils
   (:refer-clojure :exclude [record?])
+  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env])
   (:import (clojure.lang IRecord IType IObj
                          IReference Var)
            java.util.regex.Pattern))
@@ -118,21 +119,22 @@
 
 (defn resolve-ns
   "Resolves the ns mapped by the given sym in the env"
-  [ns-sym {:keys [ns namespaces]}]
+  [ns-sym {:keys [ns]}]
   (when ns-sym
-    (or (get-in @namespaces [ns :aliases ns-sym])
-        (:ns (@namespaces ns-sym)))))
+    (let [namespaces (:namespaces (env/deref-env))]
+      (or (get-in namespaces [ns :aliases ns-sym])
+          (:ns (namespaces ns-sym))))))
 
 (defn resolve-var
   "Resolves the var mapped by the given sym in the env"
-  [sym {:keys [ns namespaces] :as env}]
+  [sym {:keys [ns] :as env}]
   (when (symbol? sym)
     (let [sym-ns (when-let [ns (namespace sym)]
                    (symbol ns))
           full-ns (resolve-ns sym-ns env)]
       (when (or (not sym-ns) full-ns)
         (let [name (if sym-ns (-> sym name symbol) sym)]
-          (-> (@namespaces (or full-ns ns)) :mappings (get name)))))))
+          (-> (env/deref-env) :namespaces (get (or full-ns ns)) :mappings (get name)))))))
 
 (defn arglist-for-arity
   "Takes a fn node and an argc and returns the matching arglist"

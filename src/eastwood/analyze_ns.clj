@@ -13,6 +13,7 @@
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [resolve-var]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [postwalk prewalk cycling]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer :as ana :refer [analyze] :rename {analyze -analyze}]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.source-info :refer [source-info]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.cleanup :refer [cleanup]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.elide-meta :refer [elide-meta]]
@@ -23,6 +24,8 @@
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.box :refer [box]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.annotate-branch :refer [annotate-branch]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.annotate-methods :refer [annotate-methods]]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.annotate-class-id :refer [annotate-class-id]]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.annotate-internal-name :refer [annotate-internal-name]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.fix-case-test :refer [fix-case-test]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.classify-invoke :refer [classify-invoke]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.validate :refer [validate]]
@@ -85,14 +88,14 @@
 (defn dont-expand-twice? [form]
   (gen-interface-form? form))
 
-(defn pre-analyze-debug [at-top-level? asts form env ns opt]
+(defn pre-analyze-debug [at-top-level? asts form _env ns opt]
   (let [print-normally? (or (contains? (:debug opt) :all)
                             (contains? (:debug opt) :forms))
         pprint? (or (contains? (:debug opt) :all)
                     (contains? (:debug opt) :forms-pprint))]
   (when (or print-normally? pprint?)
-    (println (format "dbg pre-analyze #%d at-top-level?=%s ns=%s"
-                     (count asts) at-top-level? (str ns)))
+    (println (format "dbg pre-analyze #%d at-top-level?=%s ns=%s (meta ns)=%s"
+                     (count asts) at-top-level? (str ns) (meta ns)))
     (when pprint?
       (println "    form before macroexpand:")
       (pp/pprint form))
@@ -112,11 +115,12 @@
           (binding [*print-meta* true] (pr exp)))))
     (println "\n    --------------------"))))
 
-(defn post-analyze-debug [at-top-level? asts _form _analysis _exception ns opt]
+(defn post-analyze-debug [at-top-level? asts _form analysis _exception ns opt]
   (when (or (contains? (:debug opt) :progress)
             (contains? (:debug opt) :all))
-    (println (format "dbg anal'd %d at-top-level?=%s ns=%s"
-                     (count asts) at-top-level? (str ns)))))
+    (println (format "dbg anal'd %d at-top-level?=%s ns=%s analysis="
+                     (count asts) at-top-level? (str ns)))
+    (util/pprint-ast-node analysis)))
 
 (defn begin-file-debug [filename ns opt]
   (when (:record-forms? opt)
@@ -170,36 +174,40 @@
                  elide-meta
                  annotate-methods
                  fix-case-test
-                 propagate-def-name)))
+                 annotate-class-id
+                 annotate-internal-name
+                 propagate-def-name)))  ;; custom pass added for Eastwood
 
     ((fn analyze [ast]
-       (-> ast
-         (postwalk
-          (fn [ast]
-            (-> ast
-              annotate-tag
-              analyze-host-expr
-              infer-tag
-              validate
-              classify-invoke
-              (validate-loop-locals analyze)))))))
+       (postwalk ast
+                 (fn [ast]
+                   (-> ast
+                     annotate-tag
+                     analyze-host-expr
+                     infer-tag
+                     validate
+                     classify-invoke
+                     ;; constant-lift pass is not helpful for Eastwood
+                     ;;constant-lift ;; needs to be run after validate so that :maybe-class is turned into a :const
+                     (validate-loop-locals analyze))))))
 
+    ;; The following passes are intentionally far fewer than the ones
+    ;; in t.a.j/run-passes.
     (prewalk (comp cleanup
                 ensure-tag
                 box))))
 
 (defn analyze
-  [form env]
-  (with-bindings {clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)
-                  #'ana/macroexpand-1          ana.jvm/macroexpand-1
-                  #'ana/create-var             ana.jvm/create-var
-                  #'ana/parse                  ana.jvm/parse
-                  #'ana/var?                   var?}
-    (run-passes (-analyze form env))))
+  [form]
+  ;; override the default definition of run-passes, because some of
+  ;; them, on certain kinds of Clojure code, cause exceptions to be
+  ;; thrown.  We want Eastwood to successfully analyze such code.
+  (binding [ana.jvm/run-passes run-passes]
+    (ana.jvm/analyze form)))
 
-(defn analyze-form [form env]
+(defn analyze-form [form]
   (try
-    (let [form-analysis (analyze form env)]
+    (let [form-analysis (analyze form)]
       {:exception nil :analysis form-analysis})
     (catch Exception e
       {:exception e :analysis nil})))
@@ -293,58 +301,58 @@
     ;; want it to go back to the original before returning.
     (binding [*ns* *ns*
               *file* (str source-path)]
-      (begin-file-debug *file* *ns* opt)
-      (loop [forms []
-             asts []
-             unanalyzed-forms []]
-        (let [at-top-level? (empty? unanalyzed-forms)
-              [form unanalyzed-forms] (if at-top-level?
-                                        [(tr/read pbrdr nil eof) []]
-                                        [(first unanalyzed-forms)
-                                         (rest unanalyzed-forms)])
-              done? (and at-top-level?
-                         (identical? form eof))]
-          (if done?
-            {:forms forms, :asts asts, :exception nil}
-            (let [env (ana.jvm/empty-env)
-                  expanded (if (dont-expand-twice? form)
-                             form
-                             (ana.jvm/macroexpand-1 form env))]
-              (if (do-form? expanded)
-                (recur forms asts (concat (rest expanded) unanalyzed-forms))
-                (let [_ (pre-analyze-debug at-top-level? asts form env *ns* opt)
-                      {:keys [analysis exception]} (analyze-form form env)]
-                  (post-analyze-debug at-top-level? asts form analysis exception
-                                      *ns* opt)
-                  (if exception
-                    {:forms (remaining-forms
-                             pbrdr
-                             (into forms (concat [form] unanalyzed-forms))),
-                     :asts asts, :exception exception,
-                     :exception-phase :analyze, :exception-form form}
-                    (if-let [[exc-phase exc]
-                             (when eval?
-                               (try
-                                 (let [f (emit-form analysis)]
-                                   (try
-                                     (pre-eval-debug at-top-level? asts expanded analysis f *ns* opt "not top level ns")
-                                     (eval f)
-                                     nil   ; no exception
-                                     (catch Exception e
-                                       [:eval-form e])))
-                                 (catch Exception e
-                                   [:emit-form e])))]
+      (env/with-env (ana.jvm/global-env)
+        (begin-file-debug *file* *ns* opt)
+        (loop [forms []
+               asts []
+               unanalyzed-forms []]
+          (let [at-top-level? (empty? unanalyzed-forms)
+                [form unanalyzed-forms] (if at-top-level?
+                                          [(tr/read pbrdr nil eof) []]
+                                          [(first unanalyzed-forms)
+                                           (rest unanalyzed-forms)])
+                done? (and at-top-level?
+                           (identical? form eof))]
+            (if done?
+              {:forms forms, :asts asts, :exception nil}
+              (let [expanded (if (dont-expand-twice? form)
+                               form
+                               (ana.jvm/macroexpand-1 form (ana.jvm/empty-env)))]
+                (if (do-form? expanded)
+                  (recur forms asts (concat (rest expanded) unanalyzed-forms))
+                  (let [_ (pre-analyze-debug at-top-level? asts form nil *ns* opt)
+                        {:keys [analysis exception]} (analyze-form form)]
+                    (post-analyze-debug at-top-level? asts form analysis exception
+                                        *ns* opt)
+                    (if exception
                       {:forms (remaining-forms
                                pbrdr
                                (into forms (concat [form] unanalyzed-forms))),
-                       :asts asts, :exception exc,
-                       :exception-phase exc-phase, :exception-form form}
-                      (do
-                        (when debug-ns
-                          (reset! nss (namespace-changes-debug @nss opt)))
-                        (recur (conj forms form)
-                               (conj asts analysis)
-                               unanalyzed-forms)))))))))))))
+                       :asts asts, :exception exception,
+                       :exception-phase :analyze, :exception-form form}
+                      (if-let [[exc-phase exc]
+                               (when eval?
+                                 (try
+                                   (let [f (emit-form analysis)]
+                                     (try
+                                       (pre-eval-debug at-top-level? asts expanded analysis f *ns* opt "not top level ns")
+                                       (eval f)
+                                       nil   ; no exception
+                                       (catch Exception e
+                                         [:eval-form e])))
+                                   (catch Exception e
+                                     [:emit-form e])))]
+                        {:forms (remaining-forms
+                                 pbrdr
+                                 (into forms (concat [form] unanalyzed-forms))),
+                         :asts asts, :exception exc,
+                         :exception-phase exc-phase, :exception-form form}
+                        (do
+                          (when debug-ns
+                            (reset! nss (namespace-changes-debug @nss opt)))
+                          (recur (conj forms form)
+                                 (conj asts analysis)
+                                 unanalyzed-forms))))))))))))))
 
 
 ;; analyze-ns was copied from library jvm.tools.analyzer and then

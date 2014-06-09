@@ -16,7 +16,8 @@
 
             [eastwood.copieddeps.dep1.clojure.tools.analyzer
              [utils :refer [ctx resolve-var -source-info resolve-ns obj? dissoc-env]]
-             [ast :refer [walk prewalk postwalk cycling]]]
+             [ast :refer [walk prewalk postwalk]]
+             [env :as env :refer [*env*]]]
 
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :refer :all :exclude [box]]
 
@@ -72,17 +73,18 @@
                            :ns       (ns-name %)})
                  (all-ns))))
 
-(defn update-ns-map! [env]
-  (reset! (:namespaces env) (build-ns-map))
-  env)
+(defn update-ns-map! []
+  (swap! *env* assoc-in [:namespaces] (build-ns-map)))
+
+(defn global-env []
+  (atom {:namespaces (build-ns-map)}))
 
 (defn empty-env
   "Returns an empty env map"
   []
   {:context    :expr
    :locals     {}
-   :ns         (ns-name *ns*)
-   :namespaces (atom (build-ns-map))})
+   :ns         (ns-name *ns*)})
 
 (defn desugar-host-expr [form env]
   (cond
@@ -134,41 +136,42 @@
   "If form represents a macro form or an inlineable function,
    returns its expansion, else returns form."
   [form env]
-  (if (seq? form)
-    (let [[op & args] form]
-      (if (specials op)
-        form
-        (let [v (resolve-var op env)
-              m (meta v)
-              local? (-> env :locals (get op))
-              macro? (and (not local?) (:macro m)) ;; locals shadow macros
-              inline-arities-f (:inline-arities m)
-              inline? (and (not local?)
-                           (or (not inline-arities-f)
-                               (inline-arities-f (count args)))
-                           (:inline m))
-              t (:tag m)]
-          (cond
+  (env/ensure (global-env)
+    (if (seq? form)
+      (let [[op & args] form]
+        (if (specials op)
+          form
+          (let [v (resolve-var op env)
+                m (meta v)
+                local? (-> env :locals (get op))
+                macro? (and (not local?) (:macro m)) ;; locals shadow macros
+                inline-arities-f (:inline-arities m)
+                inline? (and (not local?)
+                             (or (not inline-arities-f)
+                                 (inline-arities-f (count args)))
+                             (:inline m))
+                t (:tag m)]
+            (cond
 
-           macro?
-           (let [res (apply v form (:locals env) (rest form))] ; (m &form &env & args)
-             (update-ns-map! env)
-             (if (obj? res)
-               (vary-meta res merge (meta form))
-               res))
+             macro?
+             (let [res (apply v form (:locals env) (rest form))] ; (m &form &env & args)
+               (update-ns-map!)
+               (if (obj? res)
+                 (vary-meta res merge (meta form))
+                 res))
 
-           inline?
-           (let [res (apply inline? args)]
-             (update-ns-map! env)
-             (if (obj? res)
-               (vary-meta res merge
-                          (and t {:tag t})
-                          (meta form))
-               res))
+             inline?
+             (let [res (apply inline? args)]
+               (update-ns-map!)
+               (if (obj? res)
+                 (vary-meta res merge
+                            (and t {:tag t})
+                            (meta form))
+                 res))
 
-           :else
-           (desugar-host-expr form env)))))
-    (desugar-host-expr form env)))
+             :else
+             (desugar-host-expr form env)))))
+      (desugar-host-expr form env))))
 
 (defn create-var
   "Creates a Var for sym and returns it.
@@ -369,7 +372,7 @@
   (let [etype (if (= etype :default) Throwable etype)] ;; catch-all
     (ana/-parse `(catch ~etype ~ename ~@body) env)))
 
-(defn run-passes
+(defn ^:dynamic run-passes
   "Applies the following passes in the correct order to the AST:
    * uniquify
    * add-binding-atom
@@ -456,7 +459,7 @@
    default bindings for tools.analyzer, useful to provide custom extension points.
 
    E.g.
-   (analyze form env {:bindings  {#'ana/macroexpand my-mexpand-1}})
+   (analyze form env {:bindings  {#'ana/macroexpand-1 my-mexpand-1}})
 
    Calls `run-passes` on the AST."
   ([form] (analyze form (empty-env) {}))
@@ -468,36 +471,41 @@
                             #'ana/parse                  parse
                             #'ana/var?                   var?}
                            (:bindings opts))
-       (run-passes (-analyze form env)))))
+       (env/ensure (global-env)
+         (run-passes (-analyze form env))))))
 
 (defn analyze+eval
-  "Like analyze but evals the form after the analysis.
+  "Like analyze but evals the form after the analysis and attaches the
+   returned value in the :result field of the AST node.
    Useful when analyzing whole files/namespaces."
   ([form] (analyze+eval form (empty-env) {}))
   ([form env] (analyze+eval form env {}))
   ([form env opts]
-     (let [mform (binding [ana/macroexpand-1 (get-in opts [:bindings #'ana/macroexpand-1] macroexpand-1)]
-                   (ana/macroexpand form env))]
-       (if (and (seq? mform) (= 'do (first mform)) (next mform))
-         ;; handle the Gilardi scenario
-         (let [[statements ret] (loop [statements [] [e & exprs] (rest mform)]
-                                  (if exprs
-                                    (recur (conj statements e) exprs)
-                                    [statements e]))
-               statements-expr (mapv (fn [s] (analyze+eval s (-> env (ctx :statement) update-ns-map!))) statements)
-               ret-expr (analyze+eval ret (update-ns-map! env) opts)]
-           (-> {:op         :do
-               :top-level  true
-               :form       mform
-               :statements statements-expr
-               :ret        ret-expr
-               :children   [:statements :ret]
-               :env        env}
-             source-info))
-         (let [a (analyze mform (update-ns-map! env) opts)
-               frm (emit-form a)]
-           (eval frm) ;; eval the emitted form rather than directly the form to avoid double macroexpansion
-           a)))))
+     (env/ensure (global-env)
+       (update-ns-map!)
+       (let [mform (binding [ana/macroexpand-1 (get-in opts [:bindings #'ana/macroexpand-1] macroexpand-1)]
+                     (ana/macroexpand form env))]
+         (if (and (seq? mform) (= 'do (first mform)) (next mform))
+           ;; handle the Gilardi scenario
+           (let [[statements ret] (loop [statements [] [e & exprs] (rest mform)]
+                                    (if exprs
+                                      (recur (conj statements e) exprs)
+                                      [statements e]))
+                 statements-expr (mapv (fn [s] (analyze+eval s (-> env (ctx :statement)))) statements)
+                 ret-expr (analyze+eval ret env opts)]
+             (-> {:op         :do
+                 :top-level  true
+                 :form       mform
+                 :statements statements-expr
+                 :ret        ret-expr
+                 :children   [:statements :ret]
+                 :env        env
+                 :result     (:result ret-expr)}
+               source-info))
+           (let [a (analyze mform env opts)
+                 frm (emit-form a)
+                 result (eval frm)] ;; eval the emitted form rather than directly the form to avoid double macroexpansion
+             (assoc a :result result)))))))
 
 (defn analyze'
   "Like `analyze` but runs cleanup on the AST"

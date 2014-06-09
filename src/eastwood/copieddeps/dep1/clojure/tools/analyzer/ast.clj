@@ -11,8 +11,8 @@
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [into! rseqv]]))
 
 (defn cycling
-  "Combine the given passes in a single pass that will be repeatedly
-   applied to the AST until applying it another time will have no effect"
+  "Combine the given passes in a single pass that will be applieed repeatedly
+   to the AST until applying it another time will have no effect"
   [& fns*]
   (let [fns (cycle fns*)]
     (fn [ast]
@@ -61,10 +61,9 @@
            (rseq (children* ast)))))
 
 (defn update-children
-  "Applies `f` to the nodes in the AST nodes children.
-   Optionally applies `fix` to the children before applying `f` to the
-   children nodes and then applies `fix` to the update children.
-   An example of a useful `fix` function is `rseq`."
+  "Applies `f` to each AST children node, replacing it with the returned value.
+   If reversed? is not-nil, `pre` and `post` will be applied starting from the last
+   children of the AST node to the first one."
   ([ast f] (update-children ast f false))
   ([ast f reversed?]
      (if (:children ast)
@@ -74,8 +73,10 @@
        ast)))
 
 (defn walk
-  "Walk the ast applying pre when entering the nodes, and post when exiting.
-   If reversed? is not-nil, pre and post will be applied starting from the last
+  "Walk the ast applying `pre` when entering the nodes, and `post` when exiting.
+   Both functions must return a valid node since the returned value will replace
+   the node in the AST which was given as input to the function.
+   If reversed? is not-nil, `pre` and `post` will be applied starting from the last
    children of the AST node to the first one."
   ([ast pre post]
      (walk ast pre post false))

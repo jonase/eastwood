@@ -49,14 +49,15 @@
             (= #'clojure.core/instance? the-var)
             (= :const (:op (first args)))
             (= :class (:type (first args))))
-       {:op       :instance?
-        :class    (:val (first args))
-        :target   (second args)
-        :form     form
-        :env      env
-        :o-tag    Boolean/TYPE
-        :tag      (or tag Boolean/TYPE)
-        :children [:target]}
+       (merge ast
+              {:op       :instance?
+               :class    (:val (first args))
+               :target   (second args)
+               :form     form
+               :env      env
+               :o-tag    Boolean/TYPE
+               :tag      (or tag Boolean/TYPE)
+               :children [:target]})
 
        (and var? (protocol-node? the-var))
        (if (>= argc 1)
