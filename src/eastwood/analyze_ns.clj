@@ -306,6 +306,7 @@
         (loop [forms []
                asts []
                unanalyzed-forms []]
+          (ana.jvm/update-ns-map!)
           (let [at-top-level? (empty? unanalyzed-forms)
                 [form unanalyzed-forms] (if at-top-level?
                                           [(tr/read pbrdr nil eof) []]
