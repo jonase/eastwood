@@ -56,7 +56,7 @@
         (if (= new-meta (:form meta))
           ast
           (assoc ast :meta (replace-meta meta new-meta)))
-        (dissoc ast :meta)))
+        (assoc (dissoc ast :meta) :children [:init])))
     ast))
 
 (defn elide-meta

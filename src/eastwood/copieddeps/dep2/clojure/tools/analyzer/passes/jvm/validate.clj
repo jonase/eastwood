@@ -97,8 +97,8 @@
         (if m
           (let [all-ret-equals? (apply = (mapv :return-type matching))]
             (if (or (empty? rest)
-                    (and all-ret-equals?) ;; if the method signature is the same just pick the first one
-                    (apply = (mapv #(mapv u/maybe-class (:parameter-types %)) matching)))
+                    (and all-ret-equals? ;; if the method signature is the same just pick the first one
+                         (apply = (mapv #(mapv u/maybe-class (:parameter-types %)) matching))))
              (let [ret-tag  (:return-type m)
                    arg-tags (mapv u/maybe-class (:parameter-types m))
                    args (mapv (fn [arg tag] (assoc arg :tag tag)) args arg-tags)

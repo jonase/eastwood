@@ -2,9 +2,22 @@
   (:import [java.io StringReader]
            [clojure.lang LineNumberingPushbackReader])
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as trdr]
             [clojure.pprint :as pp]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rdr-types]))
+
+(defn butlast+last [s]
+  "Returns same value as (juxt butlast last), but slightly more
+efficient since it only traverses the input sequence s once, not
+twice."
+  (loop [butlast (transient [])
+         s s]
+    (if-let [xs (next s)]
+      (recur (conj! butlast (first s)) xs)
+      [(seq (persistent! butlast)) (first s)])))
 
 (defn map-keys [f m]
   (into (empty m)
@@ -216,8 +229,7 @@
 (defn mark-exprs-in-try-body
   "Return an ast that is identical to the argument, except that
 expressions 'directly' within try blocks will have one of two new
-keywords with value
-true.
+keywords with value true.
 
 Statements, i.e. expressions that are not the last one in the body,
 and thus their return value is discarded, will have the new
@@ -244,3 +256,44 @@ of these kind."
 (defn expr-in-try-body? [ast]
   (or (statement-in-try-body? ast)
       (ret-expr-in-try-body? ast)))
+
+(defn add-partly-resolved-forms
+  "Return an ast that is identical to the argument, except that for
+every node that has a :raw-forms key, add a new
+key :eastwood/partly-resolved-forms.  The value associated with the
+new key is nearly the same as that associated with :raw-forms, except
+that every list that starts with a symbol will have that symbol
+replaced by one that is resolved, with a namespace."
+  [ast env]
+  (let [pw (fn [ast]
+             (if (contains? ast :raw-forms)
+               (let [resolved-forms
+                     (doall
+                      (map (fn [form]
+;;                             (println (format "dbx: form="))
+;;                             (clojure.pprint/pprint form)
+;;                             (println "----------------------------------------")
+                             (if (seq? form)
+                               (let [[op & args] form
+                                     var (env/with-env env
+                                           (utils/resolve-var op (ana.jvm/empty-env)))
+;;                                     _ (do
+;;                                         (println (format "dby: op=%s (class op)=%s var=%s (class var)=%s"
+;;                                                          op (class op)
+;;                                                          var (class var)))
+;;                                         (flush))
+                                     resolved-var-sym (if (nil? var)
+                                                        op
+                                                        (symbol (str (.ns ^clojure.lang.Var var))
+                                                                (name (.sym ^clojure.lang.Var var))))]
+                                 (cons resolved-var-sym args))
+                               form))
+                           (:raw-forms ast)))]
+                 (println (format "dbx: %2d %s"
+                                  (count (:raw-forms ast))
+                                  (seq (map vector
+                                            (map first (:raw-forms ast))
+                                            (map first resolved-forms)))))
+                 (assoc ast :eastwood/partly-resolved-forms resolved-forms))
+               ast))]
+    (ast/postwalk ast pw)))

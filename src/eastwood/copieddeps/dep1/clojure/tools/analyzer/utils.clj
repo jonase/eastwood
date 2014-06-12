@@ -18,8 +18,9 @@
   [to from]
   (reduce conj! to from))
 
-(defn rseqv [v]
+(defn rseqv
   "Same as (comp vec rseq)"
+  [v]
   (vec (rseq v)))
 
 (defn ctx

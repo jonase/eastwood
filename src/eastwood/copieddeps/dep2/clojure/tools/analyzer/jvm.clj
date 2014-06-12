@@ -135,7 +135,8 @@
 (defn macroexpand-1
   "If form represents a macro form or an inlineable function,
    returns its expansion, else returns form."
-  [form env]
+  ([form] (macroexpand-1 (empty-env)))
+  ([form env]
   (env/ensure (global-env)
     (if (seq? form)
       (let [[op & args] form]
@@ -171,20 +172,20 @@
 
              :else
              (desugar-host-expr form env)))))
-      (desugar-host-expr form env))))
+         (desugar-host-expr form env)))))
 
 (defn create-var
   "Creates a Var for sym and returns it.
    The Var gets interned in the env namespace."
   [sym {:keys [ns]}]
   (or (find-var (symbol (str ns) (name sym)))
-      (doto (intern ns (vary-meta sym merge
+      (intern ns (vary-meta sym merge
                                (let [{:keys [inline inline-arities]} (meta sym)]
                                  (merge {}
                                         (when inline
                                           {:inline (eval inline)})
                                         (when inline-arities
-                                          {:inline-arities (eval inline-arities)}))))))))
+                                       {:inline-arities (eval inline-arities)})))))))
 
 (defmethod parse 'var
   [[_ var :as form] env]
@@ -474,25 +475,54 @@
        (env/ensure (global-env)
          (run-passes (-analyze form env))))))
 
+(deftype ExceptionThrown [e])
+
+(defn butlast+last
+  "Returns same value as (juxt butlast last), but slightly more
+efficient since it only traverses the input sequence s once, not
+twice."
+  [s]
+  (loop [butlast (transient [])
+         s s]
+    (if-let [xs (next s)]
+      (recur (conj! butlast (first s)) xs)
+      [(seq (persistent! butlast)) (first s)])))
+
+;;(def prev-ns (atom nil))
+
 (defn analyze+eval
   "Like analyze but evals the form after the analysis and attaches the
    returned value in the :result field of the AST node.
+   If evaluating the form will cause an exception to be thrown, the exception
+   will be caught and the :result field will hold an ExceptionThrown instance
+   with the exception in the \"e\" field.
+
    Useful when analyzing whole files/namespaces."
   ([form] (analyze+eval form (empty-env) {}))
   ([form env] (analyze+eval form env {}))
   ([form env opts]
      (env/ensure (global-env)
        (update-ns-map!)
-       (let [mform (binding [ana/macroexpand-1 (get-in opts [:bindings #'ana/macroexpand-1] macroexpand-1)]
-                     (ana/macroexpand form env))]
+       (let [[mform raw-forms] (binding [ana/macroexpand-1 (get-in opts [:bindings #'ana/macroexpand-1] macroexpand-1)]
+                                 (loop [form form raw-forms []]
+                                   (let [mform (ana/macroexpand-1 form env)]
+                                     (if (= mform form)
+                                       [mform (seq raw-forms)]
+                                       (recur mform (conj raw-forms form))))))]
          (if (and (seq? mform) (= 'do (first mform)) (next mform))
            ;; handle the Gilardi scenario
-           (let [[statements ret] (loop [statements [] [e & exprs] (rest mform)]
-                                    (if exprs
-                                      (recur (conj statements e) exprs)
-                                      [statements e]))
-                 statements-expr (mapv (fn [s] (analyze+eval s (-> env (ctx :statement)))) statements)
-                 ret-expr (analyze+eval ret env opts)]
+           (let [[statements ret] (butlast+last (rest mform))
+                 statements-expr (loop [ss statements, asts []]
+                                   (if (seq ss)
+                                     (recur (next ss)
+                                            (conj asts
+                                                  (analyze+eval (first ss)
+                                                                (-> env
+                                                                    (ctx :statement)
+                                                                    (assoc :ns (ns-name *ns*)))
+                                                                opts)))
+                                     asts))
+                 ret-expr (analyze+eval ret (assoc env :ns (ns-name *ns*)) opts)]
              (-> {:op         :do
                  :top-level  true
                  :form       mform
@@ -500,11 +530,18 @@
                  :ret        ret-expr
                  :children   [:statements :ret]
                  :env        env
-                 :result     (:result ret-expr)}
+                 :result     (:result ret-expr)
+                 :raw-forms  raw-forms}
                source-info))
-           (let [a (analyze mform env opts)
+           (let [;;_ (reset! prev-ns *ns*)
+                 a (analyze mform env opts)
                  frm (emit-form a)
-                 result (eval frm)] ;; eval the emitted form rather than directly the form to avoid double macroexpansion
+                 result (try (eval frm) ;; eval the emitted form rather than directly the form to avoid double macroexpansion
+                             (catch Exception e
+                               (ExceptionThrown. e)))]
+;;             (when (not= *ns* @prev-ns)
+;;               (println (format "dbx: *ns*=%s changed from prev-ns=%s just after eval'ing form" *ns* @prev-ns))
+;;               (clojure.pprint/pprint frm))
              (assoc a :result result)))))))
 
 (defn analyze'
