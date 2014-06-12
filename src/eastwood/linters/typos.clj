@@ -243,28 +243,102 @@ generate varying strings while the test is running."
          :else nil))
       :else nil))))
 
-;; Same hack alert for suspicious-test as for keyword-typos above.  We
-;; should probably add this version of forms as another input to all
-;; linters.  Perhaps we should add both the version with no :line
-;; :column :end-line :end-column metadata done here, and another
-;; version that does have that metadata, with documented examples of
-;; what can go weird with a combination of the with-metadata version
-;; and backquoted expressions.
+;; suspicious-test used to do its job only examining source forms, but
+;; now it goes through the forms on the
+;; :eastwood-partly-resolved-forms lists of AST nodes that have such a
+;; key.  This is useful for distinguishing occurrences of (is ...)
+;; forms that are from clojure.test/is, vs. ones from
+;; clojure.core.typed/is from core.typed.
 
-(defn suspicious-test [{:keys [forms]}]
+;; For each AST node, we want only the first expression that has a
+;; first symbol equal to clojure.test/is.  There can be more than one
+;; such expression in the list, because (clojure.test/is expr) macro
+;; expands to (clojure.test/is expr nil).  We do not want to duplicate
+;; messages, so keep only the one that is closer to what the
+;; programmer wrote.  Another disadvantage of looking at the second
+;; one is that the 'nil' argument causes warnings about a non-string
+;; second argument to be issued, if we check it.
+
+(defn suspicious-test [{:keys [forms asts]}]
   (binding [*var-info-map* (edn/read-string (slurp (io/resource "var-info.edn")))]
     (doall
-     (let [forms (util/replace-comments-with-nil forms)
-           is-forms (util/subforms-with-first-in-set forms #{'is})
-           deftest-forms (util/subforms-with-first-in-set forms #{'deftest})
-           testing-forms (util/subforms-with-first-in-set forms #{'testing})
-           deftest-subexprs (apply concat
-                                   (map #(nthnext % 2) deftest-forms))
-           testing-subexprs (apply concat
-                                   (map #(nthnext % 2) testing-forms))]
-       (concat (suspicious-is-forms is-forms)
-               (predicate-forms deftest-subexprs 'deftest)
-               (predicate-forms testing-subexprs 'testing))))))
+     (let [pr-formasts (for [ast (mapcat ast/nodes asts)
+                             [pr-form raw-form]
+                             (map list
+                                  (:eastwood/partly-resolved-forms ast)
+                                  (:raw-forms ast))]
+                         {:pr-form pr-form
+                          :raw-form raw-form
+                          :ast ast})
+
+           pr-first-is-formasts
+           (remove nil?
+            (for [ast (mapcat ast/nodes asts)]
+              (let [formasts (for [[pr-form raw-form]
+                                   (map list
+                                        (:eastwood/partly-resolved-forms ast)
+                                        (:raw-forms ast))]
+                               {:pr-form pr-form
+                                :raw-form raw-form
+                                :ast ast})]
+                (first (filter #(= 'clojure.test/is
+                                   (first (:pr-form %)))
+                               formasts)))))
+
+;;           _ (do
+;;               (doseq [pr-formast pr-formasts]
+;;                 (clojure.pprint/pprint
+;;                  {:pr-form (:pr-form pr-formast)
+;;                   :raw-form (:raw-form pr-formast)
+;;                   :ast (select-keys (:ast pr-formast)
+;;                                     [:op :env :form :raw-forms])})
+;;                 (println "----------------------------------------"))
+;;               )
+
+           pr-is-formasts pr-first-is-formasts
+           pr-deftest-formasts (filter #(= (first (:pr-form %)) 'clojure.test/deftest)
+                               pr-formasts)
+           pr-testing-formasts (filter #(= (first (:pr-form %)) 'clojure.test/testing)
+                               pr-formasts)
+;;           _ (println (format "dbx: Found %d ct/is %d ct/deftest %d ct/testing (ct=clojure.test)"
+;;                              (count pr-is-formasts)
+;;                              (count pr-deftest-formasts)
+;;                              (count pr-testing-formasts)))
+           pr-is-forms (map :raw-form pr-is-formasts)
+           pr-deftest-subexprs (apply concat
+                                      (map #(nthnext (:pr-form %) 2) pr-deftest-formasts))
+           pr-testing-subexprs (apply concat
+                                      (map #(nthnext (:pr-form %) 2) pr-testing-formasts))
+
+;;           _ (do
+;;               (binding [*print-meta* true]
+;;                 (println (format "dbx: %d pr-is-forms:"
+;;                                  (count pr-is-forms)))
+;;                 (clojure.pprint/pprint pr-is-forms)
+;;                 (println "----------------------------------------")
+;;                 (println (format "dbx: %d pr-raw-is-forms:"
+;;                                  (count pr-is-forms)))
+;;                 (clojure.pprint/pprint (map :raw-form pr-is-formasts))
+;;                 (println "----------------------------------------")
+;;                 (println "----------------------------------------")
+
+;;                 (println (format "dbx: %d pr-deftest-subexprs:"
+;;                                  (count pr-deftest-subexprs)))
+;;                 (clojure.pprint/pprint pr-deftest-subexprs)
+;;                 (println "----------------------------------------")
+;;                 (println "----------------------------------------")
+                 
+;;                 (println (format "dbx: %d pr-testing-subexprs:"
+;;                                  (count pr-testing-subexprs)))
+;;                 (clojure.pprint/pprint pr-testing-subexprs)
+;;                 (println "----------------------------------------")
+;;                 (println "----------------------------------------")
+;;                 )
+;;               )
+           ]
+       (concat (suspicious-is-forms pr-is-forms)
+               (predicate-forms pr-deftest-subexprs 'deftest)
+               (predicate-forms pr-testing-subexprs 'testing))))))
 
 ;; Suspicious function calls and macro invocations
 

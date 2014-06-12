@@ -401,6 +401,11 @@
     1,
     })
   (lint-test
+   'testcases.isformsok
+   [:suspicious-test :suspicious-expression]
+   {}
+   {})
+  (lint-test
    'testcases.testtest
    [:keyword-typos :suspicious-test :suspicious-expression]
    {}
