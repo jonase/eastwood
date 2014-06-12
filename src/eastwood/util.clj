@@ -294,6 +294,12 @@ replaced by one that is resolved, with a namespace."
 ;;                                  (seq (map vector
 ;;                                            (map first (:raw-forms ast))
 ;;                                            (map first resolved-forms)))))
+;;                 (when (some #{'comment} (map first (:raw-forms ast)))
+;;                   (println "dby: comment raw and resolved forms:")
+;;                   (clojure.pprint/pprint (seq (map vector
+;;                                                    (:raw-forms ast)
+;;                                                    resolved-forms)))
+;;                   (println "----------------------------------------"))
                  (assoc ast :eastwood/partly-resolved-forms resolved-forms))
                ast))]
     (ast/postwalk ast pw)))

@@ -1,7 +1,7 @@
 (ns testcases.f03
   (:import (java.io InputStream File FileOutputStream)
            (java.net URI))
-  (:require clojure.main)
+  (:require clojure.main clojure.tools.macro)
   (:use [clojure.tools.macro
          :only (with-symbol-macros defsymbolmacro name-with-attributes)])
   (:gen-class))   ; used to cause :unused-ret-vals warning
@@ -95,6 +95,13 @@
 ;; it easy for Eastwood to discover that the nil return value was
 ;; produced from a comment macro invocation.
 
+;; The other local bindings of comment as fn and macro are there
+;; simply to see what tools.analyzer(.jvm) will return for them.
+
 (defn bar [x]
   (comment 1 2 3)
+  (let [comment (fn [y] (println y))]
+    (comment 7))
+  (clojure.tools.macro/macrolet [(comment [y] `(println ~y))]
+    (comment 9))
   (inc x))
