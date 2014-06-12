@@ -189,7 +189,8 @@
           (let [form (tr/read reader nil eof)]
             (if (identical? form eof)
               {:forms forms, :asts asts, :exception nil}
-              (let [[exc ast]
+              (let [cur-env (env/deref-env)
+                    [exc ast]
                     (try
                       (binding [ana.jvm/run-passes run-passes]
                         [nil (ana.jvm/analyze+eval form)])
@@ -200,7 +201,8 @@
                    :asts asts, :exception exc, :exception-phase :analyze+eval,
                    :exception-form form}
                   (recur (conj forms form)
-                         (conj asts ast)))))))))))
+                         (conj asts (util/add-partly-resolved-forms
+                                     ast cur-env))))))))))))
 
 
 (defn analyze-ns

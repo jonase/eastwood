@@ -382,35 +382,47 @@ discarded inside null: null'."
           ;; tests to see if they throw an exception.
           (cond (and (#{:const :var :local} (:op stmt))
                      (= location :outside-try))
-                (if (or (get stmt :eastwood/defprotocol-expansion-interface)
-                        (get stmt :eastwood/defprotocol-expansion-sigs)
-                        (util/interface? (:form stmt)))
-                  ;; Then do not report this, because it is either:
-                  ;; (a) part of a defprotocol macro expansion that
-                  ;; the interface created by the gen-interface call,
-                  ;; or (b) a nil value for the signatures of a
-                  ;; protocol with no methods, or (c) an interface
-                  ;; create with a definterface macro expansion.
-                  ;; There might be some other cases where constant
-                  ;; interfaces appear in the ast that will will not
-                  ;; warn about, but those are likely to be very rare.
-                  nil
-                  {:linter :unused-ret-vals
-                   :msg (format "%s value is discarded inside %s: %s"
-                                (case (:op stmt)
-                                  :const "Constant"
-                                  :var "Var"
-                                  :local "Local")
-                                (-> stmt :env :name)
-                                (if (nil? (:form stmt))
-                                  "nil (nil value is returned by comment and gen-class expressions)"
-                                  (str/trim-newline
-                                   (with-out-str
-                                     (binding [pp/*print-right-margin* nil]
-                                       (pp/pprint (:form stmt)))))))
-                   :file (-> stmt :env :name meta :file)
-                   :line (-> stmt :env :name meta :line)
-                   :column (-> stmt :env :name meta :column)})
+                (cond
+                 ;; do not report part of a defprotocol macro
+                 ;; expansion that the interface created via the
+                 ;; gen-interface call
+                 (get stmt :eastwood/defprotocol-expansion-interface)
+                 nil
+
+                 ;; do not report a nil value for the signature of a
+                 ;; protocol with no methods
+                 (get stmt :eastwood/defprotocol-expansion-sigs)
+                 nil
+
+                 ;; do not report an interface created via a
+                 ;; definterface macro expansion
+                 (util/interface? (:form stmt))
+                 nil
+
+                 ;; do not report an unused nil return value if it was
+                 ;; caused by a comment or gen-class macro invocation.
+                 (and (nil? (:form stmt))
+                      (some #{'clojure.core/comment 'clojure.core/gen-class}
+                            (map first (:eastwood/partly-resolved-forms stmt))))
+                 nil
+
+                 :else
+                 {:linter :unused-ret-vals
+                  :msg (format "%s value is discarded inside %s: %s"
+                               (case (:op stmt)
+                                 :const "Constant"
+                                 :var "Var"
+                                 :local "Local")
+                               (-> stmt :env :name)
+                               (if (nil? (:form stmt))
+                                 "nil"
+                                 (str/trim-newline
+                                  (with-out-str
+                                    (binding [pp/*print-right-margin* nil]
+                                      (pp/pprint (:form stmt)))))))
+                  :file (-> stmt :env :name meta :file)
+                  :line (-> stmt :env :name meta :line)
+                  :column (-> stmt :env :name meta :column)})
 
                 (util/static-call? stmt)
                 (let [cls (:class stmt)

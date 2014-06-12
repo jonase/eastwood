@@ -3,8 +3,8 @@
            (java.net URI))
   (:require clojure.main)
   (:use [clojure.tools.macro
-         :only (with-symbol-macros defsymbolmacro name-with-attributes)]))
-
+         :only (with-symbol-macros defsymbolmacro name-with-attributes)])
+  (:gen-class))   ; used to cause :unused-ret-vals warning
 
 ;; This case used to cause tools.analyzer to throw an exception before
 ;; ticket TANAL-11 was fixed.
@@ -88,3 +88,13 @@
 
 (defn foo [e]
   (clojure.main/repl-caught e))
+
+;; The comment below used to cause an :unused-ret-vals warning in
+;; earlier versions of Eastwood.  Starting with version 0.1.4,
+;; tools.analyzer(.jvm) added :raw-forms in the returned ASTs, making
+;; it easy for Eastwood to discover that the nil return value was
+;; produced from a comment macro invocation.
+
+(defn bar [x]
+  (comment 1 2 3)
+  (inc x))

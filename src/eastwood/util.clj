@@ -289,11 +289,11 @@ replaced by one that is resolved, with a namespace."
                                  (cons resolved-var-sym args))
                                form))
                            (:raw-forms ast)))]
-                 (println (format "dbx: %2d %s"
-                                  (count (:raw-forms ast))
-                                  (seq (map vector
-                                            (map first (:raw-forms ast))
-                                            (map first resolved-forms)))))
+;;                 (println (format "dbx: %2d %s"
+;;                                  (count (:raw-forms ast))
+;;                                  (seq (map vector
+;;                                            (map first (:raw-forms ast))
+;;                                            (map first resolved-forms)))))
                  (assoc ast :eastwood/partly-resolved-forms resolved-forms))
                ast))]
     (ast/postwalk ast pw)))
