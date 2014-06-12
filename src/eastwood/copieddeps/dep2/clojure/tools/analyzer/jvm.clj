@@ -512,16 +512,11 @@ twice."
          (if (and (seq? mform) (= 'do (first mform)) (next mform))
            ;; handle the Gilardi scenario
            (let [[statements ret] (butlast+last (rest mform))
-                 statements-expr (loop [ss statements, asts []]
-                                   (if (seq ss)
-                                     (recur (next ss)
-                                            (conj asts
-                                                  (analyze+eval (first ss)
-                                                                (-> env
-                                                                    (ctx :statement)
-                                                                    (assoc :ns (ns-name *ns*)))
-                                                                opts)))
-                                     asts))
+                 statements-expr (mapv (fn [s] (analyze+eval s (-> env
+                                                                   (ctx :statement)
+                                                                   (assoc :ns (ns-name *ns*)))
+                                                             opts))
+                                       statements)
                  ret-expr (analyze+eval ret (assoc env :ns (ns-name *ns*)) opts)]
              (-> {:op         :do
                  :top-level  true
