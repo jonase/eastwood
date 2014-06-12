@@ -12,6 +12,13 @@ before the release is made.
   arise due to the expansion of `gen-class` or `comment` macros.
   Issue [#39](https://github.com/jonase/eastwood/issues/39).
 
+* Only report `:suspicious-test` warnings for `(is ...)` forms if the
+  `is` refers to the one defined in `clojure.test`.  This is
+  especially helpful to users of `core.typed`, which defines its own
+  meaning for `(is ...)` forms.  These often caused false warnings
+  with previous Eastwood versions.  Issue
+  [#63](https://github.com/jonase/eastwood/issues/63).
+
 * Updated `tools.analyzer` and `tools.analyzer.jvm` to version
   tbd.
 
