@@ -1,5 +1,25 @@
 # Change log for Eastwood
 
+
+## Changes from version 0.1.2 to 0.1.4
+
+
+Note: Eastwood 0.1.4 is not released yet.  The things below are
+currently planned to be included in that release, but that may change
+before the release is made.
+
+* No longer report `nil` values as `:unused-ret-vals` warnings if they
+  arise due to the expansion of `gen-class` or `comment` macros.
+  Issue [#39](https://github.com/jonase/eastwood/issues/39).
+
+* Updated `tools.analyzer` and `tools.analyzer.jvm` to version
+  tbd.
+
+* Many `:debug` options were removed when introducing the use of
+  `tools.analyzer.jvm/analyze+eval`.  Some of them may be added back
+  in if they help to track down problems.
+
+
 ## Changes from version 0.1.2 to 0.1.3
 
 * Added file name to all linter warnings.  Issue
