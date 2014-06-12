@@ -3,6 +3,66 @@
 Intended for Eastwood developers to track down when they have time and
 interest.
 
+## Changes from version 0.1.3 to 0.1.4
+
+The new way planned to check for (is ...) expressions, so that it only
+lints them if they are clojure.test/is, by using the :raw-forms and
+:eastwood/partly-resolved-forms values in the AST, causes some lint
+warnings to no longer be printed.  Here are some of them:
+
+* The last deftest called state-seq-monad in algo.monad's file
+  test_monads.clj.  This appears to be because :raw-forms includes
+  macro expansions up to an invocation of
+  clojure.tools.macro/with-symbol-macros, but after that the (is)
+  macro is expanded along with everything else, or something like
+  that.  Probably t.a.j/analyze+eval's method of doing macroexpand-1
+  doesn't handle symbol macros.
+
+* core.logic-2014-02-21 namespace clojure.core.logic.nominal.tests had
+  a :suspicious-test warning before about nil inside a deftest,
+  probably due to a (comment ...) inside of a deftest.  I didn't
+  explicitly try to make this no longer appear, but it does not.  That
+  is good, if it is for the right reason.
+
+* namespace clojure.java.test-jmx has a new warning about a non-string
+  as second arg at line 142.  The second arg is a symbol whose value
+  happens to be a string, I can tell, but I can see that this is like
+  other cases where it is not easy for Eastwood to determine that.  It
+  probably did not occur in the output before because the 'is' macro
+  invocation is inside of a doseq.
+
+* Namespace ogre.transform.traversal-test used to have 2
+  :suspicious-test warnings that no longer appear.  This is probably
+  due to an exception being thrown before analysis completes.  This
+  did not prevent the warnings before because they were done purely at
+  the source code form level, not on ASTs.
+
+* Many new :unused-ret-vals warnings in namespace potemkin.  I don't
+  know why yet.
+
+* Namespace reply.reader.jlin.JlineInputReader no longer has spurious
+  :unused-ret-vals warning due to use of :gen-class in ns form.  Good!
+
+* Namespace clojure.tools.test-macro no longer has a spurious
+  :suspicious-test warning due to (comment) inside deftest.  Good!
+
+* Namespace clojure.tools.reader.impl.ExceptionInfo no longer has
+  spurious :unused-ret-vals warning due to use of :gen-class in ns
+  form.  Good!
+
+* Namespace flatland.useful.deftype no longer throws a "Method code
+  too large!" exception.  Good.  But now it throws an exception
+  "Attempting to call unbound fn: #'flatland.useful.deftype/defmap".
+  Not sure why it would do that.
+
+* Namespace flatland.useful.utils-test no longer shows two
+  :suspicious-test warnings that it did before.  It appears that it
+  *should*.  Investigate why they are no longer there.
+
+* Exception thrown during analyze+eval of namespace clojure.reflect.
+  This has not occurred before.  Figure out why.
+
+
 ## Changes from version 0.1.2 to 0.1.3
 
 GOOD CHANGE: The formerly-normal 2 reflection warnings from
