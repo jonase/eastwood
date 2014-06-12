@@ -537,7 +537,9 @@ twice."
 ;;             (when (not= *ns* @prev-ns)
 ;;               (println (format "dbx: *ns*=%s changed from prev-ns=%s just after eval'ing form" *ns* @prev-ns))
 ;;               (clojure.pprint/pprint frm))
-             (assoc a :result result)))))))
+             (merge a
+                    {:result    result
+                     :raw-forms raw-forms})))))))
 
 (defn analyze'
   "Like `analyze` but runs cleanup on the AST"
