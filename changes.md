@@ -1,7 +1,7 @@
 # Change log for Eastwood
 
 
-## Changes from version 0.1.2 to 0.1.4
+## Changes from version 0.1.3 to 0.1.4
 
 
 Note: Eastwood 0.1.4 is not released yet.  The things below are
@@ -18,6 +18,18 @@ before the release is made.
   meaning for `(is ...)` forms.  These often caused false warnings
   with previous Eastwood versions.  Issue
   [#63](https://github.com/jonase/eastwood/issues/63).
+
+* Improved precision of `:line` and `:column` values in
+  `:unlimited-use` warnings.
+
+* Several small changes while working towards being able to lint the
+  `core.typed` Clojure contrib library.  First was an algorithmic
+  speedup from exponential to linear time in `tools.namespace`
+  dependency analysis, which was only first noticed with
+  `core.typed`'s inter-namespace dependencies.  Second was creating
+  all namespaces before beginning linting, to handle an unusual
+  occurrence of `alias` in namespace `B` to namespace `A`, where `A`
+  required `B`.  More work still needed here.
 
 * Updated `tools.analyzer` and `tools.analyzer.jvm` to version
   tbd.
