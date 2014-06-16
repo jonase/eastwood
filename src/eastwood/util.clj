@@ -45,28 +45,99 @@ twice."
   (fn [ast]
     (= (:op ast) op)))
 
-;; walk and prewalk were copied from Clojure 1.6.0-alpha3.  walk
-;; includes the case for clojure.lang.IRecord, without which it will
-;; throw exceptions when walking forms containing record instances.
 (defn walk
   "Traverses form, an arbitrary data structure.  inner and outer are
   functions.  Applies inner to each element of form, building up a
   data structure of the same type, then applies outer to the result.
-  Recognizes all Clojure data structures. Consumes seqs as with doall."
+  Recognizes all Clojure data structures. Consumes seqs as with doall.
+
+  walk was copied from Clojure 1.6.0, and then modified to preserve
+  metadata on all sub-values of the input form that have them.  Note
+  that this metadata is 'put back on' after the function inner has
+  already been called, but before outer, so only outer has a chance to
+  change it."
   [inner outer form]
-  (cond
-   (list? form) (outer (apply list (map inner form)))
-   (instance? clojure.lang.IMapEntry form) (outer (vec (map inner form)))
-   (seq? form) (outer (doall (map inner form)))
-   (instance? clojure.lang.IRecord form)
-     (outer (reduce (fn [r x] (conj r (inner x))) form form))
-   (coll? form) (outer (into (empty form) (map inner form)))
-   :else (outer form)))
+  (let [m (meta form)
+        f (cond
+           (list? form) (apply list (map inner form))
+           (instance? clojure.lang.IMapEntry form) (vec (map inner form))
+           (seq? form) (doall (map inner form))
+           (instance? clojure.lang.IRecord form)
+             (reduce (fn [r x] (conj r (inner x))) form form)
+           (coll? form) (into (empty form) (map inner form))
+           :else form)]
+    (if m
+      (outer (with-meta f m))
+      (outer f))))
+
+;; postwalk and prewalk are unmodified from Clojure 1.6.0, except that
+;; they use this modified version of walk.
+
+(defn postwalk
+  "Performs a depth-first, post-order traversal of form.  Calls f on
+  each sub-form, uses f's return value in place of the original.
+  Recognizes all Clojure data structures. Consumes seqs as with doall."
+  {:added "1.1"}
+  [f form]
+  (walk (partial postwalk f) f form))
 
 (defn prewalk
   "Like postwalk, but does pre-order traversal."
   [f form]
   (walk (partial prewalk f) identity (f form)))
+
+;; From Chris Perkins and Cedric Greevey in the Clojure Google group,
+;; Jan 20 2012:
+;; https://groups.google.com/forum/#!topic/clojure/5LRmPXutah8
+
+;; Note: The binding of *print-meta* to false is there because if you
+;; invoke the body of this fn with *print-meta* to true, you will see
+;; *two* copies of metadata on symbols.
+
+;; This version of the function includes a suggested enhancement by
+;; Cedric Greevey later in the discussion thread.  As the test cases
+;; below the function show, it appears to work correctly even if
+;; metadata maps have metadata themselves.
+
+(defn pprint-meta
+  "A version of pprint that prints all metadata on the object,
+wherever it appears.  (binding [*print-meta* true] (pprint obj))
+prints metadata on symbols, but not on collection, at least with
+Clojure 1.6.0 and probably earlier versions.  Clojure ticket CLJ-1445
+may improve upon this in the future.
+
+http://dev.clojure.org/jira/browse/CLJ-1445"
+  [obj]
+  (binding [*print-meta* false]
+    (let [orig-dispatch clojure.pprint/*print-pprint-dispatch*]
+      (clojure.pprint/with-pprint-dispatch
+        (fn pm [o]
+          (when (meta o)
+            (print "^")
+            (pm (meta o))
+            (.write ^java.io.Writer *out* " ")
+            (clojure.pprint/pprint-newline :fill))
+          (orig-dispatch o))
+        (clojure.pprint/pprint obj)))))
+
+(defn elide-meta [form elide-key-set]
+  (let [eli (fn [form]
+              (if (meta form)
+                (with-meta form (apply dissoc (meta form) elide-key-set))
+                form))]
+    (postwalk eli form)))
+
+;; TBD: pprint-meta-elided does not elide metadata that is on the keys
+;; or values inside of other metadata maps.  Such metadata does occur
+;; in output of tools.reader, e.g. when metadta is in the source code,
+;; symbols inside the metadata map keys/vals have metadata maps with
+;; :line :column etc. info.
+
+(defn pprint-meta-elided [form]
+  (binding [*print-meta* true
+            *print-length* 50]
+    (pprint-meta
+     (elide-meta form #{:column :file :end-line :end-column}))))
 
 (defn enhance-extend-args [extend-args]
   (let [[atype-ast & proto+mmaps-asts] extend-args

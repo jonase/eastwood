@@ -73,6 +73,45 @@
 (defn dont-expand-twice? [form]
   (gen-interface-form? form))
 
+(defn pre-analyze-debug [asts form _env ns opt]
+  (let [print-normally? (or (contains? (:debug opt) :all)
+                            (contains? (:debug opt) :forms))
+        pprint? (or (contains? (:debug opt) :all)
+                    (contains? (:debug opt) :forms-pprint))]
+  (when (or print-normally? pprint?)
+    (println (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
+                     (count asts) (str ns) (meta ns)))
+    (when pprint?
+      (println "    form before macroexpand:")
+      (pp/pprint form))
+    (when print-normally?
+      (println "    form before macroexpand, with metadata (some elided for brevity):")
+      (util/pprint-meta-elided form))
+    (println "\n    --------------------")
+    (if (dont-expand-twice? form)
+      (when print-normally?
+        (println "    form is gen-interface, so avoiding macroexpand on it"))
+      (let [exp (macroexpand form)]
+        (when pprint?
+          (println "    form after macroexpand:")
+          (pp/pprint exp))
+        (when print-normally?
+          (println "    form after macroexpand, with metadata (some elided for brevity):")
+          (util/pprint-meta-elided exp))))
+    (println "\n    --------------------"))))
+
+(defn post-analyze-debug [asts ast ns opt]
+  (let [dbg (:debug opt)
+        show-ast? (or (contains? dbg :ast)
+                      (contains? dbg :all))]
+    (when (or show-ast?
+              (contains? dbg :progress))
+      (println (format "dbg anal'd %d ns=%s%s"
+                       (count asts) (str ns)
+                       (if show-ast? " ast=" ""))))
+    (when show-ast?
+      (util/pprint-ast-node ast))))
+
 (defn begin-file-debug [filename ns opt]
   (when (:record-forms? opt)
     (binding [*out* (:forms-read-wrtr opt)]
@@ -168,6 +207,11 @@
       - :ns Print all namespaces that exist according to (all-ns)
             before analysis begins, and then only when that set of
             namespaces changes after each form is analyzed.
+      - :forms Print forms just before analysis, both before and after
+               macroexpanding them.
+      - :forms-pprint Pretty-print forms just before analysis, both
+                      before and after macroexpanding them.
+      - :ast Print complete ASTs just after analysis of each form.
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
   [source-path & {:keys [reader opt]}]
@@ -190,6 +234,7 @@
             (if (identical? form eof)
               {:forms forms, :asts asts, :exception nil}
               (let [cur-env (env/deref-env)
+                    _ (pre-analyze-debug asts form cur-env *ns* opt)
                     [exc ast]
                     (try
                       (binding [ana.jvm/run-passes run-passes]
@@ -200,9 +245,11 @@
                   {:forms (remaining-forms reader (conj forms form)),
                    :asts asts, :exception exc, :exception-phase :analyze+eval,
                    :exception-form form}
-                  (recur (conj forms form)
-                         (conj asts (util/add-partly-resolved-forms
-                                     ast cur-env))))))))))))
+                  (do
+                    (post-analyze-debug asts ast *ns* opt)
+                    (recur (conj forms form)
+                           (conj asts (util/add-partly-resolved-forms
+                                       ast cur-env)))))))))))))
 
 
 (defn analyze-ns
