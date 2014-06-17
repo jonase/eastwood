@@ -88,9 +88,9 @@
   (let [tag (fn [x] (-> x meta :tag u/maybe-class))]
     (and (= a1 a2)
          (every? true? (mapv (fn [a1 a2]
-                             (and (= (tag a1) (tag a2))
-                                  (= (mapv tag a1)
-                                     (mapv tag a2))))
+                               (and (= (tag a1) (tag a2))
+                                    (= (mapv tag a1)
+                                       (mapv tag a2))))
                      a1 a2)))))
 
 (defmethod -infer-tag :if

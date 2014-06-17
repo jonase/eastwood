@@ -1,9 +1,5 @@
 #! /bin/bash
 
-# data.priority-map [org.clojure/data.priority-map "0.0.2"]
-# tools.namespace [org.clojure/tools.namespace "0.2.4"]
-# tools.reader [org.clojure/tools.reader "0.8.4"]
-
 set -ex
 
 mkdir -p repos
@@ -11,13 +7,13 @@ cd repos
 
 git clone https://github.com/clojure/tools.analyzer.git
 cd tools.analyzer
-git checkout tools.analyzer-0.2.1
+git checkout tools.analyzer-0.2.2
 
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
-git checkout tools.analyzer.jvm-0.2.1
+git checkout tools.analyzer.jvm-0.2.2
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git

@@ -31,12 +31,14 @@ before the release is made.
   occurrence of `alias` in namespace `B` to namespace `A`, where `A`
   required `B`.  More work still needed here.
 
-* Updated `tools.analyzer` and `tools.analyzer.jvm` to version
-  tbd.
+* Updated `tools.analyzer` and `tools.analyzer.jvm` to version 0.2.2.
 
-* Many `:debug` options were removed when introducing the use of
-  `tools.analyzer.jvm/analyze+eval`.  Some of them may be added back
-  in if they help to track down problems.
+* `:debug` option `:ns` was removed when introducing the use of
+  `tools.analyzer.jvm/analyze+eval`.  It may be added back in again
+  later.  Other debug options were temporarily removed, then added
+  back in, although in some cases forms are now pprint'ed without
+  metadata keys such as `:column`, `:end-line`, `:end-column`, and
+  `:file`, for brevity.
 
 
 ## Changes from version 0.1.2 to 0.1.3

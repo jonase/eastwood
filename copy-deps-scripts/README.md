@@ -60,7 +60,7 @@ available:
 
 ### Current dependencies of project deps
 
-As of May 29 2014:
+As of June 16 2014:
 
     % lein deps :tree
      [clojure-complete "0.2.3" :exclusions [[org.clojure/clojure]]]
@@ -69,12 +69,12 @@ As of May 29 2014:
          [org.clojure/core.unify "0.5.3"]
      [org.clojars.brenton/google-diff-match-patch "0.1"]
      [org.clojure/clojure "1.6.0"]
-     [org.clojure/tools.analyzer.jvm "0.2.1"]
+     [org.clojure/tools.analyzer.jvm "0.2.2"]
        [org.clojure/core.memoize "0.5.6"]
          [org.clojure/core.cache "0.6.3"]
            [org.clojure/data.priority-map "0.0.2"]
        [org.ow2.asm/asm-all "4.1"]
-     [org.clojure/tools.analyzer "0.2.1"]
+     [org.clojure/tools.analyzer "0.2.2"]
      [org.clojure/tools.macro "0.1.2"]
      [org.clojure/tools.namespace "0.2.4"]
      [org.clojure/tools.nrepl "0.2.3" :exclusions [[org.clojure/clojure]]]

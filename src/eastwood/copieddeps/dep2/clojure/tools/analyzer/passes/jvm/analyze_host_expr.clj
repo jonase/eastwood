@@ -8,7 +8,7 @@
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.analyze-host-expr
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer :as ana]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [ctx source-info]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [ctx source-info resolve-var]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :refer :all]))
 
 (defn maybe-static-field [[_ class sym]]
@@ -143,8 +143,8 @@
    or :host-interop nodes.
 
    A :host-interop node represents either an instance-field or a no-arg instance-method."
-  [{:keys [op target form tag env] :as ast}]
-  (if (#{:host-interop :host-call :host-field} op)
+  [{:keys [op target form tag env class] :as ast}]
+  (if (#{:host-interop :host-call :host-field :maybe-class} op)
     (let [class? (and (= :const (:op target))
                       (= :class (:type target))
                       (:form target))
@@ -160,6 +160,13 @@
                (analyze-host-field target-type (:field ast)
                                    target (or class? (:tag target)) env)
 
+               :maybe-class
+               (when-let [the-class (or (maybe-class class)
+                                        (maybe-class (resolve-var class env)))]
+                 (assoc (ana/-analyze :const the-class env :class)
+                   :tag   Class
+                   :o-tag Class
+                   :form  form))
                (-analyze-host-expr target-type (:m-or-f ast)
                                    target class? env))
              (when tag

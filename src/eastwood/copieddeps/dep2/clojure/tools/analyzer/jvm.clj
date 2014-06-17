@@ -137,41 +137,41 @@
    returns its expansion, else returns form."
   ([form] (macroexpand-1 (empty-env)))
   ([form env]
-  (env/ensure (global-env)
-    (if (seq? form)
-      (let [[op & args] form]
-        (if (specials op)
-          form
-          (let [v (resolve-var op env)
-                m (meta v)
-                local? (-> env :locals (get op))
-                macro? (and (not local?) (:macro m)) ;; locals shadow macros
-                inline-arities-f (:inline-arities m)
-                inline? (and (not local?)
-                             (or (not inline-arities-f)
-                                 (inline-arities-f (count args)))
-                             (:inline m))
-                t (:tag m)]
-            (cond
+     (env/ensure (global-env)
+       (if (seq? form)
+         (let [[op & args] form]
+           (if (specials op)
+             form
+             (let [v (resolve-var op env)
+                   m (meta v)
+                   local? (-> env :locals (get op))
+                   macro? (and (not local?) (:macro m)) ;; locals shadow macros
+                   inline-arities-f (:inline-arities m)
+                   inline? (and (not local?)
+                                (or (not inline-arities-f)
+                                    (inline-arities-f (count args)))
+                                (:inline m))
+                   t (:tag m)]
+               (cond
 
-             macro?
-             (let [res (apply v form (:locals env) (rest form))] ; (m &form &env & args)
-               (update-ns-map!)
-               (if (obj? res)
-                 (vary-meta res merge (meta form))
-                 res))
+                macro?
+                (let [res (apply v form (:locals env) (rest form))] ; (m &form &env & args)
+                  (update-ns-map!)
+                  (if (obj? res)
+                    (vary-meta res merge (meta form))
+                    res))
 
-             inline?
-             (let [res (apply inline? args)]
-               (update-ns-map!)
-               (if (obj? res)
-                 (vary-meta res merge
-                            (and t {:tag t})
-                            (meta form))
-                 res))
+                inline?
+                (let [res (apply inline? args)]
+                  (update-ns-map!)
+                  (if (obj? res)
+                    (vary-meta res merge
+                               (and t {:tag t})
+                               (meta form))
+                    res))
 
-             :else
-             (desugar-host-expr form env)))))
+                :else
+                (desugar-host-expr form env)))))
          (desugar-host-expr form env)))))
 
 (defn create-var
@@ -180,11 +180,11 @@
   [sym {:keys [ns]}]
   (or (find-var (symbol (str ns) (name sym)))
       (intern ns (vary-meta sym merge
-                               (let [{:keys [inline inline-arities]} (meta sym)]
-                                 (merge {}
-                                        (when inline
-                                          {:inline (eval inline)})
-                                        (when inline-arities
+                            (let [{:keys [inline inline-arities]} (meta sym)]
+                              (merge {}
+                                     (when inline
+                                       {:inline (eval inline)})
+                                     (when inline-arities
                                        {:inline-arities (eval inline-arities)})))))))
 
 (defmethod parse 'var
@@ -488,8 +488,6 @@ twice."
       (recur (conj! butlast (first s)) xs)
       [(seq (persistent! butlast)) (first s)])))
 
-;;(def prev-ns (atom nil))
-
 (defn analyze+eval
   "Like analyze but evals the form after the analysis and attaches the
    returned value in the :result field of the AST node.
@@ -528,15 +526,11 @@ twice."
                  :result     (:result ret-expr)
                  :raw-forms  raw-forms}
                source-info))
-           (let [;;_ (reset! prev-ns *ns*)
-                 a (analyze mform env opts)
+           (let [a (analyze mform env opts)
                  frm (emit-form a)
                  result (try (eval frm) ;; eval the emitted form rather than directly the form to avoid double macroexpansion
                              (catch Exception e
                                (ExceptionThrown. e)))]
-;;             (when (not= *ns* @prev-ns)
-;;               (println (format "dbx: *ns*=%s changed from prev-ns=%s just after eval'ing form" *ns* @prev-ns))
-;;               (clojure.pprint/pprint frm))
              (merge a
                     {:result    result
                      :raw-forms raw-forms})))))))

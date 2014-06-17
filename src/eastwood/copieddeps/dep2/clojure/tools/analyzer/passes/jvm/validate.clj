@@ -17,19 +17,14 @@
 (defmulti -validate :op)
 
 (defmethod -validate :maybe-class
-  [{:keys [class form env] :as ast}]
-  (if-let [the-class (u/maybe-class (or class (resolve-var class env)))]
-    (assoc (-analyze :const the-class env :class)
-      :tag   Class
-      :o-tag Class
-      :form  form)
-    (if (.contains (str class) ".") ;; try and be smart for the exception
-      (throw (ex-info (str "Class not found: " class)
-                      (merge {:class class}
-                             (source-info env))))
-      (throw (ex-info (str "Could not resolve var: " class)
-                      (merge {:var class}
-                             (source-info env)))))))
+  [{:keys [class env] :as ast}]
+  (if (.contains (str class) ".") ;; try and be smart for the exception
+    (throw (ex-info (str "Class not found: " class)
+                    (merge {:class class}
+                           (source-info env))))
+    (throw (ex-info (str "Could not resolve var: " class)
+                    (merge {:var class}
+                           (source-info env))))))
 
 (defmethod -validate :maybe-host-form
   [{:keys [class form env]}]
