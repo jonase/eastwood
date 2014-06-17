@@ -18,7 +18,7 @@ Leiningen 2.3.x.  Merge the following into your `~/.lein/profiles.clj`
 file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.1.3"]] }}
+{:user {:plugins [[jonase/eastwood "0.1.4"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -680,9 +680,9 @@ values of functions.
   a b)   ; b is returned.  a's value is ignored
 ```
 
-`comment` expressions in Clojure always return nil, and Eastwood will
-warn if this nil value is ignored.  This may be improved in the
-future.
+`comment` and `gen-class` expressions in Clojure (or `:gen-class`
+inside of an `ns` form) always return nil.  Starting with Eastwood
+0.1.4, it should no longer warn if this nil value is ignored.
 
 Many of Clojure's core functions are 'pure' functions, meaning that
 they do not modify any state of the system other than perhaps

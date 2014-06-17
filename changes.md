@@ -3,21 +3,16 @@
 
 ## Changes from version 0.1.3 to 0.1.4
 
-
-Note: Eastwood 0.1.4 is not released yet.  The things below are
-currently planned to be included in that release, but that may change
-before the release is made.
-
-* No longer report `nil` values as `:unused-ret-vals` warnings if they
-  arise due to the expansion of `gen-class` or `comment` macros.
-  Issue [#39](https://github.com/jonase/eastwood/issues/39).
-
 * Only report `:suspicious-test` warnings for `(is ...)` forms if the
   `is` refers to the one defined in `clojure.test`.  This is
   especially helpful to users of `core.typed`, which defines its own
   meaning for `(is ...)` forms.  These often caused false warnings
   with previous Eastwood versions.  Issue
   [#63](https://github.com/jonase/eastwood/issues/63).
+
+* No longer report `nil` values as `:unused-ret-vals` warnings if they
+  arise due to the expansion of `gen-class` or `comment` macros.
+  Issue [#39](https://github.com/jonase/eastwood/issues/39).
 
 * Improved precision of `:line` and `:column` values in
   `:unlimited-use` warnings.
