@@ -66,7 +66,7 @@ twice."
              (reduce (fn [r x] (conj r (inner x))) form form)
            (coll? form) (into (empty form) (map inner form))
            :else form)]
-    (if m
+    (if (and m (instance? clojure.lang.IObj f))
       (outer (with-meta f m))
       (outer f))))
 
@@ -122,8 +122,13 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
 
 (defn elide-meta [form elide-key-set]
   (let [eli (fn [form]
-              (if (meta form)
-                (with-meta form (apply dissoc (meta form) elide-key-set))
+              (if (and (meta form) (instance? clojure.lang.IObj form))
+                (let [m (meta form)
+                      m (apply dissoc m elide-key-set)
+                      ;; recursively elide metadata on the values in
+                      ;; the metadata
+                      m (map-vals #(elide-meta % elide-key-set) m)]
+                  (with-meta form m))
                 form))]
     (postwalk eli form)))
 
