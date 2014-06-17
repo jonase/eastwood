@@ -100,7 +100,7 @@
           (util/pprint-meta-elided exp))))
     (println "\n    --------------------"))))
 
-(defn post-analyze-debug [asts ast ns opt]
+(defn post-analyze-debug [asts form ast ns opt]
   (let [dbg (:debug opt)
         show-ast? (or (contains? dbg :ast)
                       (contains? dbg :all))]
@@ -110,7 +110,14 @@
                        (count asts) (str ns)
                        (if show-ast? " ast=" ""))))
     (when show-ast?
-      (util/pprint-ast-node ast))))
+      (util/pprint-ast-node ast))
+    (when (:record-forms? opt)
+      ;; TBD: Change this to macroexpand form, at least if
+      ;; dont-expand-twice? returns false.
+      (binding [*out* (:forms-read-wrtr opt)]
+        (util/pprint-ast-node form))
+      (binding [*out* (:forms-emitted-wrtr opt)]
+        (util/pprint-ast-node (:form ast))))))
 
 (defn begin-file-debug [filename ns opt]
   (when (:record-forms? opt)
@@ -246,7 +253,7 @@
                    :asts asts, :exception exc, :exception-phase :analyze+eval,
                    :exception-form form}
                   (do
-                    (post-analyze-debug asts ast *ns* opt)
+                    (post-analyze-debug asts form ast *ns* opt)
                     (recur (conj forms form)
                            (conj asts (util/add-partly-resolved-forms
                                        ast cur-env)))))))))))))
