@@ -18,7 +18,7 @@ Leiningen 2.3.x.  Merge the following into your `~/.lein/profiles.clj`
 file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.1.3"]] }}
+{:user {:plugins [[jonase/eastwood "0.1.4"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
