@@ -39,7 +39,7 @@
                 ;; :hooks [cljx.hooks leiningen.cljsbuild] ; cljx
                 }]
    :dev
-   [:1.6 :test
+   [:test
     {:dependencies []
      :plugins [[lein-ancient "0.5.4"]
                [codox        "0.6.7"]]}]}
