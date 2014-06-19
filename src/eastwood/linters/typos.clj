@@ -68,7 +68,7 @@
 ;                           (-> (first asts) :env :ns the-ns)))
         forms (util/string->forms source this-ns false)
         freqs (->> forms
-                   util/replace-comments-with-nil
+                   util/replace-comments-and-quotes-with-nil
                    flatten-also-colls
                    (filter keyword?)
                    frequencies)]
@@ -389,7 +389,7 @@ generate varying strings while the test is running."
   (apply
    concat
    (let [fs (-> forms
-                util/replace-comments-with-nil
+                util/replace-comments-and-quotes-with-nil
                 (util/subforms-with-first-in-set
                  (set (keys core-first-vars-that-do-little))))]
      (for [f fs]

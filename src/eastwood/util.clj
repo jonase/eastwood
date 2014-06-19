@@ -245,8 +245,8 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
                form))
            form))
 
-(defn replace-comments-with-nil [form]
-  (replace-subforms-with-first-in-set form #{'comment} (constantly nil)))
+(defn replace-comments-and-quotes-with-nil [form]
+  (replace-subforms-with-first-in-set form #{'comment 'quote} (constantly nil)))
 
 (defn- mark-statements-in-try-body-post [ast]
   (if (and (= :try (:op ast))
