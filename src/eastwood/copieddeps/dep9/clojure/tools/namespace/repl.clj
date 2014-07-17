@@ -163,3 +163,12 @@
   same types as clojure.java.io/file."
   [& dirs]
   (alter-var-root #'refresh-dirs (constantly dirs)))
+
+(defn clear
+  "Clears all state from the namespace/file tracker. This may help
+  repair the namespace tracker when it gets into an inconsistent
+  state, without restarting the Clojure process. The next call to
+  'refresh' will reload all source files, but may not completely
+  remove stale code from deleted files."
+  []
+  (alter-var-root #'refresh-tracker (constantly (track/tracker))))

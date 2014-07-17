@@ -33,7 +33,7 @@ cd ..
 
 git clone https://github.com/clojure/tools.namespace.git
 cd tools.namespace
-git checkout tools.namespace-0.2.4
+git checkout tools.namespace-0.2.5
 cd ..
 
 git clone https://github.com/clojure/tools.reader.git

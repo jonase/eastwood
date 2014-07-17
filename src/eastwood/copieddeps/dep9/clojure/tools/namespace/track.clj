@@ -34,7 +34,7 @@
 
 (defn- affected-namespaces [deps names]
   (set/union (set names)
-             (dep/transitive-dependents-of-node-set deps names)))
+             (dep/transitive-dependents-set deps names)))
 
 (defn add
   "Returns an updated dependency tracker with new/updated namespaces.
@@ -108,3 +108,35 @@
   "Returns a new, empty dependency tracker"
   []
   {})
+
+(comment
+  ;; Structure of the namespace tracker map
+
+  {;; Dependency graph of namespace names (symbols) as defined in
+   ;; clojure.tools.namespace.dependency/graph
+   :clojure.tools.namespace.track/deps {}
+
+   ;; Ordered list of namespace names (symbols) that need to be
+   ;; removed to bring the running system into agreement with the
+   ;; source files.
+   :clojure.tools.namespace.track/unload ()
+
+   ;; Ordered list of namespace names (symbols) that need to be
+   ;; (re)loaded to bring the running system into agreement with the
+   ;; source files.
+   :clojure.tools.namespace.track/load ()
+
+   ;; Added by clojure.tools.namespace.file: Map from source files
+   ;; (java.io.File) to the names (symbols) of namespaces they
+   ;; represent.
+   :clojure.tools.namespace.file/filemap {}
+
+   ;; Added by clojure.tools.namespace.dir: Set of source files
+   ;; (java.io.File) which have been seen by this dependency tracker;
+   ;; used to determine when files have been deleted.
+   :clojure.tools.namespace.dir/files #{}
+
+   ;; Added by clojure.tools.namespace.dir: Instant when the
+   ;; directories were last scanned, as returned by
+   ;; System/currentTimeMillis.
+   :clojure.tools.namespace.dir/time 1405201862262})

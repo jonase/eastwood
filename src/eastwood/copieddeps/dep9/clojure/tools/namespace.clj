@@ -99,7 +99,7 @@
 (defn- loader-classpath [loader]
   (when (instance? java.net.URLClassLoader loader)
     (map
-     #(java.io.File. (.getPath ^java.net.URL %))
+     #(java.io.File. (.toURI ^java.net.URL %))
      (.getURLs ^java.net.URLClassLoader loader))))
 
 (defn- classpath
