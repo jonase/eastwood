@@ -9,6 +9,43 @@
             [clojure.pprint :as pp]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rdr-types]))
 
+;; ordering-map copied under Eclipse Public License v1.0 from useful
+;; library available at: https://github.com/flatland/useful
+
+(defn ordering-map
+  "Create an empty map with a custom comparator that puts the given
+keys first, in the order specified. Other keys will be placed after
+the special keys, sorted by the default-comparator."
+  ([key-order] (ordering-map key-order compare))
+  ([key-order default-comparator]
+     (let [indices (into {} (map-indexed (fn [i x] [x i]) key-order))]
+       (sorted-map-by (fn [a b]
+                        (if-let [a-idx (indices a)]
+                          (if-let [b-idx (indices b)]
+                            (compare a-idx b-idx)
+                            -1)
+                          (if-let [b-idx (indices b)]
+                            1
+                            (default-comparator a b))))))))
+
+(defn ast-to-ordered
+  "Take an ast and return an identical one, except every map is
+replaced with an ordering-map.  The sorting of keys in a specified
+order can make it significantly easier when printing them out, to see
+more interesting keys earlier."
+  [ast]
+  (let [empty (ordering-map [:op
+                             :children
+                             :top-level
+                             :tag
+                             :form
+                             :var
+                             :raw-forms
+                             :eastwood/partly-resolved-forms
+                             :env])]
+    (ast/postwalk ast (fn [ast]
+                        (into empty ast)))))
+
 (defn butlast+last [s]
   "Returns same value as (juxt butlast last), but slightly more
 efficient since it only traverses the input sequence s once, not
