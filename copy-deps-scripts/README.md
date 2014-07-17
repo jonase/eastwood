@@ -60,7 +60,7 @@ available:
 
 ### Current dependencies of project deps
 
-As of June 16 2014:
+As of July 17 2014:
 
     % lein deps :tree
      [clojure-complete "0.2.3" :exclusions [[org.clojure/clojure]]]
@@ -76,11 +76,14 @@ As of June 16 2014:
        [org.ow2.asm/asm-all "4.1"]
      [org.clojure/tools.analyzer "0.2.2"]
      [org.clojure/tools.macro "0.1.2"]
-     [org.clojure/tools.namespace "0.2.4"]
+     [org.clojure/tools.namespace "0.2.5"]
      [org.clojure/tools.nrepl "0.2.3" :exclusions [[org.clojure/clojure]]]
      [org.clojure/tools.reader "0.8.4"]
 
     % lein ancient
+    [org.clojure/tools.analyzer "0.3.0"] is available but we use "0.2.2"
+    [org.clojure/tools.analyzer.jvm "0.3.0"] is available but we use "0.2.2"
+    [org.clojure/tools.reader "0.8.5"] is available but we use "0.8.4"
     [leinjacker "0.4.2"] is available but we use "0.4.1"
     [org.clojure/tools.macro "0.1.5"] is available but we use "0.1.2"
 

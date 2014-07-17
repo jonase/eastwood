@@ -42,14 +42,6 @@
        (filter #(not (.isDirectory ^JarEntry %))
                (enumeration-seq (.entries jar-file)))))
 
-(defn- jar-file?
-  "Returns true if file is a normal file with a .jar or .JAR extension."
-  [f]
-  (let [file (io/file f)]
-    (and (.isFile file)
-         (or (.endsWith (.getName file) ".jar")
-             (.endsWith (.getName file) ".JAR")))))
-
 ;;; Finding namespaces in a directory tree
 
 (defn find-clojure-sources-in-dir
