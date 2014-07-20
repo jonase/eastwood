@@ -28,8 +28,8 @@ This is a popular method for lint tools for C/C++ programs such as
 [Splint][SplintAnnotationExample] and for Java using
 [IntelliJ][IntelliJAnnotationExample].
 
-[SplintAnnotationExample]: (http://www.splint.org/manual/manual.html#null)
-[IntelliJAnnotationExample]: (https://groups.google.com/d/msg/clojure-dev/5_dlGSNR6xQ/hqXNZE9-RLcJ)
+[SplintAnnotationExample]: http://www.splint.org/manual/manual.html#null
+[IntelliJAnnotationExample]: https://groups.google.com/d/msg/clojure-dev/5_dlGSNR6xQ/hqXNZE9-RLcJ
 
 ## Analysis tools where this is helpful
 
@@ -103,13 +103,13 @@ There was an discussion of some of these alternatives in the
 [clojure-dev][ClojureDev] group [here][ClojureDevCodeAnnotation]
 starting in June 2014.
 
-[CoreTyped]: (https://github.com/clojure/core.typed)
-[CoreTypedRt]: (http://mvnrepository.com/artifact/org.clojure/core.typed.rt)
-[Eastwood]: (https://github.com/jonase/eastwood)
-[Cursive]: (https://cursiveclojure.com)
-[IntelliJ]: (http://www.jetbrains.com/idea)
-[ClojureDev]: (https://groups.google.com/forum/#!forum/clojure-dev)
-[ClojureDevCodeAnnotation]: (https://groups.google.com/forum/#!topic/clojure-dev/5_dlGSNR6xQ)
+[CoreTyped]: https://github.com/clojure/core.typed
+[CoreTypedRt]: http://mvnrepository.com/artifact/org.clojure/core.typed.rt
+[Eastwood]: https://github.com/jonase/eastwood
+[Cursive]: https://cursiveclojure.com
+[IntelliJ]: http://www.jetbrains.com/idea
+[ClojureDev]: https://groups.google.com/forum/#!forum/clojure-dev
+[ClojureDevCodeAnnotation]: https://groups.google.com/forum/#!topic/clojure-dev/5_dlGSNR6xQ
 
 Alternatives considered:
 
