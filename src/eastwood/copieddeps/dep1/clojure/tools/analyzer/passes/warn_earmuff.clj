@@ -20,7 +20,7 @@
                (.endsWith name "*")
                (not (dynamic? (:var ast))))
       (binding [*out* *err*]
-        (println "Warning:" name "not declared dynamic and this is not dynamically rebindable,"
+        (println "Warning:" name "not declared dynamic and thus is not dynamically rebindable,"
                  "but its name suggests otherwise."
                  "Please either indicate ^:dynamic" name "or change the name"))))
   ast)

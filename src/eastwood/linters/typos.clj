@@ -245,7 +245,7 @@ generate varying strings while the test is running."
 
 ;; suspicious-test used to do its job only examining source forms, but
 ;; now it goes through the forms on the
-;; :eastwood-partly-resolved-forms lists of AST nodes that have such a
+;; :eastwood/partly-resolved-forms lists of AST nodes that have such a
 ;; key.  This is useful for distinguishing occurrences of (is ...)
 ;; forms that are from clojure.test/is, vs. ones from
 ;; clojure.core.typed/is from core.typed.
@@ -259,6 +259,10 @@ generate varying strings while the test is running."
 ;; one is that the 'nil' argument causes warnings about a non-string
 ;; second argument to be issued, if we check it.
 
+(defn form-with-first-symbol? [x sym]
+  (and (sequential? x)
+       (= (first x) sym)))
+
 (defn suspicious-test [{:keys [forms asts]}]
   (binding [*var-info-map* (edn/read-string (slurp (io/resource "var-info.edn")))]
     (doall
@@ -271,6 +275,12 @@ generate varying strings while the test is running."
                           :raw-form raw-form
                           :ast ast})
 
+;;           _ (do
+;;               (println "pr-formasts:")
+;;               (let [x (doall (map #(update-in % [:ast] util/trim-ast :keep-only #{:op :children :tag :form :raw-forms :eastwood/partly-resolved-forms})
+;;                                   pr-formasts))]
+;;                 (util/pprint-ast-node x)))
+
            pr-first-is-formasts
            (remove nil?
             (for [ast (mapcat ast/nodes asts)]
@@ -281,8 +291,8 @@ generate varying strings while the test is running."
                                {:pr-form pr-form
                                 :raw-form raw-form
                                 :ast ast})]
-                (first (filter #(= 'clojure.test/is
-                                   (first (:pr-form %)))
+                (first (filter #(form-with-first-symbol? (:pr-form %)
+                                                         'clojure.test/is)
                                formasts)))))
 
 ;;           _ (do
@@ -296,9 +306,9 @@ generate varying strings while the test is running."
 ;;               )
 
            pr-is-formasts pr-first-is-formasts
-           pr-deftest-formasts (filter #(= (first (:pr-form %)) 'clojure.test/deftest)
-                               pr-formasts)
-           pr-testing-formasts (filter #(= (first (:pr-form %)) 'clojure.test/testing)
+           pr-deftest-formasts (filter #(form-with-first-symbol? (:pr-form %) 'clojure.test/deftest)
+                                       pr-formasts)
+           pr-testing-formasts (filter #(form-with-first-symbol? (:pr-form %) 'clojure.test/testing)
                                pr-formasts)
 ;;           _ (println (format "dbx: Found %d ct/is %d ct/deftest %d ct/testing (ct=clojure.test)"
 ;;                              (count pr-is-formasts)

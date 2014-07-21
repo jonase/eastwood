@@ -19,7 +19,7 @@
          :reflector (reflect/->JavaReflector (RT/baseLoader))
          options))
 
-(defn ^:private specials [c]
+(defn specials [c]
   (case c
     "byte" Byte/TYPE
     "boolean" Boolean/TYPE
@@ -33,7 +33,7 @@
     "object" Object
     nil))
 
-(defn ^:private special-arrays [c]
+(defn special-arrays [c]
   (case c
     "bytes" (Class/forName "[B")
     "booleans" (Class/forName "[Z")

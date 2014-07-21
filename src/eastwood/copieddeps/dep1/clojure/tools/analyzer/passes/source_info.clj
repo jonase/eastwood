@@ -15,7 +15,7 @@
     (update-in ast [:env] merge source-info)))
 
 (defn source-info
-  "Adds (when avaliable) :line, :column and :file info to the AST :env"
+  "Adds (when avaliable) :line, :column, :end-line, :end-column and :file info to the AST :env"
   [ast]
   (let [source-info (-source-info (:form ast) (:env ast))
         merge-source-info (-merge-source-info source-info)]

@@ -152,10 +152,21 @@
   "Returns the line number of x"
   [x env]
   (-> x meta :line))
+
+(defn get-end-line
+  "Returns the end line number of x"
+  [x env]
+  (-> x meta :end-line))
+
 (defn get-col
   "Returns the column number of x"
   [x env]
   (-> x meta :column))
+
+(defn get-end-column
+  "Returns the end column number of x"
+  [x env]
+  (-> x meta :end-column))
 
 (defn source-info
   "Returns the source-info from an env"
@@ -174,7 +185,11 @@
    (when-let [line (get-line x env)]
      {:line line})
    (when-let [column (get-col x env)]
-     {:column column})))
+     {:column column})
+   (when-let [end-line (get-end-line x env)]
+     {:end-line end-line})
+   (when-let [end-column (get-end-column x env)]
+     {:end-column end-column})))
 
 (defn const-val
   "Returns the value of a constant node (either :quote or :const)"

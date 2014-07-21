@@ -10,7 +10,7 @@
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer :refer [-analyze]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [prewalk]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.cleanup :refer [cleanup]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [arglist-for-arity source-info resolve-var]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [arglist-for-arity source-info resolve-var resolve-ns]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :as u :refer [tag-match? try-best-match]])
   (:import (clojure.lang IFn ExceptionInfo)))
 
@@ -18,20 +18,25 @@
 
 (defmethod -validate :maybe-class
   [{:keys [class env] :as ast}]
-  (if (.contains (str class) ".") ;; try and be smart for the exception
-    (throw (ex-info (str "Class not found: " class)
-                    (merge {:class class}
-                           (source-info env))))
+  (if (not (.contains (str class) "."))
     (throw (ex-info (str "Could not resolve var: " class)
                     (merge {:var class}
+                           (source-info env))))
+
+    (throw (ex-info (str "Class not found: " class)
+                    (merge {:class class}
                            (source-info env))))))
 
 (defmethod -validate :maybe-host-form
-  [{:keys [class form env]}]
-  (throw (ex-info (str "No such namespace: " class)
-                  (merge {:ns   class
-                          :form form}
-                         (source-info env)))))
+  [{:keys [class field form env]}]
+  (if (resolve-ns class env)
+    (throw (ex-info (str "No such var: " class)
+                    (merge {:form form}
+                           (source-info env))))
+    (throw (ex-info (str "No such namespace: " class)
+                    (merge {:ns   class
+                            :form form}
+                           (source-info env))))))
 
 (defn validate-class
   [{:keys [class form env] :as ast}]
@@ -170,6 +175,14 @@
 
 (defmethod -validate :def
   [ast]
+  (when-let [tag (-> ast :name meta :tag)]
+    (let [c (u/maybe-class tag)
+          s (if (symbol? tag) (name tag) tag)]
+      (when-not (and c (not (or (u/specials s) (u/special-arrays s))))
+        (throw (ex-info (str "Wrong tag: " (eval tag) " in def: " (:name ast))
+                        (merge {:ast      (prewalk ast cleanup)}
+                               (source-info (:env ast))))))))
+
   #_(let [init (:init ast)]
       (when-let [tag (:tag init)]
         (alter-meta! var assoc :tag tag))

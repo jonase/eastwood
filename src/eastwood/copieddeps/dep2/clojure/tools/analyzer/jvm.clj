@@ -19,7 +19,7 @@
              [ast :refer [walk prewalk postwalk]]
              [env :as env :refer [*env*]]]
 
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :refer :all :exclude [box]]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :refer :all :exclude [box specials]]
 
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
              [source-info :refer [source-info]]
@@ -82,7 +82,7 @@
 (defn empty-env
   "Returns an empty env map"
   []
-  {:context    :expr
+  {:context    :ctx/expr
    :locals     {}
    :ns         (ns-name *ns*)})
 
@@ -135,7 +135,7 @@
 (defn macroexpand-1
   "If form represents a macro form or an inlineable function,
    returns its expansion, else returns form."
-  ([form] (macroexpand-1 (empty-env)))
+  ([form] (macroexpand-1 form (empty-env)))
   ([form env]
      (env/ensure (global-env)
        (if (seq? form)
@@ -209,7 +209,7 @@
   {:op       :monitor-enter
    :env      env
    :form     form
-   :target   (-analyze target (ctx env :expr))
+   :target   (-analyze target (ctx env :expr/any))
    :children [:target]})
 
 (defmethod parse 'monitor-exit
@@ -221,7 +221,7 @@
   {:op       :monitor-exit
    :env      env
    :form     form
-   :target   (-analyze target (ctx env :expr))
+   :target   (-analyze target (ctx env :expr/any))
    :children [:target]})
 
 (defmethod parse 'clojure.core/import*
@@ -316,7 +316,7 @@
                              :op      :binding})
                           fields)
         menv (assoc env
-               :context :expr
+               :context :ctx/expr
                :locals  (zipmap fields (map dissoc-env fields-expr))
                :this    class-name)
         methods (mapv #(assoc (analyze-method-impls % menv) :interfaces interfaces)
@@ -337,7 +337,7 @@
 (defmethod parse 'case*
   [[_ expr shift mask default case-map switch-type test-type & [skip-check?] :as form] env]
   (let [[low high] ((juxt first last) (keys case-map)) ;;case-map is a sorted-map
-        test-expr (-analyze expr (ctx env :expr))
+        test-expr (-analyze expr (ctx env :expr/any))
         [tests thens] (reduce (fn [[te th] [min-hash [test then]]]
                                 (let [test-expr (ana/-analyze :const test env)
                                       then-expr (-analyze then env)]

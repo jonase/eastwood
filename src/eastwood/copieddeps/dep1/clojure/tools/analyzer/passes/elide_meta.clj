@@ -9,7 +9,7 @@
 (ns eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.elide-meta)
 
 (def ^:dynamic elides
-  "Set of map keys to elide from metadata.
+  "Predicate IFn used to indicate what map keys to elide from metadata.
    Defaults to (set (:elide-meta *compiler-options*))"
   (set (:elide-meta *compiler-options*)))
 
@@ -29,35 +29,34 @@
 
 (defn -elide-meta
   [{:keys [op meta expr env] :as ast}]
-  (case op
-    :const
-    (let [new-meta (apply dissoc (:form meta) elides)]
-      (if (or (not meta)
-              (= new-meta (:form meta)))
-        ast
+  (let [form (:form meta)
+        new-meta (apply dissoc form (filter elides (keys form)))]
+    (case op
+      :const
+        (if (or (not meta)
+                (= new-meta (:form meta)))
+          ast
+          (if (not (empty? new-meta))
+            (assoc-in ast [:meta :val] new-meta)
+            (-> ast
+                (update-in [:val] with-meta nil)
+                ;(update-in [:form] with-meta nil)
+                (dissoc :children :meta))))
+      :with-meta
         (if (not (empty? new-meta))
-          (assoc-in ast [:meta :val] new-meta)
-          (-> ast
-            (update-in [:val] with-meta nil)
-            ;(update-in [:form] with-meta nil)
-            (dissoc :children :meta)))))
-    :with-meta
-    (let [new-meta (apply dissoc (:form meta) elides)]
-      (if (not (empty? new-meta))
-        (if (= new-meta (:form meta))
-          ast
-          (assoc ast :meta (replace-meta meta new-meta)))
-        (-> expr
-          (assoc-in [:env :context] (:context env))
-          (update-in [:form] with-meta {}))))
-    :def
-    (let [new-meta (apply dissoc (:form meta) elides)]
-      (if (not (empty? new-meta))
-        (if (= new-meta (:form meta))
-          ast
-          (assoc ast :meta (replace-meta meta new-meta)))
-        (assoc (dissoc ast :meta) :children [:init])))
-    ast))
+          (if (= new-meta (:form meta))
+            ast
+            (assoc ast :meta (replace-meta meta new-meta)))
+          (-> expr
+              (assoc-in [:env :context] (:context env))
+              (update-in [:form] with-meta {})))
+      :def
+        (if (not (empty? new-meta))
+          (if (= new-meta (:form meta))
+            ast
+            (assoc ast :meta (replace-meta meta new-meta)))
+          (assoc (dissoc ast :meta) :children [:init]))
+        ast)))
 
 (defn elide-meta
   "If elides is not empty and the AST node contains metadata,
