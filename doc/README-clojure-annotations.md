@@ -22,14 +22,67 @@ tools, that would be good.
 Here we just list the methods, giving them a name and a brief
 description.  Later we discuss their pros and cons in more detail.
 
+
 ### Specially formatted comments
 
-This is a popular method for lint tools for C/C++ programs such as
-[Splint][SplintAnnotationExample] and for Java using
-[IntelliJ][IntelliJAnnotationExample].
+This is a popular method for lint tools.  The programmer inserts
+comments that are completely ignored by the compiler, but their
+contents are formatted in a way that is recognized by the analysis
+tool.  The comments often have an affect on the following lexical
+element, or sometimes a group of lines bounded by a starting and
+ending comment.
+
+[Example][SplintAnnotationExample] for lint tool Splint for C/C++
+programs.
+
+[Example][IntelliJAnnotationExample] for Java IDE IntelliJ.
 
 [SplintAnnotationExample]: http://www.splint.org/manual/manual.html#null
 [IntelliJAnnotationExample]: https://groups.google.com/d/msg/clojure-dev/5_dlGSNR6xQ/hqXNZE9-RLcJ
+
+
+### Metadata
+
+Example:
+
+    (defn my-fn [a b c]
+      (let [x (+ a b)]
+        ^{:eastwood {:disable-linters [:def-in-def]}}
+        (def bar (* x c))
+        (- bar b)))
+
+The metadata is associated with the following form, in this case `(def
+bar (* x c))`.
+
+
+### Marker macro
+
+By marker macro we simply mean a macro defined expressly for the
+purpose of wrapping around expressions to be annotated, with
+additional arguments describing the desired annotation.  An example of
+what this could look like would be:
+
+    (defn my-fn [a b c]
+      (let [x (+ a b)]
+        (eastwood/ann
+          {:disable-linters [:def-in-def]}
+          (def bar (* x c)))
+        (- bar b)))
+
+
+### do form
+
+This is similar to the marker macro idea, but does not require
+defining any new macros.  It uses the existing Clojure special form
+`do`.
+
+    (defn my-fn [a b c]
+      (let [x (+ a b)]
+        (do
+          {:disable-linters [:def-in-def]}
+          (def bar (* x c)))
+        (- bar b)))
+
 
 ## Analysis tools where this is helpful
 
