@@ -181,6 +181,12 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
     (pprint-meta
      (elide-meta form #{:column :file :end-line :end-column}))))
 
+(defn trim-ast [ast action key-set]
+  (ast/postwalk ast (fn [ast]
+                      (case action
+                        :keep-only (select-keys ast key-set)
+                        :remove-only (apply dissoc ast key-set)))))
+
 (defn enhance-extend-args [extend-args]
   (let [[atype-ast & proto+mmaps-asts] extend-args
         atype-sym (:form atype-ast)]
