@@ -19,8 +19,8 @@ tools, that would be good.
 
 ## Annotation methods
 
-Here we just list the methods, giving them a name and a brief
-description.  Later we discuss their pros and cons in more detail.
+Here we list the methods, giving them a name and a brief description.
+Later we discuss their pros and cons in more detail.
 
 
 ### Specially formatted comments
@@ -28,8 +28,8 @@ description.  Later we discuss their pros and cons in more detail.
 This is a popular method for lint tools.  The programmer inserts
 comments that are completely ignored by the compiler, but their
 contents are formatted in a way that is recognized by the analysis
-tool.  The comments often have an affect on the following lexical
-element, or sometimes a group of lines bounded by a starting and
+tool.  The comments often have an effect on the following lexical
+element, line, or sometimes a group of lines bounded by a starting and
 ending comment.
 
 [Example][SplintAnnotationExample] for lint tool Splint for C/C++
@@ -45,11 +45,13 @@ programs.
 
 Example:
 
+```clojure
     (defn my-fn [a b c]
       (let [x (+ a b)]
         ^{:eastwood {:disable-linters [:def-in-def]}}
         (def bar (* x c))
         (- bar b)))
+```
 
 The metadata is associated with the following form, in this case `(def
 bar (* x c))`.
@@ -57,17 +59,30 @@ bar (* x c))`.
 
 ### Marker macro
 
-By marker macro we simply mean a macro defined expressly for the
-purpose of wrapping around expressions to be annotated, with
-additional arguments describing the desired annotation.  An example of
-what this could look like would be:
+By marker macro we mean a macro defined for the purpose of wrapping
+around expressions to be annotated, with additional arguments
+describing the desired annotation.  An example of what this could look
+like would be:
 
+```clojure
     (defn my-fn [a b c]
       (let [x (+ a b)]
         (eastwood/ann
           {:disable-linters [:def-in-def]}
           (def bar (* x c)))
         (- bar b)))
+```
+
+The macro simply expands to the expression that is wrapped, without
+the additional arguments, e.g.:
+
+```clojure
+    (defmacro ann [opts expr]
+      expr)
+```
+
+An analysis tool using this method would need to examine the form
+before it is macroexpanded to use the extra arguments.
 
 
 ### do form
@@ -76,12 +91,14 @@ This is similar to the marker macro idea, but does not require
 defining any new macros.  It uses the existing Clojure special form
 `do`.
 
+```clojure
     (defn my-fn [a b c]
       (let [x (+ a b)]
         (do
           {:disable-linters [:def-in-def]}
           (def bar (* x c)))
         (- bar b)))
+```
 
 
 ## Analysis tools where this is helpful
