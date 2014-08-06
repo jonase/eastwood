@@ -51,31 +51,51 @@ out the latest unreleased version of Eastwood.
 
 ## What's there?
 
-Eastwood warns when it finds:
+Eastwood warns when it finds the following kinds of things.  Each
+keyword below is the name of the "linter".  That name can be used on
+the command line to enable or disable the linter.
 
-- inconsistencies between file names and the namespaces declared
-  within them (new in version 0.1.1)
-- misplaced docstrings
-- deprecated Java instance methods, static fields, static methods and
-  constructors
-- deprecated Clojure vars
-- redefinitions of the same name in the same namespace
-- def's nested inside other def's
-- function calls that seem to have the wrong number of arguments
-- function/macro `:arglists` metadata that does not match the number
-  of args it is defined with (new in version 0.1.1)
-- tests using `clojure.test` that may be written incorrectly
-- suspicious expressions that appear incorrect, because they always
-  return trivial values
-- unused values, including unused return values of pure functions, and
-  some others functions where it rarely makes sense to discard its
-  return value
-- unused private vars
-- unused function arguments
-- unused namespaces
-- unlimited (:use ...) without :refer or :only to limit the symbols
-  referred by it
-- keyword typos
+- Inconsistencies between file names and the namespaces declared
+  within them (new in version 0.1.1) (not a linter, and cannot be
+  disabled). [[more]](https://github.com/jonase/eastwood#check-consistency-of-namespace-and-file-names)
+- `:misplaced-docstrings` - Function or macro doc strings placed after
+  the argument vector, instead of before the argument vector where
+  they
+  belong. [[more]](https://github.com/jonase/eastwood#misplaced-docstrings---strings-that-appear-to-be-misplaced-documentation-strings)
+- `:deprecations` - Deprecated Clojure Vars, and deprecated Java
+  instance methods, static fields, static methods, and
+  constructors. [[more]](https://github.com/jonase/eastwood#deprecations---deprecated-java-methodsfieldsconstructors-and-clojure-vars)
+- `:redefd-vars` - Redefinitions of the same name in the same
+  namespace. [[more]](https://github.com/jonase/eastwood#redefd-vars---redefinitions-of-the-same-name-in-the-same-namespace)
+- `:def-in-def` - def's nested inside other
+  def's. [[more]](https://github.com/jonase/eastwood#def-in-def---defs-nested-inside-other-defs)
+- `:wrong-arity` - Function calls that seem to have the wrong number
+  of
+  arguments. [[more]](https://github.com/jonase/eastwood#wrong-arity---function-call-with-wrong-number-of-arguments)
+- `:bad-arglists` - Function/macro `:arglists` metadata that does not
+  match the number of args it is defined with (new in version
+  0.1.1). [[more]](https://github.com/jonase/eastwood#bad-arglists---functionmacro-definitions-with-arg-vectors-differing-from-their-arglists-metadata)
+- `:suspicious-test` - Tests using `clojure.test` that may be written
+  incorrectly. [[more]](https://github.com/jonase/eastwood#suspicious-test---suspicious-tests-that-may-be-written-incorrectly)
+- `:suspicious-expression` - Suspicious expressions that appear
+  incorrect, because they always return trivial values.
+- `:unused-ret-vals` and `:unused-ret-vals-in-try` - Unused values,
+  including unused return values of pure functions, and some others
+  functions where it rarely makes sense to discard its return
+  value. [[more]](https://github.com/jonase/eastwood#unused-ret-vals-and-unused-ret-vals-in-try---values-that-are-not-used)
+- `:unused-private-vars` - Unused private vars (needs updating).
+- `:unused-fn-args` - Unused function arguments (disabled by
+  default). [[more]](https://github.com/jonase/eastwood#unused-fn-args---unused-arguments-of-functions-macros-methods)
+- `:unused-namespaces` - Warn if a namespace is given in an `ns` form
+  after `:use` or `:require`, but no Vars within the namespace are
+  ever mentioned (disabled by default).
+- `:unlimited-use` - Unlimited `(:use ...)` without `:refer` or
+  `:only` to limit the symbols referred by
+  it. [[more]](https://github.com/jonase/eastwood#unlimited-use---use-statements-that-do-not-explicitly-limit-the-symbols-they-refer)
+- `:keyword-typos` - Keyword names that may be typos because they
+  occur only once in the source code and are slight variations on
+  other keywords (disabled by
+  default). [[more]](https://github.com/jonase/eastwood#keyword-typos---keywords-that-may-have-typographical-errors)
 
 
 ## Usage
@@ -100,24 +120,6 @@ their subdirectories.  You can also lint your project's dependencies:
      "Instance method 'public java.net.URL java.io.File.toURL() throws java.net.MalformedURLException' is deprecated.",
      :line 50}
 
-Available linters are:
-
-* `:misplaced-docstrings`
-* `:deprecations`
-* `:redefd-vars`
-* `:def-in-def`
-* `:wrong-arity`
-* `:bad-arglists` (new in version 0.1.1)
-* `:suspicious-test`
-* `:suspicious-expression`
-* `:unused-ret-vals`
-* `:unused-ret-vals-in-try`
-* `:unused-private-vars` (needs updating)
-* `:unused-fn-args` (disabled by default)
-* `:unused-namespaces` (disabled by default)
-* `:unlimited-use`
-* `:keyword-typos` (disabled by default)
-
 Available options for specifying namespaces and paths are:
 
 * `:namespaces` Vector of namespaces to lint.  A keyword
@@ -140,7 +142,8 @@ Available options for specifying namespaces and paths are:
   defaults to `[ "test" ]` if not specified in your `project.clj`
   file.
 
-Available options for specifying linters are:
+Linter names are given in the previous section.  Available options for
+specifying which linters are enabled or disabled are:
 
 * `:linters` Linters to use.  If not specified, all linters except
   those mentioned as 'disabled by default' above are used.
