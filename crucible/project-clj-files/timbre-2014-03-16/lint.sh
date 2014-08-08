@@ -8,4 +8,4 @@ else
 fi
 
 set -x
-lein ${q} eastwood '{:exclude-namespaces [ taoensso.timbre.appenders.android ]}'
+lein ${q} eastwood '{:continue-on-exception true :exclude-namespaces [ taoensso.timbre.appenders.android ]}'
