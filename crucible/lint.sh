@@ -49,7 +49,7 @@ do_eastwood()
 	    set +x
 	else
 	    set -x
-	    lein ${LEIN_PROFILE} eastwood >& eastwood-out.txt
+	    lein ${LEIN_PROFILE} eastwood '{:continue-on-exception true}' >& eastwood-out.txt
 	    set +x
 	fi
     elif [ "${project}" = "clojure" -a "${ns}" = "clojure-special" ]
@@ -89,12 +89,12 @@ do_eastwood()
         # == Linting clojure.test-clojure.protocols ==
 
 	set -x
-	lein ${LEIN_PROFILE} eastwood '{:namespaces [ :test-paths ] :exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ]}' >& eastwood-out.txt
+	lein ${LEIN_PROFILE} eastwood '{:continue-on-exception true :namespaces [ :test-paths ] :exclude-namespaces [ clojure.core clojure.parallel clojure.test-clojure.api clojure.test-clojure.compilation clojure.test-clojure.data-structures clojure.test-clojure.edn clojure.test-clojure.generators clojure.test-clojure.numbers clojure.test-clojure.reader clojure.test-clojure.evaluation clojure.test-clojure.genclass clojure.test-clojure.try-catch clojure.test-helper clojure.test-clojure.protocols ]}' >& eastwood-out.txt
 	set +x
     elif [ "${project}" = "clojure" ]
     then
 	set -x
-	lein ${LEIN_PROFILE} eastwood "{:namespaces [ ${ns} ]}" >& eastwood-out.txt
+	lein ${LEIN_PROFILE} eastwood "{:continue-on-exception true :namespaces [ ${ns} ]}" >& eastwood-out.txt
 	set +x
     else
 	echo "do_eastwood called with unknown combo project=${project} ns=${ns}"

@@ -7,4 +7,4 @@ set -x
 # including Eastwood.
 lein with-profile base javac
 
-lein ${LEIN_PROFILE} eastwood
+lein ${LEIN_PROFILE} eastwood '{:continue-on-exception true}'
