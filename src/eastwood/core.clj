@@ -364,7 +364,8 @@ curious." eastwood-url))
 "\nAn exception was thrown while analyzing namespace" ns-sym "
 Lint results may be incomplete.  If there are compilation errors in
 your code, try fixing those.  If not, check above for info on the
-exception."))))
+exception.")
+      exception)))
 
 ;; If an exception occurs during analyze, re-throw it.  This will
 ;; cause any test written that calls lint-ns-noprint to fail, unless
@@ -554,7 +555,9 @@ file and namespace to avoid name collisions.")
       (let [{:keys [err msg linters]} (opts->linters opts available-linters
                                                      default-linters)
             warning-count (atom 0)
-            exception-count (atom 0)]
+            exception-count (atom 0)
+            continue-on-exception? (:continue-on-exception opts)
+            stopped-on-exc (atom false)]
         (when err
           (print msg)
           (flush)
@@ -586,12 +589,41 @@ file and namespace to avoid name collisions.")
                 opts (if results-file?
                        (assoc opts :results-wrtr (io/writer "eastwood-results.txt"))
                        opts)]
-            (doseq [namespace namespaces]
-              (try
-                (lint-ns namespace linters opts warning-count exception-count)
-                (catch RuntimeException e
-                  (println "Linting failed:")
-                  (pst e nil))))))
+            (loop [namespaces namespaces]
+              (when-first [namespace namespaces]
+                (let [e (try
+                          (lint-ns namespace linters opts warning-count exception-count)
+                          (catch RuntimeException e
+                            (println "Linting failed:")
+                            (pst e nil)))]
+                  (if (or continue-on-exception?
+                          (not (instance? Throwable e)))
+                    (recur (next namespaces))
+                    (reset! stopped-on-exc {:exception e
+                                            :last-namespace namespace
+                                            :unanalyzed-namespaces (next namespaces)})))))))
+        ;; Don't report that we stopped analyzing early if we stop on
+        ;; the last namespace.
+        (when (and @stopped-on-exc
+                   (seq (:unanalyzed-namespaces @stopped-on-exc)))
+          (println (format
+"
+Stopped analyzing namespaces after %s
+due to exception thrown.  %d namespaces left unanalyzed.
+
+If you wish to force continuation of linting after an exception in one
+namespace, make the option map key :continue-on-exception have the
+value true.
+
+WARNING: This can cause exceptions to be thrown while analyzing later
+namespaces that would not otherwise occur.  For example, if a function
+is defined in the namespace where the first exception occurs, after
+the exception, it will never be evaluated.  If the function is then
+used in namespaces analyzed later, it will be undefined, causing
+error.
+"
+          (:last-namespace @stopped-on-exc)
+          (count (:unanalyzed-namespaces @stopped-on-exc)))))
         (when (or (> @warning-count 0)
                   (> @exception-count 0))
           (println (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
