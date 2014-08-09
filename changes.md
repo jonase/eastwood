@@ -1,6 +1,16 @@
 # Change log for Eastwood
 
 
+## Changes from version 0.1.4 to 0.1.5
+
+* The default behavior is now to stop analyzing namespaces after the
+  first exception thrown during analysis.  The new option
+  :continue-on-exception can be set to true to force the old behavior.
+  The new stopping behavior prevents some spurious warnings about
+  undefined Vars that can be confusing to users.  Issue
+  [#79](https://github.com/jonase/eastwood/issues/79).
+
+
 ## Changes from version 0.1.3 to 0.1.4
 
 * Only report `:suspicious-test` warnings for `(is ...)` forms if the
