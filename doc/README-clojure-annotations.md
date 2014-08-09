@@ -19,8 +19,8 @@ tools, that would be good.
 
 ## Annotation methods
 
-Here we list the methods, giving them a name and a brief description.
-Later we discuss their pros and cons in more detail.
+Here we list the methods, naming and briefly describing them.  Later
+we discuss their pros and cons.
 
 
 ### Specially formatted comments
@@ -41,8 +41,8 @@ programs.
 [IntelliJAnnotationExample]: https://groups.google.com/d/msg/clojure-dev/5_dlGSNR6xQ/hqXNZE9-RLcJ
 
 Clojure example, where the comment line is intended to disable
-`:def-in-def` lint warnings for the following expression, `(def bar (*
-x c))`:
+`:def-in-def` lint warnings for the following expression
+`(def bar (* x c))`:
 
 ```clojure
 (defn my-fn [a b c]
@@ -101,9 +101,10 @@ before it is macroexpanded to use the extra arguments.
 
 This is similar to the marker macro idea, but does not require
 defining any new macros.  It uses the existing Clojure special form
-`do`, where the extra arguments are not the last argument, and thus as
-long as they have no side effects, they should not alter the behavior
-of the program.
+`do`, where the expression wrapped must be the last argument, and the
+additional arguments are before that.  As long as the additional
+arguments have no side effects, they should not affect the behavior of
+the program.
 
 ```clojure
 (defn my-fn [a b c]
@@ -178,6 +179,25 @@ an entire top-level form.  Then the following could occur:
 
 If Eastwood warnings could be suppressed on smaller sections of code,
 this scenario can be avoided.
+
+The smallest useful units to be annotated are expressions such as
+integers, floating point numbers, boolean, characters, strings,
+regular expressions, keywords, and symbols.  Often it is useful to
+annotate collections such as lists (especially parenthesized code
+forms), vectors, and maps.
+
+
+## Comparison of annotation methods
+
+Metadata can only be applied to some types of expressions.  Only
+objects that implement the Java interface `IMeta` can have metadata.
+This includes lists, vectors, maps, sets, and Vars, but not numbers,
+strings, or keywords.
+
+(Also implementing IMeta are classes such as PersistentQueue, Cons,
+Seq, LazySeq, Delay, SubVector, Ref, Atom, Agent.)
+
+TBD: 
 
 
 ## References
@@ -308,3 +328,28 @@ Notes from #typed-clojure IRC channel:
     nothing special about the ann macro wrt functions
 
     ambrosebs: ann is just annotating the type a var can contain
+
+
+TBD: What is the difference between these expressions?  That is, why
+does one keep the metadata on symbol `a`, but the others do not?
+
+```clojure
+user=> (defn prm [x] (binding [*print-meta* true] (pr x)))
+#'user/prm
+user=> (def y ['b ^{:a 1 :b 2} 'a])
+#'user/y
+user=> (prm y)
+[b a]nil
+user=> (def y ['b ^{:a 1 :b 2} (symbol "a")])
+#'user/y
+user=> (prm y)
+[b a]nil
+user=> (def y '[b ^{:a 1 :b 2} a])
+#'user/y
+user=> (binding [*print-meta* true] (pr y))
+[b ^{:b 2, :a 1} a]nil
+user=> (def y ['b (with-meta 'a {:a 1 :b 2})])
+#'user/y
+user=> (prm y)
+[b ^{:b 2, :a 1} a]nil
+```
