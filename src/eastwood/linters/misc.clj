@@ -2,6 +2,9 @@
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [resolve-var]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as j]
             [eastwood.util :as util]))
 
 (defn var-of-ast [ast]
@@ -528,3 +531,12 @@ a (defonce foo val) expression.  If it is, return [foo val]."
              :file (-> loc :file)
              :line (-> loc :line)
              :column (-> loc :column)}]))))))
+
+(defn local-shadows-var [{:keys [asts]}]
+  (for [{:keys [op form env]} (mapcat ast/nodes asts)
+        :when (= op :binding)
+        :let [v (env/ensure (j/global-env) (resolve-var form env))]
+        :when v]
+    (merge {:linter :local-shadows-var
+            :msg (str "local: " form " shadows var: " v)}
+           (select-keys env #{:line :column :file}))))
