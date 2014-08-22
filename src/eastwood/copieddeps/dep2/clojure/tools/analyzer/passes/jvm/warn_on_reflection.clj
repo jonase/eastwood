@@ -20,7 +20,10 @@
                       (str column " "))
                     "- " what)))))
 
-(defmulti warn-on-reflection :op)
+(defmulti warn-on-reflection
+  "Prints a warning to *err* when *warn-on-reflection* is true
+   and a node requires runtime reflection"
+  :op)
 
 (defmethod warn-on-reflection :instance-call
   [ast]
@@ -48,7 +51,7 @@
 (defmethod warn-on-reflection :new
   [ast]
   (when-not (:validated? ast)
-    (warn (str "call to " (.getName ^Class (:class ast)) " ctor cannot be resolved")
+    (warn (str "call to " (.getName ^Class (:val (:class ast))) " ctor cannot be resolved")
           (:env ast)))
   ast)
 

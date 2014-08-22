@@ -7,8 +7,8 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.box
-  (:require [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :as u])
-  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [protocol-node? arglist-for-arity]]))
+  (:require [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :as u]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [protocol-node? arglist-for-arity]]))
 
 (defmulti box
   "Box the AST node tag where necessary"
@@ -181,12 +181,15 @@
       ast)))
 
 (defmethod box :try
-  [ast]
-  (-> ast
-    (update-in [:body] -box)
-    (update-in [:catches] #(mapv -box %))
-    (update-in [:finally] -box)
-    (update-in [:o-tag] u/box)))
+  [{:keys [tag] :as ast}]
+  (let [ast (if (and tag (u/primitive? tag))
+              ast
+              (-> ast
+                (update-in [:catches] #(mapv -box %))
+                (update-in [:body] -box)
+                (update-in [:o-tag] u/box)))]
+    (-> ast
+      (update-in [:finally] -box))))
 
 (defmethod box :invoke
   [ast]

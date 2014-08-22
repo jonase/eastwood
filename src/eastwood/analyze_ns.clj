@@ -154,13 +154,11 @@
        (postwalk ast
                  (fn [ast]
                    (-> ast
-                     annotate-tag
                      analyze-host-expr
+                     annotate-tag
                      infer-tag
                      validate
                      classify-invoke
-                     ;; constant-lift pass is not helpful for Eastwood
-                     ;;constant-lift ;; needs to be run after validate so that :maybe-class is turned into a :const
                      (validate-loop-locals analyze))))))
 
     ;; The following passes are intentionally far fewer than the ones
@@ -245,7 +243,7 @@
                     [exc ast]
                     (try
                       (binding [ana.jvm/run-passes run-passes]
-                        [nil (ana.jvm/analyze+eval form)])
+                        [nil (ana.jvm/analyze+eval form (ana.jvm/empty-env) {})])
                       (catch Exception e
                         [e nil]))]
                 (if exc

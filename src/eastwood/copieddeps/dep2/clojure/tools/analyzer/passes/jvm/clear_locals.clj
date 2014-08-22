@@ -45,7 +45,7 @@
 
 (defn maybe-clear-this
   [{:keys [env] :as ast}]
-  (-> (if (and (= :return (:context env))
+  (-> (if (and (isa? (:context env) :ctx/return)
               (not (:in-try env)))
        (assoc ast :to-clear? true)
        ast)
@@ -135,6 +135,13 @@
       ast)))
 
 (defn clear-locals
+  "Attached :to-clear? true to all the nodes that the compiler
+   can clear, those nodes can be:
+   * :local nodes
+   * :binding nodes
+   * :invoke/protocol-invoke/prim-invoke/static-call/instance-call nodes
+      in return position, meaning that the \"this\" local is eligible for
+      clearing"
   [ast]
   (if (:disable-locals-clearing *compiler-options*)
     ast

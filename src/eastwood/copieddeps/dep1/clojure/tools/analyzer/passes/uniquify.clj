@@ -7,8 +7,8 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.uniquify
-  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children children]])
-  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [update-vals]]))
+  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children children]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [update-vals]]))
 
 (def ^:dynamic *locals-counter*) ;; global counter, map sym -> count
 (def ^:dynamic *locals-frame*)   ;; holds the id for the locals in the current frame

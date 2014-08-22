@@ -8,7 +8,9 @@
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.infer-tag
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [arglist-for-arity]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :as u]))
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :as u]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
+            [clojure.set :refer [rename-keys]]))
 
 (defmulti -infer-tag :op)
 (defmethod -infer-tag :default [ast] ast)
@@ -46,13 +48,23 @@
              {:arglists arglists}))))
 
 (defmethod -infer-tag :def
+  [{:keys [var init name] :as ast}]
+  (let [info (merge (select-keys init [:return-tag :arglists :tag])
+                    (select-keys (meta name) [:tag :arglists]))]
+    (when (and (seq info)
+               (not (:dynamic (meta name)))
+               (= :global (-> (env/deref-env) :passes-opts :infer-tag/level)))
+      (alter-meta! var merge (rename-keys info {:return-tag :tag})))
+    (merge ast info {:tag clojure.lang.Var :o-tag clojure.lang.Var})))
+
+(defmethod -infer-tag :quote
   [ast]
-  (merge (assoc ast :tag clojure.lang.Var :o-tag clojure.lang.Var)
-         (select-keys (:init ast) [:return-tag :arglists])))
+  (let [tag (-> ast :expr :tag)]
+    (assoc ast :tag tag :o-tag tag)))
 
 (defmethod -infer-tag :new
   [ast]
-  (let [t (:class ast)]
+  (let [t (-> ast :class :val)]
     (assoc ast :o-tag t :tag t)))
 
 (defmethod -infer-tag :with-meta
@@ -81,16 +93,20 @@
 
 (defmethod -infer-tag :loop
   [{:keys [body] :as ast}]
-  (merge ast (select-keys body [:return-tag :arglists :tag])
-         {:o-tag (:tag body)}))
+  (merge ast (select-keys body [:return-tag :arglists])
+         {:o-tag (:tag body)}
+         (let [tag (:tag body)]
+           (if (#{Void Void/TYPE} tag)
+             (assoc ast :tag Object)
+             (assoc ast :tag tag)))))
 
 (defn =-arglists? [a1 a2]
   (let [tag (fn [x] (-> x meta :tag u/maybe-class))]
     (and (= a1 a2)
          (every? true? (mapv (fn [a1 a2]
-                               (and (= (tag a1) (tag a2))
-                                    (= (mapv tag a1)
-                                       (mapv tag a2))))
+                       (and (= (tag a1) (tag a2))
+                            (= (mapv tag a1)
+                               (mapv tag a2))))
                      a1 a2)))))
 
 (defmethod -infer-tag :if
@@ -156,13 +172,14 @@
 
 (defmethod -infer-tag :try
   [{:keys [body catches] :as ast}]
-  (let [{:keys [tag return-tag arglists]} body]
+  (let [{:keys [tag return-tag arglists]} body
+        catches (remove :ignore-tag (mapv :body catches))]
     (merge ast
-           (when (and tag (every? #(= % tag) (mapv (comp :tag :body) catches)))
+           (when (and tag (every? #(= % tag) (mapv :tag catches)))
              {:tag tag :o-tag tag})
-           (when (and return-tag (every? #(= % return-tag) (mapv (comp :return-tag :body) catches)))
+           (when (and return-tag (every? #(= % return-tag) (mapv :return-tag catches)))
              {:return-tag return-tag})
-           (when (and arglists (every? #(= % arglists) (mapv (comp :arglists :body) catches))) ;;FIX: should check meta
+           (when (and arglists (every? #(=-arglists? % arglists) (mapv :arglists catches)))
              {:arglists arglists}))))
 
 (defmethod -infer-tag :fn-method
@@ -191,7 +208,9 @@
          {:arglists (seq (mapv :arglist methods))
           :tag      clojure.lang.AFunction
           :o-tag    clojure.lang.AFunction}
-         (when-let [tag (:tag (meta (:form local)))]
+         (when-let [tag (or (:tag (meta (:form local)))
+                            (and (apply = (mapv :tag methods))
+                                 (:tag (first methods))))]
            {:return-tag tag})))
 
 (defmethod -infer-tag :invoke
@@ -230,14 +249,20 @@
 (defn infer-tag
   "Performs local type inference on the AST adds, when possible,
    one or more of the following keys to the AST:
-   * :o-tag      represents the dynamic type of the node
-   * :tag        represents the static type of the node
+   * :o-tag      represents the current type of the
+                 expression represented by the node
+   * :tag        represents the type the expression represented by the
+                 node is required to have, possibly the same as :o-tag
    * :return-tag implies that the node will return a function whose
                  invocation will result in a object of this type
    * :arglists   implies that the node will return a function with
                  this arglists
    * :ignore-tag true when the node is untyped, does not imply that
-                 all untyped node will have this"
+                 all untyped node will have this
+
+  Passes opts:
+  * :infer-tag/level  If :global, infer-tag will perform Var tag
+                      inference"
   [{:keys [tag form] :as ast}]
   (let [tag (or tag (:tag (meta form)))
         ast (-infer-tag ast)]
