@@ -153,7 +153,7 @@ selectively disable such warnings if they wish."
 (def ^:dynamic *warning-if-static-ret-val-unused* {})
 
 (defn- mark-things-in-defprotocol-expansion-post [{:keys [env] :as ast}]
-  (if (not-any? #(= % 'clojure.core/defprotocol)) (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms ast))
+  (if (not-any? #(= % 'clojure.core/defprotocol) (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms ast)))
     ast
     (let [defprotocol-var (get-in ast [:ret :expr :val])
           ;; Mark the second statement, the interface
@@ -347,7 +347,7 @@ discarded inside null: null'."
                  ;; caused by a comment or gen-class macro invocation.
                  (and (nil? (:form stmt))
                       (some #{'clojure.core/comment 'clojure.core/gen-class}
-                            (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms ast) (:eastwood/partly-resolved-forms stmt))))
+                            (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms stmt))))
                  nil
 
                  :else
