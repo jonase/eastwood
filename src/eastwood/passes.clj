@@ -11,7 +11,7 @@
             (map #(if (nil? %) "nil" (.getName ^Class %)) arg-types)))
 
 (defn get-ctor [ast]
-  (let [cls (:class ast)
+  (let [cls (:val (:class ast))
         arg-type-vec (mapv :tag (:args ast))
         arg-type-arr (into-array Class arg-type-vec)]
 ;;    (println (format "dbgx: get-ctor cls=%s arg-types=%s"
