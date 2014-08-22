@@ -3,36 +3,39 @@
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
-            [eastwood.passes :refer [propagate-def-name]]
+            [eastwood.passes :refer [propagate-def-name add-partly-resolved-forms reflect-validated]]
             [clojure.set :as set]
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as tr]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rts]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.emit-form :refer [emit-form]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [postwalk prewalk cycling]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer :as ana :refer [analyze] :rename {analyze -analyze}]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.source-info :refer [source-info]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.cleanup :refer [cleanup]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.elide-meta :refer [elide-meta]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.constant-lifter :refer [constant-lift]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.warn-earmuff :refer [warn-earmuff]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.add-binding-atom :refer [add-binding-atom]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.uniquify :refer [uniquify-locals]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.box :refer [box]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.annotate-branch :refer [annotate-branch]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.annotate-methods :refer [annotate-methods]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.annotate-class-id :refer [annotate-class-id]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.annotate-internal-name :refer [annotate-internal-name]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.fix-case-test :refer [fix-case-test]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.classify-invoke :refer [classify-invoke]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.validate :refer [validate]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.infer-tag :refer [infer-tag ensure-tag]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.annotate-tag :refer [annotate-tag]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.validate-loop-locals :refer [validate-loop-locals]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.analyze-host-expr :refer [analyze-host-expr]]))
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer
+             [ast :refer [postwalk prewalk cycling]]
+             [utils :as utils]
+             [env :as env]]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
+             [source-info :refer [source-info]]
+             [cleanup :refer [cleanup]]
+             [elide-meta :refer [elide-meta]]
+             [constant-lifter :refer [constant-lift]]
+             [warn-earmuff :refer [warn-earmuff]]
+             [add-binding-atom :refer [add-binding-atom]]
+             [uniquify :refer [uniquify-locals]]]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
+             [emit-form :refer [emit-form]]
+             [box :refer [box]]
+             [annotate-branch :refer [annotate-branch]]
+             [annotate-methods :refer [annotate-methods]]
+             [annotate-class-id :refer [annotate-class-id]]
+             [annotate-internal-name :refer [annotate-internal-name]]
+             [fix-case-test :refer [fix-case-test]]
+             [classify-invoke :refer [classify-invoke]]
+             [validate :refer [validate]]
+             [infer-tag :refer [infer-tag ensure-tag]]
+             [annotate-tag :refer [annotate-tag]]
+             [validate-loop-locals :refer [validate-loop-locals]]
+             [analyze-host-expr :refer [analyze-host-expr]]]))
 
 ;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer, then later probably diverged from each other.
@@ -64,48 +67,43 @@
   (set (map str (all-ns))))
 
 (defn gen-interface-form? [form]
-  (and (sequential? form)
+  (and (seq? form)
        (contains? #{'gen-interface 'clojure.core/gen-interface}
-                  (first form))))
+          (first form))))
 
 ;; Avoid macroexpand'ing a gen-interface form more than once, since it
 ;; causes an exception to be thrown.
 (defn dont-expand-twice? [form]
   (gen-interface-form? form))
 
-(defn pre-analyze-debug [asts form _env ns opt]
-  (let [print-normally? (or (contains? (:debug opt) :all)
-                            (contains? (:debug opt) :forms))
-        pprint? (or (contains? (:debug opt) :all)
-                    (contains? (:debug opt) :forms-pprint))]
-  (when (or print-normally? pprint?)
-    (println (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
-                     (count asts) (str ns) (meta ns)))
-    (when pprint?
-      (println "    form before macroexpand:")
-      (pp/pprint form))
-    (when print-normally?
-      (println "    form before macroexpand, with metadata (some elided for brevity):")
-      (util/pprint-meta-elided form))
-    (println "\n    --------------------")
-    (if (dont-expand-twice? form)
+(defn pre-analyze-debug [asts form _env ns {:keys [debug] :as opt}]
+  (let [print-normally? (some #{:all :forms} debug)
+        pprint? (some #{:all :forms-pprint} debug)]
+    (when (or print-normally? pprint?)
+      (println (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
+                       (count asts) (str ns) (meta ns)))
+      (when pprint?
+        (println "    form before macroexpand:")
+        (pp/pprint form))
       (when print-normally?
-        (println "    form is gen-interface, so avoiding macroexpand on it"))
-      (let [exp (macroexpand form)]
-        (when pprint?
-          (println "    form after macroexpand:")
-          (pp/pprint exp))
+        (println "    form before macroexpand, with metadata (some elided for brevity):")
+        (util/pprint-meta-elided form))
+      (println "\n    --------------------")
+      (if (dont-expand-twice? form)
         (when print-normally?
-          (println "    form after macroexpand, with metadata (some elided for brevity):")
-          (util/pprint-meta-elided exp))))
-    (println "\n    --------------------"))))
+          (println "    form is gen-interface, so avoiding macroexpand on it"))
+        (let [exp (macroexpand form)]
+          (when pprint?
+            (println "    form after macroexpand:")
+            (pp/pprint exp))
+          (when print-normally?
+            (println "    form after macroexpand, with metadata (some elided for brevity):")
+            (util/pprint-meta-elided exp))))
+      (println "\n    --------------------"))))
 
-(defn post-analyze-debug [asts form ast ns opt]
-  (let [dbg (:debug opt)
-        show-ast? (or (contains? dbg :ast)
-                      (contains? dbg :all))]
-    (when (or show-ast?
-              (contains? dbg :progress))
+(defn post-analyze-debug [asts form ast ns {:keys [debug] :as opt}]
+  (let [show-ast? (some #{:all :ast} debug)]
+    (when (or show-ast? (some #{:progress} debug))
       (println (format "dbg anal'd %d ns=%s%s"
                        (count asts) (str ns)
                        (if show-ast? " ast=" ""))))
@@ -148,7 +146,8 @@
                  fix-case-test
                  annotate-class-id
                  annotate-internal-name
-                 propagate-def-name)))  ;; custom pass added for Eastwood
+                 propagate-def-name
+                 add-partly-resolved-forms)))
 
     ((fn analyze [ast]
        (postwalk ast
@@ -161,9 +160,8 @@
                      classify-invoke
                      (validate-loop-locals analyze))))))
 
-    ;; The following passes are intentionally far fewer than the ones
-    ;; in t.a.j/run-passes.
     (prewalk (comp cleanup
+                reflect-validated
                 ensure-tag
                 box))))
 
@@ -220,8 +218,7 @@
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
   [source-path & {:keys [reader opt]}]
-  (let [debug-ns (or (contains? (:debug opt) :ns)
-                     (contains? (:debug opt) :all))
+  (let [debug-ns (some #{:ns :all} (:debug opt))
         eof (reify)]
     (when debug-ns
       (println (format "all-ns before (analyze-file \"%s\") begins:"
@@ -253,8 +250,7 @@
                   (do
                     (post-analyze-debug asts form ast *ns* opt)
                     (recur (conj forms form)
-                           (conj asts (util/add-partly-resolved-forms
-                                       ast cur-env)))))))))))))
+                           (conj asts ast))))))))))))
 
 
 (defn analyze-ns

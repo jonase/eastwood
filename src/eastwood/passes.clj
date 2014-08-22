@@ -2,7 +2,10 @@
   (:refer-clojure :exclude [get-method])
   (:require [clojure.string :as str]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children]]
-            [eastwood.util :as util]))
+            [eastwood.util :as util]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]))
 
 (defmulti reflect-validated :op)
 
@@ -91,3 +94,25 @@
 (defmethod propagate-def-name :def
   [{:keys [name] :as ast}]
   (update-children ast (fn [ast] (assoc-in ast [:env :name] name))))
+
+(defn add-partly-resolved-forms
+  "For every node that has a :raw-forms key, add a new
+key :eastwood/partly-resolved-forms.  The value associated with the
+new key is nearly the same as that associated with :raw-forms, except
+that every list that starts with a symbol will have that symbol
+replaced by one that is resolved, with a namespace."
+  [{:keys [env raw-forms] :as ast}]
+  (if raw-forms
+    (let [resolved-forms (mapv (fn [form]
+                                 (if (seq? form)
+                                   (let [[op & args] form
+                                         ^clojure.lang.Var var (env/ensure (ana.jvm/global-env)
+                                                                 (utils/resolve-var op env))
+                                         resolved-var-sym (if (nil? var)
+                                                            op
+                                                            (symbol (str (.ns var)) (name (.sym var))))]
+                                     (cons resolved-var-sym args))
+                                   form))
+                               (:raw-forms ast))]
+      (assoc ast :eastwood/partly-resolved-forms resolved-forms))
+    ast))

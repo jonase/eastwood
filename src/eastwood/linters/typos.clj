@@ -262,11 +262,12 @@ generate varying strings while the test is running."
 (defn suspicious-test [{:keys [forms asts]}]
   (binding [*var-info-map* (edn/read-string (slurp (io/resource "var-info.edn")))]
     (doall
-     (let [pr-formasts (for [ast (mapcat ast/nodes asts)
-                             [pr-form raw-form]
-                             (map list
-                                  (:eastwood/partly-resolved-forms ast)
-                                  (:raw-forms ast))]
+     (let [frms (fn [ast] (remove #(symbol? (second %))
+                                 (map list
+                                      (:eastwood/partly-resolved-forms ast)
+                                      (:raw-forms ast))))
+           pr-formasts (for [ast (mapcat ast/nodes asts)
+                             [pr-form raw-form] (frms ast)]
                          {:pr-form pr-form
                           :raw-form raw-form
                           :ast ast})
@@ -274,10 +275,7 @@ generate varying strings while the test is running."
            pr-first-is-formasts
            (remove nil?
             (for [ast (mapcat ast/nodes asts)]
-              (let [formasts (for [[pr-form raw-form]
-                                   (map list
-                                        (:eastwood/partly-resolved-forms ast)
-                                        (:raw-forms ast))]
+              (let [formasts (for [[pr-form raw-form] (frms ast)]
                                {:pr-form pr-form
                                 :raw-form raw-form
                                 :ast ast})]
