@@ -19,19 +19,20 @@
              [ast :refer [walk prewalk postwalk]]
              [env :as env :refer [*env*]]]
 
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :refer :all :exclude [box]]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :refer :all :exclude [box specials]]
 
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
              [source-info :refer [source-info]]
              [cleanup :refer [cleanup]]
-             [elide-meta :refer [elide-meta]]
+             [elide-meta :refer [elide-meta elides]]
              [warn-earmuff :refer [warn-earmuff]]
-             [collect :refer [collect collect-closed-overs]]
+             [collect-closed-overs :refer [collect-closed-overs]]
              [add-binding-atom :refer [add-binding-atom]]
              [uniquify :refer [uniquify-locals]]]
 
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
              [box :refer [box]]
+             [collect :refer [collect]]
              [constant-lifter :refer [constant-lift]]
              [annotate-branch :refer [annotate-branch]]
              [annotate-loops :refer [annotate-loops]]
@@ -48,6 +49,10 @@
              [analyze-host-expr :refer [analyze-host-expr]]
              [warn-on-reflection :refer [warn-on-reflection]]
              [emit-form :refer [emit-form]]]
+
+            [clojure.java.io :as io]
+            [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
+            [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as readers]
 
             [eastwood.copieddeps.dep3.clojure.core.memoize :refer [memo-clear!]])
   (:import clojure.lang.IObj))
@@ -82,7 +87,7 @@
 (defn empty-env
   "Returns an empty env map"
   []
-  {:context    :expr
+  {:context    :ctx/expr
    :locals     {}
    :ns         (ns-name *ns*)})
 
@@ -135,7 +140,7 @@
 (defn macroexpand-1
   "If form represents a macro form or an inlineable function,
    returns its expansion, else returns form."
-  ([form] (macroexpand-1 (empty-env)))
+  ([form] (macroexpand-1 form (empty-env)))
   ([form env]
      (env/ensure (global-env)
        (if (seq? form)
@@ -209,7 +214,7 @@
   {:op       :monitor-enter
    :env      env
    :form     form
-   :target   (-analyze target (ctx env :expr))
+   :target   (-analyze target (ctx env :ctx/expr))
    :children [:target]})
 
 (defmethod parse 'monitor-exit
@@ -221,7 +226,7 @@
   {:op       :monitor-exit
    :env      env
    :form     form
-   :target   (-analyze target (ctx env :expr))
+   :target   (-analyze target (ctx env :ctx/expr))
    :children [:target]})
 
 (defmethod parse 'clojure.core/import*
@@ -316,7 +321,7 @@
                              :op      :binding})
                           fields)
         menv (assoc env
-               :context :expr
+               :context :ctx/expr
                :locals  (zipmap fields (map dissoc-env fields-expr))
                :this    class-name)
         methods (mapv #(assoc (analyze-method-impls % menv) :interfaces interfaces)
@@ -337,15 +342,20 @@
 (defmethod parse 'case*
   [[_ expr shift mask default case-map switch-type test-type & [skip-check?] :as form] env]
   (let [[low high] ((juxt first last) (keys case-map)) ;;case-map is a sorted-map
-        test-expr (-analyze expr (ctx env :expr))
+        e (ctx env :ctx/expr)
+        test-expr (-analyze expr e)
         [tests thens] (reduce (fn [[te th] [min-hash [test then]]]
-                                (let [test-expr (ana/-analyze :const test env)
+                                (let [test-expr (ana/-analyze :const test e)
                                       then-expr (-analyze then env)]
                                   [(conj te {:op       :case-test
+                                             :form     test
+                                             :env      e
                                              :hash     min-hash
                                              :test     test-expr
                                              :children [:test]})
                                    (conj th {:op       :case-then
+                                             :form     then
+                                             :env      env
                                              :hash     min-hash
                                              :then     then-expr
                                              :children [:then]})]))
@@ -377,11 +387,11 @@
   "Applies the following passes in the correct order to the AST:
    * uniquify
    * add-binding-atom
-   * cleanup
    * source-info
    * elide-meta
    * warn-earmuff
-   * collect
+   * collect-closed-overs
+   * jvm.collect
    * jvm.box
    * jvm.constant-lifter
    * jvm.annotate-branch
@@ -417,12 +427,12 @@
        (postwalk ast
                  (fn [ast]
                    (-> ast
-                     annotate-tag
                      analyze-host-expr
+                     constant-lift
+                     annotate-tag
                      infer-tag
                      validate
                      classify-invoke
-                     constant-lift ;; needs to be run after validate so that :maybe-class is turned into a :const
                      (validate-loop-locals analyze))))))
 
     (prewalk (fn [ast]
@@ -441,7 +451,7 @@
     ;; needs to be run in a separate pass to avoid collecting
     ;; constants/callsites in :loop
     (collect-closed-overs {:what  #{:closed-overs}
-                           :where #{:deftype :reify :fn :loop}
+                           :where #{:deftype :reify :fn :loop :try}
                            :top-level? false})
 
     ;; needs to be run after collect-closed-overs
@@ -451,13 +461,14 @@
   "Returns an AST for the form that's compatible with what tools.emitter.jvm requires.
 
    Binds tools.analyzer/{macroexpand-1,create-var,parse} to
-   tools.analyzer.jvm/{macroexpand-1,create-var,parse} and calls
-   tools.analyzer/analyzer on form.
+   tools.analyzer.jvm/{macroexpand-1,create-var,parse} and analyzes the form.
 
-   If provided, opts should be a map of options to analyze, currently the only valid option
-   is :bindings.
+   If provided, opts should be a map of options to analyze, currently the only valid
+   options are :bindings and :passes-opts.
    If provided, :bindings should be a map of Var->value pairs that will be merged into the
    default bindings for tools.analyzer, useful to provide custom extension points.
+   If provided, :passes-opts should be a map of pass-name-kw->pass-config-map pairs that
+   can be used to configure the behaviour of each pass.
 
    E.g.
    (analyze form env {:bindings  {#'ana/macroexpand-1 my-mexpand-1}})
@@ -470,10 +481,15 @@
                             #'ana/macroexpand-1          macroexpand-1
                             #'ana/create-var             create-var
                             #'ana/parse                  parse
-                            #'ana/var?                   var?}
+                            #'ana/var?                   var?
+                            #'elides                     (merge {:fn    #{:line :column :end-line :end-column :file :source}
+                                                                 :reify #{:line :column :end-line :end-column :file :source}}
+                                                                elides)}
                            (:bindings opts))
        (env/ensure (global-env)
-         (run-passes (-analyze form env))))))
+         (env/with-env (swap! env/*env* merge
+                              {:passes-opts (:passes-opts opts)})
+           (run-passes (-analyze form env)))))))
 
 (deftype ExceptionThrown [e])
 
@@ -548,3 +564,29 @@ twice."
   ([form env] (analyze+eval' form env {}))
   ([form env opts]
      (prewalk (analyze+eval form env opts) cleanup)))
+
+(defn analyze-ns
+  "Analyzes a whole namespace, returns a vector of the ASTs for all the
+   top-level ASTs of that namespace.
+   Evaluates all the forms."
+  [ns]
+  (env/ensure (global-env)
+    (let [res (ns-resource ns)]
+      (assert res (str "Can't find " ns " in classpath"))
+      (let [filename (source-path res)
+            path (res-path res)]
+        (when-not (get-in *env* [::analyzed-clj path])
+          (binding [*ns* *ns*]
+            (with-open [rdr (io/reader res)]
+              (let [pbr (readers/indexing-push-back-reader
+                         (java.io.PushbackReader. rdr) 1 filename)
+                    eof (Object.)
+                    env (empty-env)]
+                (loop []
+                  (let [form (reader/read pbr nil eof)]
+                    (when-not (identical? form eof)
+                      (swap! *env* update-in [::analyzed-clj path]
+                             (fnil conj [])
+                             (analyze+eval form (assoc env :ns (ns-name *ns*))))
+                      (recur))))))))
+        (get-in @*env* [::analyzed-clj path])))))

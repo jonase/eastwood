@@ -76,20 +76,22 @@
                                           :field field}
                                          (source-info env)))))
       :instance (or (maybe-instance-field target-expr class field)
-                    {:op       :host-interop
-                     :target   (dissoc target-expr :tag :validated?)
-                     :m-or-f   field
-                     :children [:target]}
+                    {:op          :host-interop
+                     :target      (dissoc target-expr :tag :validated?)
+                     :m-or-f      field
+                     :assignable? true
+                     :children    [:target]}
                     (when (:literal? target-expr)
                       (throw (ex-info (str "Cannot find field "
                                            field " for class " class)
                                       (merge {:instance (dissoc target-expr :env)
                                               :field    field}
                                              (source-info env)))))))
-    {:op       :host-interop
-     :target   target-expr
-     :m-or-f   field
-     :children [:target]}))
+    {:op          :host-interop
+     :target      target-expr
+     :m-or-f      field
+     :assignable? true
+     :children    [:target]}))
 
 (defn -analyze-host-expr
   [target-type m-or-f target-expr class env]
@@ -149,7 +151,7 @@
                       (= :class (:type target))
                       (:form target))
           target-type (if class? :static :instance)]
-      (merge ast
+      (merge (dissoc ast :assignable? :target :args :children)
              (case op
 
                :host-call

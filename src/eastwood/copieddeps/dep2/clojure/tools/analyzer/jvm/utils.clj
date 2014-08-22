@@ -9,9 +9,12 @@
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils
   (:require [clojure.reflect :as reflect]
             [clojure.string :as s]
-            [eastwood.copieddeps.dep3.clojure.core.memoize :refer [lru]])
+            [eastwood.copieddeps.dep3.clojure.core.memoize :refer [lru]]
+            [clojure.java.io :as io])
   (:import (clojure.lang RT Symbol Var)
-           (org.objectweb.asm Type)))
+           (org.objectweb.asm Type)
+           (java.io File)
+           (java.net URL)))
 
 (defn ^:private type-reflect
   [typeref & options]
@@ -19,7 +22,7 @@
          :reflector (reflect/->JavaReflector (RT/baseLoader))
          options))
 
-(defn ^:private specials [c]
+(defn specials [c]
   (case c
     "byte" Byte/TYPE
     "boolean" Boolean/TYPE
@@ -33,7 +36,7 @@
     "object" Object
     nil))
 
-(defn ^:private special-arrays [c]
+(defn special-arrays [c]
   (case c
     "bytes" (Class/forName "[B")
     "booleans" (Class/forName "[Z")
@@ -84,15 +87,6 @@
                          (special-arrays sname))]
           ret
           (maybe-class-from-string sname))))))
-
-(defmacro case-class [c & clauses]
-  (let [pairs (partition 2 clauses)
-        default (when (odd? (count clauses))
-                   [(last clauses)])]
-     `(case ~c
-       ~@(mapcat (fn [[test then]]
-                   [(eval test) then]) pairs)
-       ~@default)))
 
 (def primitive?
   "Returns non-nil if the argument represents a primitive Class other than Void"
@@ -351,3 +345,24 @@
                   :else
                   (conj p next)))) [] methods)
       methods)))
+
+(defn source-path [x]
+  (if (instance? File x)
+    (.getAbsolutePath ^File x)
+    (str x)))
+
+(defn ns->relpath [s]
+  (str (s/replace (munge (str s)) \. \/) ".clj"))
+
+(defn ns-resource [ns]
+  (let [f (ns->relpath ns)]
+   (cond
+    (instance? File f) f
+    (instance? URL f) f
+    (re-find #"^file://" f) (URL. f)
+    :else (io/resource f))))
+
+(defn res-path [res]
+  (if (instance? File res)
+    (.getPath ^File res)
+    (.getPath ^URL res)))

@@ -40,7 +40,13 @@
        (and (= :const op)
             (= :keyword (:type the-fn)))
        (if (<= 1 argc 2)
-         (assoc ast :op :keyword-invoke)
+         (if (not (namespace (:val the-fn)))
+           (merge (dissoc ast :fn :args)
+                  {:op       :keyword-invoke
+                   :target   (first args)
+                   :keyword  the-fn
+                   :children [:keyword :target]})
+           ast)
          (throw (ex-info (str "Cannot invoke keyword with " argc " arguments")
                          (merge {:form form}
                                 (source-info env)))))
@@ -49,7 +55,7 @@
             (= #'clojure.core/instance? the-var)
             (= :const (:op (first args)))
             (= :class (:type (first args))))
-       (merge ast
+       (merge (dissoc ast :fn :args)
               {:op       :instance?
                :class    (:val (first args))
                :target   (second args)
@@ -61,7 +67,12 @@
 
        (and var? (protocol-node? the-var))
        (if (>= argc 1)
-         (assoc ast :op :protocol-invoke)
+         (merge (dissoc ast :fn)
+                {:op          :protocol-invoke
+                 :protocol-fn the-fn
+                 :target      (first args)
+                 :args        (vec (rest args))
+                 :children    [:protocol-fn :target :args]})
          (throw (ex-info "Cannot invoke protocol method with no args"
                          (merge {:form form}
                                 (source-info env)))))
