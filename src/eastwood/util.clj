@@ -394,8 +394,8 @@ replaced by one that is resolved, with a namespace."
 ;;                             (println "----------------------------------------")
                              (if (seq? form)
                                (let [[op & args] form
-                                     var (env/with-env env
-                                           (utils/resolve-var op (ana.jvm/empty-env)))
+                                     var (env/ensure env
+                                           (utils/resolve-var op (:env ast)))
 ;;                                     _ (do
 ;;                                         (println (format "dby: op=%s (class op)=%s var=%s (class var)=%s"
 ;;                                                          op (class op)

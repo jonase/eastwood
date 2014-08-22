@@ -47,8 +47,7 @@ return value followed by the time it took to evaluate in millisec."
      [ret# elapsed-msec#]))
 
 (def ^:private available-linters
-  {
-   :misplaced-docstrings misc/misplaced-docstrings
+  {:misplaced-docstrings misc/misplaced-docstrings
    :deprecations deprecated/deprecations
    :redefd-vars misc/redefd-vars
    :def-in-def misc/def-in-def
@@ -64,12 +63,10 @@ return value followed by the time it took to evaluate in millisec."
    :unused-namespaces unused/unused-namespaces
    :unlimited-use misc/unlimited-use
    :keyword-typos typos/keyword-typos
-   :non-dynamic-earmuffs misc/non-dynamic-earmuffs
-   })
+   :non-dynamic-earmuffs misc/non-dynamic-earmuffs})
 
 (def ^:private default-linters
-  #{
-    :misplaced-docstrings
+  #{:misplaced-docstrings
     :deprecations
     :redefd-vars
     :def-in-def
@@ -79,13 +76,7 @@ return value followed by the time it took to evaluate in millisec."
     :suspicious-expression
     :unused-ret-vals
     :unused-ret-vals-in-try
-    ;;:unused-private-vars  ; not yet updated to t.a(.jvm).  Also needs cols
-    ;; :unused-fn-args      ; updated, but don't use it by default
-    ;; :unused-namespaces   ; updated, but don't use it by default. no line/col
-    :unlimited-use
-    ;; :keyword-typos       ; updated, but don't use it by default. no line/col
-    ;;:non-dynamic-earmuffs ; not yet updated to t.a(.jvm).  Also needs cols
-    })
+    :unlimited-use})
 
 (defn- lint [exprs kw]
   (try
@@ -125,16 +116,16 @@ entire stack trace if depth is nil).  Does not print ex-data."
               (str/upper-case (subs x 0 1))))))) ; first char is upper-case
 
 (defn misplaced-primitive-tag? [x]
-  (cond
-   (= x clojure.core/byte)    {:prim-name "byte",    :supported-as-ret-hint false}
-   (= x clojure.core/short)   {:prim-name "short",   :supported-as-ret-hint false}
-   (= x clojure.core/int)     {:prim-name "int",     :supported-as-ret-hint false}
-   (= x clojure.core/long)    {:prim-name "long",    :supported-as-ret-hint true}
-   (= x clojure.core/boolean) {:prim-name "boolean", :supported-as-ret-hint false}
-   (= x clojure.core/char)    {:prim-name "char",    :supported-as-ret-hint false}
-   (= x clojure.core/float)   {:prim-name "float",   :supported-as-ret-hint false}
-   (= x clojure.core/double)  {:prim-name "double",  :supported-as-ret-hint true}
-   :else nil))
+  (condp = x
+   clojure.core/byte    {:prim-name "byte",    :supported-as-ret-hint false}
+   clojure.core/short   {:prim-name "short",   :supported-as-ret-hint false}
+   clojure.core/int     {:prim-name "int",     :supported-as-ret-hint false}
+   clojure.core/long    {:prim-name "long",    :supported-as-ret-hint true}
+   clojure.core/boolean {:prim-name "boolean", :supported-as-ret-hint false}
+   clojure.core/char    {:prim-name "char",    :supported-as-ret-hint false}
+   clojure.core/float   {:prim-name "float",   :supported-as-ret-hint false}
+   clojure.core/double  {:prim-name "double",  :supported-as-ret-hint true}
+   nil))
 
 (defn print-ex-data-details [ns-sym opts ^Throwable exc]
   (let [dat (ex-data exc)
