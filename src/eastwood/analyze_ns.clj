@@ -12,30 +12,27 @@
             [eastwood.copieddeps.dep1.clojure.tools.analyzer
              [ast :refer [postwalk prewalk cycling]]
              [utils :as utils]
-             [env :as env]]
+             [env :as env]
+             [passes :refer [schedule]]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
              [source-info :refer [source-info]]
              [cleanup :refer [cleanup]]
              [elide-meta :refer [elide-meta]]
-             [constant-lifter :refer [constant-lift]]
              [warn-earmuff :refer [warn-earmuff]]
-             [add-binding-atom :refer [add-binding-atom]]
+             [collect-closed-overs :refer [collect-closed-overs]]
              [uniquify :refer [uniquify-locals]]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
-             [emit-form :refer [emit-form]]
              [box :refer [box]]
-             [annotate-branch :refer [annotate-branch]]
-             [annotate-methods :refer [annotate-methods]]
-             [annotate-class-id :refer [annotate-class-id]]
-             [annotate-internal-name :refer [annotate-internal-name]]
-             [fix-case-test :refer [fix-case-test]]
+             [collect :refer [collect]]
+             [constant-lifter :refer [constant-lift]]
+             [clear-locals :refer [clear-locals]]
              [classify-invoke :refer [classify-invoke]]
              [validate :refer [validate]]
              [infer-tag :refer [infer-tag ensure-tag]]
-             [annotate-tag :refer [annotate-tag]]
              [validate-loop-locals :refer [validate-loop-locals]]
-             [analyze-host-expr :refer [analyze-host-expr]]]))
+             [warn-on-reflection :refer [warn-on-reflection]]
+             [emit-form :refer [emit-form]]]))
 
 ;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer, then later probably diverged from each other.
@@ -130,40 +127,37 @@
 ;; would prefer to give linter warnings for, rather than throw an
 ;; exception.
 
-(defn run-passes
+(def eastwood-passes
+  "Set of passes that will be run by default on the AST by #'run-passes"
+  #{#'warn-on-reflection
+    #'warn-earmuff
+
+    #'uniquify-locals
+
+    #'source-info
+    #'elide-meta
+    #'constant-lift
+
+    #'clear-locals
+    #'collect-closed-overs
+    #'collect
+
+    #'box
+
+    #'validate-loop-locals
+    #'validate
+    #'infer-tag
+
+    #'classify-invoke})
+
+(def scheduled-eastwood-passes
+  (schedule eastwood-passes))
+
+(defn ^:dynamic run-passes
+  "Function that will be invoked on the AST tree immediately after it has been constructed,
+   by default set-ups and runs the default passes declared in #'default-passes"
   [ast]
-  (-> ast
-
-    uniquify-locals
-    add-binding-atom
-
-    (prewalk (fn [ast]
-               (-> ast
-                 warn-earmuff
-                 source-info
-                 elide-meta
-                 annotate-methods
-                 fix-case-test
-                 annotate-class-id
-                 annotate-internal-name
-                 propagate-def-name
-                 add-partly-resolved-forms)))
-
-    ((fn analyze [ast]
-       (postwalk ast
-                 (fn [ast]
-                   (-> ast
-                     analyze-host-expr
-                     annotate-tag
-                     infer-tag
-                     validate
-                     classify-invoke
-                     (validate-loop-locals analyze))))))
-
-    (prewalk (comp cleanup
-                reflect-validated
-                ensure-tag
-                box))))
+  (scheduled-eastwood-passes ast))
 
 (defn remaining-forms [pushback-reader forms]
   (let [eof (reify)]
