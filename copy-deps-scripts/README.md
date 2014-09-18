@@ -89,6 +89,7 @@ As of September 18 2014:
      [org.clojure/tools.reader "0.8.4"]
      [org.clojure/tools.trace "0.7.8"]
     jafinger@JAFINGER-M-H057 ~/clj/andy-forks/eastwood/copy-deps-scripts/deps
+
     % lein ancient
     [org.clojure/tools.analyzer "0.5.3"] is available but we use "0.5.2"
     [org.clojure/tools.analyzer.jvm "0.5.6"] is available but we use "0.5.4"
@@ -140,3 +141,102 @@ this ticket after copying it:
 For all others, the versions output by 'lein deps :tree' are copied in
 with no changes other than editing the namespace names.  See clone.sh
 for details.
+
+
+### Using Dolly to copy dependencies into Eastwood source code
+
+    % lein repl
+
+    (require '[dolly.clone :as c])
+    (def dry-run {:dry-run? true :print? true})
+    (def for-real {:dry-run? false :print? true})
+
+    (def e-root "/Users/jafinger/clj/andy-forks/eastwood")
+    (def src-path (str e-root "/src"))
+    (def staging-path (str e-root "/staging"))
+
+    (def taj-src-path (str e-root "/copy-deps-scripts/repos/tools.analyzer.jvm/src/main/clojure"))
+    (def ta-src-path (str e-root "/copy-deps-scripts/repos/tools.analyzer/src/main/clojure"))
+    (def cm-src-path (str e-root "/copy-deps-scripts/repos/core.memoize/src/main/clojure"))
+    (def ccache-src-path (str e-root "/copy-deps-scripts/repos/core.cache/src/main/clojure"))
+    (def dp-src-path (str e-root "/copy-deps-scripts/repos/data.priority-map/src/main/clojure"))
+    (def tr-src-path (str e-root "/copy-deps-scripts/repos/tools.reader/src/main/clojure"))
+    (def lj-src-path (str e-root "/copy-deps-scripts/repos/leinjacker/src"))
+    (def ccontracts-src-path (str e-root "/copy-deps-scripts/repos/core.contracts/src/main/clojure"))
+    (def cu-src-path (str e-root "/copy-deps-scripts/repos/core.unify/src/main/clojure"))
+    (def tn-src-path (str e-root "/copy-deps-scripts/repos/tools.namespace/src/main/clojure"))
+
+
+    ;; Run once with dry-run to see what will happen.  Look it over to
+    ;; see if it is reasonable, then run again with for-real to do the
+    ;; copying.
+    (def c (c/copy-namespaces-unmodified ta-src-path staging-path 'clojure.tools.analyzer dry-run))
+    (def c (c/copy-namespaces-unmodified ta-src-path staging-path 'clojure.tools.analyzer for-real))
+
+    ;; The copying above should make no modifications, so running a
+    ;; diff command like the following from the dolly project root
+    ;; directory in a command shell should show no differences.
+
+    ;; diff -cr copy-deps-scripts/repos/tools.analyzer/src/main/clojure staging
+
+    ;; Now move the files from the staging area into dolly's code and
+    ;; rename the namespaces.
+
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.analyzer 'eastwood.copieddeps.dep1.clojure.tools.analyzer [src-path] dry-run)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.analyzer 'eastwood.copieddeps.dep1.clojure.tools.analyzer [src-path] for-real)
+
+    ;; tools.analyzer.jvm
+    (def c (c/copy-namespaces-unmodified taj-src-path staging-path 'clojure.tools.analyzer dry-run))
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.analyzer 'eastwood.copieddeps.dep2.clojure.tools.analyzer [src-path] dry-run)
+
+    ;; core.memoize
+    (def c (c/copy-namespaces-unmodified cm-src-path staging-path 'clojure.core.memoize dry-run))
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.memoize 'eastwood.copieddeps.dep3.clojure.core.memoize [src-path] dry-run)
+
+    ;; core.cache
+    (def c (c/copy-namespaces-unmodified ccache-src-path staging-path 'clojure.core.cache dry-run))
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.cache 'eastwood.copieddeps.dep4.clojure.core.cache [src-path] dry-run)
+
+    ;; data.priority-map
+    (def c (c/copy-namespaces-unmodified dp-src-path staging-path 'clojure.data.priority-map dry-run))
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.data.priority-map 'eastwood.copieddeps.dep5.clojure.data.priority-map [src-path] dry-run)
+
+    ;; tools.reader
+    (def c (c/copy-namespaces-unmodified tr-src-path staging-path 'clojure.tools.reader dry-run))
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.reader 'eastwood.copieddeps.dep10.clojure.tools.reader [src-path] dry-run)
+
+    ;; leinjacker
+    (def c (c/copy-namespaces-unmodified lj-src-path staging-path 'leinjacker dry-run))
+    (c/move-namespaces-and-rename staging-path src-path 'leinjacker 'eastwood.copieddeps.dep6.leinjacker [src-path] dry-run)
+
+    ;; core.contracts
+    (def c (c/copy-namespaces-unmodified ccontracts-src-path staging-path 'clojure.core.contracts dry-run))
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.contracts 'eastwood.copieddeps.dep7.clojure.core.contracts [src-path] dry-run)
+
+    ;; core.unify
+    (def c (c/copy-namespaces-unmodified cu-src-path staging-path 'clojure.core.unify dry-run))
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.unify 'eastwood.copieddeps.dep8.clojure.core.unify [src-path] dry-run)
+
+    ;; tools.namespace
+    (def c (c/copy-namespaces-unmodified tn-src-path staging-path 'clojure.tools.namespace dry-run))
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.namespace 'eastwood.copieddeps.dep9.clojure.tools.namespace [src-path] dry-run)
+
+
+Here are the dependencies copied in, given in a topologically sorted
+order such that for all 'A requires B' dependencies, A occurs before
+B.  If you use 'stateless Dolly' as it is on Sep 18 2014 to copy and
+rename the namespaces in this order, it should do all of the desired
+renaming by the end.
+
+eastwood.copieddeps.dep2 clojure.tools.analyzer.jvm
+  eastwood.copieddeps.dep1 clojure.tools.analyzer
+  eastwood.copieddeps.dep3 clojure.core.memoize
+    eastwood.copieddeps.dep4 clojure.core.cache
+      eastwood.copieddeps.dep5 clojure.data.priority-map
+  eastwood.copieddeps.dep10 clojure.tools.reader
+
+eastwood.copieddeps.dep6 leinjacker
+  eastwood.copieddeps.dep7 clojure.core.contracts
+    eastwood.copieddeps.dep8 clojure.core.unify
+
+eastwood.copieddeps.dep9 clojure.tools.namespace
