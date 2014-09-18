@@ -358,7 +358,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
 (defn wrong-arity [{:keys [asts]}]
   (let [exprs (->> asts
                    (mapcat ast/nodes)
-                   (filter :maybe-mismatch-arity))]
+                   (filter :maybe-arity-mismatch))]
     (for [expr exprs
           :let [loc (-> expr :fn :form meta)]]
       {:linter :wrong-arity
