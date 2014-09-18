@@ -54,6 +54,7 @@ return value followed by the time it took to evaluate in millisec."
    :def-in-def misc/def-in-def
    :wrong-arity misc/wrong-arity
    :bad-arglists misc/bad-arglists
+   :local-shadows-var misc/local-shadows-var
    :suspicious-test typos/suspicious-test
    :suspicious-expression typos/suspicious-expression
    :unused-ret-vals unused/unused-ret-vals
