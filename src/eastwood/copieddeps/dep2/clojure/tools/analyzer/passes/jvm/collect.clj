@@ -7,7 +7,12 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.collect
-  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children]]))
+  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
+             [constant-lifter :refer [constant-lift]]
+             [annotate-tag :refer [annotate-tag]]
+             [classify-invoke :refer [classify-invoke]]]))
 
 (def ^:private ^:dynamic *collects*)
 
@@ -96,17 +101,20 @@
     nil))
 
 (defn collect
-  "Takes a map with:
-   * :what        set of keywords describing what to collect, some of:
-     ** :constants     constant expressions
-     ** :callsites     keyword and protocol callsites
-   * :where       set of :op nodes where to attach collected info
-   * :top-level?  if true attach collected info to the top-level node
+  "Takes an AST and returns it with the collected info, as specified by
+   the passes opts:
 
-   Returns a function that does the takes an AST and returns an AST with the
-   collected info."
-  [{:keys [what top-level?] :as opts}]
-  (fn this [ast]
+   * :collect/what        set of keywords describing what to collect, some of:
+     ** :constants          constant expressions
+     ** :callsites          keyword and protocol callsites
+   * :collect/where       set of :op nodes where to attach collected info
+   * :collect/top-level?  if true attach collected info to the top-level node"
+  {:pass-info {:walk :none :depends #{#'classify-invoke #'annotate-tag} :after #{#'constant-lift}}}
+  [ast]
+  (let [passes-opts                        (:passes-opts (env/deref-env))
+        {:keys [what top-level?] :as opts} {:what       (:collect/what passes-opts)
+                                            :where      (:collect/where passes-opts)
+                                            :top-level? (:collect/top-level? passes-opts)}]
     (binding [*collects* (atom (merge {:constants           {}
                                        :protocol-callsites #{}
                                        :keyword-callsites  #{}

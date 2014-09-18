@@ -145,6 +145,7 @@
    or :host-interop nodes.
 
    A :host-interop node represents either an instance-field or a no-arg instance-method."
+  {:pass-info {:walk :post :depends #{}}}
   [{:keys [op target form tag env class] :as ast}]
   (if (#{:host-interop :host-call :host-field :maybe-class} op)
     (let [class? (and (= :const (:op target))

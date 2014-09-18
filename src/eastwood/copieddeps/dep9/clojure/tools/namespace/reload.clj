@@ -34,6 +34,10 @@
         (let [n (first load)]
           (try (require n :reload)
                (update-in tracker [::track/load] rest)
+               ;; This doesn't work because we don't ever try to reload the file.
+               ;; (catch java.io.FileNotFoundException e
+               ;;   (assoc tracker
+               ;;     ::error e ::error-ns n ::track/load (rest load)))
                (catch Throwable t
                  (assoc tracker
                    ::error t ::error-ns n ::track/unload load))))

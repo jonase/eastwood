@@ -35,7 +35,7 @@
   (let [now (System/currentTimeMillis)]
     (-> tracker
         (update-in [::files] #(if % (apply disj % deleted) #{}))
-        (file/remove-files deleted)
+        (file/remove-files (into deleted modified))
         (update-in [::files] into modified)
         (file/add-files modified)
         (assoc ::time now))))

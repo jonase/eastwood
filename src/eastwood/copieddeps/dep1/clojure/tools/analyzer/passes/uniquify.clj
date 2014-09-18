@@ -81,6 +81,7 @@
 (defn uniquify-locals
   "Walks the AST performing alpha-conversion on the :name field
    of :local/:binding nodes, invalidates :local map in :env field"
+  {:pass-info {:walk :none :depends #{}}}
   [ast]
   (binding [*locals-counter* (atom {})
             *locals-frame*   (atom {})]

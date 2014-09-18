@@ -12,6 +12,7 @@
 (defn warn-earmuff
   "Prints a warning to *err* if the AST node is a :def node and the
    var name contains earmuffs but the var is not marked dynamic"
+  {:pass-info {:walk :pre :depends #{}}}
   [ast]
   (let [name (str (:name ast))]
     (when (and (= :def (:op ast))

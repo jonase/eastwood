@@ -7,7 +7,9 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.emit-form
-  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.emit-form :as default]))
+  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
+             [emit-form :as default]
+             [uniquify :refer [uniquify-locals]]]))
 
 (defmulti -emit-form (fn [{:keys [op]} _] op))
 
@@ -25,6 +27,7 @@
     * :hygienic
     * :qualified-vars (DEPRECATED, use :qualified-symbols instead)
     * :qualified-symbols"
+  {:pass-info {:walk :none :depends #{#'uniquify-locals} :compiler true}}
   ([ast] (emit-form ast #{}))
   ([ast opts]
      (binding [default/-emit-form* -emit-form*]
@@ -32,6 +35,7 @@
 
 (defn emit-hygienic-form
   "Return an hygienic form represented by the given AST"
+  {:pass-info {:walk :none :depends #{#'uniquify-locals} :compiler true}}
   [ast]
   (binding [default/-emit-form* -emit-form*]
     (-emit-form* ast #{:hygienic})))

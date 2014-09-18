@@ -9,7 +9,8 @@
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.classify-invoke
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [arglist-for-arity protocol-node? source-info]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils
-             :refer [maybe-class prim-or-obj primitive? prim-interface]]))
+             :refer [maybe-class prim-or-obj primitive? prim-interface]]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.validate :refer [validate]]))
 
 (defn classify-invoke
   "If the AST node is an :invoke, check the node in function position,
@@ -22,6 +23,7 @@
    * if it is a regular function with primitive type hints that match a
      clojure.lang.IFn$[primitive interface], transform the node in a :prim-invoke
      node"
+  {:pass-info {:walk :post :depends #{#'validate}}}
   [{:keys [op args tag env form] :as ast}]
   (if-not (= op :invoke)
     ast
@@ -40,7 +42,8 @@
        (and (= :const op)
             (= :keyword (:type the-fn)))
        (if (<= 1 argc 2)
-         (if (not (namespace (:val the-fn)))
+         (if (and (not (namespace (:val the-fn)))
+                  (= 1 argc))
            (merge (dissoc ast :fn :args)
                   {:op       :keyword-invoke
                    :target   (first args)

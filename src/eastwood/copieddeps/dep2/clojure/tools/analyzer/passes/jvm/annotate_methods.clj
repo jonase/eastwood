@@ -8,7 +8,9 @@
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.annotate-methods
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [prewalk]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.cleanup :refer [cleanup]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
+             [cleanup :refer [cleanup]]
+             [elide-meta :refer [elide-meta]]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [source-info]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils
                 :refer [members name-matches? try-best-match]
@@ -17,6 +19,7 @@
 (defn annotate-methods
   "Adds a :methods key to reify/deftype :methods info representing
    the reflected informations  for the required methods."
+  {:pass-info {:walk :pre :depends #{} :after #{#'elide-meta}}}
   [{:keys [op methods interfaces] :as ast}]
   (case op
     (:reify :deftype)
