@@ -15,7 +15,7 @@
     (orig/constant-lift ast)))
 
 (defn constant-lift
-  "Like clojure.tools.analyzer.passes.constant-lifter/constant-lift but
+  "Like eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.constant-lifter/constant-lift but
    transforms also :var nodes where the var has :const in the metadata
    into :const nodes and preserves tag info"
   [ast]

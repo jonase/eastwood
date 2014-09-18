@@ -6,7 +6,7 @@
 ;   the terms of this license.
 ;   You must not remove this notice, or any other, from this software.
 
-;;; copieddepstant and clojure.uuid ;;;
+;;; copied from clojure.instant and clojure.uuid ;;;
 
 (ns ^:skip-wiki eastwood.copieddeps.dep10.clojure.tools.reader.default-data-readers
   (:import [java.util Calendar Date GregorianCalendar TimeZone]

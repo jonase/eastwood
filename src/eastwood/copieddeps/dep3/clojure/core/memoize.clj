@@ -154,7 +154,7 @@
    mapping expected argument values to arity positions.  The map values
    are the return values of the memoized function.
 
-   You can access the memoization cache directly via the `:clojure.core.memoize/cache` key
+   You can access the memoization cache directly via the `:eastwood.copieddeps.dep3.clojure.core.memoize/cache` key
    on the memoized function's metadata.  However, it is advised to
    use the core.memo primitives instead as implementation details may
    change over time."
@@ -171,7 +171,7 @@
   (println "WARNING - Deprecated construction method for"
            c
            "cache; prefered way is:"
-           (str "(clojure.core.memoize/" c " function <base> <:" c "/threshold num>)")))
+           (str "(eastwood.copieddeps.dep3.clojure.core.memoize/" c " function <base> <:" c "/threshold num>)")))
 
 (defmacro ^{:private true} def-deprecated [nom ds & arities]
   `(defn ~(symbol (str "memo-" (name nom))) ~ds
@@ -180,7 +180,7 @@
 
 (defmacro ^{:private true} massert [condition msg]
   `(when-not ~condition
-      (throw (new AssertionError (str "clojure.core.memoize/" ~msg "\n" (pr-str '~condition))))))
+      (throw (new AssertionError (str "eastwood.copieddeps.dep3.clojure.core.memoize/" ~msg "\n" (pr-str '~condition))))))
 
 (defmacro ^{:private true} check-args [nom f base key threshold]
   (when *assert*
@@ -202,7 +202,7 @@
 ;; ### FIFO
 
 (def-deprecated fifo
-  "DEPRECATED: Please use clojure.core.memoize/fifo instead."
+  "DEPRECATED: Please use eastwood.copieddeps.dep3.clojure.core.memoize/fifo instead."
   ([f] (memo-fifo f 32 {}))
   ([f limit] (memo-fifo f limit {}))
   ([f limit base]
@@ -218,7 +218,7 @@
 
    Observe the following:
 
-       (require '[clojure.core.memoize :as memo])
+       (require '[eastwood.copieddeps.dep3.clojure.core.memoize :as memo])
 
        (def id (memo/fifo identity :fifo/threshold 2))
 
@@ -252,7 +252,7 @@
 ;; ### LRU
 
 (def-deprecated lru
-  "DEPRECATED: Please use clojure.core.memoize/lru instead."
+  "DEPRECATED: Please use eastwood.copieddeps.dep3.clojure.core.memoize/lru instead."
   ([f] (memo-lru f 32))
   ([f limit] (memo-lru f limit {}))
   ([f limit base]
@@ -268,7 +268,7 @@
 
    Observe the following:
 
-       (require '[clojure.core.memoize :as memo])
+       (require '[eastwood.copieddeps.dep3.clojure.core.memoize :as memo])
 
        (def id (memo/lru identity :lru/threshold 2))
 
@@ -313,7 +313,7 @@
 ;; ### TTL
 
 (def-deprecated ttl
-  "DEPRECATED: Please use clojure.core.memoize/ttl instead."
+  "DEPRECATED: Please use eastwood.copieddeps.dep3.clojure.core.memoize/ttl instead."
   ([f] (memo-ttl f 3000 {}))
   ([f limit] (memo-ttl f limit {}))
   ([f limit base]
@@ -330,7 +330,7 @@
    should provide a **T**ime **T**o **L**ive parameter in
    milliseconds.
 
-       (require '[clojure.core.memoize :as memo])
+       (require '[eastwood.copieddeps.dep3.clojure.core.memoize :as memo])
 
        (def id (memo/ttl identity :ttl/threshold 5000))
 
@@ -359,7 +359,7 @@
 ;; ### LU
 
 (def-deprecated lu
-  "DEPRECATED: Please use clojure.core.memoize/lu instead."
+  "DEPRECATED: Please use eastwood.copieddeps.dep3.clojure.core.memoize/lu instead."
   ([f] (memo-lu f 32))
   ([f limit] (memo-lu f limit {}))
   ([f limit base]
@@ -374,7 +374,7 @@
    function removes all cache values whose usage value is
    smallest:
 
-       (require '[clojure.core.memoize :as memo])
+       (require '[eastwood.copieddeps.dep3.clojure.core.memoize :as memo])
 
        (def id (memo/lu identity :lu/threshold 3))
 
