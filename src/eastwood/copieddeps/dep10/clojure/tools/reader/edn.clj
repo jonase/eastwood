@@ -341,7 +341,7 @@
    Reads data in the edn format (subset of Clojure data):
    http://edn-format.org
 
-   clojure.tools.reader.edn/read doesn't depend on dynamic Vars, all configuration
+   eastwood.copieddeps.dep10.clojure.tools.reader.edn/read doesn't depend on dynamic Vars, all configuration
    is done by passing an opt map.
 
    opts is a map that can include the following keys:
@@ -399,7 +399,7 @@
    Reads data in the edn format (subset of Clojure data):
    http://edn-format.org
 
-   opts is a map as per clojure.tools.reader.edn/read"
+   opts is a map as per eastwood.copieddeps.dep10.clojure.tools.reader.edn/read"
   ([s] (read-string {:eof nil} s))
   ([opts s]
      (when (and s (not (identical? s "")))

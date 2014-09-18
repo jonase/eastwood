@@ -36,7 +36,7 @@
        (if (ns-decl? form)
          form
          (recur))))
-       (catch Exception e nil)))
+   (catch Exception e nil)))
 
 ;;; Parsing dependencies
 
