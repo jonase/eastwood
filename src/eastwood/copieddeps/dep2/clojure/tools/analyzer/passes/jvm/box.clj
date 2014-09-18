@@ -8,10 +8,14 @@
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.box
   (:require [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :as u]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [protocol-node? arglist-for-arity]]))
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [protocol-node? arglist-for-arity]]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
+             [validate :refer [validate]]
+             [infer-tag :refer [infer-tag]]]))
 
 (defmulti box
   "Box the AST node tag where necessary"
+  {:pass-info {:walk :pre :depends #{#'infer-tag} :after #{#'validate}}}
   :op)
 
 (defmacro if-let-box [class then else]
@@ -102,10 +106,6 @@
       (update-in [:expr] -box)
       (update-in [:o-tag] u/box))
     ast))
-
-(defmethod box :keyword-invoke
-  [ast]
-  (assoc ast :args (mapv -box (:args ast))))
 
 (defmethod box :protocol-invoke
   [ast]

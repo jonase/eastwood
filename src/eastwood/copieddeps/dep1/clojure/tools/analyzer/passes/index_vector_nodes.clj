@@ -12,6 +12,7 @@
   "Adds an :idx attribute to nodes in a vector children, representing the position
    of the node vector."
   [ast]
+  {:pass-info {:walk :any :depends #{}}}
   (merge ast
          (reduce (fn [m c]
                    (let [v (c ast)

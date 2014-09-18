@@ -8,7 +8,9 @@
 
 (ns eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.collect-closed-overs
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.cleanup :refer [cleanup]]))
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.cleanup :refer [cleanup]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.uniquify :refer [uniquify-locals]]))
 
 (def ^:private ^:dynamic *collects*)
 
@@ -55,14 +57,16 @@
       (-collect-closed-overs ast))))
 
 (defn collect-closed-overs
-  "Attach closed-overs info to the AST, opts takes:
+  "Attach closed-overs info to the AST as specified by the passes opts:
    * :where       set of :op nodes where to attach the closed-overs
    * :top-level?  if true attach closed-overs info to the top-level node"
-  [ast opts]
-  (if ((:what opts) :closed-overs)
+  {:pass-info {:walk :none :depends #{#'uniquify-locals}}}
+  [ast]
+  (let [passes-opts                   (:passes-opts (env/deref-env))
+        {:keys [top-level?] :as opts} {:where      (or (:collect-closed-overs/where passes-opts) #{})
+                                       :top-level? (:collect-closed-overs/top-level? passes-opts)}]
     (binding [*collects* (atom (merge opts {:closed-overs {} :locals #{}}))]
       (let [ast (collect-closed-overs* ast)]
-        (if (:top-level? opts)
+        (if top-level?
           (assoc ast :closed-overs (:closed-overs @*collects*))
-          ast)))
-    ast))
+          ast)))))

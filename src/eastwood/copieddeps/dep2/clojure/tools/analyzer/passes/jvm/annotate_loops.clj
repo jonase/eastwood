@@ -19,6 +19,7 @@
    Note that because (recur expr) is equivalent to (let [e expr] (recur e))
    the node corresponting to expr will have the same :loops field
    as the nodes in the same code path of the recur"
+  {:pass-info {:walk :pre :depends #{}}}
   :op)
 
 (defmulti check-recur :op)

@@ -7,13 +7,13 @@ cd repos
 
 git clone https://github.com/clojure/tools.analyzer.git
 cd tools.analyzer
-git checkout tools.analyzer-0.5.2
+git checkout tools.analyzer-0.6.0
 
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
-git checkout tools.analyzer.jvm-0.5.4
+git checkout tools.analyzer.jvm-0.6.0
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git
@@ -33,7 +33,7 @@ cd ..
 
 git clone https://github.com/clojure/tools.namespace.git
 cd tools.namespace
-git checkout tools.namespace-0.2.5
+git checkout tools.namespace-0.2.6
 cd ..
 
 git clone https://github.com/clojure/tools.reader.git

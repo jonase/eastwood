@@ -10,7 +10,12 @@
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [arglist-for-arity]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :as u]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
-            [clojure.set :refer [rename-keys]]))
+            [clojure.set :refer [rename-keys]]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
+             [annotate-tag :refer [annotate-tag]]
+             [annotate-methods :refer [annotate-methods]]
+             [analyze-host-expr :refer [analyze-host-expr]]
+             [fix-case-test :refer [fix-case-test]]]))
 
 (defmulti -infer-tag :op)
 (defmethod -infer-tag :default [ast] ast)
@@ -263,6 +268,7 @@
   Passes opts:
   * :infer-tag/level  If :global, infer-tag will perform Var tag
                       inference"
+  {:pass-info {:walk :post :depends #{#'annotate-tag #'annotate-methods #'fix-case-test #'analyze-host-expr}}}
   [{:keys [tag form] :as ast}]
   (let [tag (or tag (:tag (meta form)))
         ast (-infer-tag ast)]
@@ -273,6 +279,7 @@
              {:o-tag o-tag}))))
 
 (defn ensure-tag
+  {:pass-info {:walk :any :depends #{#'infer-tag}}}
   [{:keys [o-tag tag] :as ast}]
   (assoc ast
     :tag   (or tag Object)

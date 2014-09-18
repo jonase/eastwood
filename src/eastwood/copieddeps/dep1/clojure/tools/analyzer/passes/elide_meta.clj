@@ -6,7 +6,8 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.elide-meta)
+(ns eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.elide-meta
+  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.source-info :refer [source-info]]))
 
 (def ^:dynamic elides
   "A map of op keywords to predicate IFns.
@@ -79,6 +80,7 @@
 (defn elide-meta
   "If elides is not empty and the AST node contains metadata,
    dissoc all the keys in elides from the metadata."
+  {:pass-info {:walk :any :depends #{} :after #{#'source-info}}}
   [ast]
   (if (some #(if (seq? %) (seq %) %) (vals elides))
     (-elide-meta ast)
