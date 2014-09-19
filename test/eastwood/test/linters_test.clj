@@ -135,41 +135,49 @@
    {}
    {
     {:linter :unused-fn-args,
-     :msg "Function args [y (line 5, column 30)] of (or within) fn-with-unused-args are never used",
+     :msg "Function arg y never used",
      :file "testcases/f06.clj",
-     :line 5, :column 1}
+     :line 5, :column 30}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [y (line 9, column 31)] of (or within) fn-with-unused-args2 are never used",
+     :msg "Function arg y never used",
      :file "testcases/f06.clj",
-     :line 9, :column 1}
+     :line 9, :column 31}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [w (line 20, column 20)] of (or within) fn-with-unused-args3 are never used",
+     :msg "Function arg w never used",
      :file "testcases/f06.clj",
-     :line 19, :column 1}
+     :line 20, :column 20}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [body (line 33, column 23)] of (or within) macro2 are never used",
+     :msg "Function arg body never used",
      :file "testcases/f06.clj",
-     :line 33, :column 11}
+     :line 33, :column 23}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [z (line 50, column 33)] of (or within) fn-with-unused-args4 are never used",
+     :msg "Function arg z never used",
      :file "testcases/f06.clj",
-     :line 50, :column 1}
+     :line 50, :column 33}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [val (line 69, column 13) f (line 68, column 11)] of (or within) protocol CollReduce type clojure.lang.ASeq method coll-reduce are never used",
-     :file nil,
-     :line nil, :column nil}
+     :msg "Function arg coll never used",
+     :file "testcases/f06.clj",
+     :line 63, :column 6}
     1,
     {:linter :unused-fn-args,
-     :msg (if clojure-1-6-or-later
-            "Function args [coll (line 63, column 6) f (line 64, column 11)] of (or within) protocol CollReduce type nil method coll-reduce are never used"
-            "Function args [f (line 64, column 11) coll (line 64, column 6)] of (or within) protocol CollReduce type nil method coll-reduce are never used"),
-     :file nil,
-     :line nil, :column nil}
+     :msg "Function arg f never used",
+     :file "testcases/f06.clj",
+     :line 64, :column 11}
+    1,
+    {:linter :unused-fn-args,
+     :msg "Function arg f never used",
+     :file "testcases/f06.clj",
+     :line 68, :column 11}
+    1,
+    {:linter :unused-fn-args,
+     :msg "Function arg val never used",
+     :file "testcases/f06.clj",
+     :line 69, :column 13}
     1,
     })
   (let [common-expected-warnings
