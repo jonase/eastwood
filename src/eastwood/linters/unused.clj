@@ -72,19 +72,11 @@ selectively disable such warnings if they wish."
           :let [unused (->> (unused-fn-args* expr)
                             (map :form)
                             (remove ignore-arg?)
-                            set)
-                loc (-> expr :env :name meta)]
-          :when (not-empty unused)]
+                            set)]
+          unused-sym unused
+          :let [loc (-> unused-sym meta)]]
       {:linter :unused-fn-args
-       :msg (format "Function args [%s] of (or within) %s are never used"
-                    (str/join " " (map (fn [sym]
-                                         (if-let [l (-> sym meta :line)]
-                                           (format "%s (line %s, column %s)"
-                                                   sym l
-                                                   (-> sym meta :column))
-                                           sym))
-                                       unused))
-                    (-> expr :env :name))
+       :msg (format "Function arg %s never used" unused-sym)
        :file (-> loc :file)
        :line (-> loc :line)
        :column (-> loc :column)})))
