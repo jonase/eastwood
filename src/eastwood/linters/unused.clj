@@ -351,22 +351,28 @@ discarded inside null: null'."
                  nil
 
                  :else
-                 {:linter :unused-ret-vals
-                  :msg (format "%s value is discarded inside %s: %s"
-                               (case (:op stmt)
-                                 :const "Constant"
-                                 :var "Var"
-                                 :local "Local")
-                               (-> stmt :env :name)
-                               (if (nil? (:form stmt))
-                                 "nil"
-                                 (str/trim-newline
-                                  (with-out-str
-                                    (binding [pp/*print-right-margin* nil]
-                                      (pp/pprint (:form stmt)))))))
-                  :file (-> stmt :env :name meta :file)
-                  :line (-> stmt :env :name meta :line)
-                  :column (-> stmt :env :name meta :column)})
+                 (let [name-found? (contains? (-> stmt :env) :name)
+                       loc (if name-found?
+                             (-> stmt :env :name meta)
+                             (-> stmt :env))]
+                   {:linter :unused-ret-vals
+                    :msg (format "%s value is discarded%s: %s"
+                                 (case (:op stmt)
+                                   :const "Constant"
+                                   :var "Var"
+                                   :local "Local")
+                                 (if name-found?
+                                   (str " inside " (-> stmt :env :name))
+                                   "")
+                                 (if (nil? (:form stmt))
+                                   "nil"
+                                   (str/trim-newline
+                                    (with-out-str
+                                      (binding [pp/*print-right-margin* nil]
+                                        (pp/pprint (:form stmt)))))))
+                    :file (-> loc :file)
+                    :line (-> loc :line)
+                    :column (-> loc :column)}))
 
                 (util/static-call? stmt)
                 (let [cls (:class stmt)

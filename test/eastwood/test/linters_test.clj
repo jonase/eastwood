@@ -179,15 +179,15 @@
      :linter :unused-ret-vals-in-try,
      :msg "Pure static method call return value is discarded inside body of try: (. clojure.lang.Numbers (add 5 7))"}
     1,
-    {:line 22, :column 1,
+    {:line 27, :column 5,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Constant value is discarded inside unused-ret-vals33: 7"}
+     :msg "Constant value is discarded: 7"}
     1,
-    {:line 22, :column 1,
+    {:line 27, :column 5,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Constant value is discarded inside unused-ret-vals33: :a"}
+     :msg "Constant value is discarded: :a"}
     1,
     {:line 24, :column 5,
      :file "testcases/f07.clj",
@@ -261,10 +261,10 @@
      :linter :unused-ret-vals,
      :msg "Pure function call return value is discarded: (assoc {} i i)"}
     2,
-    {:line 79, :column 1,
+    {:line 81, :column 5,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Constant value is discarded inside unused-ret-vals3: :a"}
+     :msg "Constant value is discarded: :a"}
     1,
     {:line 81, :column 9,
      :file "testcases/f07.clj",
@@ -301,25 +301,25 @@
      :linter :unused-ret-vals,
      :msg "Pure function call return value is discarded: (assoc {} k v)"}
     1,
-    {:line 110, :column 1,
+    {:line 112, :column 5,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Var value is discarded inside gah: repeatedly"}
+     :msg "Var value is discarded: repeatedly"}
     1,
-    {:line 110, :column 1,
+    {:line 112, :column 16,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Local value is discarded inside gah: n"}
+     :msg "Local value is discarded: n"}
     1,
-    {:line 110, :column 1,
+    {:line 112, :column 18,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Local value is discarded inside gah: x"}
+     :msg "Local value is discarded: x"}
     1,
-    {:line 114, :column 1,
+    {:line 125, :column 7,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Var value is discarded inside check-do-let-nesting: gah"}
+     :msg "Var value is discarded: gah"}
     1,
     }
 
