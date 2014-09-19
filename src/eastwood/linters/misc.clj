@@ -209,13 +209,13 @@ significantly faster than the otherwise equivalent (= (count s) n)"
                 ancestor-op-set-stack top-level-defs
                 ancestor-defs-vec
                 nested-defs defonce-or-defmulti-match-stack]} *def-walker-data*
-                defonce-or-defmulti-expr? (some '#{clojure.core/defmulti clojure.core/defonce}
-                                                (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms ast)))
+        defonce-or-defmulti-expr? (some '#{clojure.core/defmulti clojure.core/defonce}
+                                        (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms ast)))
         def? (= :def (:op ast))
         declare? (and def? (-> ast :name meta :declared true?))
         nested-def? (and def?
                          (contains? ancestor-op-set :def))
-        inside-defonce-or-defmulti-expr? (some vector?
+        inside-defonce-or-defmulti-expr? (some identity
                                                defonce-or-defmulti-match-stack)]
     (set! *def-walker-data*
           (assoc *def-walker-data*
