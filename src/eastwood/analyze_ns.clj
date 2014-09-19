@@ -244,7 +244,8 @@
                   (do
                     (post-analyze-debug asts form ast *ns* opt)
                     (recur (conj forms form)
-                           (conj asts ast))))))))))))
+                           (conj asts
+                                 (add-partly-resolved-forms ast)))))))))))))
 
 
 (defn analyze-ns

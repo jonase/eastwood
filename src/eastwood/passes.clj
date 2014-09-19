@@ -1,7 +1,7 @@
 (ns eastwood.passes
   (:refer-clojure :exclude [get-method])
   (:require [clojure.string :as str]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children postwalk]]
             [eastwood.util :as util]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
@@ -101,18 +101,21 @@ key :eastwood/partly-resolved-forms.  The value associated with the
 new key is nearly the same as that associated with :raw-forms, except
 that every list that starts with a symbol will have that symbol
 replaced by one that is resolved, with a namespace."
-  [{:keys [env raw-forms] :as ast}]
-  (if raw-forms
-    (let [resolved-forms (mapv (fn [form]
-                                 (if (seq? form)
-                                   (let [[op & args] form
-                                         ^clojure.lang.Var var (env/ensure (ana.jvm/global-env)
-                                                                 (utils/resolve-var op env))
-                                         resolved-var-sym (if (nil? var)
-                                                            op
-                                                            (symbol (str (.ns var)) (name (.sym var))))]
-                                     (cons resolved-var-sym args))
-                                   form))
-                               (:raw-forms ast))]
-      (assoc ast :eastwood/partly-resolved-forms resolved-forms))
-    ast))
+  [ast]
+  (let [pw (fn [{:keys [env raw-forms] :as ast}]
+             (if raw-forms
+               (let [resolved-forms
+                     (mapv (fn [form]
+                             (if (seq? form)
+                               (let [[op & args] form
+                                     ^clojure.lang.Var var (env/ensure (ana.jvm/global-env)
+                                                                       (utils/resolve-var op env))
+                                     resolved-var-sym (if (nil? var)
+                                                        op
+                                                        (symbol (str (.ns var)) (name (.sym var))))]
+                                 (cons resolved-var-sym args))
+                               form))
+                           (:raw-forms ast))]
+                 (assoc ast :eastwood/partly-resolved-forms resolved-forms))
+               ast))]
+    (postwalk ast pw)))
