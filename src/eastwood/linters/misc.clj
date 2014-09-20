@@ -443,10 +443,8 @@ significantly faster than the otherwise equivalent (= (count s) n)"
      (for [a def-fn-asts]
        (let [macro? (-> a :var meta :macro)
              fn-arglists (-> a :arglists)
-             fn-arglists2 (-> a :init :arglists)
              macro-args? (or (not macro?)
-                             (and (every? #(= '(&form &env) (take 2 %)) fn-arglists)
-                                  (every? #(= '(&form &env) (take 2 %)) fn-arglists2)))
+                             (every? #(= '(&form &env) (take 2 %)) fn-arglists))
              meta-arglists (cond (contains? (-> a :meta :val) :arglists)
                                  (-> a :meta :val :arglists)
                                  ;; see case 2 notes above
@@ -459,16 +457,9 @@ significantly faster than the otherwise equivalent (= (count s) n)"
              fn-arglists (if (and macro? macro-args?)
                            (map #(subvec % 2) fn-arglists)
                            fn-arglists)
-             fn-arglists2 (if (and macro? macro-args?)
-                            (map #(subvec % 2) fn-arglists2)
-                            fn-arglists2)
              fn-sigs (all-sigs fn-arglists)
-             fn-sigs2 (all-sigs fn-arglists2)
              meta-sigs (all-sigs meta-arglists)
-             loc (-> a var-of-ast meta)
-             _ (when (not= fn-sigs fn-sigs2)
-                 (println (format "Eastwood internal error: fn-sigs=%s != fn-sigs2=%s"
-                                  fn-sigs2 (seq fn-arglists2))))]
+             loc (-> a var-of-ast meta)]
          (if (and (not (nil? meta-arglists))
                   (not= fn-sigs meta-sigs))
            [{:linter :bad-arglists
