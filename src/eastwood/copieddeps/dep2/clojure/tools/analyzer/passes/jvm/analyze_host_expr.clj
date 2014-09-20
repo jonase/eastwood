@@ -142,12 +142,13 @@
 (defn analyze-host-expr
   "Performing some reflection, transforms :host-interop/:host-call/:host-field
    nodes in either: :static-field, :static-call, :instance-call, :instance-field
-   or :host-interop nodes.
+   or :host-interop nodes, and a :var or :maybe-class node in a :const :class node,
+   if necessary (class literals shadow Vars).
 
-   A :host-interop node represents either an instance-field or a no-arg instance-method."
+   A :host-interop node represents either an instance-field or a no-arg instance-method. "
   {:pass-info {:walk :post :depends #{}}}
   [{:keys [op target form tag env class] :as ast}]
-  (if (#{:host-interop :host-call :host-field :maybe-class} op)
+  (if (#{:host-interop :host-call :host-field :maybe-class :var} op)
     (let [class? (and (= :const (:op target))
                       (= :class (:type target))
                       (:form target))
@@ -170,6 +171,14 @@
                    :tag   Class
                    :o-tag Class
                    :form  form))
+
+               :var
+               (when-let [the-class (maybe-class form)]
+                 (assoc (ana/-analyze :const the-class env :class)
+                   :tag   Class
+                   :o-tag Class
+                   :form  form))
+
                (-analyze-host-expr target-type (:m-or-f ast)
                                    target class? env))
              (when tag
