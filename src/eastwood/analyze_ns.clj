@@ -121,7 +121,7 @@
     (binding [*out* (:forms-emitted-wrtr opt)]
       (println (format "\n\n== Analyzing file '%s'\n" filename)))))
 
-;; run-passes is a cut-down version of run-passes in
+;; eastwood-passes is a cut-down version of run-passes in
 ;; tools.analyzer.jvm.  It eliminates phases that are not needed for
 ;; linting, and which can cause analysis to fail for code that we
 ;; would prefer to give linter warnings for, rather than throw an
@@ -129,7 +129,11 @@
 
 (def eastwood-passes
   "Set of passes that will be run by default on the AST by #'run-passes"
-  #{#'warn-on-reflection
+  #{
+    ;; Doing clojure.core/eval in analyze+eval already generates
+    ;; reflection warnings from Clojure.  Doing it in tools.analyzer
+    ;; also leads to duplicate warnings.
+    ;;#'warn-on-reflection
     #'warn-earmuff
 
     #'uniquify-locals
