@@ -173,11 +173,12 @@
                    :form  form))
 
                :var
-               (when-let [the-class (maybe-class form)]
+               (if-let [the-class (maybe-class form)]
                  (assoc (ana/-analyze :const the-class env :class)
                    :tag   Class
                    :o-tag Class
-                   :form  form))
+                   :form  form)
+                 ast)
 
                (-analyze-host-expr target-type (:m-or-f ast)
                                    target class? env))
