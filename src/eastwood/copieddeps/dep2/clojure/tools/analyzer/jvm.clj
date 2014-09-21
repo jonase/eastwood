@@ -171,21 +171,19 @@
                 (desugar-host-expr form env)))))
          (desugar-host-expr form env)))))
 
-(defn qualify-argvec [arglist]
-  (letfn [(fix-tag [x] (vary-meta x merge
-                                  (when-let [t (:tag (meta x))]
-                                    {:tag (if (or (string? t)
-                                                  (u/specials (str t))
-                                                  (u/special-arrays (str t)))
-                                            t
-                                            (if-let [c (maybe-class t)]
-                                              (let [new-t (-> c .getName symbol)]
-                                                (if (= new-t t)
-                                                  t
-                                                  (with-meta new-t {::qualified? true})))
-                                              t))})))]
-    (with-meta (mapv fix-tag arglist)
-      (meta (fix-tag arglist)))))
+(defn qualify-arglists [arglists]
+  (vary-meta arglists merge
+             (when-let [t (:tag (meta arglists))]
+               {:tag (if (or (string? t)
+                             (u/specials (str t))
+                             (u/special-arrays (str t)))
+                       t
+                       (if-let [c (maybe-class t)]
+                         (let [new-t (-> c .getName symbol)]
+                           (if (= new-t t)
+                             t
+                             (with-meta new-t {::qualified? true})))
+                         t))})))
 
 (defn create-var
   "Creates a Var for sym and returns it.
@@ -196,8 +194,7 @@
                             (let [{:keys [inline inline-arities arglists]} (meta sym)]
                               (merge {}
                                      (when arglists
-                                       {:arglists (seq (for [arglist arglists]
-                                                         (qualify-argvec arglist)))})
+                                       {:arglists (qualify-arglists arglists)})
                                      (when inline
                                        {:inline (eval inline)})
                                      (when inline-arities

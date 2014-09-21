@@ -7,16 +7,17 @@ cd repos
 
 git clone https://github.com/clojure/tools.analyzer.git
 cd tools.analyzer
-git checkout tools.analyzer-0.6.0
-
+# This is a commit shortly after tools.analyzer-0.6.0 that contains a
+# few fixes.
+#git checkout tools.analyzer-0.6.0
+git checkout 5cc91aa64bba4967f8a6f8406bd03ee559efed69
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
 # This is a commit shortly after tools.analyzer.jvm-0.6.0 that
-# contains a fix that will hopefully avoid some NullPointerException
-# that were occurring with proxy expressions.
-git checkout cef273d52876b4e76cf9f4c47c0d0c66aa2aabd2
+# contains a few fixes.
+git checkout 698096cebc271d7b5f44eefe4e5b79ebde9df8e2
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git
