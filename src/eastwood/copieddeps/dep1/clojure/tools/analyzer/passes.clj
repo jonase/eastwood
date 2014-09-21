@@ -96,8 +96,8 @@
       (if-let [x (or (ffilter :compiler free-all)
                      (and w (or (ffilter-walk #{w} free-all)
                                 (ffilter-walk #{:any} free-all)))
-                     (ffilter :affects free-all)
-                     (ffilter-walk #{:none} free-all))]
+                     (ffilter-walk #{:none} free-all)
+                     (ffilter :affects free-all))]
         (recur (cons (assoc x :passes [(:name x)]) state)
                (remove-pass passes (:name x)))
         (recur (cons (assoc free :passes [(:name free)]) state)
