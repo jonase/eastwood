@@ -166,16 +166,17 @@
 
 (defmethod -validate :def
   [ast]
-  (when-let [tag (-> ast :name meta :tag)]
-    (let [c (u/maybe-class tag)
-          s (if (symbol? tag) (name tag) tag)]
-      (when-not (and c (not (or (u/specials s) (u/special-arrays s))))
-        (if-let [handle (-> (env/deref-env) :passes-opts :validate/wrong-tag-handler)]
-          (handle nil ast)
-          (throw (ex-info (str "Wrong tag: " (eval tag) " in def: " (:name ast))
-                          (merge {:ast      (prewalk ast cleanup)}
-                                 (source-info (:env ast)))))))))
-  ast)
+  (merge
+   ast
+   (when-let [tag (-> ast :name meta :tag)]
+     (let [c (u/maybe-class tag)
+           s (if (symbol? tag) (name tag) tag)]
+       (when-not (and c (not (or (u/specials s) (u/special-arrays s))))
+         (if-let [handle (-> (env/deref-env) :passes-opts :validate/wrong-tag-handler)]
+           (handle nil ast)
+           (throw (ex-info (str "Wrong tag: " (eval tag) " in def: " (:name ast))
+                           (merge {:ast      (prewalk ast cleanup)}
+                                  (source-info (:env ast)))))))))))
 
 (defmethod -validate :invoke
   [{:keys [args env fn form] :as ast}]
@@ -235,8 +236,10 @@
    * :validate/wrong-tag-handler
       If bound to a function, will invoke that function instead of
       throwing on invalid tag.
-      The function takes the tag key and the AST and must return
-      a map of tag key -> valid tag value (or nil)
+      The function takes the tag key (or nil if the node is :def and
+      the wrong tag is the one on the :name field meta) and must return a
+      map that will be merged into the AST and should be used to replace
+      or remove (replacing with nil or Object) the wrong tags.
    * :validate/unresolvable-symbol-handler
       If bound to a function, will invoke that function instead of
       throwing on unresolvable symbol.
