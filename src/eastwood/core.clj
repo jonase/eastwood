@@ -140,11 +140,11 @@ entire stack trace if depth is nil).  Does not print ex-data."
       (when (contains? (:ast dat) :form)
         (println (format "    (class (-> dat :ast :form))=%s (-> dat :ast :form)="
                          (class (-> dat :ast :form))))
-        (util/pprint-ast-node (-> dat :ast :form)))
-      (util/pprint-ast-node (-> dat :ast)) )
+        (util/pprint-form (-> dat :ast :form)))
+      (util/pprint-form (-> dat :ast)) )
     (when (contains? dat :form)
       (println (format "    (:form dat)="))
-      (util/pprint-ast-node (:form dat)))
+      (util/pprint-form (:form dat)))
     (pst exc nil)))
 
 (defn handle-bad-dot-form [ns-sym opts ^Throwable exc]
@@ -172,7 +172,7 @@ entire stack trace if depth is nil).  Does not print ex-data."
                    (:tag ast))]
        (println (format "A function, macro, protocol method, var, etc. named %s has been used here:"
                         form))
-       (util/pprint-ast-node (meta form))
+       (util/pprint-form (meta form))
        (println (format "Wherever it is defined, or where it is called, it has a type of %s"
                         tag))
        (cond
@@ -229,7 +229,7 @@ For supported type hints, it should be just before the arg vector, like this:
            tag (-> form meta :tag)]
        (println (format "Local name '%s' has been given a type tag '%s' here:"
                         form tag))
-       (util/pprint-ast-node (meta tag))
+       (util/pprint-form (meta tag))
        (cond
         (maybe-unqualified-java-class-name? tag)
         (do
@@ -284,7 +284,7 @@ curious." eastwood-url))
         (do
           (println (format "dbgx for case :op %s tag=%s (class form)=%s (sequential? form)=%s form="
                            (:op ast) tag (class form) (sequential? form)))
-          (util/pprint-ast-node form)
+          (util/pprint-form form)
           :show-more-details)))
 
      :else
@@ -351,7 +351,7 @@ curious." eastwood-url))
                   *print-length* 50]
           (pp/pprint exception-form))
         (println "\nShown again with metadata for debugging:")
-        (util/pprint-ast-node exception-form))
+        (util/pprint-form exception-form))
       (println
 "\nAn exception was thrown while analyzing namespace" ns-sym "
 Lint results may be incomplete.  If there are compilation errors in

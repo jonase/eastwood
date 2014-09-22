@@ -110,9 +110,9 @@
       ;; TBD: Change this to macroexpand form, at least if
       ;; dont-expand-twice? returns false.
       (binding [*out* (:forms-read-wrtr opt)]
-        (util/pprint-ast-node form))
+        (util/pprint-form form))
       (binding [*out* (:forms-emitted-wrtr opt)]
-        (util/pprint-ast-node (:form ast))))))
+        (util/pprint-form (:form ast))))))
 
 (defn begin-file-debug [filename ns opt]
   (when (:record-forms? opt)
