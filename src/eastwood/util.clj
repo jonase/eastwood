@@ -42,7 +42,31 @@ more interesting keys earlier."
                              :var
                              :raw-forms
                              :eastwood/partly-resolved-forms
-                             :env])]
+                             :env
+
+                             ;; Some keywords I have seen in :children
+                             ;; vectors, given in the same relative
+                             ;; order as I saw them.
+                             :body
+                             :catches
+                             :finally
+                             :statements
+                             :ret
+                             :test
+                             :then
+                             :else
+                             :fn
+                             :instance
+                             :args
+                             :params
+                             :body
+                             :expr
+                             :meta
+                             :local
+                             :methods
+                             :keys
+                             :vals
+                             ])]
     (ast/postwalk ast (fn [ast]
                         (into empty ast)))))
 
@@ -71,12 +95,6 @@ twice."
 (defn filter-vals [f m]
   (into (empty m)
         (filter (fn [[_ v]] (f v)) m)))
-
-(defn pprint-ast-node [ast]
-  (binding [*print-meta* true
-            ;;*print-level* 12
-            *print-length* 50]
-    (pp/pprint ast)))
 
 (defn op= [op]
   (fn [ast]
@@ -186,6 +204,14 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
                       (case action
                         :keep-only (select-keys ast key-set)
                         :remove-only (apply dissoc ast key-set)))))
+
+(defn pprint-ast-node [ast]
+  (-> (trim-ast ast :remove-only [:env])
+      ast-to-ordered
+      pprint-meta-elided))
+
+(defn pprint-form [form]
+  (pprint-meta-elided form))
 
 (defn enhance-extend-args [extend-args]
   (let [[atype-ast & proto+mmaps-asts] extend-args
