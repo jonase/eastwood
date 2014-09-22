@@ -913,16 +913,11 @@ file.
 ## For Eastwood developers
 
 To be on the bleeding edge (with all that phrase implies, e.g. you are
-more likely to run across new undiscovered bugs), install the latest
-versions of the tools.analyzer(.jvm) libraries, and Eastwood, in your
-local Maven repository:
+more likely to run across new undiscovered bugs), install Eastwood in
+your local Maven repository:
 
-    $ cd path/to/tools.analyzer
-    $ lein install
-    $ cd path/to/tools.analyzer.jvm
-    $ lein install
     $ cd path/to/eastwood
-    $ LEIN_SNAPSHOTS_IN_RELEASE=1 lein install
+    $ lein install
 
 Then add `[jonase/eastwood "0.1.5-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
