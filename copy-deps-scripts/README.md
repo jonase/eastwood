@@ -214,15 +214,15 @@ B.  If you use 'stateless Dolly' as it is on Sep 18 2014 to copy and
 rename the namespaces in this order, it should do all of the desired
 renaming by the end.
 
-eastwood.copieddeps.dep2 clojure.tools.analyzer.jvm
-  eastwood.copieddeps.dep1 clojure.tools.analyzer
-  eastwood.copieddeps.dep3 clojure.core.memoize
-    eastwood.copieddeps.dep4 clojure.core.cache
-      eastwood.copieddeps.dep5 clojure.data.priority-map
-  eastwood.copieddeps.dep10 clojure.tools.reader
+    eastwood.copieddeps.dep2 clojure.tools.analyzer.jvm
+      eastwood.copieddeps.dep1 clojure.tools.analyzer
+      eastwood.copieddeps.dep3 clojure.core.memoize
+        eastwood.copieddeps.dep4 clojure.core.cache
+          eastwood.copieddeps.dep5 clojure.data.priority-map
+      eastwood.copieddeps.dep10 clojure.tools.reader
 
-eastwood.copieddeps.dep6 leinjacker
-  eastwood.copieddeps.dep7 clojure.core.contracts
-    eastwood.copieddeps.dep8 clojure.core.unify
+    eastwood.copieddeps.dep6 leinjacker
+      eastwood.copieddeps.dep7 clojure.core.contracts
+        eastwood.copieddeps.dep8 clojure.core.unify
 
-eastwood.copieddeps.dep9 clojure.tools.namespace
+    eastwood.copieddeps.dep9 clojure.tools.namespace
