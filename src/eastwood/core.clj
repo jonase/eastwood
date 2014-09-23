@@ -348,7 +348,7 @@ curious." eastwood-url))
         (binding [*print-level* 7
                   *print-length* 50]
           (pp/pprint exception-form))
-        (println "\nShown again with metadata for debugging:")
+        (println "\nShown again with metadata for debugging (some metadata elided for brevity):")
         (util/pprint-form exception-form))
       (println
 "\nAn exception was thrown while analyzing namespace" ns-sym "
