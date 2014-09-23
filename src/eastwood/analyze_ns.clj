@@ -163,6 +163,10 @@
   [ast]
   (scheduled-eastwood-passes ast))
 
+(defn wrapped-exception? [result]
+  (if (instance? eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)
+    (.e ^eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)))
+
 (defn remaining-forms [pushback-reader forms]
   (let [eof (reify)]
     (loop [forms forms]
@@ -194,7 +198,7 @@
 
   :exception-phase - If an exception was thrown, this is a keyword
       indicating in what portion of analyze-file's operation this
-      exception occurred.  Currently always :analyze+eval
+      exception occurred.  Always :analyze+eval or :eval
 
   :exception-form - If an exception was thrown, the current form being
       processed when the exception occurred.
@@ -245,11 +249,15 @@
                   {:forms (remaining-forms reader (conj forms form)),
                    :asts asts, :exception exc, :exception-phase :analyze+eval,
                    :exception-form form}
-                  (do
-                    (post-analyze-debug asts form ast *ns* opt)
-                    (recur (conj forms form)
-                           (conj asts
-                                 (add-partly-resolved-forms ast)))))))))))))
+                  (if-let [e (wrapped-exception? (:result ast))]
+                    {:forms (remaining-forms reader (conj forms form)),
+                     :asts asts, :exception e, :exception-phase :eval,
+                     :exception-form form}
+                    (do
+                      (post-analyze-debug asts form ast *ns* opt)
+                      (recur (conj forms form)
+                             (conj asts
+                                   (add-partly-resolved-forms ast))))))))))))))
 
 
 (defn analyze-ns
