@@ -20,6 +20,7 @@
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.unused :as unused]
+            [eastwood.linters.typetags :as typetags]
             [eastwood.linters.typos :as typos])
   (:import [java.io File PushbackReader]
            [clojure.lang LineNumberingPushbackReader]))
@@ -62,6 +63,7 @@ return value followed by the time it took to evaluate in millisec."
    :unused-fn-args unused/unused-fn-args
    :unused-namespaces unused/unused-namespaces
    :unlimited-use misc/unlimited-use
+   :wrong-tag typetags/wrong-tag
    :keyword-typos typos/keyword-typos
    :non-dynamic-earmuffs misc/non-dynamic-earmuffs})
 
@@ -76,7 +78,8 @@ return value followed by the time it took to evaluate in millisec."
     :suspicious-expression
     :unused-ret-vals
     :unused-ret-vals-in-try
-    :unlimited-use})
+    :unlimited-use
+    :wrong-tag})
 
 (defn- lint [exprs kw]
   (try

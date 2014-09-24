@@ -121,6 +121,15 @@
     (binding [*out* (:forms-emitted-wrtr opt)]
       (println (format "\n\n== Analyzing file '%s'\n" filename)))))
 
+(defn eastwood-wrong-tag-handler [_ ast]
+;;  (let [tag (-> ast :name meta :tag)]
+;;    (println (format "jafinger-dbg: Wrong tag: %s (%s -- uneval'd %s (%s)) in def: %s"
+;;                     (eval tag) (class (eval tag)) tag (class tag) (:name ast)))
+;;    (util/pprint-form (:form ast)))
+  ;; Key/value pairs to be merged into ast for later code to find
+  ;; and issue warnings.
+  {:eastwood/wrong-tag true})
+
 ;; eastwood-passes is a cut-down version of run-passes in
 ;; tools.analyzer.jvm.  It eliminates phases that are not needed for
 ;; linting, and which can cause analysis to fail for code that we
@@ -162,6 +171,10 @@
    by default set-ups and runs the default passes declared in #'default-passes"
   [ast]
   (scheduled-eastwood-passes ast))
+
+(def eastwood-passes-opts
+  (merge ana.jvm/default-passes-opts
+         {:validate/wrong-tag-handler eastwood-wrong-tag-handler}))
 
 (defn wrapped-exception? [result]
   (if (instance? eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)
@@ -242,7 +255,8 @@
                     [exc ast]
                     (try
                       (binding [ana.jvm/run-passes run-passes]
-                        [nil (ana.jvm/analyze+eval form (ana.jvm/empty-env) {})])
+                        [nil (ana.jvm/analyze+eval form (ana.jvm/empty-env)
+                                                   {:passes-opts eastwood-passes-opts})])
                       (catch Exception e
                         [e nil]))]
                 (if exc
