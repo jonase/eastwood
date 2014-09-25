@@ -121,14 +121,16 @@
     (binding [*out* (:forms-emitted-wrtr opt)]
       (println (format "\n\n== Analyzing file '%s'\n" filename)))))
 
-(defn eastwood-wrong-tag-handler [_ ast]
+(defn eastwood-wrong-tag-handler [t ast]
 ;;  (let [tag (-> ast :name meta :tag)]
-;;    (println (format "jafinger-dbg: Wrong tag: %s (%s -- uneval'd %s (%s)) in def: %s"
-;;                     (eval tag) (class (eval tag)) tag (class tag) (:name ast)))
-;;    (util/pprint-form (:form ast)))
+;;    (println (format "jafinger-dbg: Wrong tag: %s (%s -- uneval'd %s (%s)) in def: %s   t=%s (class t)=%s"
+;;                     (eval tag) (class (eval tag)) tag (class tag) (:name ast)
+;;                     t (class t)))
+;;    (util/pprint-form (:form ast))
+;;    (util/pprint-ast-node ast))
   ;; Key/value pairs to be merged into ast for later code to find
   ;; and issue warnings.
-  {:eastwood/wrong-tag true})
+  {:eastwood/wrong-tag (or t :eastwood/wrong-tag-on-var)})
 
 ;; eastwood-passes is a cut-down version of run-passes in
 ;; tools.analyzer.jvm.  It eliminates phases that are not needed for
