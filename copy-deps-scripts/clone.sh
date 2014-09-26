@@ -10,14 +10,14 @@ cd tools.analyzer
 # This is a commit shortly after tools.analyzer-0.6.0 that contains a
 # few fixes.
 #git checkout tools.analyzer-0.6.0
-git checkout 5cc91aa64bba4967f8a6f8406bd03ee559efed69
+git checkout 3af99e2a8055c22609de2d64b1e0009e949c252d
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
 # This is a commit shortly after tools.analyzer.jvm-0.6.0 that
 # contains a few fixes.
-git checkout a674e2ae9d4c29f6f31c1c4162bc71104721c32e
+git checkout 2f3499280dc2bb62d6f291738ecc04f91b0d7dbb
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git

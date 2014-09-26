@@ -9,7 +9,7 @@
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.classify-invoke
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [arglist-for-arity protocol-node? source-info]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils
-             :refer [maybe-class prim-or-obj primitive? prim-interface]]
+             :refer [specials prim-interface]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.validate :refer [validate]]))
 
 (defn classify-invoke
@@ -31,11 +31,7 @@
           the-fn (:fn ast)
           op (:op the-fn)
           var? (= :var op)
-          the-var (:var the-fn)
-          arglist (arglist-for-arity the-fn argc)
-          arg-tags (mapv (comp prim-or-obj maybe-class :tag meta) arglist)
-          ret-tag (prim-or-obj (maybe-class (:tag (meta arglist))))
-          prim-interface (prim-interface (conj arg-tags ret-tag))]
+          the-var (:var the-fn)]
 
       (cond
 
@@ -68,7 +64,7 @@
                :tag      (or tag Boolean/TYPE)
                :children [:target]})
 
-       (and var? (protocol-node? the-var))
+       (and var? (protocol-node? the-var (:meta the-fn)))
        (if (>= argc 1)
          (merge (dissoc ast :fn)
                 {:op          :protocol-invoke
@@ -80,13 +76,16 @@
                          (merge {:form form}
                                 (source-info env)))))
 
-       prim-interface
-       (merge ast
-              {:op             :prim-invoke
-               :prim-interface prim-interface
-               :args           (mapv (fn [arg tag] (assoc arg :tag tag)) args arg-tags)
-               :o-tag          ret-tag
-               :tag            (or tag ret-tag)})
-
        :else
-       ast))))
+       (let [arglist (arglist-for-arity the-fn argc)
+             arg-tags (mapv (comp specials str :tag meta) arglist)
+             ret-tag (-> arglist meta :tag str specials)
+             tags (conj arg-tags ret-tag)]
+         (if-let [prim-interface (prim-interface (mapv #(if (nil? %) Object %) tags))]
+           (merge ast
+                  {:op             :prim-invoke
+                   :prim-interface prim-interface
+                   :args           (mapv (fn [arg tag] (assoc arg :tag tag)) args arg-tags)
+                   :o-tag          ret-tag
+                   :tag            (or tag ret-tag)})
+           ast))))))

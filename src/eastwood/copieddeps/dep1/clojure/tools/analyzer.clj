@@ -252,10 +252,12 @@
                        :children    (vec (remove #{:init} children))})
                (if-let [var (let [v (resolve-var sym env)]
                               (and (var? v) v))]
-                 {:op          :var
-                  :assignable? (dynamic? var) ;; we cannot statically determine if a Var is in a thread-local context
-                                              ;; so checking whether it's dynamic or not is the most we can do
-                  :var         var}
+                 (let [m (meta var)]
+                   {:op          :var
+                    :assignable? (dynamic? var m) ;; we cannot statically determine if a Var is in a thread-local context
+                                                  ;; so checking whether it's dynamic or not is the most we can do
+                    :var         var
+                    :meta        m})
                  (if-let [maybe-class (namespace sym)] ;; e.g. js/foo.bar or Long/MAX_VALUE
                    (let [maybe-class (symbol maybe-class)]
                      {:op    :maybe-host-form

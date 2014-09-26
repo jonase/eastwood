@@ -8,8 +8,8 @@
 (defn constant-lift*
   [ast]
   (if (= :var (:op ast))
-    (let [{:keys [var env form]} ast]
-     (if (constant? var)
+    (let [{:keys [var env form meta]} ast]
+     (if (constant? var meta)
        (let [val @var]
          (assoc (-analyze :const val env (classify val))
            :form form))
