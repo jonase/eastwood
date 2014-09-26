@@ -83,36 +83,24 @@
    :locals     {}
    :ns         (ns-name *ns*)})
 
+(defn desugar-symbol [form env]
+  (let [sym-ns (namespace form)]
+    (if-let [target (and sym-ns
+                         (not (resolve-ns (symbol sym-ns) env))
+                         (maybe-class sym-ns))]                           ;; Class/field
+      (with-meta (list '. target (symbol (str "-" (name form)))) ;; transform to (. Class -field)
+        (meta form))
+      form)))
+
 (defn desugar-host-expr [form env]
-  (cond
-   (symbol? form)
-   (let [target (maybe-class (namespace form))]
-     (if (and target (not (resolve-ns (symbol (namespace form)) env)))       ;; Class/field
-       (with-meta (list '. target (symbol (str "-" (symbol (name form))))) ;; transform to (. Class -field)
-         (meta form))
-       form))
+  (let [[op & expr] form]
+    (if (symbol? op)
+      (let [opname (name op)
+            opns   (namespace op)]
+        (if-let [target (and opns
+                             (not (resolve-ns (symbol opns) env))
+                             (maybe-class opns))] ; (class/field ..)
 
-   (seq? form)
-   (let [[op & expr] form]
-     (if (symbol? op)
-       (let [opname (name op)
-             opns   (namespace op)]
-         (cond
-
-          (.startsWith opname ".") ; (.foo bar ..)
-          (let [[target & args] expr
-                target (if-let [target (and (not (get (:locals env) target))
-                                            (maybe-class target))]
-                         (with-meta (list 'clojure.core/identity target)
-                           {:tag 'java.lang.Class})
-                         target)
-                args (list* (symbol (subs opname 1)) args)]
-            (with-meta (list '. target (if (= 1 (count args)) ;; we don't know if (.foo bar) is
-                                         (first args) args))  ;; a method call or a field access
-              (meta form)))
-
-          (and (maybe-class opns)
-               (not (resolve-ns (symbol opns) env))) ; (class/field ..)
           (let [target (maybe-class opns)
                 op (symbol opname)]
             (with-meta (list '. target (if (zero? (count expr))
@@ -120,14 +108,25 @@
                                          (list* op expr)))
               (meta form)))
 
-          (.endsWith opname ".") ;; (class. ..)
-          (with-meta (list* 'new (symbol (subs opname 0 (dec (count opname)))) expr)
-            (meta form))
+          (cond
+           (.startsWith opname ".")     ; (.foo bar ..)
+           (let [[target & args] expr
+                 target (if-let [target (and (not (get (:locals env) target))
+                                             (maybe-class target))]
+                          (with-meta (list 'do target)
+                            {:tag 'java.lang.Class})
+                          target)
+                 args (list* (symbol (subs opname 1)) args)]
+             (with-meta (list '. target (if (= 1 (count args)) ;; we don't know if (.foo bar) is
+                                          (first args) args))  ;; a method call or a field access
+               (meta form)))
 
-          :else form))
-       form))
+           (.endsWith opname ".") ;; (class. ..)
+           (with-meta (list* 'new (symbol (subs opname 0 (dec (count opname)))) expr)
+             (meta form))
 
-   :else form))
+           :else form)))
+      form)))
 
 (defn macroexpand-1
   "If form represents a macro form or an inlineable function,
@@ -135,41 +134,48 @@
   ([form] (macroexpand-1 form (empty-env)))
   ([form env]
      (env/ensure (global-env)
-       (if (seq? form)
-         (let [[op & args] form]
-           (if (specials op)
-             form
-             (let [v (resolve-var op env)
-                   m (meta v)
-                   local? (-> env :locals (get op))
-                   macro? (and (not local?) (:macro m)) ;; locals shadow macros
-                   inline-arities-f (:inline-arities m)
-                   inline? (and (not local?)
-                                (or (not inline-arities-f)
-                                    (inline-arities-f (count args)))
-                                (:inline m))
-                   t (:tag m)]
-               (cond
+       (cond
 
-                macro?
-                (let [res (apply v form (:locals env) (rest form))] ; (m &form &env & args)
-                  (update-ns-map!)
-                  (if (obj? res)
-                    (vary-meta res merge (meta form))
-                    res))
+        (seq? form)
+        (let [[op & args] form]
+          (if (specials op)
+            form
+            (let [v (resolve-var op env)
+                  m (meta v)
+                  local? (-> env :locals (get op))
+                  macro? (and (not local?) (:macro m)) ;; locals shadow macros
+                  inline-arities-f (:inline-arities m)
+                  inline? (and (not local?)
+                               (or (not inline-arities-f)
+                                   (inline-arities-f (count args)))
+                               (:inline m))
+                  t (:tag m)]
+              (cond
 
-                inline?
-                (let [res (apply inline? args)]
-                  (update-ns-map!)
-                  (if (obj? res)
-                    (vary-meta res merge
-                               (and t {:tag t})
-                               (meta form))
-                    res))
+               macro?
+               (let [res (apply v form (:locals env) (rest form))] ; (m &form &env & args)
+                 (update-ns-map!)
+                 (if (obj? res)
+                   (vary-meta res merge (meta form))
+                   res))
 
-                :else
-                (desugar-host-expr form env)))))
-         (desugar-host-expr form env)))))
+               inline?
+               (let [res (apply inline? args)]
+                 (update-ns-map!)
+                 (if (obj? res)
+                   (vary-meta res merge
+                              (and t {:tag t})
+                              (meta form))
+                   res))
+
+               :else
+               (desugar-host-expr form env)))))
+
+        (symbol? form)
+        (desugar-symbol form env)
+
+        :else
+        form))))
 
 (defn qualify-arglists [arglists]
   (vary-meta arglists merge
@@ -283,9 +289,10 @@
 ;; HACK
 (defn -deftype [name class-name args interfaces]
 
-  (doseq [arg [class-name (str class-name) name (str name)]
-          f   [maybe-class members*]]
-    (memo-clear! f [arg]))
+  (doseq [arg [class-name name]]
+    (memo-clear! maybe-class-from-string [(str arg)])
+    (memo-clear! members* [arg])
+    (memo-clear! members* [(str arg)]))
 
   (let [interfaces (mapv #(symbol (.getName ^Class %)) interfaces)]
     (eval (list 'let []

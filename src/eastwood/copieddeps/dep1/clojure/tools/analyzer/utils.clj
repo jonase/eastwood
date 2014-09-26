@@ -122,30 +122,35 @@
 
 (defn private?
   "Returns true if the var is private"
-  [var]
-  (:private (meta var)))
+  ([var] (private? var nil))
+  ([var m]
+     (:private (or m (meta var)))))
 
 (defn macro?
   "Returns true if the var maps to a macro"
-  [var]
-  (:macro (meta var)))
+  ([var] (macro? var nil))
+  ([var m]
+     (:macro (or m (meta var)))))
 
 (defn constant?
   "Returns true if the var is a const"
-  [var]
-  (:const (meta var)))
+  ([var] (constant? var nil))
+  ([var m]
+     (:const (or m (meta var)))))
 
 (defn dynamic?
   "Returns true if the var is dynamic"
-  [var]
-  (or (:dynamic (meta var))
-      (when (var? var) ;; workaround needed since Clojure doesn't always propagate :dynamic
-        (.isDynamic ^Var var))))
+  ([var] (dynamic? var nil))
+  ([var m]
+     (or (:dynamic (or m (meta var)))
+         (when (var? var) ;; workaround needed since Clojure doesn't always propagate :dynamic
+           (.isDynamic ^Var var)))))
 
 (defn protocol-node?
   "Returns true if the var maps to a protocol function"
-  [var]
-  (boolean (:protocol (meta var)))) ;; conveniently this is true in both clojure and clojurescript
+  ([var] (protocol-node? var nil))
+  ([var m]
+     (boolean (:protocol (or m (meta var)))))) ;; conveniently this is true in both clojure and clojurescript
 
 (defn resolve-ns
   "Resolves the ns mapped by the given sym in the env"
@@ -177,20 +182,36 @@
                    (>= argc (- (count last-arglist) 2)))
           last-arglist))))
 
+(defn select-keys'
+  "Like clojure.core/select-keys, but uses transients and doesn't preserve meta"
+  [map keyseq]
+  (loop [ret (transient {}) keys (seq keyseq)]
+    (if keys
+      (let [entry (find map (first keys))]
+        (recur (if entry
+                 (conj! ret entry)
+                 ret)
+               (next keys)))
+      (persistent! ret))))
+
+(defn merge'
+  "Like merge, but uses transients"
+  [m & mms]
+  (persistent! (reduce conj! (transient (or m {})) mms)))
+
 (defn source-info
   "Returns the available source-info keys from a map"
   [m]
-  (select-keys m #{:file :line :column :end-line :end-column :source-span}))
+  (when (:line m)
+    (select-keys' m #{:file :line :column :end-line :end-column :source-span})))
 
 (defn -source-info
   "Returns the source-info of x"
   [x env]
-  (merge
-   (source-info env)
-   (when-let [file (and (not= *file* "NO_SOURCE_FILE")
-                        *file*)]
-     {:file file})
-   (source-info (meta x))))
+  (merge' (source-info (meta x))
+          (when-let [file (and (not= *file* "NO_SOURCE_FILE")
+                               *file*)]
+            {:file file})))
 
 (defn const-val
   "Returns the value of a constant node (either :quote or :const)"
@@ -207,4 +228,4 @@
 
 (def mmerge
   "Same as (fn [m1 m2] (merge-with merge m2 m1))"
-  #(merge-with merge %2 %1))
+  #(merge-with merge' %2 %1))

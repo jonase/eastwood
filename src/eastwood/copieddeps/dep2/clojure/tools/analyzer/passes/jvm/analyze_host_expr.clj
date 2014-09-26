@@ -8,7 +8,7 @@
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.analyze-host-expr
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer :as ana]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [ctx source-info resolve-var]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [ctx source-info resolve-var merge']]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :refer :all]))
 
 (defn maybe-static-field [[_ class sym]]
@@ -153,35 +153,37 @@
                       (= :class (:type target))
                       (:form target))
           target-type (if class? :static :instance)]
-      (merge (dissoc ast :assignable? :target :args :children)
-             (case op
+      (merge' (dissoc ast :assignable? :target :args :children)
+              (case op
 
-               :host-call
-               (analyze-host-call target-type (:method ast)
-                                  (:args ast) target class? env)
+                :host-call
+                (analyze-host-call target-type (:method ast)
+                                   (:args ast) target class? env)
 
-               :host-field
-               (analyze-host-field target-type (:field ast)
-                                   target (or class? (:tag target)) env)
+                :host-field
+                (analyze-host-field target-type (:field ast)
+                                    target (or class? (:tag target)) env)
 
-               :maybe-class
-               (when-let [the-class (or (maybe-class class)
-                                        (maybe-class (resolve-var class env)))]
-                 (assoc (ana/-analyze :const the-class env :class)
-                   :tag   Class
-                   :o-tag Class
-                   :form  form))
+                :maybe-class
+                (when-let [the-class (or (maybe-class class)
+                                         (maybe-class (resolve-var class env)))]
+                  (assoc (ana/-analyze :const the-class env :class)
+                    :tag   Class
+                    :o-tag Class
+                    :form  form))
 
-               :var
-               (if-let [the-class (maybe-class form)]
-                 (assoc (ana/-analyze :const the-class env :class)
-                   :tag   Class
-                   :o-tag Class
-                   :form  form)
-                 ast)
+                :var
+                (if-let [the-class (and (not (namespace form))
+                                        (pos? (.indexOf (str form) "."))
+                                        (maybe-class form))]
+                  (assoc (ana/-analyze :const the-class env :class)
+                    :tag   Class
+                    :o-tag Class
+                    :form  form)
+                  ast)
 
-               (-analyze-host-expr target-type (:m-or-f ast)
-                                   target class? env))
-             (when tag
-               {:tag tag})))
+                (-analyze-host-expr target-type (:m-or-f ast)
+                                    target class? env))
+              (when tag
+                {:tag tag})))
     ast))

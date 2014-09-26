@@ -17,9 +17,9 @@
 (def ^:private ^:dynamic *collects*)
 
 (defn -register-constant
-  [form tag type]
+  [form tag type meta]
   (let [key {:form form
-             :meta (meta form)
+             :meta meta
              :tag  tag}
         collects @*collects*]
     (or (:id ((:constants collects) key)) ;; constant already in the constant table
@@ -42,23 +42,25 @@
   [{:keys [val tag type] :as ast}]
   (if (and (not= type :nil)        ;; nil and true/false can be emitted as literals,
            (not= type :boolean)) ;; no need to put them on the constant table
-    (let [id (-register-constant val tag type)]
+    (let [id (-register-constant val tag type (meta val))]
       (assoc ast :id id))
     ast))
 
 (defmethod -collect-const :def
   [ast]
-  (let [id (-register-constant (:var ast) clojure.lang.Var :var)]
+  (let [var (:var ast)
+        id (-register-constant var clojure.lang.Var :var (meta var))]
     (assoc ast :id id)))
 
 (defmethod -collect-const :var
   [ast]
-  (let [id (-register-constant (:var ast) clojure.lang.Var :var)]
+  (let [id (-register-constant (:var ast) clojure.lang.Var :var (:meta ast))]
     (assoc ast :id id)))
 
 (defmethod -collect-const :the-var
   [ast]
-  (let [id (-register-constant (:var ast) clojure.lang.Var :var)]
+  (let [var (:var ast)
+        id (-register-constant var clojure.lang.Var :var (meta var))]
     (assoc ast :id id)))
 
 (defmethod -collect-callsite :keyword-invoke
