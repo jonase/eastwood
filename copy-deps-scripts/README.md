@@ -155,10 +155,9 @@ for details.
     (def cu-src-path (str e-root "/copy-deps-scripts/repos/core.unify/src/main/clojure"))
     (def tn-src-path (str e-root "/copy-deps-scripts/repos/tools.namespace/src/main/clojure"))
 
-    ;; Run once with dry-run to see what will happen.  Look it over to
-    ;; see if it is reasonable, then run again with for-real to do the
-    ;; copying.
-    (c/copy-namespaces-unmodified taj-src-path staging-path 'clojure.tools.analyzer dry-run)
+    ;; Change for-real to dry-run to see what will happen without
+    ;; changing anything.  Look it over to see if it is reasonable.
+    (c/copy-namespaces-unmodified taj-src-path staging-path 'clojure.tools.analyzer for-real)
 
     ;; The copying above should make no modifications, so running a
     ;; diff command like the following from the dolly project root
@@ -169,43 +168,43 @@ for details.
     ;; Now move the files from the staging area into dolly's code and
     ;; rename the namespaces.
 
-    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.analyzer 'eastwood.copieddeps.dep2.clojure.tools.analyzer [src-path] dry-run)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.analyzer 'eastwood.copieddeps.dep2.clojure.tools.analyzer [src-path] for-real)
 
     ;; tools.analyzer
-    (c/copy-namespaces-unmodified ta-src-path staging-path 'clojure.tools.analyzer dry-run)
-    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.analyzer 'eastwood.copieddeps.dep1.clojure.tools.analyzer [src-path] dry-run)
+    (c/copy-namespaces-unmodified ta-src-path staging-path 'clojure.tools.analyzer for-real)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.analyzer 'eastwood.copieddeps.dep1.clojure.tools.analyzer [src-path] for-real)
 
     ;; core.memoize
-    (c/copy-namespaces-unmodified cm-src-path staging-path 'clojure.core.memoize dry-run)
-    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.memoize 'eastwood.copieddeps.dep3.clojure.core.memoize [src-path] dry-run)
+    (c/copy-namespaces-unmodified cm-src-path staging-path 'clojure.core.memoize for-real)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.memoize 'eastwood.copieddeps.dep3.clojure.core.memoize [src-path] for-real)
 
     ;; core.cache
-    (c/copy-namespaces-unmodified ccache-src-path staging-path 'clojure.core.cache dry-run)
-    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.cache 'eastwood.copieddeps.dep4.clojure.core.cache [src-path] dry-run)
+    (c/copy-namespaces-unmodified ccache-src-path staging-path 'clojure.core.cache for-real)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.cache 'eastwood.copieddeps.dep4.clojure.core.cache [src-path] for-real)
 
     ;; data.priority-map
-    (c/copy-namespaces-unmodified dp-src-path staging-path 'clojure.data.priority-map dry-run)
-    (c/move-namespaces-and-rename staging-path src-path 'clojure.data.priority-map 'eastwood.copieddeps.dep5.clojure.data.priority-map [src-path] dry-run)
+    (c/copy-namespaces-unmodified dp-src-path staging-path 'clojure.data.priority-map for-real)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.data.priority-map 'eastwood.copieddeps.dep5.clojure.data.priority-map [src-path] for-real)
 
     ;; tools.reader
-    (c/copy-namespaces-unmodified tr-src-path staging-path 'clojure.tools.reader dry-run)
-    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.reader 'eastwood.copieddeps.dep10.clojure.tools.reader [src-path] dry-run)
+    (c/copy-namespaces-unmodified tr-src-path staging-path 'clojure.tools.reader for-real)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.reader 'eastwood.copieddeps.dep10.clojure.tools.reader [src-path] for-real)
 
     ;; leinjacker
-    (c/copy-namespaces-unmodified lj-src-path staging-path 'leinjacker dry-run)
-    (c/move-namespaces-and-rename staging-path src-path 'leinjacker 'eastwood.copieddeps.dep6.leinjacker [src-path] dry-run)
+    (c/copy-namespaces-unmodified lj-src-path staging-path 'leinjacker for-real)
+    (c/move-namespaces-and-rename staging-path src-path 'leinjacker 'eastwood.copieddeps.dep6.leinjacker [src-path] for-real)
 
     ;; core.contracts
-    (c/copy-namespaces-unmodified ccontracts-src-path staging-path 'clojure.core.contracts dry-run)
-    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.contracts 'eastwood.copieddeps.dep7.clojure.core.contracts [src-path] dry-run)
+    (c/copy-namespaces-unmodified ccontracts-src-path staging-path 'clojure.core.contracts for-real)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.contracts 'eastwood.copieddeps.dep7.clojure.core.contracts [src-path] for-real)
 
     ;; core.unify
-    (c/copy-namespaces-unmodified cu-src-path staging-path 'clojure.core.unify dry-run)
-    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.unify 'eastwood.copieddeps.dep8.clojure.core.unify [src-path] dry-run)
+    (c/copy-namespaces-unmodified cu-src-path staging-path 'clojure.core.unify for-real)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.core.unify 'eastwood.copieddeps.dep8.clojure.core.unify [src-path] for-real)
 
     ;; tools.namespace
-    (c/copy-namespaces-unmodified tn-src-path staging-path 'clojure.tools.namespace dry-run)
-    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.namespace 'eastwood.copieddeps.dep9.clojure.tools.namespace [src-path] dry-run)
+    (c/copy-namespaces-unmodified tn-src-path staging-path 'clojure.tools.namespace for-real)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.namespace 'eastwood.copieddeps.dep9.clojure.tools.namespace [src-path] for-real)
 
 
 Here are the dependencies copied in, given in a topologically sorted
