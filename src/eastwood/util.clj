@@ -205,10 +205,11 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
                         :keep-only (select-keys ast key-set)
                         :remove-only (apply dissoc ast key-set)))))
 
-(defn pprint-ast-node [ast]
-  (-> (trim-ast ast :remove-only [:env])
-      ast-to-ordered
-      pprint-meta-elided))
+(defn pprint-ast-node [ast & kws]
+  (let [a (if (contains? (set kws) :with-env)
+            ast
+            (trim-ast ast :remove-only [:env]))]
+    (-> a ast-to-ordered pprint-meta-elided)))
 
 (defn pprint-form [form]
   (pprint-meta-elided form))
