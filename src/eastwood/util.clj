@@ -42,7 +42,31 @@ more interesting keys earlier."
                              :var
                              :raw-forms
                              :eastwood/partly-resolved-forms
-                             :env])]
+                             :env
+
+                             ;; Some keywords I have seen in :children
+                             ;; vectors, given in the same relative
+                             ;; order as I saw them.
+                             :body
+                             :catches
+                             :finally
+                             :statements
+                             :ret
+                             :test
+                             :then
+                             :else
+                             :fn
+                             :instance
+                             :args
+                             :params
+                             :body
+                             :expr
+                             :meta
+                             :local
+                             :methods
+                             :keys
+                             :vals
+                             ])]
     (ast/postwalk ast (fn [ast]
                         (into empty ast)))))
 
@@ -71,12 +95,6 @@ twice."
 (defn filter-vals [f m]
   (into (empty m)
         (filter (fn [[_ v]] (f v)) m)))
-
-(defn pprint-ast-node [ast]
-  (binding [*print-meta* true
-            ;;*print-level* 12
-            *print-length* 50]
-    (pp/pprint ast)))
 
 (defn op= [op]
   (fn [ast]
@@ -186,6 +204,15 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
                       (case action
                         :keep-only (select-keys ast key-set)
                         :remove-only (apply dissoc ast key-set)))))
+
+(defn pprint-ast-node [ast & kws]
+  (let [a (if (contains? (set kws) :with-env)
+            ast
+            (trim-ast ast :remove-only [:env]))]
+    (-> a ast-to-ordered pprint-meta-elided)))
+
+(defn pprint-form [form]
+  (pprint-meta-elided form))
 
 (defn enhance-extend-args [extend-args]
   (let [[atype-ast & proto+mmaps-asts] extend-args
@@ -375,50 +402,3 @@ of these kind."
 (defn expr-in-try-body? [ast]
   (or (statement-in-try-body? ast)
       (ret-expr-in-try-body? ast)))
-
-(defn add-partly-resolved-forms
-  "Return an ast that is identical to the argument, except that for
-every node that has a :raw-forms key, add a new
-key :eastwood/partly-resolved-forms.  The value associated with the
-new key is nearly the same as that associated with :raw-forms, except
-that every list that starts with a symbol will have that symbol
-replaced by one that is resolved, with a namespace."
-  [ast env]
-  (let [pw (fn [ast]
-             (if (contains? ast :raw-forms)
-               (let [resolved-forms
-                     (doall
-                      (map (fn [form]
-;;                             (println (format "dbx: form="))
-;;                             (clojure.pprint/pprint form)
-;;                             (println "----------------------------------------")
-                             (if (seq? form)
-                               (let [[op & args] form
-                                     var (env/with-env env
-                                           (utils/resolve-var op (ana.jvm/empty-env)))
-;;                                     _ (do
-;;                                         (println (format "dby: op=%s (class op)=%s var=%s (class var)=%s"
-;;                                                          op (class op)
-;;                                                          var (class var)))
-;;                                         (flush))
-                                     resolved-var-sym (if (nil? var)
-                                                        op
-                                                        (symbol (str (.ns ^clojure.lang.Var var))
-                                                                (name (.sym ^clojure.lang.Var var))))]
-                                 (cons resolved-var-sym args))
-                               form))
-                           (:raw-forms ast)))]
-;;                 (println (format "dbx: %2d %s"
-;;                                  (count (:raw-forms ast))
-;;                                  (seq (map vector
-;;                                            (map first (:raw-forms ast))
-;;                                            (map first resolved-forms)))))
-;;                 (when (some #{'comment} (map first (:raw-forms ast)))
-;;                   (println "dby: comment raw and resolved forms:")
-;;                   (clojure.pprint/pprint (seq (map vector
-;;                                                    (:raw-forms ast)
-;;                                                    resolved-forms)))
-;;                   (println "----------------------------------------"))
-                 (assoc ast :eastwood/partly-resolved-forms resolved-forms))
-               ast))]
-    (ast/postwalk ast pw)))

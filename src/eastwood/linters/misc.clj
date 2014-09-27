@@ -192,57 +192,6 @@ significantly faster than the otherwise equivalent (= (count s) n)"
        [(nth form 1) (nth form 2)]))
 
 
-;; defonce-or-defmulti-macro-expansion? is a bit of a hackish way to
-;; recognize the macroexpansion of a defonce or defmulti declaration.
-;; However, without doing something to recognize these forms, the two
-;; occurrences of (def foo ...) in the expansion leads to a
-;; :redefd-vars warning.
-
-;; I am sure defonce-or-defmulti-macro-expansion? can be written more
-;; clearly and concisely using core.match or core.logic.
-
-;; Why doesn't macroexpand replace clojure.core/when-not with
-;; equivalent if?  Answer: Because macroexpand is explicitly
-;; documented only to expand the outermost macro invocation, if any,
-;; and to leave inner macro invocations untouched.
-
-(defn defonce-or-defmulti-macro-expansion?
-  "Return false if form is not the same as a macroexpansion of
-a (defonce foo val) expression.  If it is, return [foo val]."
-  [form]
-  (and (sequential? form)
-       (= 'let* (first form))
-       (count-equals? form 3)
-       (let [bindings (nth form 1)
-             body (nth form 2)]
-         (and (vector? bindings)
-              (= 2 (count bindings))
-              (sequential? body)
-              (count-equals? body 3)
-              (= 'clojure.core/when-not (nth body 0))
-              (let [symbol-bound (nth bindings 0)
-                    val-bound (nth bindings 1)
-                    when-not-condition (nth body 1)
-                    when-not-body (nth body 2)]
-                (and (symbol? symbol-bound)
-                     (sequential? val-bound)
-                     (count-equals? val-bound 2)
-                     (= 'def (first val-bound))
-                     (sequential? when-not-body)
-                     (count-equals? when-not-body 3)
-                     (= 'def (nth when-not-body 0))
-                     (let [first-def-sym (nth val-bound 1)
-                           second-def-sym (nth when-not-body 1)
-                           [hasroot-symbol] (contains-hasroot-expr?
-                                             when-not-condition)]
-                       (and hasroot-symbol
-                            (symbol? hasroot-symbol)
-                            (= symbol-bound hasroot-symbol)
-                            (symbol? first-def-sym)
-                            (symbol? second-def-sym)
-                            (= first-def-sym second-def-sym)
-                            [first-def-sym (nth when-not-body 2)]))))))))
-
 
 (def ^:dynamic *def-walker-data* 0)
 
@@ -260,13 +209,13 @@ a (defonce foo val) expression.  If it is, return [foo val]."
                 ancestor-op-set-stack top-level-defs
                 ancestor-defs-vec
                 nested-defs defonce-or-defmulti-match-stack]} *def-walker-data*
-        defonce-or-defmulti-expr? (defonce-or-defmulti-macro-expansion?
-                                    (:form ast))
+        defonce-or-defmulti-expr? (some '#{clojure.core/defmulti clojure.core/defonce}
+                                        (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms ast)))
         def? (= :def (:op ast))
         declare? (and def? (-> ast :name meta :declared true?))
         nested-def? (and def?
                          (contains? ancestor-op-set :def))
-        inside-defonce-or-defmulti-expr? (some vector?
+        inside-defonce-or-defmulti-expr? (some identity
                                                defonce-or-defmulti-match-stack)]
     (set! *def-walker-data*
           (assoc *def-walker-data*
@@ -409,7 +358,7 @@ a (defonce foo val) expression.  If it is, return [foo val]."
 (defn wrong-arity [{:keys [asts]}]
   (let [exprs (->> asts
                    (mapcat ast/nodes)
-                   (filter :maybe-mismatch-arity))]
+                   (filter :maybe-arity-mismatch))]
     (for [expr exprs
           :let [loc (-> expr :fn :form meta)]]
       {:linter :wrong-arity
@@ -494,10 +443,8 @@ a (defonce foo val) expression.  If it is, return [foo val]."
      (for [a def-fn-asts]
        (let [macro? (-> a :var meta :macro)
              fn-arglists (-> a :arglists)
-             fn-arglists2 (-> a :init :arglists)
              macro-args? (or (not macro?)
-                             (and (every? #(= '(&form &env) (take 2 %)) fn-arglists)
-                                  (every? #(= '(&form &env) (take 2 %)) fn-arglists2)))
+                             (every? #(= '(&form &env) (take 2 %)) fn-arglists))
              meta-arglists (cond (contains? (-> a :meta :val) :arglists)
                                  (-> a :meta :val :arglists)
                                  ;; see case 2 notes above
@@ -510,16 +457,9 @@ a (defonce foo val) expression.  If it is, return [foo val]."
              fn-arglists (if (and macro? macro-args?)
                            (map #(subvec % 2) fn-arglists)
                            fn-arglists)
-             fn-arglists2 (if (and macro? macro-args?)
-                            (map #(subvec % 2) fn-arglists2)
-                            fn-arglists2)
              fn-sigs (all-sigs fn-arglists)
-             fn-sigs2 (all-sigs fn-arglists2)
              meta-sigs (all-sigs meta-arglists)
-             loc (-> a var-of-ast meta)
-             _ (when (not= fn-sigs fn-sigs2)
-                 (println (format "Eastwood internal error: fn-sigs=%s != fn-sigs2=%s"
-                                  fn-sigs2 (seq fn-arglists2))))]
+             loc (-> a var-of-ast meta)]
          (if (and (not (nil? meta-arglists))
                   (not= fn-sigs meta-sigs))
            [{:linter :bad-arglists

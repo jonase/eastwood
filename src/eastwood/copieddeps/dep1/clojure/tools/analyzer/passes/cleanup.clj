@@ -8,7 +8,9 @@
 
 (ns eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.cleanup)
 
-(defn cleanup [ast]
+(defn cleanup
+  {:pass-info {:walk :any :depends #{}}}
+  [ast]
   (-> ast
     (update-in [:env] dissoc :loop-locals-casts)
     (update-in [:env :locals] #(reduce-kv (fn [m k l] (assoc m k (dissoc l :env :init))) {} %))

@@ -31,8 +31,8 @@
 
 (defn- ns-file-name [sym]
   (str (-> (name sym)
-           (str/replace #"-" "_")
-           (str/replace #"\." File/separator))
+           (str/replace "-" "_")
+           (str/replace "." File/separator))
        ".clj"))
 
 (defn- clojure-source-files [dirs]

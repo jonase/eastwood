@@ -10,6 +10,7 @@
 
 (defn annotate-class-id
   "Adds a unique class id to :reify/:fn nodes"
+  {:pass-info {:walk :any :depends #{}}}
   [ast]
   (if (#{:reify :fn} (:op ast))
     (assoc ast :class-id (gensym))

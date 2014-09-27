@@ -8,7 +8,11 @@
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.clear-locals
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [ctx rseqv]]))
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [ctx rseqv]]
+            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
+             [annotate-branch :refer [annotate-branch]]
+             [annotate-loops :refer [annotate-loops]]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.collect-closed-overs :refer [collect-closed-overs]]))
 
 (def ^:dynamic *clears*)
 
@@ -45,7 +49,7 @@
 
 (defn maybe-clear-this
   [{:keys [env] :as ast}]
-  (-> (if (and (= :return (:context env))
+  (-> (if (and (isa? (:context env) :ctx/return)
               (not (:in-try env)))
        (assoc ast :to-clear? true)
        ast)
@@ -135,6 +139,14 @@
       ast)))
 
 (defn clear-locals
+  "Attached :to-clear? true to all the nodes that the compiler
+   can clear, those nodes can be:
+   * :local nodes
+   * :binding nodes
+   * :invoke/protocol-invoke/prim-invoke/static-call/instance-call nodes
+      in return position, meaning that the \"this\" local is eligible for
+      clearing"
+  {:pass-info {:walk :none :depends #{#'collect-closed-overs #'annotate-branch #'annotate-loops}}}
   [ast]
   (if (:disable-locals-clearing *compiler-options*)
     ast

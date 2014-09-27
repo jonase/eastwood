@@ -11,7 +11,7 @@
   reloaded after files have changed. This is the low-level
   implementation that requires you to find the namespace dependencies
   yourself: most uses will interact with the wrappers in
-  clojure.tools.namespace.file and clojure.tools.namespace.dir or the
+  eastwood.copieddeps.dep9.clojure.tools.namespace.file and eastwood.copieddeps.dep9.clojure.tools.namespace.dir or the
   public API in clojure.tools.namespace.repl."}
   eastwood.copieddeps.dep9.clojure.tools.namespace.track
   (:refer-clojure :exclude (remove))
@@ -55,15 +55,15 @@
   After adding new/updated namespaces, the dependency tracker will
   have two lists associated with the following keys:
 
-      :clojure.tools.namespace.track/unload
+      :eastwood.copieddeps.dep9.clojure.tools.namespace.track/unload
           is the list of namespaces that need to be removed
 
-      :clojure.tools.namespace.track/load
+      :eastwood.copieddeps.dep9.clojure.tools.namespace.track/load
           is the list of namespaces that need to be reloaded
 
   To reload namespaces in the correct order, first remove/unload all
   namespaces in the 'unload' list, then (re)load all namespaces in the
-  'load' list. The clojure.tools.namespace.reload namespace has
+  'load' list. The eastwood.copieddeps.dep9.clojure.tools.namespace.reload namespace has
   functions to do this."
   [tracker depmap]
   (let [{load ::load
@@ -113,30 +113,30 @@
   ;; Structure of the namespace tracker map
 
   {;; Dependency graph of namespace names (symbols) as defined in
-   ;; clojure.tools.namespace.dependency/graph
-   :clojure.tools.namespace.track/deps {}
+   ;; eastwood.copieddeps.dep9.clojure.tools.namespace.dependency/graph
+   :eastwood.copieddeps.dep9.clojure.tools.namespace.track/deps {}
 
    ;; Ordered list of namespace names (symbols) that need to be
    ;; removed to bring the running system into agreement with the
    ;; source files.
-   :clojure.tools.namespace.track/unload ()
+   :eastwood.copieddeps.dep9.clojure.tools.namespace.track/unload ()
 
    ;; Ordered list of namespace names (symbols) that need to be
    ;; (re)loaded to bring the running system into agreement with the
    ;; source files.
-   :clojure.tools.namespace.track/load ()
+   :eastwood.copieddeps.dep9.clojure.tools.namespace.track/load ()
 
-   ;; Added by clojure.tools.namespace.file: Map from source files
+   ;; Added by eastwood.copieddeps.dep9.clojure.tools.namespace.file: Map from source files
    ;; (java.io.File) to the names (symbols) of namespaces they
    ;; represent.
-   :clojure.tools.namespace.file/filemap {}
+   :eastwood.copieddeps.dep9.clojure.tools.namespace.file/filemap {}
 
-   ;; Added by clojure.tools.namespace.dir: Set of source files
+   ;; Added by eastwood.copieddeps.dep9.clojure.tools.namespace.dir: Set of source files
    ;; (java.io.File) which have been seen by this dependency tracker;
    ;; used to determine when files have been deleted.
-   :clojure.tools.namespace.dir/files #{}
+   :eastwood.copieddeps.dep9.clojure.tools.namespace.dir/files #{}
 
-   ;; Added by clojure.tools.namespace.dir: Instant when the
+   ;; Added by eastwood.copieddeps.dep9.clojure.tools.namespace.dir: Instant when the
    ;; directories were last scanned, as returned by
    ;; System/currentTimeMillis.
-   :clojure.tools.namespace.dir/time 1405201862262})
+   :eastwood.copieddeps.dep9.clojure.tools.namespace.dir/time 1405201862262})

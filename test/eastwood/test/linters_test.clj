@@ -135,41 +135,49 @@
    {}
    {
     {:linter :unused-fn-args,
-     :msg "Function args [y (line 5, column 30)] of (or within) fn-with-unused-args are never used",
+     :msg "Function arg y never used",
      :file "testcases/f06.clj",
-     :line 5, :column 1}
+     :line 5, :column 30}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [y (line 9, column 31)] of (or within) fn-with-unused-args2 are never used",
+     :msg "Function arg y never used",
      :file "testcases/f06.clj",
-     :line 9, :column 1}
+     :line 9, :column 31}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [w (line 20, column 20)] of (or within) fn-with-unused-args3 are never used",
+     :msg "Function arg w never used",
      :file "testcases/f06.clj",
-     :line 19, :column 1}
+     :line 20, :column 20}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [body (line 33, column 23)] of (or within) macro2 are never used",
+     :msg "Function arg body never used",
      :file "testcases/f06.clj",
-     :line 33, :column 11}
+     :line 33, :column 23}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [z (line 50, column 33)] of (or within) fn-with-unused-args4 are never used",
+     :msg "Function arg z never used",
      :file "testcases/f06.clj",
-     :line 50, :column 1}
+     :line 50, :column 33}
     1,
     {:linter :unused-fn-args,
-     :msg "Function args [val (line 69, column 13) f (line 68, column 11)] of (or within) protocol CollReduce type clojure.lang.ASeq method coll-reduce are never used",
-     :file nil,
-     :line nil, :column nil}
+     :msg "Function arg coll never used",
+     :file "testcases/f06.clj",
+     :line 63, :column 6}
     1,
     {:linter :unused-fn-args,
-     :msg (if clojure-1-6-or-later
-            "Function args [coll (line 63, column 6) f (line 64, column 11)] of (or within) protocol CollReduce type nil method coll-reduce are never used"
-            "Function args [f (line 64, column 11) coll (line 64, column 6)] of (or within) protocol CollReduce type nil method coll-reduce are never used"),
-     :file nil,
-     :line nil, :column nil}
+     :msg "Function arg f never used",
+     :file "testcases/f06.clj",
+     :line 64, :column 11}
+    1,
+    {:linter :unused-fn-args,
+     :msg "Function arg f never used",
+     :file "testcases/f06.clj",
+     :line 68, :column 11}
+    1,
+    {:linter :unused-fn-args,
+     :msg "Function arg val never used",
+     :file "testcases/f06.clj",
+     :line 69, :column 13}
     1,
     })
   (let [common-expected-warnings
@@ -179,15 +187,15 @@
      :linter :unused-ret-vals-in-try,
      :msg "Pure static method call return value is discarded inside body of try: (. clojure.lang.Numbers (add 5 7))"}
     1,
-    {:line 22, :column 1,
+    {:line 27, :column 5,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Constant value is discarded inside unused-ret-vals33: 7"}
+     :msg "Constant value is discarded: 7"}
     1,
-    {:line 22, :column 1,
+    {:line 27, :column 5,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Constant value is discarded inside unused-ret-vals33: :a"}
+     :msg "Constant value is discarded: :a"}
     1,
     {:line 24, :column 5,
      :file "testcases/f07.clj",
@@ -261,10 +269,10 @@
      :linter :unused-ret-vals,
      :msg "Pure function call return value is discarded: (assoc {} i i)"}
     2,
-    {:line 79, :column 1,
+    {:line 81, :column 5,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Constant value is discarded inside unused-ret-vals3: :a"}
+     :msg "Constant value is discarded: :a"}
     1,
     {:line 81, :column 9,
      :file "testcases/f07.clj",
@@ -301,25 +309,25 @@
      :linter :unused-ret-vals,
      :msg "Pure function call return value is discarded: (assoc {} k v)"}
     1,
-    {:line 110, :column 1,
+    {:line 112, :column 5,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Var value is discarded inside gah: repeatedly"}
+     :msg "Var value is discarded: repeatedly"}
     1,
-    {:line 110, :column 1,
+    {:line 112, :column 16,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Local value is discarded inside gah: n"}
+     :msg "Local value is discarded: n"}
     1,
-    {:line 110, :column 1,
+    {:line 112, :column 18,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Local value is discarded inside gah: x"}
+     :msg "Local value is discarded: x"}
     1,
-    {:line 114, :column 1,
+    {:line 125, :column 7,
      :file "testcases/f07.clj",
      :linter :unused-ret-vals,
-     :msg "Var value is discarded inside check-do-let-nesting: gah"}
+     :msg "Var value is discarded: gah"}
     1,
     }
 
