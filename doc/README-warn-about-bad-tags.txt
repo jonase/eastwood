@@ -1,6 +1,12 @@
 TBD: What is going on here?  Why does (Math/abs (f2 -3)) cause a
 reflection warning, but neither of the other variants does?
 
+Nicola Mometto suggested filing a ticket for this behavior, which is:
+http://dev.clojure.org/jira/browse/CLJ-1533
+Turns out it was a duplicate of CLJ-1491, but that one was closed
+instead of this one, I think because the proposed patch for CLJ-1533
+fixed everythig that CLJ-1491's patch did, plus some more cases.
+
 ```clojure
 user=> (clojure-version)
 "1.6.0"
@@ -465,3 +471,75 @@ t.a(.j) 0.3.0 exception message:
 Wrong tag: long in def: ring-top
 
 ----------------------------------------
+
+Here is a later #clojure IRC conversation about type tags on
+functions:
+
+http://logs.lazybot.org/irc.freenode.net/%23clojure/2014-09-25.txt
+
+[23:43:07] luxbock: in defn, does a type hint for the return value go before the function name, or after (but before arguments)?
+
+http://logs.lazybot.org/irc.freenode.net/%23clojure/2014-09-26.txt
+
+[02:20:00] amalloy: luxbock: i'm afraid the answer is "it depends"
+[02:20:28] amalloy: if you're typehinting with a reference type (ie, most types), it goes before the function name
+[02:20:39] amalloy: to hint a primitive double or long, it goes on the arglist
+[02:22:29] clgv: amalloy: I think that should be fixed. the typehint on the function name should be removed in favor of the one on the arglist that is needed by primitive functions anyway
+[02:22:45] clgv: currently, that won't even work for non-primitive class :(
+[02:23:35] Bronsa: clgv: except return type typehints on the argvec require classes to be fully qualified while on the name don't
+[02:24:10] clgv: Bronsa: yeah, when fixing the general issue, resolving might be added there easily, right?
+[02:24:21] amalloy: clgv: that's not so obvious in the case of multiple arities
+[02:24:39] clgv: amalloy: why? what is the problem?
+[02:25:03] Bronsa: clgv: I believe I already made a patch for that
+[02:25:40] amalloy: what happens if you write (defn f (^String [^long x] ...) (^Date [^double x] ...)), and then call (f y)? what type does the result of that have?
+[02:26:02] Bronsa: clgv: on an earlier discussion about it, Rich didn't seem to think it was a problem though
+[02:26:07] Bronsa: amalloy: that doesn't make any sense?
+[02:26:35] amalloy: Bronsa: no? it seems fine to me. if x is known to be a double or a long, the compiler will dispatch to whatever arity
+[02:26:47] amalloy: er, will it? maybe not
+[02:27:03] clgv: amalloy: easy as that, multiple impls of same arity are not allowed as far as I know
+[02:27:08] Bronsa: ,(fn ([^long x]) ([^double y]))
+[02:27:15] Bronsa: amalloy: ^
+[02:27:21] clgv: (inc Bronsa) ;)
+[02:27:21] lazybot: ⇒ 1
+[02:27:28] hyPiRion: what about
+[02:27:45] hyPiRion: ,(fn ([^long x ^long y]) ([^double y]))
+[02:28:24] Bronsa: hyPiRion: sure but there you know statically which arity you're invoking
+[02:28:51] clgv: Bronsa: what stopped your patch?
+[02:28:57] hyPiRion: right, I presume use apply is a bad thing for reflection :p
+[02:29:01] clgv: Bronsa: general desinterest?
+[02:29:01] Bronsa: clgv: it's in the limbo
+[02:29:02] hyPiRion: apply use*
+[02:29:48] Bronsa: clgv: http://dev.clojure.org/jira/browse/CLJ-1232
+[02:29:52] clgv: yeah, though the compiler could try to "guess" for `apply` if all arities have the same typehint ;)
+[02:31:07] clgv: Bronsa: wouldnt it be better to unify the patch into a patch that also fixes the different locations for typehint (i.e. removes the functionality of typehints on the function name in favor for the arglist?)
+[02:31:36] clgv: ah well might hurt the inclusion (short term)
+[02:31:41] TEttinger: ,(defn f (^String [^double x] (str x)) (^Date [^long x ^long y] (Date. (+ x y))))
+[02:31:47] Bronsa: clgv: that would be a breaking change
+[02:31:47] TEttinger: ,(defn f (^String [^double x] (str x)) (^DateTime [^long x ^long y] (Date. (+ x y))))
+[02:31:51] TEttinger: hm
+[02:32:00] Glenjamin: if you just allowed both but favoured the arglist you'd keep back compat
+[02:32:02] TEttinger: ,(defn f (^String [^double x] (str x)) (^java.util.Date [^long x ^long y] (Date. (+ x y))))
+[02:32:08] TEttinger: whaaaat
+[02:32:17] Glenjamin: ,(defn f (^String [^double x] (str x)) (^java.util.Date [^long x ^long y] (java.util.Date. (+ x y))))
+[02:32:23] clgv: Bronsa: yeah ok, if they are resolved that'll work
+[02:32:25] hyPiRion: ,(import 'java.util.Date)
+[02:32:50] TEttinger: (f 1.0)
+[02:32:52] TEttinger: ,(f 1.0)
+[02:33:05] TEttinger: ,(f 777777777777 80)
+[02:33:11] clgv: same namespace ;)
+[02:33:12] TEttinger: haha
+[02:33:49] clgv: ,(ns bla (:use sandbox)) (f 777777777777 80))
+[02:34:03] TEttinger: ns returns nil
+[02:34:11] clgv: ,(do (ns bla (:use sandbox)) (f 777777777777 80)))
+[02:34:30] clgv: ,(do (ns bla (:use sandbox)) (let [d (f 777777777777 80)))] d)
+[02:34:40] clgv: ,(do (ns bla (:use sandbox)) (let [d (f 777777777777 80))] d))
+[02:34:44] clgv: :(
+[02:34:57] clgv: ,(do (ns bla (:use sandbox)) (let [d (f 777777777777 80)] d))
+[02:35:16] TEttinger: why the ns :use sandbox trick?
+[02:35:16] Bronsa: clgv: it's not going to error out on you anyway. The only issue you'll get is a reflection warning from an interop call
+[02:35:16] clgv: maybe it doesnt switch
+[02:35:28] clgv: ah ok
+[02:35:39] Bronsa: type hints aren't enforced
+[02:35:51] TEttinger: that's why they're hints
+[02:36:16] clgv: yeah, I thought it already worked when you bind it in a `let` and the compiler tries to determine the type... was wrong there
+[02:36:41] clgv: I had that same error months ago...
