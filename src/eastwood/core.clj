@@ -20,6 +20,7 @@
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.unused :as unused]
+            [eastwood.linters.typetags :as typetags]
             [eastwood.linters.typos :as typos])
   (:import [java.io File PushbackReader]
            [clojure.lang LineNumberingPushbackReader]))
@@ -47,8 +48,7 @@ return value followed by the time it took to evaluate in millisec."
      [ret# elapsed-msec#]))
 
 (def ^:private available-linters
-  {
-   :misplaced-docstrings misc/misplaced-docstrings
+  {:misplaced-docstrings misc/misplaced-docstrings
    :deprecations deprecated/deprecations
    :redefd-vars misc/redefd-vars
    :def-in-def misc/def-in-def
@@ -63,13 +63,12 @@ return value followed by the time it took to evaluate in millisec."
    :unused-fn-args unused/unused-fn-args
    :unused-namespaces unused/unused-namespaces
    :unlimited-use misc/unlimited-use
+   :wrong-tag typetags/wrong-tag
    :keyword-typos typos/keyword-typos
-   :non-dynamic-earmuffs misc/non-dynamic-earmuffs
-   })
+   :non-dynamic-earmuffs misc/non-dynamic-earmuffs})
 
 (def ^:private default-linters
-  #{
-    :misplaced-docstrings
+  #{:misplaced-docstrings
     :deprecations
     :redefd-vars
     :def-in-def
@@ -79,13 +78,8 @@ return value followed by the time it took to evaluate in millisec."
     :suspicious-expression
     :unused-ret-vals
     :unused-ret-vals-in-try
-    ;;:unused-private-vars  ; not yet updated to t.a(.jvm).  Also needs cols
-    ;; :unused-fn-args      ; updated, but don't use it by default
-    ;; :unused-namespaces   ; updated, but don't use it by default. no line/col
     :unlimited-use
-    ;; :keyword-typos       ; updated, but don't use it by default. no line/col
-    ;;:non-dynamic-earmuffs ; not yet updated to t.a(.jvm).  Also needs cols
-    })
+    :wrong-tag})
 
 (defn- lint [exprs kw]
   (try
@@ -125,16 +119,16 @@ entire stack trace if depth is nil).  Does not print ex-data."
               (str/upper-case (subs x 0 1))))))) ; first char is upper-case
 
 (defn misplaced-primitive-tag? [x]
-  (cond
-   (= x clojure.core/byte)    {:prim-name "byte",    :supported-as-ret-hint false}
-   (= x clojure.core/short)   {:prim-name "short",   :supported-as-ret-hint false}
-   (= x clojure.core/int)     {:prim-name "int",     :supported-as-ret-hint false}
-   (= x clojure.core/long)    {:prim-name "long",    :supported-as-ret-hint true}
-   (= x clojure.core/boolean) {:prim-name "boolean", :supported-as-ret-hint false}
-   (= x clojure.core/char)    {:prim-name "char",    :supported-as-ret-hint false}
-   (= x clojure.core/float)   {:prim-name "float",   :supported-as-ret-hint false}
-   (= x clojure.core/double)  {:prim-name "double",  :supported-as-ret-hint true}
-   :else nil))
+  (condp = x
+   clojure.core/byte    {:prim-name "byte",    :supported-as-ret-hint false}
+   clojure.core/short   {:prim-name "short",   :supported-as-ret-hint false}
+   clojure.core/int     {:prim-name "int",     :supported-as-ret-hint false}
+   clojure.core/long    {:prim-name "long",    :supported-as-ret-hint true}
+   clojure.core/boolean {:prim-name "boolean", :supported-as-ret-hint false}
+   clojure.core/char    {:prim-name "char",    :supported-as-ret-hint false}
+   clojure.core/float   {:prim-name "float",   :supported-as-ret-hint false}
+   clojure.core/double  {:prim-name "double",  :supported-as-ret-hint true}
+   nil))
 
 (defn print-ex-data-details [ns-sym opts ^Throwable exc]
   (let [dat (ex-data exc)
@@ -149,11 +143,11 @@ entire stack trace if depth is nil).  Does not print ex-data."
       (when (contains? (:ast dat) :form)
         (println (format "    (class (-> dat :ast :form))=%s (-> dat :ast :form)="
                          (class (-> dat :ast :form))))
-        (util/pprint-ast-node (-> dat :ast :form)))
-      (util/pprint-ast-node (-> dat :ast)) )
+        (util/pprint-form (-> dat :ast :form)))
+      (util/pprint-form (-> dat :ast)) )
     (when (contains? dat :form)
       (println (format "    (:form dat)="))
-      (util/pprint-ast-node (:form dat)))
+      (util/pprint-form (:form dat)))
     (pst exc nil)))
 
 (defn handle-bad-dot-form [ns-sym opts ^Throwable exc]
@@ -181,7 +175,7 @@ entire stack trace if depth is nil).  Does not print ex-data."
                    (:tag ast))]
        (println (format "A function, macro, protocol method, var, etc. named %s has been used here:"
                         form))
-       (util/pprint-ast-node (meta form))
+       (util/pprint-form (meta form))
        (println (format "Wherever it is defined, or where it is called, it has a type of %s"
                         tag))
        (cond
@@ -238,7 +232,7 @@ For supported type hints, it should be just before the arg vector, like this:
            tag (-> form meta :tag)]
        (println (format "Local name '%s' has been given a type tag '%s' here:"
                         form tag))
-       (util/pprint-ast-node (meta tag))
+       (util/pprint-form (meta tag))
        (cond
         (maybe-unqualified-java-class-name? tag)
         (do
@@ -293,7 +287,7 @@ curious." eastwood-url))
         (do
           (println (format "dbgx for case :op %s tag=%s (class form)=%s (sequential? form)=%s form="
                            (:op ast) tag (class form) (sequential? form)))
-          (util/pprint-ast-node form)
+          (util/pprint-form form)
           :show-more-details)))
 
      :else
@@ -357,8 +351,8 @@ curious." eastwood-url))
         (binding [*print-level* 7
                   *print-length* 50]
           (pp/pprint exception-form))
-        (println "\nShown again with metadata for debugging:")
-        (util/pprint-ast-node exception-form))
+        (println "\nShown again with metadata for debugging (some metadata elided for brevity):")
+        (util/pprint-form exception-form))
       (println
 "\nAn exception was thrown while analyzing namespace" ns-sym "
 Lint results may be incomplete.  If there are compilation errors in

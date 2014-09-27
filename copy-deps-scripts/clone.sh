@@ -7,13 +7,17 @@ cd repos
 
 git clone https://github.com/clojure/tools.analyzer.git
 cd tools.analyzer
-git checkout tools.analyzer-0.2.2
-
+# This is a commit shortly after tools.analyzer-0.6.0 that contains a
+# few fixes.
+#git checkout tools.analyzer-0.6.0
+git checkout 3af99e2a8055c22609de2d64b1e0009e949c252d
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
-git checkout tools.analyzer.jvm-0.2.2
+# This is a commit shortly after tools.analyzer.jvm-0.6.0 that
+# contains a few fixes.
+git checkout 2f3499280dc2bb62d6f291738ecc04f91b0d7dbb
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git
@@ -33,7 +37,7 @@ cd ..
 
 git clone https://github.com/clojure/tools.namespace.git
 cd tools.namespace
-git checkout tools.namespace-0.2.5
+git checkout tools.namespace-0.2.6
 cd ..
 
 git clone https://github.com/clojure/tools.reader.git

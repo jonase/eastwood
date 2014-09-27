@@ -14,6 +14,7 @@
   "Adds a :internal-name to :fn nodes containing a string that represents
    the name of the class that will be generated for that fn, not including
    the ns prefix"
+  {:pass-info {:walk :pre :depends #{}}}
   :op)
 
 (defn propagate-internal-name

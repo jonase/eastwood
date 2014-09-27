@@ -10,8 +10,7 @@
   (:refer-clojure :exclude [record?])
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env])
   (:import (clojure.lang IRecord IType IObj
-                         IReference Var)
-           java.util.regex.Pattern))
+                         IReference Var)))
 
 (defn into!
   "Like into, but for transients"
@@ -33,6 +32,17 @@
   [ast]
   (dissoc ast :env))
 
+(defn butlast+last
+  "Returns same value as (juxt butlast last), but slightly more
+   efficient since it only traverses the input sequence s once, not
+   twice."
+  [s]
+  (loop [butlast (transient [])
+         s s]
+    (if-let [xs (next s)]
+      (recur (conj! butlast (first s)) xs)
+      [(seq (persistent! butlast)) (first s)])))
+
 (defn update-vals
   "Applies f to all the vals in the map"
   [m f]
@@ -52,22 +62,37 @@
   "Returns true if x is a record"
   [x]
   (instance? IRecord x))
+
 (defn type?
   "Returns true if x is a type"
   [x]
   (instance? IType x))
+
 (defn obj?
   "Returns true if x implements IObj"
   [x]
   (instance? IObj x))
+
 (defn reference?
   "Returns true if x implements IReference"
   [x]
   (instance? IReference x))
+
+(defmacro compile-if
+  [exp then & else]
+  (if (try (eval exp)
+           (catch Exception _ false))
+    `(do ~then)
+    `(do ~@else)))
+
 (defn regex?
   "Returns true if x is a regex"
   [x]
-  (instance? Pattern x))
+  (instance? (compile-if (Class/forName "java.util.regex.Pattern")
+               java.util.regex.Pattern
+               System.Text.RegularExpressions.Regex)
+             x))
+
 (defn boolean?
   "Returns true if x is a boolean"
   [x]
@@ -97,26 +122,35 @@
 
 (defn private?
   "Returns true if the var is private"
-  [var]
-  (:private (meta var)))
+  ([var] (private? var nil))
+  ([var m]
+     (:private (or m (meta var)))))
+
 (defn macro?
   "Returns true if the var maps to a macro"
-  [var]
-  (:macro (meta var)))
+  ([var] (macro? var nil))
+  ([var m]
+     (:macro (or m (meta var)))))
+
 (defn constant?
   "Returns true if the var is a const"
-  [var]
-  (:const (meta var)))
+  ([var] (constant? var nil))
+  ([var m]
+     (:const (or m (meta var)))))
+
 (defn dynamic?
   "Returns true if the var is dynamic"
-  [var]
-  (or (:dynamic (meta var))
-      (when (var? var) ;; workaround needed since Clojure doesn't always propagate :dynamic
-        (.isDynamic ^Var var))))
+  ([var] (dynamic? var nil))
+  ([var m]
+     (or (:dynamic (or m (meta var)))
+         (when (var? var) ;; workaround needed since Clojure doesn't always propagate :dynamic
+           (.isDynamic ^Var var)))))
+
 (defn protocol-node?
   "Returns true if the var maps to a protocol function"
-  [var]
-  (boolean (:protocol (meta var)))) ;; conveniently this is true in both clojure and clojurescript
+  ([var] (protocol-node? var nil))
+  ([var m]
+     (boolean (:protocol (or m (meta var)))))) ;; conveniently this is true in both clojure and clojurescript
 
 (defn resolve-ns
   "Resolves the ns mapped by the given sym in the env"
@@ -148,44 +182,50 @@
                    (>= argc (- (count last-arglist) 2)))
           last-arglist))))
 
-(defn get-line
-  "Returns the line number of x"
-  [x env]
-  (-> x meta :line))
-(defn get-col
-  "Returns the column number of x"
-  [x env]
-  (-> x meta :column))
+(defn select-keys'
+  "Like clojure.core/select-keys, but uses transients and doesn't preserve meta"
+  [map keyseq]
+  (loop [ret (transient {}) keys (seq keyseq)]
+    (if keys
+      (let [entry (find map (first keys))]
+        (recur (if entry
+                 (conj! ret entry)
+                 ret)
+               (next keys)))
+      (persistent! ret))))
+
+(defn merge'
+  "Like merge, but uses transients"
+  [m & mms]
+  (persistent! (reduce conj! (transient (or m {})) mms)))
 
 (defn source-info
-  "Returns the source-info from an env"
-  [env]
-  (select-keys env #{:file :line :column}))
+  "Returns the available source-info keys from a map"
+  [m]
+  (when (:line m)
+    (select-keys' m #{:file :line :column :end-line :end-column :source-span})))
 
 (defn -source-info
   "Returns the source-info of x"
   [x env]
-  (merge
-   (source-info env)
-   (when-let [file (or (-> x meta :file)
-                       (and (not= *file* "NO_SOURCE_FILE")
-                            *file*))]
-     {:file file})
-   (when-let [line (get-line x env)]
-     {:line line})
-   (when-let [column (get-col x env)]
-     {:column column})))
+  (merge' (source-info (meta x))
+          (when-let [file (and (not= *file* "NO_SOURCE_FILE")
+                               *file*)]
+            {:file file})))
 
 (defn const-val
   "Returns the value of a constant node (either :quote or :const)"
-  [{:keys [op val expr]}]
-  (if (= :quote op)
-    (:val expr)
-    val))
+  [{:keys [op form val expr]}]
+  (cond
+   (= :quote op)
+   (const-val expr)
 
-(defmacro compile-if
-  [exp then & else]
-  (if (try (eval exp)
-           (catch Throwable _ false))
-    `(do ~then)
-    `(do ~@else)))
+   val
+   val
+
+   :else
+   form))
+
+(def mmerge
+  "Same as (fn [m1 m2] (merge-with merge m2 m1))"
+  #(merge-with merge' %2 %1))

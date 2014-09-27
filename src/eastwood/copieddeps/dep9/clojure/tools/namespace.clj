@@ -28,7 +28,7 @@
        (.endsWith (.getName file) ".clj")))
 
 (defn find-clojure-sources-in-dir
-  "DEPRECATED; moved to clojure.tools.namespace.find
+  "DEPRECATED; moved to eastwood.copieddeps.dep9.clojure.tools.namespace.find
 
   Searches recursively under dir for Clojure source files (.clj).
   Returns a sequence of File objects, in breadth-first sort order."
@@ -38,21 +38,21 @@
            (filter clojure-source-file? (file-seq dir))))
 
 (defn comment?
-  "DEPRECATED; moved to clojure.tools.namespace.parse
+  "DEPRECATED; moved to eastwood.copieddeps.dep9.clojure.tools.namespace.parse
 
   Returns true if form is a (comment ...)"
   [form]
   (and (list? form) (= 'comment (first form))))
 
 (defn ns-decl?
-  "DEPRECATED; moved to clojure.tools.namespace.parse
+  "DEPRECATED; moved to eastwood.copieddeps.dep9.clojure.tools.namespace.parse
 
   Returns true if form is a (ns ...) declaration."
   [form]
   (and (list? form) (= 'ns (first form))))
 
 (defn read-ns-decl
-  "DEPRECATED; moved to clojure.tools.namespace.parse
+  "DEPRECATED; moved to eastwood.copieddeps.dep9.clojure.tools.namespace.parse
 
   Attempts to read a (ns ...) declaration from rdr, and returns the
   unevaluated form.  Returns nil if read fails or if a ns declaration
@@ -68,7 +68,7 @@
        (catch Exception e nil)))
 
 (defn read-file-ns-decl
-  "DEPRECATED; moved to clojure.tools.namespace.file
+  "DEPRECATED; moved to eastwood.copieddeps.dep9.clojure.tools.namespace.file
 
   Attempts to read a (ns ...) declaration from file, and returns the
   unevaluated form.  Returns nil if read fails, or if the first form
@@ -78,7 +78,7 @@
     (read-ns-decl rdr)))
 
 (defn find-ns-decls-in-dir
-  "DEPRECATED; moved to clojure.tools.namespace.find
+  "DEPRECATED; moved to eastwood.copieddeps.dep9.clojure.tools.namespace.find
 
   Searches dir recursively for (ns ...) declarations in Clojure
   source files; returns the unevaluated ns declarations."
@@ -86,7 +86,7 @@
   (filter identity (map read-file-ns-decl (find-clojure-sources-in-dir dir))))
 
 (defn find-namespaces-in-dir
-  "DEPRECATED; moved to clojure.tools.namespace.find
+  "DEPRECATED; moved to eastwood.copieddeps.dep9.clojure.tools.namespace.find
 
   Searches dir recursively for (ns ...) declarations in Clojure
   source files; returns the symbol names of the declared namespaces."
@@ -132,14 +132,14 @@
 ;;; Finding namespaces in JAR files
 
 (defn clojure-sources-in-jar
-  "DEPRECATED; moved to clojure.tools.namespace.find
+  "DEPRECATED; moved to eastwood.copieddeps.dep9.clojure.tools.namespace.find
 
   Returns a sequence of filenames ending in .clj found in the JAR file."
   [^JarFile jar-file]
   (filter #(.endsWith ^String % ".clj") (filenames-in-jar jar-file)))
 
 (defn read-ns-decl-from-jarfile-entry
-  "DEPRECATED; moved to clojure.tools.namespace.find
+  "DEPRECATED; moved to eastwood.copieddeps.dep9.clojure.tools.namespace.find
 
   Attempts to read a (ns ...) declaration from the named entry in the
   JAR file, and returns the unevaluated form.  Returns nil if the read
@@ -152,7 +152,7 @@
     (read-ns-decl rdr)))
 
 (defn find-ns-decls-in-jarfile
-  "DEPRECATED; moved to clojure.tools.namespace.find
+  "DEPRECATED; moved to eastwood.copieddeps.dep9.clojure.tools.namespace.find
 
   Searches the JAR file for Clojure source files containing (ns ...)
   declarations; returns the unevaluated ns declarations."
@@ -162,7 +162,7 @@
                (clojure-sources-in-jar jarfile))))
 
 (defn find-namespaces-in-jarfile
-  "DEPRECATED; moved to clojure.tools.namespace.find
+  "DEPRECATED; moved to eastwood.copieddeps.dep9.clojure.tools.namespace.find
 
   Searches the JAR file for Clojure source files containing (ns ...)
   declarations.  Returns a sequence of the symbol names of the
@@ -173,7 +173,7 @@
 ;;; Finding namespaces anywhere on CLASSPATH
 
 (defn find-ns-decls-on-classpath
-  "DEPRECATED; use clojure.tools.namespace.find/find-ns-decls
+  "DEPRECATED; use eastwood.copieddeps.dep9.clojure.tools.namespace.find/find-ns-decls
   and clojure.java.classpath/classpath from
   http://github.com/clojure/java.classpath
 
@@ -185,7 +185,7 @@
    (mapcat find-ns-decls-in-jarfile (classpath-jarfiles))))
 
 (defn find-namespaces-on-classpath
-  "DEPRECATED; use clojure.tools.namespace.find/find-namespaces
+  "DEPRECATED; use eastwood.copieddeps.dep9.clojure.tools.namespace.find/find-namespaces
   and clojure.java.classpath/classpath from
   http://github.com/clojure/java.classpath
 
