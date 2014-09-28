@@ -343,8 +343,8 @@ curious." eastwood-url))
               (show-exception ns-sym opts result))
             (do
               (swap! warning-count inc)
-              (binding [*out* (:results-wrtr opts)]
-                (prn result))
+              (when (:results-wrtr opts)
+                (binding [*out* (:results-wrtr opts)] (prn result)))
               (pp/pprint result)))
           (println))
         (when print-time?
