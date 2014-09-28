@@ -76,8 +76,14 @@
 (require '[eastwood.util :as util] :reload)
 (require '[eastwood.linters.unused :as un] :reload)
 
+(defn clean-ast [ast]
+  (-> ast
+      (util/trim-ast :remove-only [:env])
+      util/ast-to-ordered))
+
 (def a (ana/analyze-ns 'testcases.f06 :opt {}))
-(insp/inspect-tree a)
+(def a2 (update-in a [:analyze-results :asts] #(mapv clean-ast %)))
+(insp/inspect-tree a2)
 
 (def fn1 (:init (nth a 1)))
 (def locs1 (->> fn1 util/ast-nodes (filter (util/op= :local))))
