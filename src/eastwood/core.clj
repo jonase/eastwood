@@ -343,6 +343,8 @@ curious." eastwood-url))
               (show-exception ns-sym opts result))
             (do
               (swap! warning-count inc)
+              (binding [*out* (:results-wrtr opts)]
+                (prn result))
               (pp/pprint result)))
           (println))
         (when print-time?
@@ -579,6 +581,10 @@ file and namespace to avoid name collisions.")
                            :record-forms? true
                            :forms-read-wrtr (io/writer "forms-read.txt")
                            :forms-emitted-wrtr (io/writer "forms-emitted.txt")))
+                       opts)
+                results-file? (:results-file opts)
+                opts (if results-file?
+                       (assoc opts :results-wrtr (io/writer "eastwood-results.txt"))
                        opts)]
             (doseq [namespace namespaces]
               (try
