@@ -346,7 +346,7 @@ discarded inside null: null'."
                  (let [name-found? (contains? (-> stmt :env) :name)
                        loc (if name-found?
                              (-> stmt :env :name meta)
-                             (-> stmt :env))]
+                             (pass/most-specific-loc stmt))]
                    {:linter :unused-ret-vals
                     :msg (format "%s value is discarded%s: %s"
                                  (case (:op stmt)

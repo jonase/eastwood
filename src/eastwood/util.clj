@@ -42,6 +42,7 @@ more interesting keys earlier."
                              :var
                              :raw-forms
                              :eastwood/partly-resolved-forms
+                             :eastwood/ancestors
                              :env
 
                              ;; Some keywords I have seen in :children

@@ -1,7 +1,7 @@
 (ns eastwood.passes
   (:refer-clojure :exclude [get-method])
   (:require [clojure.string :as str]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children postwalk]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children postwalk walk]]
             [eastwood.util :as util]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
@@ -119,3 +119,38 @@ replaced by one that is resolved, with a namespace."
                  (assoc ast :eastwood/partly-resolved-forms resolved-forms))
                ast))]
     (postwalk ast pw)))
+
+
+(def ^:private ^:dynamic *ancestors*)
+
+(defn add-ancestors-pre [ast]
+  (swap! *ancestors* #(update-in % [:ancestors] conj ast))
+  ast)
+
+(defn add-ancestors-post [ast]
+  (swap! *ancestors* #(update-in % [:ancestors] pop))
+  (let [{:keys [ancestors]} @*ancestors*]
+    (assoc ast :eastwood/ancestors ancestors)))
+
+(defn add-ancestors [ast]
+  (binding [*ancestors* (atom {:ancestors []})]
+    (walk ast add-ancestors-pre add-ancestors-post)))
+
+(defn has-code-loc? [x]
+  (if (and (contains? x :file)
+           (contains? x :line)
+           (contains? x :column))
+    x))
+
+(defn code-loc [ast]
+  (has-code-loc? (:env ast)))
+
+(defn most-specific-loc
+  "Given an ast that contains something in the source code we would
+like to create a warning about, find the nearest ancestor ast a that
+has non-nil values for (-> a :env :line) and also for :column
+and :file.  Assumes the ast has earlier been put through
+add-ancestors."
+  [ast]
+  (or (code-loc ast)
+      (some code-loc (rseq (:eastwood/ancestors ast)))))

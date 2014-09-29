@@ -3,7 +3,7 @@
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
-            [eastwood.passes :refer [propagate-def-name add-partly-resolved-forms reflect-validated]]
+            [eastwood.passes :as pass]
             [clojure.set :as set]
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as tr]
@@ -178,6 +178,15 @@
   (merge ana.jvm/default-passes-opts
          {:validate/wrong-tag-handler eastwood-wrong-tag-handler}))
 
+;; TBD: Consider changing how the functions called within
+;; eastwood-ast-additions are defined so that they can be added to
+;; eastwood-passes above instead.
+
+(defn eastwood-ast-additions [ast]
+  (-> ast
+      pass/add-partly-resolved-forms
+      pass/add-ancestors))
+
 (defn wrapped-exception? [result]
   (if (instance? eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)
     (.e ^eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)))
@@ -273,7 +282,7 @@
                       (post-analyze-debug asts form ast *ns* opt)
                       (recur (conj forms form)
                              (conj asts
-                                   (add-partly-resolved-forms ast))))))))))))))
+                                   (eastwood-ast-additions ast))))))))))))))
 
 
 (defn analyze-ns
