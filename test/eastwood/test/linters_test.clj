@@ -117,7 +117,18 @@
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var]
    {}
-   {})
+   {
+    {:linter :local-shadows-var,
+     :msg "local: replace invoked as function shadows var: #'clojure.core/replace",
+     :file "testcases/f04.clj",
+     :line 44, :column 14}
+    1,
+    {:linter :local-shadows-var,
+     :msg "local: shuffle invoked as function shadows var: #'clojure.core/shuffle",
+     :file "testcases/f04.clj",
+     :line 47, :column 14}
+    1,
+    })
   ;; The following test is known to fail with Clojure 1.5.1 because of
   ;; protocol method names that begin with "-".  See
   ;; http://dev.clojure.org/jira/browse/TANAL-17 and
