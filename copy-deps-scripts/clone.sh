@@ -23,6 +23,7 @@ cd ..
 git clone https://github.com/clojure/core.memoize.git
 cd core.memoize
 git checkout core.memoize-0.5.6
+patch -p1 < ../../core.memoize-fix-reflection-warning.patch
 cd ..
 
 git clone https://github.com/clojure/core.cache.git

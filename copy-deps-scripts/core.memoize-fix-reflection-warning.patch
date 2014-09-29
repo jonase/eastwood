@@ -1,0 +1,13 @@
+diff --git a/src/main/clojure/clojure/core/memoize.clj b/src/main/clojure/clojure/core/memoize.clj
+index 645cf1a..27bf925 100644
+--- a/src/main/clojure/clojure/core/memoize.clj
++++ b/src/main/clojure/clojure/core/memoize.clj
+@@ -69,7 +69,7 @@
+   [memoized-fn]
+   (when-let [cache (::cache (meta memoized-fn))]
+     (into {}
+-          (for [[k v] (.cache @cache)]
++          (for [[k v] (.cache ^PluggableMemoization @cache)]
+             [(vec k) @v]))))
+ 
+ (defn memoized?
