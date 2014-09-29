@@ -48,7 +48,6 @@ more interesting keys earlier."
                              ;; Some keywords I have seen in :children
                              ;; vectors, given in the same relative
                              ;; order as I saw them.
-                             :body
                              :catches
                              :finally
                              :statements
@@ -60,9 +59,11 @@ more interesting keys earlier."
                              :instance
                              :args
                              :params
+                             :bindings
                              :body
                              :expr
                              :meta
+                             :init
                              :local
                              :methods
                              :keys
