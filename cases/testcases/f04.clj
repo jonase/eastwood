@@ -24,12 +24,26 @@
   ;; used as functions.
   (let [name 'foo
         pmap {:a 1 :b 2}
-        comment (fn [y] (println name map y))]
-    ;; This use of comment should cause a warning with the current
-    ;; linter, although the fact that comment is explicitly defined
-    ;; above as a fn should perhaps not cause a warning if the linter
-    ;; were 'smarter'.
+        comment (fn [y] (println name map y))
+        remove #(inc %)]
+    ;; No warning, similar to (remove 5) call case below.
     (comment 7)
     ;; should cause a warning for pmap, but current linter doesn't
     ;; detect that pmap is being used as a function here.
-    (map pmap [1 2 3])))
+    (println (map pmap [1 2 3]))
+    ;; Ideally this should not cause a warning.  Figure out how to
+    ;; determine that remove is a function, and consider this an
+    ;; intentional case of shadowing.
+    (println (remove 5))))
+
+;; core.logic intentionally shadows the name loop using letfn.
+;; Hopefully the result of analyzing this code makes it easy to
+;; determine that loop's value is a function in this case, so I can
+;; suppress the warning.
+
+(defn shadowed-loop [v]
+  (letfn [(loop [ys]
+            (if ys
+              (loop (next ys))
+              28))]
+    (loop v)))

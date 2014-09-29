@@ -478,6 +478,10 @@ significantly faster than the otherwise equivalent (= (count s) n)"
 (defn local-shadows-var [{:keys [asts]}]
   (for [{:keys [op fn form env]} (mapcat ast/nodes asts)
         :when (and (= op :invoke)
+                   ;; In the examples I have looked at, (:o-tag fn) is
+                   ;; also equal to 'clojure.lang.AFunction.  What is
+                   ;; the difference between that and (:tag fn) ?
+                   (not= clojure.lang.AFunction (:tag fn))
                    (contains? (:locals env) (:form fn)))
         :let [v (env/ensure (j/global-env) (resolve-var (:form fn) env))]
         :when v]

@@ -117,13 +117,7 @@
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var]
    {}
-   {
-    {:linter :local-shadows-var,
-     :msg "local: comment invoked as function shadows var: #'clojure.core/comment",
-     :file "testcases/f04.clj",
-     :line 32, :column 5}
-    1,
-    })
+   {})
   ;; The following test is known to fail with Clojure 1.5.1 because of
   ;; protocol method names that begin with "-".  See
   ;; http://dev.clojure.org/jira/browse/TANAL-17 and
