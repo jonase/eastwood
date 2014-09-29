@@ -197,15 +197,17 @@ generate varying strings while the test is running."
 
 (def ^:dynamic *var-info-map* nil)
 
-(defn predicate-forms [forms form-type]
+(defn predicate-forms [subexpr-maps form-type]
   (apply
    concat
-   (for [f forms]
+   (for [{:keys [subexpr ast]} subexpr-maps
+         :let [f subexpr]]
      (cond
       (and (not (list? f))
            (constant-expr? f))
       [(let [meta-loc (-> f meta)
-             loc (pass/has-code-loc? meta-loc)]
+             loc (or (pass/has-code-loc? meta-loc)
+                     (pass/most-specific-loc ast))]
          {:linter :suspicious-test,
           :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
                        (cond (-> meta-loc :line) ""
@@ -283,57 +285,30 @@ generate varying strings while the test is running."
                                    (first (:pr-form %)))
                                formasts)))))
 
-;;           _ (do
-;;               (doseq [pr-formast pr-formasts]
-;;                 (clojure.pprint/pprint
-;;                  {:pr-form (:pr-form pr-formast)
-;;                   :raw-form (:raw-form pr-formast)
-;;                   :ast (select-keys (:ast pr-formast)
-;;                                     [:op :env :form :raw-forms])})
-;;                 (println "----------------------------------------"))
-;;               )
+           ;; To find deftest subexpressions, first filter all of the
+           ;; partly-resolved forms for those with a first symbol
+           ;; equal to clojure.test/deftest, then get of the first 2
+           ;; symbols from each, which are the deftest and the Var
+           ;; name following deftest.
+           pr-deftest-subexprs
+           (->> pr-formasts
+                (filter #(= 'clojure.test/deftest (first (:pr-form %))))
+                (mapcat (fn [formast]
+                          (for [subexpr (nthnext (:pr-form formast) 2)]
+                            (assoc formast :subexpr subexpr)))))
+
+           ;; Similarly for testing subexprs as for deftest subexprs.
+           ;; TBD: Make a helper function to eliminate the nearly
+           ;; duplicated code between deftest and testing.
+           pr-testing-subexprs
+           (->> pr-formasts
+                (filter #(= 'clojure.test/testing (first (:pr-form %))))
+                (mapcat (fn [formast]
+                          (for [subexpr (nthnext (:pr-form formast) 2)]
+                            (assoc formast :subexpr subexpr)))))
 
            pr-is-formasts pr-first-is-formasts
-           pr-deftest-formasts (filter #(= (first (:pr-form %)) 'clojure.test/deftest)
-                               pr-formasts)
-           pr-testing-formasts (filter #(= (first (:pr-form %)) 'clojure.test/testing)
-                               pr-formasts)
-;;           _ (println (format "dbx: Found %d ct/is %d ct/deftest %d ct/testing (ct=clojure.test)"
-;;                              (count pr-is-formasts)
-;;                              (count pr-deftest-formasts)
-;;                              (count pr-testing-formasts)))
-           pr-is-forms (map :raw-form pr-is-formasts)
-           pr-deftest-subexprs (apply concat
-                                      (map #(nthnext (:pr-form %) 2) pr-deftest-formasts))
-           pr-testing-subexprs (apply concat
-                                      (map #(nthnext (:pr-form %) 2) pr-testing-formasts))
-
-;;           _ (do
-;;               (binding [*print-meta* true]
-;;                 (println (format "dbx: %d pr-is-forms:"
-;;                                  (count pr-is-forms)))
-;;                 (clojure.pprint/pprint pr-is-forms)
-;;                 (println "----------------------------------------")
-;;                 (println (format "dbx: %d pr-raw-is-forms:"
-;;                                  (count pr-is-forms)))
-;;                 (clojure.pprint/pprint (map :raw-form pr-is-formasts))
-;;                 (println "----------------------------------------")
-;;                 (println "----------------------------------------")
-
-;;                 (println (format "dbx: %d pr-deftest-subexprs:"
-;;                                  (count pr-deftest-subexprs)))
-;;                 (clojure.pprint/pprint pr-deftest-subexprs)
-;;                 (println "----------------------------------------")
-;;                 (println "----------------------------------------")
-                 
-;;                 (println (format "dbx: %d pr-testing-subexprs:"
-;;                                  (count pr-testing-subexprs)))
-;;                 (clojure.pprint/pprint pr-testing-subexprs)
-;;                 (println "----------------------------------------")
-;;                 (println "----------------------------------------")
-;;                 )
-;;               )
-           ]
+           pr-is-forms (map :raw-form pr-is-formasts)]
        (concat (suspicious-is-forms pr-is-forms)
                (predicate-forms pr-deftest-subexprs 'deftest)
                (predicate-forms pr-testing-subexprs 'testing))))))
