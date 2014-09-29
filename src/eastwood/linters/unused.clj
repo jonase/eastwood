@@ -224,10 +224,11 @@ discarded inside null: null'."
                     " inside body of try"
                     "")
         form (:form stmt)
-        [file line column] ((juxt :file :line :column)
-                            (case stmt-desc-str
-                              "function call" (-> stmt :meta)
-                              "static method call" (-> stmt :form meta)))
+        loc (or (pass/has-code-loc?
+                 (case stmt-desc-str
+                   "function call" (-> stmt :meta)
+                   "static method call" (-> stmt :form meta)))
+                (pass/most-specific-loc stmt))
         ;; If there is no info about the method m in
         ;; *warning-if-static-ret-val-unused*, use reflection to see
         ;; if the return type of the method is void.  That is a fairly
@@ -270,9 +271,9 @@ discarded inside null: null'."
            :warn-if-ret-val-unused
            (format "Should use return value of %s, but it is discarded%s: %s"
                    stmt-desc-str extra-msg form))
-         :file file
-         :line line
-         :column column}
+         :file (-> loc :file)
+         :line (-> loc :line)
+         :column (-> loc :column)}
 
         ;; default case, where we have no information about the type
         ;; of function or method it is.  Note that for Clojure
