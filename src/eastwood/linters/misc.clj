@@ -472,11 +472,15 @@ significantly faster than the otherwise equivalent (= (count s) n)"
              :line (-> loc :line)
              :column (-> loc :column)}]))))))
 
+;; TBD: Consider also looking for local symbols in positions of forms
+;; where they appeared to be used as functions, e.g. as the second arg
+;; to map, apply, etc.
 (defn local-shadows-var [{:keys [asts]}]
-  (for [{:keys [op form env]} (mapcat ast/nodes asts)
-        :when (= op :binding)
-        :let [v (env/ensure (j/global-env) (resolve-var form env))]
+  (for [{:keys [op fn form env]} (mapcat ast/nodes asts)
+        :when (and (= op :invoke)
+                   (contains? (:locals env) (:form fn)))
+        :let [v (env/ensure (j/global-env) (resolve-var (:form fn) env))]
         :when v]
     (merge {:linter :local-shadows-var
-            :msg (str "local: " form " shadows var: " v)}
+            :msg (str "local: " (:form fn) " invoked as function shadows var: " v)}
            (select-keys env #{:line :column :file}))))

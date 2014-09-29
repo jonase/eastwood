@@ -74,6 +74,7 @@ return value followed by the time it took to evaluate in millisec."
     :def-in-def
     :wrong-arity
     :bad-arglists
+    :local-shadows-var
     :suspicious-test
     :suspicious-expression
     :unused-ret-vals

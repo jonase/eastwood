@@ -34,7 +34,7 @@
   (lint-test
    'testcases.f01
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity]
+    :wrong-arity :local-shadows-var]
    {}
    {
     {:linter :redefd-vars,
@@ -84,7 +84,8 @@
   ;; twice in the result.  Once would be enough.
   (lint-test
    'testcases.f02
-   [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity]
+   [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity
+    :local-shadows-var]
    {}
    {
     {:linter :redefd-vars,
@@ -114,9 +115,15 @@
   (lint-test
    'testcases.f04
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity]
+    :wrong-arity :local-shadows-var]
    {}
-   {})
+   {
+    {:linter :local-shadows-var,
+     :msg "local: comment invoked as function shadows var: #'clojure.core/comment",
+     :file "testcases/f04.clj",
+     :line 32, :column 5}
+    1,
+    })
   ;; The following test is known to fail with Clojure 1.5.1 because of
   ;; protocol method names that begin with "-".  See
   ;; http://dev.clojure.org/jira/browse/TANAL-17 and
@@ -125,13 +132,13 @@
     (lint-test
      'testcases.f05
      [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-      :wrong-arity]
+      :wrong-arity :local-shadows-var]
      {}
      {}))
   (lint-test
    'testcases.f06
    [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity]
+    :wrong-arity :local-shadows-var]
    {}
    {
     {:linter :unused-fn-args,
@@ -351,14 +358,15 @@
           1)]
     (lint-test
      'testcases.f07
-     [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
+     [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
+      :local-shadows-var]
      {}
      (if clojure-1-6-or-later
        clojure-1-6-or-later-expected-warnings
        clojure-1-5-expected-warnings)))
   (lint-test
    'testcases.deprecated
-   [:deprecations :wrong-arity]
+   [:deprecations :wrong-arity :local-shadows-var]
    {}
    {
     {:linter :deprecations,
@@ -388,20 +396,22 @@
   (lint-test
    'testcases.tanal-9
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
-    :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
+    :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
+    :local-shadows-var]
 ;;   [:misplaced-docstrings]
    {}  ;{:debug #{:all}}
    {})
   (lint-test
    'testcases.tanal-27
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
-    :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
+    :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
+    :local-shadows-var]
    {}
    {})
   (lint-test
    'testcases.keyword-typos
    [:keyword-typos :unused-ret-vals :unused-ret-vals-in-try
-    :deprecations :wrong-arity]
+    :deprecations :wrong-arity :local-shadows-var]
    {}
    {
     {:linter :keyword-typos,
@@ -410,12 +420,13 @@
     })
   (lint-test
    'testcases.isformsok
-   [:suspicious-test :suspicious-expression]
+   [:suspicious-test :suspicious-expression :local-shadows-var]
    {}
    {})
   (lint-test
    'testcases.testtest
-   [:keyword-typos :suspicious-test :suspicious-expression]
+   [:keyword-typos :suspicious-test :suspicious-expression
+    :local-shadows-var]
    {}
    {
     {:linter :suspicious-test,
@@ -759,7 +770,7 @@
   ;; command line.  What is going on here?
   (lint-test
    'testcases.unlimiteduse
-   [:unlimited-use]
+   [:unlimited-use :local-shadows-var]
    {}
    {
     {:linter :unlimited-use,
@@ -775,7 +786,7 @@
     })
   (lint-test
    'testcases.in-ns-switching
-   [:unlimited-use]
+   [:unlimited-use :local-shadows-var]
    {}
    {
     {:linter :unlimited-use,
