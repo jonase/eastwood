@@ -1,6 +1,7 @@
 (ns eastwood.linters.typos
   (:require [clojure.pprint :as pp])
   (:require [eastwood.util :as util]
+            [eastwood.passes :as pass]
             [clojure.string :as str]
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
@@ -203,18 +204,17 @@ generate varying strings while the test is running."
      (cond
       (and (not (list? f))
            (constant-expr? f))
-      [(let [file (-> f meta :file)
-             line (-> f meta :line)
-             column (-> f meta :column)]
+      [(let [meta-loc (-> f meta)
+             loc (pass/has-code-loc? meta-loc)]
          {:linter :suspicious-test,
           :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
-                       (cond line ""
+                       (cond (-> meta-loc :line) ""
                              (string? f) (str " \"" f "\"")
                              :else (str " " f))
                        (if f (.getName (class f)) "nil") form-type)
-          :file file
-          :line line
-          :column column})]
+          :file (-> loc :file)
+          :line (-> loc :line)
+          :column (-> loc :column)})]
       
       (sequential? f)
       (let [ff (first f)
@@ -222,23 +222,23 @@ generate varying strings while the test is running."
             var-info (and cc-sym (get *var-info-map* cc-sym))
 ;;             _ (println (format "dbx: predicate-forms ff=%s cc-sym=%s var-info=%s"
 ;;                                ff cc-sym var-info))
-            ]
+            loc (-> ff meta)]
         (cond
          (and var-info (get var-info :predicate))
          [{:linter :suspicious-test,
            :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
                         ff form-type ff)
-           :file (-> ff meta :file)
-           :line (-> ff meta :line)
-           :column (-> ff meta :column)}]
+           :file (-> loc :file)
+           :line (-> loc :line)
+           :column (-> loc :column)}]
          
          (and var-info (get var-info :pure-fn))
          [{:linter :suspicious-test,
            :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
                         ff form-type)
-           :file (-> ff meta :file)
-           :line (-> ff meta :line)
-           :column (-> ff meta :column)}]
+           :file (-> loc :file)
+           :line (-> loc :line)
+           :column (-> loc :column)}]
          
          :else nil))
       :else nil))))
@@ -392,6 +392,7 @@ generate varying strings while the test is running."
                  (set (keys core-first-vars-that-do-little))))]
      (for [f fs]
        (let [fn-sym (first f)
+             loc (-> fn-sym meta)
              num-args (dec (count f))
              suspicious-args (get core-first-vars-that-do-little fn-sym)
              info (get suspicious-args num-args)]
@@ -405,9 +406,9 @@ generate varying strings while the test is running."
                           (if (= "" (:ret-val info))
                             "\"\""
                             (print-str (:ret-val info))))
-             :file (-> fn-sym meta :file)
-             :line (-> fn-sym meta :line)
-             :column (-> fn-sym meta :column)}]))))))
+             :file (-> loc :file)
+             :line (-> loc :line)
+             :column (-> loc :column)}]))))))
 
 ;; Note: Looking for asts that contain :invoke nodes for the function
 ;; #'clojure.core/= will not find expressions like (clojure.test/is (=
@@ -469,6 +470,7 @@ generate varying strings while the test is running."
               fn-sym (.sym fn-var)
               num-args (count (-> ast :args))
               form (-> ast :form)
+              loc (-> form meta)
               suspicious-args (get core-fns-that-do-little fn-var)
               info (get suspicious-args num-args)]
           (if (contains? suspicious-args num-args)
@@ -481,9 +483,9 @@ generate varying strings while the test is running."
                           (if (= "" (:ret-val info))
                             "\"\""
                             (print-str (:ret-val info))))
-             :file (-> form meta :file)
-             :line (-> form meta :line)
-             :column (-> form meta :column)})))))))
+             :file (-> loc :file)
+             :line (-> loc :line)
+             :column (-> loc :column)})))))))
 
 (defn suspicious-expression [& args]
   (concat
