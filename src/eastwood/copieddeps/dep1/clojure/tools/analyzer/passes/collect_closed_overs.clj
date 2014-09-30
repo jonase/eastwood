@@ -59,7 +59,10 @@
 (defn collect-closed-overs
   "Attach closed-overs info to the AST as specified by the passes opts:
    * :where       set of :op nodes where to attach the closed-overs
-   * :top-level?  if true attach closed-overs info to the top-level node"
+   * :top-level?  if true attach closed-overs info to the top-level node
+
+   The info will be attached in the :closed-overs field of the AST node
+   and will be a map of local name -> binding AST node"
   {:pass-info {:walk :none :depends #{#'uniquify-locals}}}
   [ast]
   (let [passes-opts                   (:passes-opts (env/deref-env))

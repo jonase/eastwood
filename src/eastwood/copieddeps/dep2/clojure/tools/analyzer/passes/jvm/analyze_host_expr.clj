@@ -167,7 +167,7 @@
                 :maybe-class
                 (when-let [the-class (or (maybe-class class)
                                          (maybe-class (resolve-var class env)))]
-                  (assoc (ana/-analyze :const the-class env :class)
+                  (assoc (ana/analyze-const the-class env :class)
                     :tag   Class
                     :o-tag Class
                     :form  form))
@@ -176,7 +176,7 @@
                 (if-let [the-class (and (not (namespace form))
                                         (pos? (.indexOf (str form) "."))
                                         (maybe-class form))]
-                  (assoc (ana/-analyze :const the-class env :class)
+                  (assoc (ana/analyze-const the-class env :class)
                     :tag   Class
                     :o-tag Class
                     :form  form)

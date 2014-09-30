@@ -33,7 +33,6 @@
 (derive :ctx.invoke/param :ctx/expr)
 (derive :ctx.invoke/target :ctx/expr)
 
-(defmulti -analyze (fn [op form env & _] op))
 (defmulti -parse
   "Takes a form and an env map and dispatches on the head of the form, that is
    a special form."
@@ -42,35 +41,42 @@
 
 (defmulti -analyze-form (fn [form _] (class form)))
 
+(declare analyze-symbol
+         analyze-vector
+         analyze-map
+         analyze-set
+         analyze-seq
+         analyze-const)
+
 (def ^:dynamic analyze-form
   "Like analyze, but does not mark the form with :top-level true"
   -analyze-form)
 
 (defmethod -analyze-form clojure.lang.Symbol
   [form env]
-  (-analyze :symbol form env))
+  (analyze-symbol form env))
 
 (defmethod -analyze-form clojure.lang.IPersistentVector
   [form env]
-  (-analyze :vector form env))
+  (analyze-vector form env))
 
 (defmethod -analyze-form clojure.lang.IPersistentMap
   [form env]
-  (-analyze :map form env))
+  (analyze-map form env))
 
 (defmethod -analyze-form clojure.lang.IPersistentSet
   [form env]
-  (-analyze :set form env))
+  (analyze-set form env))
 
 (defmethod -analyze-form clojure.lang.ISeq
   [form env]
   (if-let [form (seq form)]
-    (-analyze :seq form env)
-    (-analyze :const form env)))
+    (analyze-seq form env)
+    (analyze-const form env)))
 
 (defmethod -analyze-form clojure.lang.IType
   [form env]
-  (-analyze :const form env :type))
+  (analyze-const form env :type))
 
 (prefer-method -analyze-form clojure.lang.IType clojure.lang.IPersistentMap)
 (prefer-method -analyze-form clojure.lang.IType clojure.lang.IPersistentVector)
@@ -79,7 +85,7 @@
 
 (defmethod -analyze-form clojure.lang.IRecord
   [form env]
-  (-analyze :const form env :record))
+  (analyze-const form env :record))
 
 (prefer-method -analyze-form clojure.lang.IRecord clojure.lang.IPersistentMap)
 (prefer-method -analyze-form clojure.lang.IRecord clojure.lang.IPersistentVector)
@@ -88,7 +94,7 @@
 
 (defmethod -analyze-form :default
   [form env]
-  (-analyze :const form env))
+  (analyze-const form env))
 
 (defn analyze
   "Given a form to analyze and an environment, a map containing:
@@ -170,8 +176,8 @@
        :children [:meta :expr]}
       expr)))
 
-(defmethod -analyze :const
-  [_ form env & [type]]
+(defn analyze-const
+  [form env & [type]]
   (let [type (or type (classify form))
         m (meta form)]
     (merge
@@ -183,12 +189,11 @@
       :form     form}
      (when (and (obj? form)
                 (seq m))
-       {:meta     (-analyze :const m (ctx env :ctx/expr) :map) ;; metadata on a constant literal will not be evaluated at
-                                                           ;; runtime, this is also true for metadata on quoted collection literals
-        :children [:meta]}))))
+       {:meta     (analyze-const m (ctx env :ctx/expr) :map) ;; metadata on a constant literal will not be evaluated at
+        :children [:meta]}))))                               ;; runtime, this is also true for metadata on quoted collection literals
 
-(defmethod -analyze :vector
-  [_ form env]
+(defn analyze-vector
+  [form env]
   (let [items-env (ctx env :ctx/expr)
         items (mapv (analyze-in-env items-env) form)]
     (wrapping-meta
@@ -198,8 +203,8 @@
       :form     form
       :children [:items]})))
 
-(defmethod -analyze :map
-  [_ form env]
+(defn analyze-map
+  [form env]
   (let [kv-env (ctx env :ctx/expr)
         [keys vals] (reduce-kv (fn [[keys vals] k v]
                                  [(conj keys k) (conj vals v)])
@@ -214,8 +219,8 @@
       :form     form
       :children [:keys :vals]})))
 
-(defmethod -analyze :set
-  [_ form env]
+(defn analyze-set
+  [form env]
   (let [items-env (ctx env :ctx/expr)
         items (mapv (analyze-in-env items-env) form)]
     (wrapping-meta
@@ -241,12 +246,12 @@
         mform
         (recur mform)))))
 
-(defmethod -analyze :symbol
-  [_ sym env]
+(defn analyze-symbol
+  [sym env]
   (let [mform (macroexpand-1 sym env)] ;; t.a.j/macroexpand-1 macroexpands Class/Field into (. Class Field)
     (if (= mform sym)
       (merge (if-let [{:keys [mutable children] :as local-binding} (-> env :locals sym)] ;; locals shadow globals
-               (merge (dissoc local-binding :init) ;; avoids useless passes later
+               (merge (dissoc local-binding :init)                                      ;; avoids useless passes later
                       {:op          :local
                        :assignable? (boolean mutable)
                        :children    (vec (remove #{:init} children))})
@@ -255,8 +260,7 @@
                  (let [m (meta var)]
                    {:op          :var
                     :assignable? (dynamic? var m) ;; we cannot statically determine if a Var is in a thread-local context
-                                                  ;; so checking whether it's dynamic or not is the most we can do
-                    :var         var
+                    :var         var              ;; so checking whether it's dynamic or not is the most we can do
                     :meta        m})
                  (if-let [maybe-class (namespace sym)] ;; e.g. js/foo.bar or Long/MAX_VALUE
                    (let [maybe-class (symbol maybe-class)]
@@ -273,8 +277,8 @@
         (analyze-form env)
         (update-in [:raw-forms] (fnil conj ()) sym)))))
 
-(defmethod -analyze :seq
-  [_ form env]
+(defn analyze-seq
+  [form env]
   (let [op (first form)]
     (when (nil? op)
       (throw (ex-info "Can't call nil"
@@ -340,7 +344,7 @@
     (throw (ex-info (str "Wrong number of args to quote, had: " (dec (count form)))
                     (merge {:form form}
                            (-source-info form env)))))
-  (let [const (-analyze :const expr env)]
+  (let [const (analyze-const expr env)]
     {:op       :quote
      :expr     const
      :form     form

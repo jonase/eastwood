@@ -1,6 +1,6 @@
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.constant-lifter
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.constant-lifter :as orig]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer :refer [-analyze]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer :refer [analyze-const]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [constant? classify]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.analyze-host-expr :refer [analyze-host-expr]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.elide-meta :refer [elide-meta]]))
@@ -11,7 +11,7 @@
     (let [{:keys [var env form meta]} ast]
      (if (constant? var meta)
        (let [val @var]
-         (assoc (-analyze :const val env (classify val))
+         (assoc (analyze-const val env (classify val))
            :form form))
        ast))
     (orig/constant-lift ast)))
