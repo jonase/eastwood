@@ -8,31 +8,12 @@
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as tr]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rts]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer :as ana :refer [analyze] :rename {analyze -analyze}]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer
-             [ast :refer [postwalk prewalk cycling]]
-             [utils :as utils]
              [env :as env]
              [passes :refer [schedule]]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
-             [source-info :refer [source-info]]
-             [cleanup :refer [cleanup]]
-             [elide-meta :refer [elide-meta]]
-             [warn-earmuff :refer [warn-earmuff]]
-             [collect-closed-overs :refer [collect-closed-overs]]
-             [uniquify :refer [uniquify-locals]]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
-             [box :refer [box]]
-             [collect :refer [collect]]
-             [constant-lifter :refer [constant-lift]]
-             [clear-locals :refer [clear-locals]]
-             [classify-invoke :refer [classify-invoke]]
-             [validate :refer [validate]]
-             [infer-tag :refer [infer-tag ensure-tag]]
-             [validate-loop-locals :refer [validate-loop-locals]]
-             [warn-on-reflection :refer [warn-on-reflection]]
-             [emit-form :refer [emit-form]]]))
+             [warn-on-reflection :refer [warn-on-reflection]]]))
 
 ;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer, then later probably diverged from each other.
@@ -140,30 +121,10 @@
 
 (def eastwood-passes
   "Set of passes that will be run by default on the AST by #'run-passes"
-  #{
-    ;; Doing clojure.core/eval in analyze+eval already generates
-    ;; reflection warnings from Clojure.  Doing it in tools.analyzer
-    ;; also leads to duplicate warnings.
-    ;;#'warn-on-reflection
-    #'warn-earmuff
-
-    #'uniquify-locals
-
-    #'source-info
-    #'elide-meta
-    #'constant-lift
-
-    #'clear-locals
-    #'collect-closed-overs
-    #'collect
-
-    #'box
-
-    #'validate-loop-locals
-    #'validate
-    #'infer-tag
-
-    #'classify-invoke})
+  ;; Doing clojure.core/eval in analyze+eval already generates
+  ;; reflection warnings from Clojure.  Doing it in tools.analyzer
+  ;; also leads to duplicate warnings.
+  (disj ana.jvm/default-passes #'warn-on-reflection))
 
 (def scheduled-eastwood-passes
   (schedule eastwood-passes))
