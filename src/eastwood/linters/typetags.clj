@@ -4,7 +4,7 @@
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]))
 
 (def default-classname-mapping
-  (.getMappings (the-ns 'eastwood.linters.typetags)))
+  (ns-map 'eastwood.linters.typetags))
 
 (defn wrong-tag-from-analyzer [{:keys [asts]}]
   (for [{:keys [op name form env] :as ast} (->> (mapcat ast/nodes asts)
