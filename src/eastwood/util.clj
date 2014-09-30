@@ -211,7 +211,10 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
   (let [a (if (contains? (set kws) :with-env)
             ast
             (trim-ast ast :remove-only [:env]))]
-    (-> a ast-to-ordered pprint-meta-elided)))
+    (-> a
+        (trim-ast :remove-only [:eastwood/ancestors])
+        ast-to-ordered
+        pprint-meta-elided)))
 
 (defn pprint-form [form]
   (pprint-meta-elided form))
