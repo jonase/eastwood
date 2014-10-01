@@ -34,7 +34,7 @@
   (lint-test
    'testcases.f01
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity :local-shadows-var]
+    :wrong-arity :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :redefd-vars,
@@ -85,7 +85,7 @@
   (lint-test
    'testcases.f02
    [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity
-    :local-shadows-var]
+    :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :redefd-vars,
@@ -109,13 +109,14 @@
   (lint-test
    'testcases.f03
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try :wrong-arity]
+    :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try :wrong-arity
+    :wrong-tag]
    {}
    {})
   (lint-test
    'testcases.f04
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity :local-shadows-var]
+    :wrong-arity :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :local-shadows-var,
@@ -137,13 +138,13 @@
     (lint-test
      'testcases.f05
      [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-      :wrong-arity :local-shadows-var]
+      :wrong-arity :local-shadows-var :wrong-tag]
      {}
      {}))
   (lint-test
    'testcases.f06
    [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity :local-shadows-var]
+    :wrong-arity :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :unused-fn-args,
@@ -364,14 +365,14 @@
     (lint-test
      'testcases.f07
      [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
-      :local-shadows-var]
+      :local-shadows-var :wrong-tag]
      {}
      (if clojure-1-6-or-later
        clojure-1-6-or-later-expected-warnings
        clojure-1-5-expected-warnings)))
   (lint-test
    'testcases.deprecated
-   [:deprecations :wrong-arity :local-shadows-var]
+   [:deprecations :wrong-arity :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :deprecations,
@@ -402,7 +403,7 @@
    'testcases.tanal-9
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
-    :local-shadows-var]
+    :local-shadows-var :wrong-tag]
 ;;   [:misplaced-docstrings]
    {}  ;{:debug #{:all}}
    {})
@@ -410,13 +411,13 @@
    'testcases.tanal-27
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
-    :local-shadows-var]
+    :local-shadows-var :wrong-tag]
    {}
    {})
   (lint-test
    'testcases.keyword-typos
    [:keyword-typos :unused-ret-vals :unused-ret-vals-in-try
-    :deprecations :wrong-arity :local-shadows-var]
+    :deprecations :wrong-arity :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :keyword-typos,
@@ -425,13 +426,13 @@
     })
   (lint-test
    'testcases.isformsok
-   [:suspicious-test :suspicious-expression :local-shadows-var]
+   [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
    {}
    {})
   (lint-test
    'testcases.testtest
    [:keyword-typos :suspicious-test :suspicious-expression
-    :local-shadows-var]
+    :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :suspicious-test,
@@ -775,7 +776,7 @@
   ;; command line.  What is going on here?
   (lint-test
    'testcases.unlimiteduse
-   [:unlimited-use :local-shadows-var]
+   [:unlimited-use :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :unlimited-use,
@@ -791,13 +792,99 @@
     })
   (lint-test
    'testcases.in-ns-switching
-   [:unlimited-use :local-shadows-var]
+   [:unlimited-use :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :unlimited-use,
      :msg "Unlimited use of (clojure.test clojure.set [testcases.f01 :as t1]) in testcases.in-ns-switching",
      :file "testcases/in_ns_switching.clj",
      :line 3, :column 9}
+    1,
+    })
+  (lint-test
+   'testcases.wrongtag
+   @#'eastwood.core/default-linters
+   {}
+   {
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lv1",
+     :file "testcases/wrongtag.clj",
+     :line 7, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lv2",
+     :file "testcases/wrongtag.clj",
+     :line 8, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: iv1",
+     :file "testcases/wrongtag.clj",
+     :line 19, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: iv2",
+     :file "testcases/wrongtag.clj",
+     :line 20, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf1",
+     :file "testcases/wrongtag.clj",
+     :line 31, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf2",
+     :file "testcases/wrongtag.clj",
+     :line 32, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf3",
+     :file "testcases/wrongtag.clj",
+     :line 33, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf4",
+     :file "testcases/wrongtag.clj",
+     :line 34, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if1",
+     :file "testcases/wrongtag.clj",
+     :line 35, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if2",
+     :file "testcases/wrongtag.clj",
+     :line 36, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if3",
+     :file "testcases/wrongtag.clj",
+     :line 37, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if4",
+     :file "testcases/wrongtag.clj",
+     :line 38, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Tag: (quote LinkedList) for return type of fn on arg vector: [coll] should be Java class name (fully qualified if not in java.lang package)",
+     :file "testcases/wrongtag.clj",
+     :line 84, :column 36}
+    1,
+    {:linter :wrong-tag,
+     :msg "Tag: (quote LinkedList) for return type of fn on arg vector: [coll] should be Java class name (fully qualified if not in java.lang package)",
+     :file "testcases/wrongtag.clj",
+     :line 85, :column 33}
+    1,
+    {:linter :wrong-tag,
+     :msg "Tag: LinkedList for return type of fn on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)",
+     :file "testcases/wrongtag.clj",
+     :line 87, :column 28}
+    1,
+    {:linter :wrong-tag,
+     :msg "Tag: LinkedList for return type of fn on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)",
+     :file "testcases/wrongtag.clj",
+     :line 88, :column 25}
     1,
     })
   ;; I would prefer if this threw an exception, but I think it does
