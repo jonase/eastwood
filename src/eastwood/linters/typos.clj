@@ -220,7 +220,9 @@ generate varying strings while the test is running."
       
       (sequential? f)
       (let [ff (first f)
-            cc-sym (and ff (symbol "clojure.core" (name ff)))
+            cc-sym (and ff
+                        (instance? clojure.lang.Named ff)
+                        (symbol "clojure.core" (name ff)))
             var-info (and cc-sym (get *var-info-map* cc-sym))
 ;;             _ (println (format "dbx: predicate-forms ff=%s cc-sym=%s var-info=%s"
 ;;                                ff cc-sym var-info))
