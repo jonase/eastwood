@@ -9,15 +9,18 @@
 (defn replace-variable-tag-part
   "Wrong tags that were written like (def ^long foo ...) convert to
 strings like clojure.core$long@deadbeef, where the deadbeef part is an
-8-digit hex string that changes from one run to the next.  Replace
-these strings with @<somehex>, simply to make them consistent from one
-run to the next, thus easier to check for in unit tests, and producing
-fewer lines of output in 'diff' from one Eastwood run to the next.  I
-doubt the exact value of the hex digits has any lasting significance
-needed by the user."
+hex string that changes from one run to the next.  It is usually 8
+digits long in my experience, but does not print leading 0s so can be
+shorter.
+
+Replace these strings with @<somehex>, simply to make them consistent
+from one run to the next, thus easier to check for in unit tests, and
+producing fewer lines of output in 'diff' from one Eastwood run to the
+next.  I doubt the exact value of the hex digits has any lasting
+significance needed by the user."
   [tag]
   (string/replace (str tag)
-                  #"@[0-9a-fA-F]{8}"
+                  #"@[0-9a-fA-F]+"
                   (string/re-quote-replacement "@<somehex>")))
 
 (defn wrong-tag-from-analyzer [{:keys [asts]}]
