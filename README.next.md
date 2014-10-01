@@ -45,8 +45,14 @@ compiler errors before running Eastwood.  Even better, `lein test`
 will compile files in your source paths and test paths, not merely
 your source paths as `lein check` does.
 
-See section "For Eastwood developers" below for instructions on trying
-out the latest unreleased version of Eastwood.
+It is experimental right now, but you should be able to run Eastwood
+on namespaces from within a running REPL, without having to start a
+new JVM.  See section [Running Eastwood in a REPL](tbd-link).
+
+See section [For Eastwood
+developers](https://github.com/jonase/eastwood#for-eastwood-developers)
+below for instructions on trying out the latest unreleased version of
+Eastwood.
 
 
 ## What's there?
@@ -218,6 +224,62 @@ value that is a set of keywords, e.g.
   each top level form print any changes to that list of loaded
   namespaces (typically as the result of evaluating a `require` or
   `use` form).
+
+
+### Running Eastwood in a REPL
+
+This is _experimental_.  Before you try it, note that Eastwood does these steps:
+
+* analyzes the source code you give it
+* generates _new_ forms from the analysis results.  Note: if there are
+  bugs, these new forms might not be identical to the original source
+  code.
+* Calls `eval` on the generated forms.
+
+Hopefully you can see from this the possibility of Eastwood bugs
+leading to incorrect Clojure code being loaded into a running JVM.
+
+If you want to run Eastwood in this way to avoid starting up a new JVM
+every time you lint your code, I recommend doing so in a separate JVM
+process used only for linting purposes.  It would be foolhardy to do
+this in a JVM running a live production system.  Preferably you should
+not even use the same JVM process where you do your ongoing testing
+and development work.
+
+Merge this into your project's project.clj file first:
+
+```clojure
+:profiles {:dev {:dependencies [[jonase/eastwood "0.1.4" :exclusions [org.clojure/clojure]]]}}
+```
+
+From within your REPL:
+
+```clojure
+(require '[eastwood.core :as e])
+
+(defn lint [ns]
+  (e/lint-ns-noprint ns @#'e/default-linters {}))
+
+(use 'clojure.pprint)
+
+(pprint (lint 'my.ns))
+```
+
+Replace `my.ns` with the namespace you wish to lint.
+
+Note: This approach will read the namespace code from the source file,
+and it will evaluate its forms just as doing `use` or `require` on the
+namespace would.  It will throw an exception if running Eastwood on
+that namespace would throw an exception.  It can print messages to
+`*out*`, e.g. if `*warn-on-reflection*` is true, or if an exception is
+thrown.  The return value is a sequence of maps that are the same as
+the ones you would see printed by Eastwood when run from a shell.
+
+This approach requires you to manage your namespaces manually.
+Eastwood will not force the removal of any namespaces, and I would
+guess if there are any issues from reloading a namespace that is
+already loaded with protocols, deftype, etc. then they are yours to
+deal with.
 
 
 ## Known issues
