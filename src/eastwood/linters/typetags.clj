@@ -4,7 +4,7 @@
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]))
 
 (def default-classname-mapping
-  (.getMappings (the-ns 'eastwood.linters.typetags)))
+  (ns-map 'eastwood.linters.typetags))
 
 (defn replace-variable-tag-part
   "Wrong tags that were written like (def ^long foo ...) convert to
