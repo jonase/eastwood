@@ -204,18 +204,28 @@ Otherwise import the class by adding a line like this to your ns statement:
 like this:
     (defn ^%s %s [args] ...)" prim-name form))
           (println (format
-"Clojure 1.5.1 does not handle such tags correctly, and gives no error messages."))
+"Clojure 1.5.1 and 1.6.0 do not handle such tags as you probably expect.
+They silently treat this as a tag of the *function* named clojure.core/%s"
+prim-name))
           (when-not supported-as-ret-hint
             (println (format
 "Also, it only supports return type hints of long and double, not %s" prim-name)))
           (println (format
 "Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
-Type hints for unsupported types (other than long or double) should be deleted.
-For supported type hints, it should be just before the arg vector, like this:
+If you wish the function to have a primitive return type, this is only
+supported for types long and double, and the type tag must be given just
+before the argument vector, like this:
     (defn %s ^%s [args] ...)" form good-prim-name))
           (println (format
 "or if there are multiple arities defined, like this:
     (defn %s (^%s [arg1] ...) (^%s [arg1 arg2] ...))" form good-prim-name good-prim-name))
+          (println (format
+"If you wish to use a primitive type tag on the Var name, Clojure will
+only use that if the function is called and its return value is used
+as an argument in a Java interop call.  In such situations, the type
+tag can help choose a Java method and often avoid reflection.  If that
+is what you want, you must specify the tag like so:
+    (defn ^{:tag '%s} %s [args] ...)" prim-name form))
           :no-more-details-needed)
         
         :else
