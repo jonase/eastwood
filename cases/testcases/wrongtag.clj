@@ -99,3 +99,12 @@
 (def ^{:private true} avlf11 (fn ^LinkedList [coll] (java.util.LinkedList. coll)))
 (defn ^{:private true} avlf12 ^LinkedList [coll] (java.util.LinkedList. coll))
 (defn- avlf13 ^LinkedList [coll] (java.util.LinkedList. coll))
+
+;; No warnings for these cases, either, strangely enough.  Clojure
+;; never seems to throw an exception for non-fully qualified Java
+;; class names as type tags on Vars naming functions, only in the
+;; cases mentioned above when such a class name is used as a tag on
+;; the argument vector.
+
+(def ^LinkedList avlf15 (fn [coll] (java.util.LinkedList. coll)))
+(defn ^LinkedList avlf16 [coll] (java.util.LinkedList. coll))
