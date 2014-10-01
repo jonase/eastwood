@@ -5,19 +5,8 @@ interest.
 
 ## Changes from version 0.1.4 to 0.1.5
 
-New linter :wrong-tag
-
-It currently has warnings for the following projects:
-
-    cassaforte namespace clojurewerkz.cassaforte.bytes, .uuids
-    kria namespace kria.conversions
-    meltdown namespace clojurewerkz.meltdown.consumers
-
-TBD: Add detailed documentation to README.md for :wrong-tag linter
-
-New linter :local-shadows-var
-
 TBD: Add detailed documentation to README.md for :local-shadows-var
+TBD: Add detailed documentation to README.md for :wrong-tag linter
 
 Eastwood 0.1.4 threw an exception due to a not-fully-qualified Java
 class name used in a type tag in the places listed below.  Why doesn't
@@ -56,21 +45,6 @@ TBD: Some :deprecations warnings have worse file/line/col combinations
 reported than in 0.1.4.
 
     core.match-2014-03-05 namespace clojure.core.match.date and others
-
-I have removed some details from some Eastwood warning messages,
-particularly the following linters, because it was not easy to
-determine whether the latest tools.analyzer(.jvm) analysis results
-contained them in an easy-to-reach place without additional code.
-
-    :unused-fn-args
-    :unused-ret-vals
-
-On the plus side, some of the line and column numbers are now more
-precise than they were before from those linters, as well as those
-below:
-
-    :suspicious-test (e.g. elastisch namespace
-        clojurewerkz.elastisch.rest-api.multi-test)
 
 Namespace clojure.core.logic.nominal.tests throws exception 'Could not
 resolve var: deftest' when it clearly uses clojure.test.  It does have
