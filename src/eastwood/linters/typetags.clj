@@ -67,13 +67,13 @@ needed by the user."
         :let [tag (-> form first meta :tag)
               loc (-> form first meta)
               ;; *If* this :fn-method is part of a defn, then the
-              ;; *'parent' ast should be the one with :op :fn, and its
-              ;; *parent ast should be the one with :op :def, and that
-              ;; *ast's :meta key should have the metadata on the Var
-              ;; *whose value is being made equal to the fn being
-              ;; *defined.  That is where the {:private true}
-              ;; *key/value pair should be if the Var is marked
-              ;; *private.
+              ;; 'parent' ast should be the one with :op :fn, and its
+              ;; parent ast should be the one with :op :def.  That
+              ;; 'grandparent' ast's :meta key should have the
+              ;; metadata on the Var whose value is being made equal
+              ;; to the fn being defined.  That is where the {:private
+              ;; true} key/value pair should be if the Var is marked
+              ;; private.
               grandparent-ast (let [ancestors (:eastwood/ancestors ast)
                                     n (count ancestors)]
                                 (if (>= n 2)
