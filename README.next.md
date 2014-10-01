@@ -975,10 +975,10 @@ is not fully qualified.
 (defn ^LinkedList linklist2 [coll] (java.util.LinkedList. coll))
 
 ;; no warning for this since it is fully qualified
-(defn linklist2 ^java.util.LinkedList [coll] (java.util.LinkedList. coll))
+(defn linklist3 ^java.util.LinkedList [coll] (java.util.LinkedList. coll))
 
 ;; no warning for this because it is private
-(defn ^:private linklist3 ^LinkedList [coll] (java.util.LinkedList. coll))
+(defn ^:private linklist4 ^LinkedList [coll] (java.util.LinkedList. coll))
 
 ;; no warning for this because Class is in java.lang package
 (defn cls ^Class [obj] (class obj))
