@@ -84,10 +84,10 @@ the command line to enable or disable the linter.
   functions where it rarely makes sense to discard its return
   value. [[more]](https://github.com/jonase/eastwood#unused-ret-vals-and-unused-ret-vals-in-try---values-that-are-not-used)
 - `:local-shadows-var` - A local name, e.g. a fn arg or let binding,
-  has the same name as a global Var, and is called as a function.
-  [[more]](tbd)
+  has the same name as a global Var, and is called as a function (new
+  in version 0.1.5). [[more]](https://github.com/jonase/eastwood#local-shadows-var---a-local-name-that-is-same-as-a-global-name-called-as-a-function)
 - `:wrong-tag` - An incorrect type tag for which the Clojure compiler
-  does not give an error. [[more]](tbd)
+  does not give an error (new in version 0.1.5). [[more]](https://github.com/jonase/eastwood#wrong-tag---an-incorrect-type-tag)
 - `:unused-private-vars` - Unused private vars (needs updating).
 - `:unused-fn-args` - Unused function arguments (disabled by
   default). [[more]](https://github.com/jonase/eastwood#unused-fn-args---unused-arguments-of-functions-macros-methods)
@@ -811,10 +811,12 @@ in this map will never cause one of these warnings.
 
 ### `:local-shadows-var` - A local name that is same as a global name, called as a function
 
+New in Eastwood version 0.1.5
+
 Many functions in `clojure.core` have names that you might like to use
 as local names, such as function arguments or let bindings.  This is
 not necessarily a mistake, and Clojure certainly allows it, but it is
-easy to do so accidentally and introduce a bug.
+easy to do so and accidentally introduce a bug.
 
 For example, below the intent was to call `clojure.core/count` on the
 collection `data`, but instead the `let` binds a value to `count`, and
@@ -847,7 +849,7 @@ defined function.
   (println (replace 5)))
 ```
 
-The following will not cause a warning, because Eastwood's analysis is
+The following _will_ cause a warning, because Eastwood's analysis is
 not sophisticated enough to determine that the value bound to
 `replace` is a function.
 
@@ -856,10 +858,10 @@ not sophisticated enough to determine that the value bound to
   (println (replace 5)))
 ```
 
-The following example will also not cause a warning, because even
-though `pmap` can be determined not to be a function, Eastwood does
-not 'know' that the function call to `map` will use `pmap`'s value as
-a function.
+The following example will not cause a warning, because even though
+`pmap` is determined to have a non-function value, Eastwood does not
+'know' that the function call to `map` will use `pmap`'s value as a
+function.
 
 ```clojure
 (let [pmap {:a 1 :b 2}]
@@ -868,6 +870,8 @@ a function.
 
 
 ### `:wrong-tag` - An incorrect type tag
+
+New in Eastwood version 0.1.5
 
 You can use a type tag on a Var name, like in the examples below.
 This does not force the type of the value assigned to the Var, but
