@@ -207,7 +207,7 @@ generate varying strings while the test is running."
            (constant-expr? f))
       [(let [meta-loc (-> f meta)
              loc (or (pass/has-code-loc? meta-loc)
-                     (pass/most-specific-loc ast))]
+                     (pass/code-loc (pass/nearest-ast-with-loc ast)))]
          {:linter :suspicious-test,
           :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
                        (cond (-> meta-loc :line) ""

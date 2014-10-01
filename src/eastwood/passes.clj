@@ -145,12 +145,13 @@ replaced by one that is resolved, with a namespace."
 (defn code-loc [ast]
   (has-code-loc? (:env ast)))
 
-(defn most-specific-loc
+(defn nearest-ast-with-loc
   "Given an ast that contains something in the source code we would
-like to create a warning about, find the nearest ancestor ast a that
-has non-nil values for (-> a :env :line) and also for :column
+like to create a warning about, return the nearest ancestor ast T that
+has non-nil values for (-> T :env :line) and also for :column
 and :file.  Assumes the ast has earlier been put through
 add-ancestors."
   [ast]
-  (or (code-loc ast)
-      (some code-loc (rseq (:eastwood/ancestors ast)))))
+  (let [places (concat [ast] (rseq (:eastwood/ancestors ast)))
+        first-ast-with-loc (first (filter code-loc places))]
+    first-ast-with-loc))

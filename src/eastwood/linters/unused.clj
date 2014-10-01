@@ -228,7 +228,7 @@ discarded inside null: null'."
                  (case stmt-desc-str
                    "function call" (-> stmt :meta)
                    "static method call" (-> stmt :form meta)))
-                (pass/most-specific-loc stmt))
+                (pass/code-loc (pass/nearest-ast-with-loc stmt)))
         ;; If there is no info about the method m in
         ;; *warning-if-static-ret-val-unused*, use reflection to see
         ;; if the return type of the method is void.  That is a fairly
@@ -347,7 +347,7 @@ discarded inside null: null'."
                  (let [name-found? (contains? (-> stmt :env) :name)
                        loc (if name-found?
                              (-> stmt :env :name meta)
-                             (pass/most-specific-loc stmt))]
+                             (pass/code-loc (pass/nearest-ast-with-loc stmt)))]
                    {:linter :unused-ret-vals
                     :msg (format "%s value is discarded%s: %s"
                                  (case (:op stmt)
