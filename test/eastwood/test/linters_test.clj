@@ -129,6 +129,11 @@
      :file "testcases/f04.clj",
      :line 47, :column 14}
     1,
+    {:linter :local-shadows-var,
+     :msg "local: count invoked as function shadows var: #'clojure.core/count",
+     :file "testcases/f04.clj",
+     :line 64, :column 20}
+    1,
     })
   ;; The following test is known to fail with Clojure 1.5.1 because of
   ;; protocol method names that begin with "-".  See

@@ -57,3 +57,9 @@
               (loop (next ys))
               28))]
     (loop v)))
+
+(defn user-reported-example [fetched-data]
+  (let [{count :count
+         data  :data} fetched-data
+        real-count (count data)]
+    (inc real-count)))
