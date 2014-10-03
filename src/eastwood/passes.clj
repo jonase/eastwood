@@ -155,3 +155,7 @@ add-ancestors."
   (let [places (concat [ast] (rseq (:eastwood/ancestors ast)))
         first-ast-with-loc (first (filter code-loc places))]
     first-ast-with-loc))
+
+(defn all-asts-with-locs [ast]
+  (let [places (concat [ast] (rseq (:eastwood/ancestors ast)))]
+    (filter code-loc places)))
