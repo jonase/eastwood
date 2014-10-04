@@ -115,34 +115,38 @@ selectively disable such warnings if they wish."
 
 ;; Unused return values
 
-(defn make-invoke-val-unused-action-map [rsrc-name]
-  (let [sym-info-map (edn/read-string (slurp (io/resource rsrc-name)))]
-    (into {}
-          (for [[sym properties] sym-info-map]
-            [(resolve sym)
-             (cond (:macro properties) nil
-                   (:side-effect properties) :side-effect
-                   (:lazy properties) :lazy-fn
-                   (:pure-fn properties) :pure-fn
-                   (:pure-fn-if-fn-args-pure properties) :pure-fn-if-fn-args-pure
-                   (:warn-if-ret-val-unused properties) :warn-if-ret-val-unused
-                   :else nil)]))))
+(defn make-invoke-val-unused-action-map [cur-map rsrc-name]
+  (if (nil? cur-map)
+    (let [sym-info-map (edn/read-string (slurp (io/resource rsrc-name)))]
+      (into {}
+            (for [[sym properties] sym-info-map]
+              [sym
+               (cond (:macro properties) nil
+                     (:side-effect properties) :side-effect
+                     (:lazy properties) :lazy-fn
+                     (:pure-fn properties) :pure-fn
+                     (:pure-fn-if-fn-args-pure properties) :pure-fn-if-fn-args-pure
+                     (:warn-if-ret-val-unused properties) :warn-if-ret-val-unused
+                     :else nil)])))
+    cur-map))
 
-(defn make-static-method-val-unused-action-map [rsrc-name]
-  (let [static-method-info-map (edn/read-string (slurp (io/resource rsrc-name)))]
-    (into {}
-          (for [[static-method properties] static-method-info-map]
-            [(assoc static-method
-               :class (Class/forName (str (:class static-method))))
-             (cond (:side-effect properties) :side-effect
-                   (:lazy properties) :lazy-fn
-                   (:pure-fn properties) :pure-fn
-                   (:pure-fn-if-fn-args-pure properties) :pure-fn-if-fn-args-pure
-                   (:warn-if-ret-val-unused properties) :warn-if-ret-val-unused
-                   :else nil)]))))
+(defn make-static-method-val-unused-action-map [cur-map rsrc-name]
+  (if (nil? cur-map)
+    (let [static-method-info-map (edn/read-string (slurp (io/resource rsrc-name)))]
+      (into {}
+            (for [[static-method properties] static-method-info-map]
+              [(assoc static-method
+                 :class (Class/forName (str (:class static-method))))
+               (cond (:side-effect properties) :side-effect
+                     (:lazy properties) :lazy-fn
+                     (:pure-fn properties) :pure-fn
+                     (:pure-fn-if-fn-args-pure properties) :pure-fn-if-fn-args-pure
+                     (:warn-if-ret-val-unused properties) :warn-if-ret-val-unused
+                     :else nil)])))
+    cur-map))
 
-(def ^:dynamic *warning-if-invoke-ret-val-unused* {})
-(def ^:dynamic *warning-if-static-ret-val-unused* {})
+(def ^:dynamic *warning-if-invoke-ret-val-unused* (atom nil))
+(def ^:dynamic *warning-if-static-ret-val-unused* (atom nil))
 
 (defn- mark-things-in-defprotocol-expansion-post [{:keys [env] :as ast}]
   (if (not-any? #(= % 'clojure.core/defprotocol) (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms ast)))
@@ -286,108 +290,113 @@ discarded inside null: null'."
         (if (= stmt-desc-str "static method call")
           (debug-unknown-fn-methods fn-or-method stmt-desc-str stmt))))))
 
+(defn var-to-fqsym [^clojure.lang.Var v]
+  (symbol (str (.ns v)) (str (.sym v))))
+
 (defn unused-ret-vals-2 [location {:keys [asts]}]
-  (binding [*warning-if-invoke-ret-val-unused*
-            (make-invoke-val-unused-action-map "var-info.edn")
-            *warning-if-static-ret-val-unused*
-            (make-static-method-val-unused-action-map "jvm-method-info.edn")]
-    (let [unused-ret-val-exprs (->> asts
-                                    (map util/mark-exprs-in-try-body)
-                                    (map mark-things-in-defprotocol-expansion)
-                                    (mapcat ast/nodes)
-                                    (mapcat :statements)
-                                    (mapcat unused-exprs-to-check))
-          should-use-ret-val-exprs
-          (->> unused-ret-val-exprs
-               (filter #(or (#{:const :var :local} (:op %))
-                            (util/invoke-expr? %)
-                            (util/static-call? %))))]
-      (doall
-       (remove
-        nil?
-        (for [stmt should-use-ret-val-exprs]
-          ;; Note: Report unused :const :var and :local only when
-          ;; linter is the regular :unused-ret-vals one, but do so for
-          ;; such values whether they are inside of a try block or
-          ;; not.  If both :unused-ret-vals and
-          ;; :unused-ret-vals-in-try are specified, such values will
-          ;; only be reported once, and if :unused-ret-vals-in-try is
-          ;; used but not the other, they will not be reported.  I
-          ;; expect that :unused-ret-vals will be the more commonly
-          ;; used one, as the :unused-ret-vals-in-try will likely have
-          ;; more false positives from functions being called in unit
-          ;; tests to see if they throw an exception.
-          (cond (and (#{:const :var :local} (:op stmt))
-                     (= location :outside-try))
-                (cond
-                 ;; do not report part of a defprotocol macro
-                 ;; expansion that the interface created via the
-                 ;; gen-interface call
-                 (get stmt :eastwood/defprotocol-expansion-interface)
-                 nil
-
-                 ;; do not report a nil value for the signature of a
-                 ;; protocol with no methods
-                 (get stmt :eastwood/defprotocol-expansion-sigs)
-                 nil
-
-                 ;; do not report an interface created via a
-                 ;; definterface macro expansion
-                 (util/interface? (:form stmt))
-                 nil
-
-                 ;; do not report an unused nil return value if it was
-                 ;; caused by a comment or gen-class macro invocation.
-                 (and (nil? (:form stmt))
-                      (some #{'clojure.core/comment 'clojure.core/gen-class}
-                            (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms stmt))))
-                 nil
-
-                 :else
-                 (let [name-found? (contains? (-> stmt :env) :name)
-                       loc (if name-found?
-                             (-> stmt :env :name meta)
-                             (pass/code-loc (pass/nearest-ast-with-loc stmt)))]
-                   {:linter :unused-ret-vals
-                    :msg (format "%s value is discarded%s: %s"
-                                 (case (:op stmt)
-                                   :const "Constant"
-                                   :var "Var"
-                                   :local "Local")
-                                 (if name-found?
-                                   (str " inside " (-> stmt :env :name))
-                                   "")
-                                 (if (nil? (:form stmt))
-                                   "nil"
-                                   (str/trim-newline
-                                    (with-out-str
-                                      (binding [pp/*print-right-margin* nil]
-                                        (pp/pprint (:form stmt)))))))
-                    :file (-> loc :file)
-                    :line (-> loc :line)
-                    :column (-> loc :column)}))
-
-                (util/static-call? stmt)
-                (let [cls (:class stmt)
-                      method (:method stmt)
-                      m {:class cls :method method}
-                      action (get *warning-if-static-ret-val-unused* m)]
-                  (unused-ret-val-lint-result stmt "static method call"
-                                              action m location))
-
-                (util/invoke-expr? stmt)
-                (let [v1 (get-in stmt [:fn :var])
-                      ;; Special case for apply.  Issue a warning
-                      ;; based upon the 1st arg to apply, not apply
-                      ;; itself (if that arg is a var).
-                      arg1 (first (:args stmt))
-                      v (if (and (= v1 #'clojure.core/apply)
-                                 (= :var (:op arg1)))
-                          (:var arg1)
-                          v1)
-                      action (get *warning-if-invoke-ret-val-unused* v)]
-                  (unused-ret-val-lint-result stmt "function call"
-                                              action v location)))))))))
+  (swap! *warning-if-invoke-ret-val-unused*
+         make-invoke-val-unused-action-map "var-info.edn")
+  (swap! *warning-if-static-ret-val-unused*
+         make-static-method-val-unused-action-map "jvm-method-info.edn")
+  (let [warning-if-invoke-ret-val-unused @*warning-if-invoke-ret-val-unused*
+        warning-if-static-ret-val-unused @*warning-if-static-ret-val-unused*
+        unused-ret-val-exprs (->> asts
+                                  (map util/mark-exprs-in-try-body)
+                                  (map mark-things-in-defprotocol-expansion)
+                                  (mapcat ast/nodes)
+                                  (mapcat :statements)
+                                  (mapcat unused-exprs-to-check))
+        should-use-ret-val-exprs
+        (->> unused-ret-val-exprs
+             (filter #(or (#{:const :var :local} (:op %))
+                          (util/invoke-expr? %)
+                          (util/static-call? %))))]
+    (doall
+     (remove
+      nil?
+      (for [stmt should-use-ret-val-exprs]
+        ;; Note: Report unused :const :var and :local only when
+        ;; linter is the regular :unused-ret-vals one, but do so for
+        ;; such values whether they are inside of a try block or
+        ;; not.  If both :unused-ret-vals and
+        ;; :unused-ret-vals-in-try are specified, such values will
+        ;; only be reported once, and if :unused-ret-vals-in-try is
+        ;; used but not the other, they will not be reported.  I
+        ;; expect that :unused-ret-vals will be the more commonly
+        ;; used one, as the :unused-ret-vals-in-try will likely have
+        ;; more false positives from functions being called in unit
+        ;; tests to see if they throw an exception.
+        (cond (and (#{:const :var :local} (:op stmt))
+                   (= location :outside-try))
+              (cond
+               ;; do not report part of a defprotocol macro
+               ;; expansion that the interface created via the
+               ;; gen-interface call
+               (get stmt :eastwood/defprotocol-expansion-interface)
+               nil
+               
+               ;; do not report a nil value for the signature of a
+               ;; protocol with no methods
+               (get stmt :eastwood/defprotocol-expansion-sigs)
+               nil
+               
+               ;; do not report an interface created via a
+               ;; definterface macro expansion
+               (util/interface? (:form stmt))
+               nil
+               
+               ;; do not report an unused nil return value if it was
+               ;; caused by a comment or gen-class macro invocation.
+               (and (nil? (:form stmt))
+                    (some #{'clojure.core/comment 'clojure.core/gen-class}
+                          (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms stmt))))
+               nil
+               
+               :else
+               (let [name-found? (contains? (-> stmt :env) :name)
+                     loc (if name-found?
+                           (-> stmt :env :name meta)
+                           (pass/code-loc (pass/nearest-ast-with-loc stmt)))]
+                 {:linter :unused-ret-vals
+                  :msg (format "%s value is discarded%s: %s"
+                               (case (:op stmt)
+                                 :const "Constant"
+                                 :var "Var"
+                                 :local "Local")
+                               (if name-found?
+                                 (str " inside " (-> stmt :env :name))
+                                 "")
+                               (if (nil? (:form stmt))
+                                 "nil"
+                                 (str/trim-newline
+                                  (with-out-str
+                                    (binding [pp/*print-right-margin* nil]
+                                      (pp/pprint (:form stmt)))))))
+                  :file (-> loc :file)
+                  :line (-> loc :line)
+                  :column (-> loc :column)}))
+              
+              (util/static-call? stmt)
+              (let [cls (:class stmt)
+                    method (:method stmt)
+                    m {:class cls :method method}
+                    action (warning-if-static-ret-val-unused m)]
+                (unused-ret-val-lint-result stmt "static method call"
+                                            action m location))
+              
+              (util/invoke-expr? stmt)
+              (let [v1 (get-in stmt [:fn :var])
+                    ;; Special case for apply.  Issue a warning
+                    ;; based upon the 1st arg to apply, not apply
+                    ;; itself (if that arg is a var).
+                    arg1 (first (:args stmt))
+                    v (if (and (= v1 #'clojure.core/apply)
+                               (= :var (:op arg1)))
+                        (:var arg1)
+                        v1)
+                    action (warning-if-invoke-ret-val-unused (var-to-fqsym v))]
+                (unused-ret-val-lint-result stmt "function call"
+                                            action v location))))))))
 
 (defn unused-ret-vals [& args]
   (apply unused-ret-vals-2 :outside-try args))

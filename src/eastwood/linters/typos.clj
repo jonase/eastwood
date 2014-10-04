@@ -195,57 +195,63 @@ generate varying strings while the test is running."
         
         :else nil)))))
 
-(def ^:dynamic *var-info-map* nil)
+(def ^:dynamic *var-info-map* (atom nil))
+
+(defn read-var-info-map-if-needed [cur-map resource-name]
+  (if (nil? cur-map)
+    (edn/read-string (slurp (io/resource resource-name)))
+    cur-map))
 
 (defn predicate-forms [subexpr-maps form-type]
-  (apply
-   concat
-   (for [{:keys [subexpr ast]} subexpr-maps
-         :let [f subexpr]]
-     (cond
-      (and (not (list? f))
-           (constant-expr? f))
-      [(let [meta-loc (-> f meta)
-             loc (or (pass/has-code-loc? meta-loc)
-                     (pass/code-loc (pass/nearest-ast-with-loc ast)))]
-         {:linter :suspicious-test,
-          :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
-                       (cond (-> meta-loc :line) ""
-                             (string? f) (str " \"" f "\"")
-                             :else (str " " f))
-                       (if f (.getName (class f)) "nil") form-type)
-          :file (-> loc :file)
-          :line (-> loc :line)
-          :column (-> loc :column)})]
-      
-      (sequential? f)
-      (let [ff (first f)
-            cc-sym (and ff
-                        (instance? clojure.lang.Named ff)
-                        (symbol "clojure.core" (name ff)))
-            var-info (and cc-sym (get *var-info-map* cc-sym))
-;;             _ (println (format "dbx: predicate-forms ff=%s cc-sym=%s var-info=%s"
-;;                                ff cc-sym var-info))
-            loc (-> ff meta)]
-        (cond
-         (and var-info (get var-info :predicate))
-         [{:linter :suspicious-test,
-           :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
-                        ff form-type ff)
-           :file (-> loc :file)
-           :line (-> loc :line)
-           :column (-> loc :column)}]
-         
-         (and var-info (get var-info :pure-fn))
-         [{:linter :suspicious-test,
-           :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
-                        ff form-type)
-           :file (-> loc :file)
-           :line (-> loc :line)
-           :column (-> loc :column)}]
-         
-         :else nil))
-      :else nil))))
+  (let [var-info-map @*var-info-map*]
+    (apply
+     concat
+     (for [{:keys [subexpr ast]} subexpr-maps
+           :let [f subexpr]]
+       (cond
+        (and (not (list? f))
+             (constant-expr? f))
+        [(let [meta-loc (-> f meta)
+               loc (or (pass/has-code-loc? meta-loc)
+                       (pass/code-loc (pass/nearest-ast-with-loc ast)))]
+           {:linter :suspicious-test,
+            :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
+                         (cond (-> meta-loc :line) ""
+                               (string? f) (str " \"" f "\"")
+                               :else (str " " f))
+                         (if f (.getName (class f)) "nil") form-type)
+            :file (-> loc :file)
+            :line (-> loc :line)
+            :column (-> loc :column)})]
+        
+        (sequential? f)
+        (let [ff (first f)
+              cc-sym (and ff
+                          (instance? clojure.lang.Named ff)
+                          (symbol "clojure.core" (name ff)))
+              var-info (and cc-sym (var-info-map cc-sym))
+;;              _ (println (format "dbx: predicate-forms ff=%s cc-sym=%s var-info=%s"
+;;                                 ff cc-sym var-info))
+              loc (-> ff meta)]
+          (cond
+           (and var-info (get var-info :predicate))
+           [{:linter :suspicious-test,
+             :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
+                          ff form-type ff)
+             :file (-> loc :file)
+             :line (-> loc :line)
+             :column (-> loc :column)}]
+           
+           (and var-info (get var-info :pure-fn))
+           [{:linter :suspicious-test,
+             :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
+                          ff form-type)
+             :file (-> loc :file)
+             :line (-> loc :line)
+             :column (-> loc :column)}]
+           
+           :else nil))
+        :else nil)))))
 
 ;; suspicious-test used to do its job only examining source forms, but
 ;; now it goes through the forms on the
@@ -264,56 +270,55 @@ generate varying strings while the test is running."
 ;; second argument to be issued, if we check it.
 
 (defn suspicious-test [{:keys [forms asts]}]
-  (binding [*var-info-map* (edn/read-string (slurp (io/resource "var-info.edn")))]
-    (doall
-     (let [frms (fn [ast] (remove #(symbol? (second %))
-                                 (map list
-                                      (:eastwood/partly-resolved-forms ast)
-                                      (:raw-forms ast))))
-           pr-formasts (for [ast (mapcat ast/nodes asts)
-                             [pr-form raw-form] (frms ast)]
-                         {:pr-form pr-form
-                          :raw-form raw-form
-                          :ast ast})
+  (swap! *var-info-map* read-var-info-map-if-needed "var-info.edn")
+  (let [frms (fn [ast] (remove #(symbol? (second %))
+                               (map list
+                                    (:eastwood/partly-resolved-forms ast)
+                                    (:raw-forms ast))))
+        pr-formasts (for [ast (mapcat ast/nodes asts)
+                          [pr-form raw-form] (frms ast)]
+                      {:pr-form pr-form
+                       :raw-form raw-form
+                       :ast ast})
+        
+        pr-first-is-formasts
+        (remove nil?
+                (for [ast (mapcat ast/nodes asts)]
+                  (let [formasts (for [[pr-form raw-form] (frms ast)]
+                                   {:pr-form pr-form
+                                    :raw-form raw-form
+                                    :ast ast})]
+                    (first (filter #(= 'clojure.test/is
+                                       (first (:pr-form %)))
+                                   formasts)))))
+        
+        ;; To find deftest subexpressions, first filter all of the
+        ;; partly-resolved forms for those with a first symbol equal
+        ;; to clojure.test/deftest, then get of the first 2 symbols
+        ;; from each, which are the deftest and the Var name following
+        ;; deftest.
+        pr-deftest-subexprs
+        (->> pr-formasts
+             (filter #(= 'clojure.test/deftest (first (:pr-form %))))
+             (mapcat (fn [formast]
+                       (for [subexpr (nthnext (:pr-form formast) 2)]
+                         (assoc formast :subexpr subexpr)))))
+        
+        ;; Similarly for testing subexprs as for deftest subexprs.
+        ;; TBD: Make a helper function to eliminate the nearly
+        ;; duplicated code between deftest and testing.
+        pr-testing-subexprs
+        (->> pr-formasts
+             (filter #(= 'clojure.test/testing (first (:pr-form %))))
+             (mapcat (fn [formast]
+                       (for [subexpr (nthnext (:pr-form formast) 2)]
+                         (assoc formast :subexpr subexpr)))))
 
-           pr-first-is-formasts
-           (remove nil?
-            (for [ast (mapcat ast/nodes asts)]
-              (let [formasts (for [[pr-form raw-form] (frms ast)]
-                               {:pr-form pr-form
-                                :raw-form raw-form
-                                :ast ast})]
-                (first (filter #(= 'clojure.test/is
-                                   (first (:pr-form %)))
-                               formasts)))))
-
-           ;; To find deftest subexpressions, first filter all of the
-           ;; partly-resolved forms for those with a first symbol
-           ;; equal to clojure.test/deftest, then get of the first 2
-           ;; symbols from each, which are the deftest and the Var
-           ;; name following deftest.
-           pr-deftest-subexprs
-           (->> pr-formasts
-                (filter #(= 'clojure.test/deftest (first (:pr-form %))))
-                (mapcat (fn [formast]
-                          (for [subexpr (nthnext (:pr-form formast) 2)]
-                            (assoc formast :subexpr subexpr)))))
-
-           ;; Similarly for testing subexprs as for deftest subexprs.
-           ;; TBD: Make a helper function to eliminate the nearly
-           ;; duplicated code between deftest and testing.
-           pr-testing-subexprs
-           (->> pr-formasts
-                (filter #(= 'clojure.test/testing (first (:pr-form %))))
-                (mapcat (fn [formast]
-                          (for [subexpr (nthnext (:pr-form formast) 2)]
-                            (assoc formast :subexpr subexpr)))))
-
-           pr-is-formasts pr-first-is-formasts
-           pr-is-forms (map :raw-form pr-is-formasts)]
-       (concat (suspicious-is-forms pr-is-forms)
-               (predicate-forms pr-deftest-subexprs 'deftest)
-               (predicate-forms pr-testing-subexprs 'testing))))))
+        pr-is-formasts pr-first-is-formasts
+        pr-is-forms (map :raw-form pr-is-formasts)]
+    (concat (suspicious-is-forms pr-is-forms)
+            (predicate-forms pr-deftest-subexprs 'deftest)
+            (predicate-forms pr-testing-subexprs 'testing))))
 
 ;; Suspicious function calls and macro invocations
 
