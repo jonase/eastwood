@@ -775,6 +775,21 @@
      :linter :suspicious-expression,
      :msg "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
+    {:line 145, :column 8,
+     :file "testcases/testtest.clj",
+     :linter :suspicious-expression,
+     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+    1,
+    {:line 146, :column 4,
+     :file "testcases/testtest.clj",
+     :linter :suspicious-test,
+     :msg "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning."}
+    1,
+    {:line 146, :column 8,
+     :file "testcases/testtest.clj",
+     :linter :suspicious-expression,
+     :msg "== called with 1 args.  (== x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+    1,
     })
   ;; It is strange that the :unlimited-use linter has nil for :line
   ;; and :column here, but integer values when I use it from the
