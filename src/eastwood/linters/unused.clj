@@ -95,8 +95,8 @@ selectively disable such warnings if they wish."
   (->> (mapcat ast/nodes exprs)
        (filter #(and (= (:op %) :invoke)
                      (let [v (-> % :fn :var)]
-                       (or (= v #'clojure.core/require)
-                           (= v #'clojure.core/use)))))
+                       (#{'clojure.core/require 'clojure.core/use}
+                        (util/var-to-fqsym v)))))
        (mapcat :args)
        (map #(-> % :expr :form))
        (remove nil?)
@@ -290,9 +290,6 @@ discarded inside null: null'."
         (if (= stmt-desc-str "static method call")
           (debug-unknown-fn-methods fn-or-method stmt-desc-str stmt))))))
 
-(defn var-to-fqsym [^clojure.lang.Var v]
-  (symbol (str (.ns v)) (str (.sym v))))
-
 (defn unused-ret-vals-2 [location {:keys [asts]}]
   (swap! *warning-if-invoke-ret-val-unused*
          make-invoke-val-unused-action-map "var-info.edn")
@@ -390,11 +387,12 @@ discarded inside null: null'."
                     ;; based upon the 1st arg to apply, not apply
                     ;; itself (if that arg is a var).
                     arg1 (first (:args stmt))
-                    v (if (and (= v1 #'clojure.core/apply)
+                    v (if (and (= (util/var-to-fqsym v1) 'clojure.core/apply)
                                (= :var (:op arg1)))
                         (:var arg1)
                         v1)
-                    action (warning-if-invoke-ret-val-unused (var-to-fqsym v))]
+                    action (warning-if-invoke-ret-val-unused
+                            (util/var-to-fqsym v))]
                 (unused-ret-val-lint-result stmt "function call"
                                             action v location))))))))
 

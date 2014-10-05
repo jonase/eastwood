@@ -98,6 +98,9 @@ twice."
   (into (empty m)
         (filter (fn [[_ v]] (f v)) m)))
 
+(defn var-to-fqsym [^clojure.lang.Var v]
+  (if v (symbol (str (.ns v)) (str (.sym v)))))
+
 (defn op= [op]
   (fn [ast]
     (= (:op ast) op)))
@@ -247,7 +250,7 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
 
 (defn extend-invocation-ast? [ast]
   (and (= (:op ast) :invoke)
-       (= #'clojure.core/extend (get-in ast [:fn :var]))))
+       (= 'clojure.core/extend (var-to-fqsym (get-in ast [:fn :var])))))
 
 (defn enhance-extend-invocations-prewalk [ast]
   (if (extend-invocation-ast? ast)

@@ -393,7 +393,7 @@ generate varying strings while the test is running."
              :column (-> loc :column)}]))))))
 
 ;; Note: Looking for asts that contain :invoke nodes for the function
-;; #'clojure.core/= will not find expressions like (clojure.test/is (=
+;; 'clojure.core/= will not find expressions like (clojure.test/is (=
 ;; (+ 1 1))), because the is macro changes that to an apply on
 ;; function = with one arg, which is a sequence of expressions.
 ;; Finding one-arg = can probably only be done at the source form
@@ -401,59 +401,61 @@ generate varying strings while the test is running."
 
 (def core-fns-that-do-little
   {
-   #'clojure.core/=        '{1 {:args [x] :ret-val true}}
-   #'clojure.core/==       '{1 {:args [x] :ret-val true}}
-   #'clojure.core/not=     '{1 {:args [x] :ret-val false}}
-   #'clojure.core/<        '{1 {:args [x] :ret-val true}}
-   #'clojure.core/<=       '{1 {:args [x] :ret-val true}}
-   #'clojure.core/>        '{1 {:args [x] :ret-val true}}
-   #'clojure.core/>=       '{1 {:args [x] :ret-val true}}
-   #'clojure.core/min      '{1 {:args [x] :ret-val x}}
-   #'clojure.core/max      '{1 {:args [x] :ret-val x}}
-   #'clojure.core/min-key  '{2 {:args [f x] :ret-val x}}
-   #'clojure.core/max-key  '{2 {:args [f x] :ret-val x}}
-   #'clojure.core/dissoc   '{1 {:args [map] :ret-val map}}
-   #'clojure.core/disj     '{1 {:args [set] :ret-val set}}
-   #'clojure.core/merge    '{0 {:args [] :ret-val nil},
-                             1 {:args [map] :ret-val map}}
-   #'clojure.core/merge-with '{1 {:args [f] :ret-val nil},
-                               2 {:args [f map] :ret-val map}}
-   #'clojure.core/interleave '{0 {:args [] :ret-val ()}}
-   #'clojure.core/pr-str   '{0 {:args [] :ret-val ""}}
-   #'clojure.core/print-str '{0 {:args [] :ret-val ""}}
-   #'clojure.core/pr       '{0 {:args [] :ret-val nil}}
-   #'clojure.core/print    '{0 {:args [] :ret-val nil}}
+   'clojure.core/=        '{1 {:args [x] :ret-val true}}
+   'clojure.core/==       '{1 {:args [x] :ret-val true}}
+   'clojure.core/not=     '{1 {:args [x] :ret-val false}}
+   'clojure.core/<        '{1 {:args [x] :ret-val true}}
+   'clojure.core/<=       '{1 {:args [x] :ret-val true}}
+   'clojure.core/>        '{1 {:args [x] :ret-val true}}
+   'clojure.core/>=       '{1 {:args [x] :ret-val true}}
+   'clojure.core/min      '{1 {:args [x] :ret-val x}}
+   'clojure.core/max      '{1 {:args [x] :ret-val x}}
+   'clojure.core/min-key  '{2 {:args [f x] :ret-val x}}
+   'clojure.core/max-key  '{2 {:args [f x] :ret-val x}}
+   'clojure.core/dissoc   '{1 {:args [map] :ret-val map}}
+   'clojure.core/disj     '{1 {:args [set] :ret-val set}}
+   'clojure.core/merge    '{0 {:args [] :ret-val nil},
+                            1 {:args [map] :ret-val map}}
+   'clojure.core/merge-with '{1 {:args [f] :ret-val nil},
+                              2 {:args [f map] :ret-val map}}
+   'clojure.core/interleave '{0 {:args [] :ret-val ()}}
+   'clojure.core/pr-str   '{0 {:args [] :ret-val ""}}
+   'clojure.core/print-str '{0 {:args [] :ret-val ""}}
+   'clojure.core/pr       '{0 {:args [] :ret-val nil}}
+   'clojure.core/print    '{0 {:args [] :ret-val nil}}
    
-   #'clojure.core/comp     '{0 {:args [] :ret-val identity}}
-   #'clojure.core/partial  '{1 {:args [f] :ret-val f}}
-   #'clojure.core/+        '{0 {:args []  :ret-val 0},   ; inline
-                             1 {:args [x] :ret-val x}}
-   #'clojure.core/+'       '{0 {:args []  :ret-val 0},   ; inline
-                             1 {:args [x] :ret-val x}}
-   #'clojure.core/*        '{0 {:args []  :ret-val 1},   ; inline
-                             1 {:args [x] :ret-val x}}
-   #'clojure.core/*'       '{0 {:args []  :ret-val 1},   ; inline
-                             1 {:args [x] :ret-val x}}
+   'clojure.core/comp     '{0 {:args [] :ret-val identity}}
+   'clojure.core/partial  '{1 {:args [f] :ret-val f}}
+   'clojure.core/+        '{0 {:args []  :ret-val 0},   ; inline
+                            1 {:args [x] :ret-val x}}
+   'clojure.core/+'       '{0 {:args []  :ret-val 0},   ; inline
+                            1 {:args [x] :ret-val x}}
+   'clojure.core/*        '{0 {:args []  :ret-val 1},   ; inline
+                            1 {:args [x] :ret-val x}}
+   'clojure.core/*'       '{0 {:args []  :ret-val 1},   ; inline
+                            1 {:args [x] :ret-val x}}
    ;; Note: (- x) and (/ x) do something useful
    })
 
 (defn suspicious-expression-asts [{:keys [asts]}]
-  (let [fn-var-set (set (keys core-fns-that-do-little))
+  (let [fn-sym-set (set (keys core-fns-that-do-little))
         invoke-asts (->> asts
                          (mapcat ast/nodes)
                          (filter #(and (= (:op %) :invoke)
                                        (let [v (-> % :fn :var)]
-                                         (contains? fn-var-set v)))))]
+                                         (contains? fn-sym-set
+                                                    (util/var-to-fqsym v))))))]
     (doall
      (remove
       nil?
       (for [ast invoke-asts]
         (let [^clojure.lang.Var fn-var (-> ast :fn :var)
               fn-sym (.sym fn-var)
+              fn-fqsym (util/var-to-fqsym fn-var)
               num-args (count (-> ast :args))
               form (-> ast :form)
               loc (-> form meta)
-              suspicious-args (get core-fns-that-do-little fn-var)
+              suspicious-args (core-fns-that-do-little fn-fqsym)
               info (get suspicious-args num-args)]
           (if (contains? suspicious-args num-args)
             {:linter :suspicious-expression,

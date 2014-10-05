@@ -54,7 +54,7 @@
 (defn- use? [ast]
   (and (= :invoke (:op ast))
        (= :var (-> ast :fn :op))
-       (= #'clojure.core/use (-> ast :fn :var))))
+       (= 'clojure.core/use (util/var-to-fqsym (-> ast :fn :var)))))
 
 (defn- remove-quote-wrapper [x]
   (if (and (sequential? x)
