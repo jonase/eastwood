@@ -269,7 +269,7 @@ generate varying strings while the test is running."
 ;; one is that the 'nil' argument causes warnings about a non-string
 ;; second argument to be issued, if we check it.
 
-(defn suspicious-test [{:keys [forms asts]}]
+(defn suspicious-test [{:keys [asts]}]
   (swap! *var-info-map* read-var-info-map-if-needed "var-info.edn")
   (let [frms (fn [ast] (remove #(symbol? (second %))
                                (map list
