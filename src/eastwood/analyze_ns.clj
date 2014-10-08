@@ -111,7 +111,7 @@
 ;;    (util/pprint-ast-node ast))
   ;; Key/value pairs to be merged into ast for later code to find
   ;; and issue warnings.
-  {:eastwood/wrong-tag (or t :eastwood/wrong-tag-on-var)})
+  {:eastwood/wrong-tag t})
 
 ;; eastwood-passes is a cut-down version of run-passes in
 ;; tools.analyzer.jvm.  It eliminates phases that are not needed for

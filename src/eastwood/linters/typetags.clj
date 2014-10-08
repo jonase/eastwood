@@ -28,7 +28,7 @@ significance needed by the user."
                                                 (filter :eastwood/wrong-tag))
         :let [kind (:eastwood/wrong-tag ast)
               [typ tag loc]
-              (cond (= kind :eastwood/wrong-tag-on-var)
+              (cond (= kind :name/tag)
                     [:wrong-tag-on-var (-> name meta :tag) env]
                     
                     (= op :var)
