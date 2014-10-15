@@ -103,11 +103,14 @@
       (println (format "\n\n== Analyzing file '%s'\n" filename)))))
 
 (defn eastwood-wrong-tag-handler [t ast]
-;;  (let [tag (-> ast :name meta :tag)]
-;;    (println (format "jafinger-dbg: Wrong tag: %s (%s -- uneval'd %s (%s)) in def: %s   t=%s (class t)=%s"
-;;                     (eval tag) (class (eval tag)) tag (class tag) (:name ast)
-;;                     t (class t)))
-;;    (util/pprint-form (:form ast))
+;;  (let [tag (if (= t :name/tag)
+;;              (-> ast :name meta :tag)
+;;              (get ast t))]
+;;    (println (format "jafinger-dbg: Wrong tag: %s (%s) in def: %s   t=%s"
+;;                     tag (class tag)
+;;                     ;;(eval tag) (class (eval tag))
+;;                     (:name ast) t))
+;;    (pp/pprint (:form ast))
 ;;    (util/pprint-ast-node ast))
   ;; Key/value pairs to be merged into ast for later code to find
   ;; and issue warnings.

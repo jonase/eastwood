@@ -324,6 +324,11 @@ generate varying strings while the test is running."
 
 (def core-first-vars-that-do-little
   '{
+    ;; TBD: It seems like = == and not= are redundant with the
+    ;; corresponding entries in core-fns-that-do-little below.  See if
+    ;; this map can be made only for macros, and that one only for
+    ;; functions, and all that is detected now continues to be
+    ;; detected.
     =        {1 {:args [x] :ret-val true}}
     ==       {1 {:args [x] :ret-val true}}
     not=     {1 {:args [x] :ret-val false}}
