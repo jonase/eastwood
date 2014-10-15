@@ -7,22 +7,18 @@ cd repos
 
 git clone https://github.com/clojure/tools.analyzer.git
 cd tools.analyzer
-# This is a commit shortly after tools.analyzer-0.6.0 that contains a
-# few fixes.
-#git checkout tools.analyzer-0.6.0
-git checkout 3af99e2a8055c22609de2d64b1e0009e949c252d
+git checkout tools.analyzer-0.6.1
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
-# This is a commit shortly after tools.analyzer.jvm-0.6.0 that
-# contains a few fixes.
-git checkout 2f3499280dc2bb62d6f291738ecc04f91b0d7dbb
+git checkout tools.analyzer.jvm-0.6.1
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git
 cd core.memoize
 git checkout core.memoize-0.5.6
+patch -p1 < ../../core.memoize-fix-reflection-warning.patch
 cd ..
 
 git clone https://github.com/clojure/core.cache.git

@@ -141,6 +141,9 @@
   (is (= 6 (+ 2 4)) (str "2+4" "is" "6"))
   (is (= 6 (+ 2 4)) (format "%s is %s" 2 6))
   (is (= 6 (+ 2 4)) (print-str 5))
+
+  (is (= "foo") (str "fo" "o"))
+  (is (== 6) (+ 2 4))
   )
 
 (comment

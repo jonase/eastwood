@@ -27,14 +27,12 @@
              [cleanup :refer [cleanup]]
              [elide-meta :refer [elide-meta elides]]
              [warn-earmuff :refer [warn-earmuff]]
-             [collect-closed-overs :refer [collect-closed-overs]]
              [uniquify :refer [uniquify-locals]]]
 
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
+             [analyze-host-expr :refer [analyze-host-expr]]
              [box :refer [box]]
-             [collect :refer [collect]]
              [constant-lifter :refer [constant-lift]]
-             [clear-locals :refer [clear-locals]]
              [classify-invoke :refer [classify-invoke]]
              [validate :refer [validate]]
              [infer-tag :refer [infer-tag]]
@@ -129,8 +127,8 @@
       form)))
 
 (defn macroexpand-1
-  "If form represents a macro form or an inlineable function,
-   returns its expansion, else returns form."
+  "If form represents a macro form or an inlineable function,returns its expansion,
+   else returns form."
   ([form] (macroexpand-1 form (empty-env)))
   ([form env]
      (env/ensure (global-env)
@@ -360,7 +358,7 @@
         e (ctx env :ctx/expr)
         test-expr (-analyze expr e)
         [tests thens] (reduce (fn [[te th] [min-hash [test then]]]
-                                (let [test-expr (ana/-analyze :const test e)
+                                (let [test-expr (ana/analyze-const test e)
                                       then-expr (-analyze then env)]
                                   [(conj te {:op       :case-test
                                              :form     test
@@ -409,12 +407,9 @@
     #'elide-meta
     #'constant-lift
 
-    #'clear-locals
-    #'collect-closed-overs
-    #'collect
-
     #'box
 
+    #'analyze-host-expr
     #'validate-loop-locals
     #'validate
     #'infer-tag
@@ -426,7 +421,11 @@
 
 (defn ^:dynamic run-passes
   "Function that will be invoked on the AST tree immediately after it has been constructed,
-   by default set-ups and runs the default passes declared in #'default-passes"
+   by default runs the passes declared in #'default-passes, should be rebound if a different
+   set of passes is required.
+
+   Use #'eastwood.copieddeps.dep1.clojure.tools.analyzer.passes/schedule to get a function from a set of passes that
+   run-passes can be bound to."
   [ast]
   (scheduled-default-passes ast))
 
@@ -439,10 +438,11 @@
    :collect-closed-overs/top-level? false})
 
 (defn analyze
-  "Returns an AST for the form that's compatible with what tools.emitter.jvm requires.
+  "Analyzes a clojure form using tools.analyzer augmented with the JVM specific special ops
+   and returns its AST, after running #'run-passes on it.
 
-   Binds tools.analyzer/{macroexpand-1,create-var,parse} to
-   tools.analyzer.jvm/{macroexpand-1,create-var,parse} and analyzes the form.
+   If no configuration option is provides, analyze will setup tools.analyzer using the extension
+   points declared in this namespace.
 
    If provided, opts should be a map of options to analyze, currently the only valid
    options are :bindings and :passes-opts (if not provided, :passes-opts defaults to the
@@ -453,9 +453,7 @@
    can be used to configure the behaviour of each pass.
 
    E.g.
-   (analyze form env {:bindings  {#'ana/macroexpand-1 my-mexpand-1}})
-
-   Calls `run-passes` on the AST."
+   (analyze form env {:bindings  {#'ana/macroexpand-1 my-mexpand-1}})"
   ([form] (analyze form (empty-env) {}))
   ([form env] (analyze form env {}))
   ([form env opts]
@@ -539,24 +537,25 @@
   "Analyzes a whole namespace, returns a vector of the ASTs for all the
    top-level ASTs of that namespace.
    Evaluates all the forms."
-  [ns]
-  (env/ensure (global-env)
-    (let [res (ns-resource ns)]
-      (assert res (str "Can't find " ns " in classpath"))
-      (let [filename (source-path res)
-            path (res-path res)]
-        (when-not (get-in (env/deref-env) [::analyzed-clj path])
-          (binding [*ns* *ns*]
-            (with-open [rdr (io/reader res)]
-              (let [pbr (readers/indexing-push-back-reader
-                         (java.io.PushbackReader. rdr) 1 filename)
-                    eof (Object.)
-                    env (empty-env)]
-                (loop []
-                  (let [form (reader/read pbr nil eof)]
-                    (when-not (identical? form eof)
-                      (swap! *env* update-in [::analyzed-clj path]
-                             (fnil conj [])
-                             (analyze+eval form (assoc env :ns (ns-name *ns*))))
-                      (recur))))))))
-        (get-in @*env* [::analyzed-clj path])))))
+  ([ns] (analyze-ns ns (empty-env)))
+  ([ns env] (analyze-ns ns env {}))
+  ([ns env opts]
+     (env/ensure (global-env)
+                 (let [res (ns-resource ns)]
+                   (assert res (str "Can't find " ns " in classpath"))
+                   (let [filename (source-path res)
+                         path (res-path res)]
+                     (when-not (get-in (env/deref-env) [::analyzed-clj path])
+                       (binding [*ns* *ns*]
+                         (with-open [rdr (io/reader res)]
+                           (let [pbr (readers/indexing-push-back-reader
+                                      (java.io.PushbackReader. rdr) 1 filename)
+                                 eof (Object.)]
+                             (loop []
+                               (let [form (reader/read pbr nil eof)]
+                                 (when-not (identical? form eof)
+                                   (swap! *env* update-in [::analyzed-clj path]
+                                          (fnil conj [])
+                                          (analyze+eval form (assoc env :ns (ns-name *ns*)) opts))
+                                   (recur))))))))
+                     (get-in @*env* [::analyzed-clj path]))))))

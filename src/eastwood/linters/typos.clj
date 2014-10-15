@@ -1,6 +1,7 @@
 (ns eastwood.linters.typos
   (:require [clojure.pprint :as pp])
   (:require [eastwood.util :as util]
+            [eastwood.passes :as pass]
             [clojure.string :as str]
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
@@ -194,54 +195,63 @@ generate varying strings while the test is running."
         
         :else nil)))))
 
-(def ^:dynamic *var-info-map* nil)
+(def ^:dynamic *var-info-map* (atom nil))
 
-(defn predicate-forms [forms form-type]
-  (apply
-   concat
-   (for [f forms]
-     (cond
-      (and (not (list? f))
-           (constant-expr? f))
-      [(let [file (-> f meta :file)
-             line (-> f meta :line)
-             column (-> f meta :column)]
-         {:linter :suspicious-test,
-          :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
-                       (cond line ""
-                             (string? f) (str " \"" f "\"")
-                             :else (str " " f))
-                       (if f (.getName (class f)) "nil") form-type)
-          :file file
-          :line line
-          :column column})]
-      
-      (sequential? f)
-      (let [ff (first f)
-            cc-sym (and ff (symbol "clojure.core" (name ff)))
-            var-info (and cc-sym (get *var-info-map* cc-sym))
-;;             _ (println (format "dbx: predicate-forms ff=%s cc-sym=%s var-info=%s"
-;;                                ff cc-sym var-info))
-            ]
-        (cond
-         (and var-info (get var-info :predicate))
-         [{:linter :suspicious-test,
-           :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
-                        ff form-type ff)
-           :file (-> ff meta :file)
-           :line (-> ff meta :line)
-           :column (-> ff meta :column)}]
-         
-         (and var-info (get var-info :pure-fn))
-         [{:linter :suspicious-test,
-           :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
-                        ff form-type)
-           :file (-> ff meta :file)
-           :line (-> ff meta :line)
-           :column (-> ff meta :column)}]
-         
-         :else nil))
-      :else nil))))
+(defn read-var-info-map-if-needed [cur-map resource-name]
+  (if (nil? cur-map)
+    (edn/read-string (slurp (io/resource resource-name)))
+    cur-map))
+
+(defn predicate-forms [subexpr-maps form-type]
+  (let [var-info-map @*var-info-map*]
+    (apply
+     concat
+     (for [{:keys [subexpr ast]} subexpr-maps
+           :let [f subexpr]]
+       (cond
+        (and (not (list? f))
+             (constant-expr? f))
+        [(let [meta-loc (-> f meta)
+               loc (or (pass/has-code-loc? meta-loc)
+                       (pass/code-loc (pass/nearest-ast-with-loc ast)))]
+           {:linter :suspicious-test,
+            :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
+                         (cond (-> meta-loc :line) ""
+                               (string? f) (str " \"" f "\"")
+                               :else (str " " f))
+                         (if f (.getName (class f)) "nil") form-type)
+            :file (-> loc :file)
+            :line (-> loc :line)
+            :column (-> loc :column)})]
+        
+        (sequential? f)
+        (let [ff (first f)
+              cc-sym (and ff
+                          (instance? clojure.lang.Named ff)
+                          (symbol "clojure.core" (name ff)))
+              var-info (and cc-sym (var-info-map cc-sym))
+;;              _ (println (format "dbx: predicate-forms ff=%s cc-sym=%s var-info=%s"
+;;                                 ff cc-sym var-info))
+              loc (-> ff meta)]
+          (cond
+           (and var-info (get var-info :predicate))
+           [{:linter :suspicious-test,
+             :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
+                          ff form-type ff)
+             :file (-> loc :file)
+             :line (-> loc :line)
+             :column (-> loc :column)}]
+           
+           (and var-info (get var-info :pure-fn))
+           [{:linter :suspicious-test,
+             :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
+                          ff form-type)
+             :file (-> loc :file)
+             :line (-> loc :line)
+             :column (-> loc :column)}]
+           
+           :else nil))
+        :else nil)))))
 
 ;; suspicious-test used to do its job only examining source forms, but
 ;; now it goes through the forms on the
@@ -259,89 +269,66 @@ generate varying strings while the test is running."
 ;; one is that the 'nil' argument causes warnings about a non-string
 ;; second argument to be issued, if we check it.
 
-(defn suspicious-test [{:keys [forms asts]}]
-  (binding [*var-info-map* (edn/read-string (slurp (io/resource "var-info.edn")))]
-    (doall
-     (let [frms (fn [ast] (remove #(symbol? (second %))
-                                 (map list
-                                      (:eastwood/partly-resolved-forms ast)
-                                      (:raw-forms ast))))
-           pr-formasts (for [ast (mapcat ast/nodes asts)
-                             [pr-form raw-form] (frms ast)]
-                         {:pr-form pr-form
-                          :raw-form raw-form
-                          :ast ast})
+(defn suspicious-test [{:keys [asts]}]
+  (swap! *var-info-map* read-var-info-map-if-needed "var-info.edn")
+  (let [frms (fn [ast] (remove #(symbol? (second %))
+                               (map list
+                                    (:eastwood/partly-resolved-forms ast)
+                                    (:raw-forms ast))))
+        pr-formasts (for [ast (mapcat ast/nodes asts)
+                          [pr-form raw-form] (frms ast)]
+                      {:pr-form pr-form
+                       :raw-form raw-form
+                       :ast ast})
+        
+        pr-first-is-formasts
+        (remove nil?
+                (for [ast (mapcat ast/nodes asts)]
+                  (let [formasts (for [[pr-form raw-form] (frms ast)]
+                                   {:pr-form pr-form
+                                    :raw-form raw-form
+                                    :ast ast})]
+                    (first (filter #(= 'clojure.test/is
+                                       (first (:pr-form %)))
+                                   formasts)))))
+        
+        ;; To find deftest subexpressions, first filter all of the
+        ;; partly-resolved forms for those with a first symbol equal
+        ;; to clojure.test/deftest, then get of the first 2 symbols
+        ;; from each, which are the deftest and the Var name following
+        ;; deftest.
+        pr-deftest-subexprs
+        (->> pr-formasts
+             (filter #(= 'clojure.test/deftest (first (:pr-form %))))
+             (mapcat (fn [formast]
+                       (for [subexpr (nthnext (:pr-form formast) 2)]
+                         (assoc formast :subexpr subexpr)))))
+        
+        ;; Similarly for testing subexprs as for deftest subexprs.
+        ;; TBD: Make a helper function to eliminate the nearly
+        ;; duplicated code between deftest and testing.
+        pr-testing-subexprs
+        (->> pr-formasts
+             (filter #(= 'clojure.test/testing (first (:pr-form %))))
+             (mapcat (fn [formast]
+                       (for [subexpr (nthnext (:pr-form formast) 2)]
+                         (assoc formast :subexpr subexpr)))))
 
-           pr-first-is-formasts
-           (remove nil?
-            (for [ast (mapcat ast/nodes asts)]
-              (let [formasts (for [[pr-form raw-form] (frms ast)]
-                               {:pr-form pr-form
-                                :raw-form raw-form
-                                :ast ast})]
-                (first (filter #(= 'clojure.test/is
-                                   (first (:pr-form %)))
-                               formasts)))))
-
-;;           _ (do
-;;               (doseq [pr-formast pr-formasts]
-;;                 (clojure.pprint/pprint
-;;                  {:pr-form (:pr-form pr-formast)
-;;                   :raw-form (:raw-form pr-formast)
-;;                   :ast (select-keys (:ast pr-formast)
-;;                                     [:op :env :form :raw-forms])})
-;;                 (println "----------------------------------------"))
-;;               )
-
-           pr-is-formasts pr-first-is-formasts
-           pr-deftest-formasts (filter #(= (first (:pr-form %)) 'clojure.test/deftest)
-                               pr-formasts)
-           pr-testing-formasts (filter #(= (first (:pr-form %)) 'clojure.test/testing)
-                               pr-formasts)
-;;           _ (println (format "dbx: Found %d ct/is %d ct/deftest %d ct/testing (ct=clojure.test)"
-;;                              (count pr-is-formasts)
-;;                              (count pr-deftest-formasts)
-;;                              (count pr-testing-formasts)))
-           pr-is-forms (map :raw-form pr-is-formasts)
-           pr-deftest-subexprs (apply concat
-                                      (map #(nthnext (:pr-form %) 2) pr-deftest-formasts))
-           pr-testing-subexprs (apply concat
-                                      (map #(nthnext (:pr-form %) 2) pr-testing-formasts))
-
-;;           _ (do
-;;               (binding [*print-meta* true]
-;;                 (println (format "dbx: %d pr-is-forms:"
-;;                                  (count pr-is-forms)))
-;;                 (clojure.pprint/pprint pr-is-forms)
-;;                 (println "----------------------------------------")
-;;                 (println (format "dbx: %d pr-raw-is-forms:"
-;;                                  (count pr-is-forms)))
-;;                 (clojure.pprint/pprint (map :raw-form pr-is-formasts))
-;;                 (println "----------------------------------------")
-;;                 (println "----------------------------------------")
-
-;;                 (println (format "dbx: %d pr-deftest-subexprs:"
-;;                                  (count pr-deftest-subexprs)))
-;;                 (clojure.pprint/pprint pr-deftest-subexprs)
-;;                 (println "----------------------------------------")
-;;                 (println "----------------------------------------")
-                 
-;;                 (println (format "dbx: %d pr-testing-subexprs:"
-;;                                  (count pr-testing-subexprs)))
-;;                 (clojure.pprint/pprint pr-testing-subexprs)
-;;                 (println "----------------------------------------")
-;;                 (println "----------------------------------------")
-;;                 )
-;;               )
-           ]
-       (concat (suspicious-is-forms pr-is-forms)
-               (predicate-forms pr-deftest-subexprs 'deftest)
-               (predicate-forms pr-testing-subexprs 'testing))))))
+        pr-is-formasts pr-first-is-formasts
+        pr-is-forms (map :raw-form pr-is-formasts)]
+    (concat (suspicious-is-forms pr-is-forms)
+            (predicate-forms pr-deftest-subexprs 'deftest)
+            (predicate-forms pr-testing-subexprs 'testing))))
 
 ;; Suspicious function calls and macro invocations
 
 (def core-first-vars-that-do-little
   '{
+    ;; TBD: It seems like = == and not= are redundant with the
+    ;; corresponding entries in core-fns-that-do-little below.  See if
+    ;; this map can be made only for macros, and that one only for
+    ;; functions, and all that is detected now continues to be
+    ;; detected.
     =        {1 {:args [x] :ret-val true}}
     ==       {1 {:args [x] :ret-val true}}
     not=     {1 {:args [x] :ret-val false}}
@@ -392,6 +379,7 @@ generate varying strings while the test is running."
                  (set (keys core-first-vars-that-do-little))))]
      (for [f fs]
        (let [fn-sym (first f)
+             loc (-> fn-sym meta)
              num-args (dec (count f))
              suspicious-args (get core-first-vars-that-do-little fn-sym)
              info (get suspicious-args num-args)]
@@ -405,12 +393,12 @@ generate varying strings while the test is running."
                           (if (= "" (:ret-val info))
                             "\"\""
                             (print-str (:ret-val info))))
-             :file (-> fn-sym meta :file)
-             :line (-> fn-sym meta :line)
-             :column (-> fn-sym meta :column)}]))))))
+             :file (-> loc :file)
+             :line (-> loc :line)
+             :column (-> loc :column)}]))))))
 
 ;; Note: Looking for asts that contain :invoke nodes for the function
-;; #'clojure.core/= will not find expressions like (clojure.test/is (=
+;; 'clojure.core/= will not find expressions like (clojure.test/is (=
 ;; (+ 1 1))), because the is macro changes that to an apply on
 ;; function = with one arg, which is a sequence of expressions.
 ;; Finding one-arg = can probably only be done at the source form
@@ -418,58 +406,61 @@ generate varying strings while the test is running."
 
 (def core-fns-that-do-little
   {
-   #'clojure.core/=        '{1 {:args [x] :ret-val true}}
-   #'clojure.core/==       '{1 {:args [x] :ret-val true}}
-   #'clojure.core/not=     '{1 {:args [x] :ret-val false}}
-   #'clojure.core/<        '{1 {:args [x] :ret-val true}}
-   #'clojure.core/<=       '{1 {:args [x] :ret-val true}}
-   #'clojure.core/>        '{1 {:args [x] :ret-val true}}
-   #'clojure.core/>=       '{1 {:args [x] :ret-val true}}
-   #'clojure.core/min      '{1 {:args [x] :ret-val x}}
-   #'clojure.core/max      '{1 {:args [x] :ret-val x}}
-   #'clojure.core/min-key  '{2 {:args [f x] :ret-val x}}
-   #'clojure.core/max-key  '{2 {:args [f x] :ret-val x}}
-   #'clojure.core/dissoc   '{1 {:args [map] :ret-val map}}
-   #'clojure.core/disj     '{1 {:args [set] :ret-val set}}
-   #'clojure.core/merge    '{0 {:args [] :ret-val nil},
-                             1 {:args [map] :ret-val map}}
-   #'clojure.core/merge-with '{1 {:args [f] :ret-val nil},
-                               2 {:args [f map] :ret-val map}}
-   #'clojure.core/interleave '{0 {:args [] :ret-val ()}}
-   #'clojure.core/pr-str   '{0 {:args [] :ret-val ""}}
-   #'clojure.core/print-str '{0 {:args [] :ret-val ""}}
-   #'clojure.core/pr       '{0 {:args [] :ret-val nil}}
-   #'clojure.core/print    '{0 {:args [] :ret-val nil}}
+   'clojure.core/=        '{1 {:args [x] :ret-val true}}
+   'clojure.core/==       '{1 {:args [x] :ret-val true}}
+   'clojure.core/not=     '{1 {:args [x] :ret-val false}}
+   'clojure.core/<        '{1 {:args [x] :ret-val true}}
+   'clojure.core/<=       '{1 {:args [x] :ret-val true}}
+   'clojure.core/>        '{1 {:args [x] :ret-val true}}
+   'clojure.core/>=       '{1 {:args [x] :ret-val true}}
+   'clojure.core/min      '{1 {:args [x] :ret-val x}}
+   'clojure.core/max      '{1 {:args [x] :ret-val x}}
+   'clojure.core/min-key  '{2 {:args [f x] :ret-val x}}
+   'clojure.core/max-key  '{2 {:args [f x] :ret-val x}}
+   'clojure.core/dissoc   '{1 {:args [map] :ret-val map}}
+   'clojure.core/disj     '{1 {:args [set] :ret-val set}}
+   'clojure.core/merge    '{0 {:args [] :ret-val nil},
+                            1 {:args [map] :ret-val map}}
+   'clojure.core/merge-with '{1 {:args [f] :ret-val nil},
+                              2 {:args [f map] :ret-val map}}
+   'clojure.core/interleave '{0 {:args [] :ret-val ()}}
+   'clojure.core/pr-str   '{0 {:args [] :ret-val ""}}
+   'clojure.core/print-str '{0 {:args [] :ret-val ""}}
+   'clojure.core/pr       '{0 {:args [] :ret-val nil}}
+   'clojure.core/print    '{0 {:args [] :ret-val nil}}
    
-   #'clojure.core/comp     '{0 {:args [] :ret-val identity}}
-   #'clojure.core/partial  '{1 {:args [f] :ret-val f}}
-   #'clojure.core/+        '{0 {:args []  :ret-val 0},   ; inline
-                             1 {:args [x] :ret-val x}}
-   #'clojure.core/+'       '{0 {:args []  :ret-val 0},   ; inline
-                             1 {:args [x] :ret-val x}}
-   #'clojure.core/*        '{0 {:args []  :ret-val 1},   ; inline
-                             1 {:args [x] :ret-val x}}
-   #'clojure.core/*'       '{0 {:args []  :ret-val 1},   ; inline
-                             1 {:args [x] :ret-val x}}
+   'clojure.core/comp     '{0 {:args [] :ret-val identity}}
+   'clojure.core/partial  '{1 {:args [f] :ret-val f}}
+   'clojure.core/+        '{0 {:args []  :ret-val 0},   ; inline
+                            1 {:args [x] :ret-val x}}
+   'clojure.core/+'       '{0 {:args []  :ret-val 0},   ; inline
+                            1 {:args [x] :ret-val x}}
+   'clojure.core/*        '{0 {:args []  :ret-val 1},   ; inline
+                            1 {:args [x] :ret-val x}}
+   'clojure.core/*'       '{0 {:args []  :ret-val 1},   ; inline
+                            1 {:args [x] :ret-val x}}
    ;; Note: (- x) and (/ x) do something useful
    })
 
 (defn suspicious-expression-asts [{:keys [asts]}]
-  (let [fn-var-set (set (keys core-fns-that-do-little))
+  (let [fn-sym-set (set (keys core-fns-that-do-little))
         invoke-asts (->> asts
                          (mapcat ast/nodes)
                          (filter #(and (= (:op %) :invoke)
                                        (let [v (-> % :fn :var)]
-                                         (contains? fn-var-set v)))))]
+                                         (contains? fn-sym-set
+                                                    (util/var-to-fqsym v))))))]
     (doall
      (remove
       nil?
       (for [ast invoke-asts]
         (let [^clojure.lang.Var fn-var (-> ast :fn :var)
               fn-sym (.sym fn-var)
+              fn-fqsym (util/var-to-fqsym fn-var)
               num-args (count (-> ast :args))
               form (-> ast :form)
-              suspicious-args (get core-fns-that-do-little fn-var)
+              loc (-> form meta)
+              suspicious-args (core-fns-that-do-little fn-fqsym)
               info (get suspicious-args num-args)]
           (if (contains? suspicious-args num-args)
             {:linter :suspicious-expression,
@@ -481,9 +472,9 @@ generate varying strings while the test is running."
                           (if (= "" (:ret-val info))
                             "\"\""
                             (print-str (:ret-val info))))
-             :file (-> form meta :file)
-             :line (-> form meta :line)
-             :column (-> form meta :column)})))))))
+             :file (-> loc :file)
+             :line (-> loc :line)
+             :column (-> loc :column)})))))))
 
 (defn suspicious-expression [& args]
   (concat

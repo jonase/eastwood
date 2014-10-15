@@ -3,6 +3,75 @@
 Intended for Eastwood developers to track down when they have time and
 interest.
 
+## Changes from version 0.1.4 to 0.1.5
+
+TBD: Add detailed documentation to README.md for :local-shadows-var
+TBD: Add detailed documentation to README.md for :wrong-tag linter
+
+Eastwood 0.1.4 threw an exception due to a not-fully-qualified Java
+class name used in a type tag in the places listed below.  Why doesn't
+0.1.5 throw this exception?
+
+    meltdown namespace clojurewerkz.meltdown.selectors-test, class name Reactor
+
+0.1.5 throws a new exception not thrown by 0.1.4 that seems like it
+might be a bug:
+
+    meltdown namespace clojurewerkz.meltdown.reactor-test, exception
+        'No such var: mr'
+
+tools.analyzer.jvm version 0.6.0 throws a 'Wrong tag' exception for
+some namespaces that the older version did not:
+
+    clojurewerkz.cassaforte.bytes 'Wrong tag: clojure.core$bytes@560973d9 in def: to-bytes'
+    # TBD: With latest changes, I think clojurewerkz.chash.ring
+    # exception went away.  Why?
+    clojurewerkz.chash.ring 'Wrong tag: long in def: ring-top'
+    clojure.core.async.impl.protocols 'Wrong tag: int in def: MAX-QUEUE-SIZE'
+    kria.conversions 'Wrong tag: clojure.core$bytes@cf562cb in def: byte-array<-byte-buffer'
+    clojurewerkz.meltdown.consumers 'Wrong tag: clojure.core$boolean@2d8af427 in def: paused?'
+    potemkin.collections 'Wrong tag: :potemkin/abstract-type in def: AbstractMap'
+
+TBD: It would be best to modify Eastwood to recognize this exception
+specifically, and print a shorter more focused message about it.
+
+TBD: Some :redefd-vars warnings have worse file/line/col combinations
+reported than in 0.1.4.  See about improving those.  In particular:
+
+    core.contracts-2013-07-24 namespace clojure.core.constraints-tests
+    potemkin namespace potemkin.collections-test
+
+TBD: Some :deprecations warnings have worse file/line/col combinations
+reported than in 0.1.4.
+
+    core.match-2014-03-05 namespace clojure.core.match.date and others
+
+Namespace clojure.core.logic.nominal.tests throws exception 'Could not
+resolve var: deftest' when it clearly uses clojure.test.  It does have
+the :reload key after that, which might be throwing a wrench into
+things?  TBD: It did this in Eastwood 0.1.4, too.  It only does it for
+core.logic-2014-02-21, not for core.logic-2014-03-28, even though both
+versions seem to have identical ns forms.  Weird.
+
+I removed the pass #'warn-on-reflection from the default list of
+tools.analyzer(.jvm) default-passes to create eastwood-passes.  With
+that pass included and a Leiningen project.clj file that enables
+reflection warnings, most (or maybe all) reflection warnings are
+printed twice.  I'd rather only see them printed once.
+
+When I still had the #'warn-on-reflection pass included, in namespace
+clojure.core.logic.unifier, the invocation of = in the following
+function definition gives a reflection warning with tools.analyzer.jvm
+0.6.0, but Clojure itself does not.  This happens in many other
+namespaces in core.logic and core.match, too.
+
+(defn- lvarq-sym? [s]
+  (and (symbol? s) (= (first (str s)) \?)))
+
+TBD: Is this a bug in tools.analyzer(.jvm) reflection warnings?  Or an
+instance of Clojure not warning when it should?
+
+
 ## Changes from version 0.1.3 to 0.1.4
 
 The new way planned to check for (is ...) expressions, so that it only

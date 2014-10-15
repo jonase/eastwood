@@ -42,12 +42,12 @@ more interesting keys earlier."
                              :var
                              :raw-forms
                              :eastwood/partly-resolved-forms
+                             :eastwood/ancestors
                              :env
 
                              ;; Some keywords I have seen in :children
                              ;; vectors, given in the same relative
                              ;; order as I saw them.
-                             :body
                              :catches
                              :finally
                              :statements
@@ -59,9 +59,11 @@ more interesting keys earlier."
                              :instance
                              :args
                              :params
+                             :bindings
                              :body
                              :expr
                              :meta
+                             :init
                              :local
                              :methods
                              :keys
@@ -95,6 +97,9 @@ twice."
 (defn filter-vals [f m]
   (into (empty m)
         (filter (fn [[_ v]] (f v)) m)))
+
+(defn var-to-fqsym [^clojure.lang.Var v]
+  (if v (symbol (str (.ns v)) (str (.sym v)))))
 
 (defn op= [op]
   (fn [ast]
@@ -209,7 +214,10 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
   (let [a (if (contains? (set kws) :with-env)
             ast
             (trim-ast ast :remove-only [:env]))]
-    (-> a ast-to-ordered pprint-meta-elided)))
+    (-> a
+        (trim-ast :remove-only [:eastwood/ancestors])
+        ast-to-ordered
+        pprint-meta-elided)))
 
 (defn pprint-form [form]
   (pprint-meta-elided form))
@@ -242,7 +250,7 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
 
 (defn extend-invocation-ast? [ast]
   (and (= (:op ast) :invoke)
-       (= #'clojure.core/extend (get-in ast [:fn :var]))))
+       (= 'clojure.core/extend (var-to-fqsym (get-in ast [:fn :var])))))
 
 (defn enhance-extend-invocations-prewalk [ast]
   (if (extend-invocation-ast? ast)

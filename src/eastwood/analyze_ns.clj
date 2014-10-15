@@ -3,36 +3,17 @@
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
-            [eastwood.passes :refer [propagate-def-name add-partly-resolved-forms reflect-validated]]
+            [eastwood.passes :as pass]
             [clojure.set :as set]
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as tr]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rts]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer :as ana :refer [analyze] :rename {analyze -analyze}]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer
-             [ast :refer [postwalk prewalk cycling]]
-             [utils :as utils]
              [env :as env]
              [passes :refer [schedule]]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
-             [source-info :refer [source-info]]
-             [cleanup :refer [cleanup]]
-             [elide-meta :refer [elide-meta]]
-             [warn-earmuff :refer [warn-earmuff]]
-             [collect-closed-overs :refer [collect-closed-overs]]
-             [uniquify :refer [uniquify-locals]]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
-             [box :refer [box]]
-             [collect :refer [collect]]
-             [constant-lifter :refer [constant-lift]]
-             [clear-locals :refer [clear-locals]]
-             [classify-invoke :refer [classify-invoke]]
-             [validate :refer [validate]]
-             [infer-tag :refer [infer-tag ensure-tag]]
-             [validate-loop-locals :refer [validate-loop-locals]]
-             [warn-on-reflection :refer [warn-on-reflection]]
-             [emit-form :refer [emit-form]]]))
+             [warn-on-reflection :refer [warn-on-reflection]]]))
 
 ;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer, then later probably diverged from each other.
@@ -122,15 +103,18 @@
       (println (format "\n\n== Analyzing file '%s'\n" filename)))))
 
 (defn eastwood-wrong-tag-handler [t ast]
-;;  (let [tag (-> ast :name meta :tag)]
-;;    (println (format "jafinger-dbg: Wrong tag: %s (%s -- uneval'd %s (%s)) in def: %s   t=%s (class t)=%s"
-;;                     (eval tag) (class (eval tag)) tag (class tag) (:name ast)
-;;                     t (class t)))
-;;    (util/pprint-form (:form ast))
+;;  (let [tag (if (= t :name/tag)
+;;              (-> ast :name meta :tag)
+;;              (get ast t))]
+;;    (println (format "jafinger-dbg: Wrong tag: %s (%s) in def: %s   t=%s"
+;;                     tag (class tag)
+;;                     ;;(eval tag) (class (eval tag))
+;;                     (:name ast) t))
+;;    (pp/pprint (:form ast))
 ;;    (util/pprint-ast-node ast))
   ;; Key/value pairs to be merged into ast for later code to find
   ;; and issue warnings.
-  {:eastwood/wrong-tag (or t :eastwood/wrong-tag-on-var)})
+  {:eastwood/wrong-tag t})
 
 ;; eastwood-passes is a cut-down version of run-passes in
 ;; tools.analyzer.jvm.  It eliminates phases that are not needed for
@@ -140,30 +124,10 @@
 
 (def eastwood-passes
   "Set of passes that will be run by default on the AST by #'run-passes"
-  #{
-    ;; Doing clojure.core/eval in analyze+eval already generates
-    ;; reflection warnings from Clojure.  Doing it in tools.analyzer
-    ;; also leads to duplicate warnings.
-    ;;#'warn-on-reflection
-    #'warn-earmuff
-
-    #'uniquify-locals
-
-    #'source-info
-    #'elide-meta
-    #'constant-lift
-
-    #'clear-locals
-    #'collect-closed-overs
-    #'collect
-
-    #'box
-
-    #'validate-loop-locals
-    #'validate
-    #'infer-tag
-
-    #'classify-invoke})
+  ;; Doing clojure.core/eval in analyze+eval already generates
+  ;; reflection warnings from Clojure.  Doing it in tools.analyzer
+  ;; also leads to duplicate warnings.
+  (disj ana.jvm/default-passes #'warn-on-reflection))
 
 (def scheduled-eastwood-passes
   (schedule eastwood-passes))
@@ -177,6 +141,15 @@
 (def eastwood-passes-opts
   (merge ana.jvm/default-passes-opts
          {:validate/wrong-tag-handler eastwood-wrong-tag-handler}))
+
+;; TBD: Consider changing how the functions called within
+;; eastwood-ast-additions are defined so that they can be added to
+;; eastwood-passes above instead.
+
+(defn eastwood-ast-additions [ast]
+  (-> ast
+      pass/add-partly-resolved-forms
+      pass/add-ancestors))
 
 (defn wrapped-exception? [result]
   (if (instance? eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)
@@ -273,7 +246,7 @@
                       (post-analyze-debug asts form ast *ns* opt)
                       (recur (conj forms form)
                              (conj asts
-                                   (add-partly-resolved-forms ast))))))))))))))
+                                   (eastwood-ast-additions ast))))))))))))))
 
 
 (defn analyze-ns

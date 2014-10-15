@@ -34,7 +34,7 @@
   (lint-test
    'testcases.f01
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity]
+    :wrong-arity :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :redefd-vars,
@@ -84,7 +84,8 @@
   ;; twice in the result.  Once would be enough.
   (lint-test
    'testcases.f02
-   [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity]
+   [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity
+    :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :redefd-vars,
@@ -108,15 +109,32 @@
   (lint-test
    'testcases.f03
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try :wrong-arity]
+    :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try :wrong-arity
+    :wrong-tag]
    {}
    {})
   (lint-test
    'testcases.f04
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity]
+    :wrong-arity :local-shadows-var :wrong-tag]
    {}
-   {})
+   {
+    {:linter :local-shadows-var,
+     :msg "local: replace invoked as function shadows var: #'clojure.core/replace",
+     :file "testcases/f04.clj",
+     :line 44, :column 14}
+    1,
+    {:linter :local-shadows-var,
+     :msg "local: shuffle invoked as function shadows var: #'clojure.core/shuffle",
+     :file "testcases/f04.clj",
+     :line 47, :column 14}
+    1,
+    {:linter :local-shadows-var,
+     :msg "local: count invoked as function shadows var: #'clojure.core/count",
+     :file "testcases/f04.clj",
+     :line 64, :column 20}
+    1,
+    })
   ;; The following test is known to fail with Clojure 1.5.1 because of
   ;; protocol method names that begin with "-".  See
   ;; http://dev.clojure.org/jira/browse/TANAL-17 and
@@ -125,13 +143,13 @@
     (lint-test
      'testcases.f05
      [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-      :wrong-arity]
+      :wrong-arity :local-shadows-var :wrong-tag]
      {}
      {}))
   (lint-test
    'testcases.f06
    [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity]
+    :wrong-arity :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :unused-fn-args,
@@ -351,14 +369,15 @@
           1)]
     (lint-test
      'testcases.f07
-     [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
+     [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
+      :local-shadows-var :wrong-tag]
      {}
      (if clojure-1-6-or-later
        clojure-1-6-or-later-expected-warnings
        clojure-1-5-expected-warnings)))
   (lint-test
    'testcases.deprecated
-   [:deprecations :wrong-arity]
+   [:deprecations :wrong-arity :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :deprecations,
@@ -388,20 +407,22 @@
   (lint-test
    'testcases.tanal-9
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
-    :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
+    :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
+    :local-shadows-var :wrong-tag]
 ;;   [:misplaced-docstrings]
    {}  ;{:debug #{:all}}
    {})
   (lint-test
    'testcases.tanal-27
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
-    :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity]
+    :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
+    :local-shadows-var :wrong-tag]
    {}
    {})
   (lint-test
    'testcases.keyword-typos
    [:keyword-typos :unused-ret-vals :unused-ret-vals-in-try
-    :deprecations :wrong-arity]
+    :deprecations :wrong-arity :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :keyword-typos,
@@ -410,12 +431,13 @@
     })
   (lint-test
    'testcases.isformsok
-   [:suspicious-test :suspicious-expression]
+   [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
    {}
    {})
   (lint-test
    'testcases.testtest
-   [:keyword-typos :suspicious-test :suspicious-expression]
+   [:keyword-typos :suspicious-test :suspicious-expression
+    :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :suspicious-test,
@@ -753,13 +775,28 @@
      :linter :suspicious-expression,
      :msg "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
+    {:line 145, :column 8,
+     :file "testcases/testtest.clj",
+     :linter :suspicious-expression,
+     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+    1,
+    {:line 146, :column 4,
+     :file "testcases/testtest.clj",
+     :linter :suspicious-test,
+     :msg "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning."}
+    1,
+    {:line 146, :column 8,
+     :file "testcases/testtest.clj",
+     :linter :suspicious-expression,
+     :msg "== called with 1 args.  (== x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+    1,
     })
   ;; It is strange that the :unlimited-use linter has nil for :line
   ;; and :column here, but integer values when I use it from the
   ;; command line.  What is going on here?
   (lint-test
    'testcases.unlimiteduse
-   [:unlimited-use]
+   [:unlimited-use :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :unlimited-use,
@@ -775,13 +812,99 @@
     })
   (lint-test
    'testcases.in-ns-switching
-   [:unlimited-use]
+   [:unlimited-use :local-shadows-var :wrong-tag]
    {}
    {
     {:linter :unlimited-use,
      :msg "Unlimited use of (clojure.test clojure.set [testcases.f01 :as t1]) in testcases.in-ns-switching",
      :file "testcases/in_ns_switching.clj",
      :line 3, :column 9}
+    1,
+    })
+  (lint-test
+   'testcases.wrongtag
+   @#'eastwood.core/default-linters
+   {}
+   {
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lv1",
+     :file "testcases/wrongtag.clj",
+     :line 7, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lv2",
+     :file "testcases/wrongtag.clj",
+     :line 8, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: iv1",
+     :file "testcases/wrongtag.clj",
+     :line 19, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: iv2",
+     :file "testcases/wrongtag.clj",
+     :line 20, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf1",
+     :file "testcases/wrongtag.clj",
+     :line 31, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf2",
+     :file "testcases/wrongtag.clj",
+     :line 32, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf3",
+     :file "testcases/wrongtag.clj",
+     :line 33, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf4",
+     :file "testcases/wrongtag.clj",
+     :line 34, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if1",
+     :file "testcases/wrongtag.clj",
+     :line 35, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if2",
+     :file "testcases/wrongtag.clj",
+     :line 36, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if3",
+     :file "testcases/wrongtag.clj",
+     :line 37, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if4",
+     :file "testcases/wrongtag.clj",
+     :line 38, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Tag: (quote LinkedList) for return type of fn on arg vector: [coll] should be Java class name (fully qualified if not in java.lang package)",
+     :file "testcases/wrongtag.clj",
+     :line 84, :column 36}
+    1,
+    {:linter :wrong-tag,
+     :msg "Tag: (quote LinkedList) for return type of fn on arg vector: [coll] should be Java class name (fully qualified if not in java.lang package)",
+     :file "testcases/wrongtag.clj",
+     :line 85, :column 33}
+    1,
+    {:linter :wrong-tag,
+     :msg "Tag: LinkedList for return type of fn on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)",
+     :file "testcases/wrongtag.clj",
+     :line 87, :column 28}
+    1,
+    {:linter :wrong-tag,
+     :msg "Tag: LinkedList for return type of fn on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)",
+     :file "testcases/wrongtag.clj",
+     :line 88, :column 25}
     1,
     })
   ;; I would prefer if this threw an exception, but I think it does

@@ -3,12 +3,49 @@
 
 ## Changes from version 0.1.4 to 0.1.5
 
+* New linter `:local-shadows-var` that warns if a local name (e.g. a
+  function argument or let binding) has the same name as a global Var,
+  and is called as a function.  This is sometimes a mistake.  Issue
+  [#81](https://github.com/jonase/eastwood/issues/81).
+
+* New linter `:wrong-tag` that warns for some kinds of erroneous type
+  tags.  For example, a primitive type tag like `^int` or `^bytes` on
+  a Var name being def'd or defn'd should be given in the form `^{:tag
+  'int}` instead.  Also it is best if Java class names outside of the
+  `java.lang` package are fully qualified when used to hint the return
+  type of a function on its argument vector.
+
 * The default behavior is now to stop analyzing namespaces after the
-  first exception thrown during analysis.  The new option
-  :continue-on-exception can be set to true to force the old behavior.
-  The new stopping behavior prevents some spurious warnings about
-  undefined Vars that can be confusing to users.  Issue
+  first exception thrown during analysis or evaluation.  The new
+  option :continue-on-exception can be set to true to force the old
+  behavior.  The new stopping behavior prevents some spurious warnings
+  about undefined Vars that can be confusing to users.  Issue
   [#79](https://github.com/jonase/eastwood/issues/79).
+
+* The warning messages for linters `:unused-fn-args`
+  `:unused-ret-vals` have changed slightly to remove details that were
+  not easy to continue to provide with the newest `tools.analyzer`
+  libraries.  On the plus side, some of the line and column numbers
+  are now more precise than they were before with those linters, and
+  also for the `:suspicious-test` linter.
+
+* Eastwood 0.1.4, and perhaps a few earlier versions as well,
+  unintentionally 'hid' exception thrown by the Clojure compiler while
+  doing eval.  Such exceptions are now made visible to the user.
+
+* Updated `tools.analyzer` and `tools.analyzer.jvm` to versions
+  shortly after release 0.6.0, with fixes up to Sep 30 2014.
+
+* Updated `tools.namespace` to version 0.2.6.
+
+* Added some new utility/debug functions for showing ASTs trimmed of
+  unwanted data, and sorting the keys in orders that put the most
+  important values early.
+
+* Made some Eastwood code simultaneously simpler, shorter, and more
+  reliable by using `tools.analyzer(.jvm)` enhancement that preserves
+  the original forms of code that goes through macro expansion.  Issue
+  [#71](https://github.com/jonase/eastwood/issues/71).
 
 
 ## Changes from version 0.1.3 to 0.1.4

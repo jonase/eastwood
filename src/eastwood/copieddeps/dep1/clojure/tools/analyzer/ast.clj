@@ -41,10 +41,7 @@
    (reduce (fn [acc [_ c]] ((if (vector? c) into! conj!) acc c))
            (transient []) (children* ast))))
 
-(defmulti -update-children   (fn [ast f] (:op ast)))
-(defmulti -update-children-r (fn [ast f] (:op ast)))
-
-(defmethod -update-children :default
+(defn -update-children
   [ast f]
   (persistent!
    (reduce (fn [ast [k v]]
@@ -52,7 +49,7 @@
            (transient ast)
            (children* ast))))
 
-(defmethod -update-children-r :default
+(defn -update-children-r
   [ast f]
   (persistent!
    (reduce (fn [ast [k v]]
@@ -64,7 +61,9 @@
   "Applies `f` to each AST children node, replacing it with the returned value.
    If reversed? is not-nil, `pre` and `post` will be applied starting from the last
    children of the AST node to the first one."
-  ([ast f] (update-children ast f false))
+  ([ast f] (if (:children ast)
+             (-update-children ast f)
+             ast))
   ([ast f reversed?]
      (if (:children ast)
        (if reversed?
