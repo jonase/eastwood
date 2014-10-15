@@ -31,6 +31,9 @@ significance needed by the user."
               (cond (= kind :name/tag)
                     [:wrong-tag-on-var (-> name meta :tag) env]
                     
+                    (= kind :tag)
+                    [:tag (get ast kind) (meta form)]
+
                     (= op :var)
                     [:var (get ast kind) env]
                     
@@ -48,6 +51,9 @@ significance needed by the user."
               :wrong-tag-on-var (format "Wrong tag: %s in def of Var: %s"
                                         (replace-variable-tag-part (eval tag))
                                         name)
+              :tag (format "Wrong tag: %s on form: %s"
+                           (replace-variable-tag-part tag)
+                           form)
               :var (format "Wrong tag: %s for form: %s, probably where the Var %s was def'd in namespace %s"
                            (replace-variable-tag-part tag)
                            form
