@@ -334,8 +334,7 @@ curious." eastwood-url))
   (let [[{:keys [analyze-results exception exception-phase exception-form]}
          analyze-time-msec]
         (timeit (analyze/analyze-ns ns-sym :opt opts))
-        print-time? (or (contains? (:debug opts) :all)
-                        (contains? (:debug opts) :time))]
+        print-time? (util/debug? #{:time} opts)]
     (when print-time?
       (println (format "Analysis took %.1f millisec" analyze-time-msec)))
     (doseq [linter linters]
@@ -566,7 +565,7 @@ file and namespace to avoid name collisions.")
           (print msg)
           (flush)
           (System/exit 1))
-        (when (contains? (:debug opts) :all)
+        (when (util/debug? #{:all} opts)
           (println (format "Namespaces to be linted:"))
           (doseq [n namespaces]
             (println (format "    %s" n))))
@@ -578,9 +577,7 @@ file and namespace to avoid name collisions.")
         (doseq [n namespaces]
           (create-ns n))
         (when (seq linters)
-          (let [record-forms? (or (contains? (:debug opts) :all)
-                                  (contains? (:debug opts) :compare-forms))
-                opts (if record-forms?
+          (let [opts (if (util/debug? #{:compare-forms} opts)
                        (do
                          (binding [*out* *err*]
                            (println (format "Writing files forms-read.txt and forms-emitted.txt")))

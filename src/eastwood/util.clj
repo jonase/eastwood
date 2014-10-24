@@ -410,3 +410,10 @@ of these kind."
 (defn expr-in-try-body? [ast]
   (or (statement-in-try-body? ast)
       (ret-expr-in-try-body? ast)))
+
+(defn debug? [debug-options opt]
+  (assert (set? debug-options))
+  (assert (map? opt))
+  (let [d (:debug opt)]
+    (or (contains? d :all)
+        (some debug-options d))))

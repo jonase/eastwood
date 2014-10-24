@@ -54,9 +54,9 @@
 (defn dont-expand-twice? [form]
   (gen-interface-form? form))
 
-(defn pre-analyze-debug [asts form _env ns {:keys [debug] :as opt}]
-  (let [print-normally? (some #{:all :forms} debug)
-        pprint? (some #{:all :forms-pprint} debug)]
+(defn pre-analyze-debug [asts form _env ns opt]
+  (let [print-normally? (util/debug? #{:forms} opt)
+        pprint? (util/debug? #{:forms-pprint} opt)]
     (when (or print-normally? pprint?)
       (println (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
                        (count asts) (str ns) (meta ns)))
@@ -79,9 +79,9 @@
             (util/pprint-meta-elided exp))))
       (println "\n    --------------------"))))
 
-(defn post-analyze-debug [asts form ast ns {:keys [debug] :as opt}]
-  (let [show-ast? (some #{:all :ast} debug)]
-    (when (or show-ast? (some #{:progress} debug))
+(defn post-analyze-debug [asts form ast ns opt]
+  (let [show-ast? (util/debug? #{:ast} opt)]
+    (when (or show-ast? (util/debug? #{:progress} opt))
       (println (format "dbg anal'd %d ns=%s%s"
                        (count asts) (str ns)
                        (if show-ast? " ast=" ""))))
@@ -208,9 +208,8 @@
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
   [source-path & {:keys [reader opt]}]
-  (let [debug-ns (some #{:ns :all} (:debug opt))
-        eof (reify)]
-    (when debug-ns
+  (let [eof (reify)]
+    (when (util/debug? #{:ns} opt)
       (println (format "all-ns before (analyze-file \"%s\") begins:"
                        source-path))
       (pp/pprint (sort (all-ns-names-set))))
