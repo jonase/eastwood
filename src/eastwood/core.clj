@@ -88,26 +88,31 @@ return value followed by the time it took to evaluate in millisec."
     (catch Throwable e
       [e])))
 
-;; Copied from clojure.repl/pst then slightly modified to print to
-;; *out*, not *err*, and to use depth nil to print all stack frames.
+;; Copied from clojure.repl/pst then modified to 'print' using a
+;; callback function, and to use depth nil to print all stack frames.
+
 (defn pst
-  "Prints a stack trace of the exception, to the depth requested (the
-entire stack trace if depth is nil).  Does not print ex-data."
-  [^Throwable e depth]
-  (println (str (-> e class .getSimpleName) " "
-                (.getMessage e)))
+  "'Prints' a stack trace of the exception,  to the depth requested (the
+entire stack trace if depth is nil).  Does not print ex-data.
+
+No actual printing is done in this function.  The callback function
+print-cb is called once for each line of output."
+  [^Throwable e depth print-cb]
+  (print-cb (str (-> e class .getSimpleName) " "
+                 (.getMessage e)))
   (let [st (.getStackTrace e)
         cause (.getCause e)]
     (doseq [el (remove #(#{"clojure.lang.RestFn" "clojure.lang.AFn"}
                          (.getClassName ^StackTraceElement %))
                        st)]
-      (println (str \tab (repl/stack-element-str el))))
+      (print-cb (str \tab (repl/stack-element-str el))))
     (when cause
-      (println "Caused by:")
+      (print-cb "Caused by:")
       (pst cause (if depth
                    (min depth
                         (+ 2 (- (count (.getStackTrace cause))
-                                (count st)))))))))
+                                (count st)))))
+           print-cb))))
 
 (defn maybe-unqualified-java-class-name? [x]
   (if-not (or (symbol? x) (string? x))
@@ -330,45 +335,57 @@ curious." eastwood-url))
       :show-more-details)))
 
 (defn lint-ns [ns-sym linters opts warning-count exception-count]
-  (println "== Linting" ns-sym "==")
-  (let [[{:keys [analyze-results exception exception-phase exception-form]}
-         analyze-time-msec]
-        (timeit (analyze/analyze-ns ns-sym :opt opts))
-        print-time? (util/debug? #{:time} opts)]
-    (when print-time?
-      (println (format "Analysis took %.1f millisec" analyze-time-msec)))
-    (doseq [linter linters]
-      (let [[results time-msec] (timeit (lint analyze-results linter))]
-        (doseq [result results]
-          (if (instance? Throwable result)
-            (do
-              (println (format "Exception thrown by linter %s on namespace %s"
-                               linter ns-sym))
-              (swap! exception-count inc)
-              (show-exception ns-sym opts result))
-            (do
-              (swap! warning-count inc)
-              (pp/pprint result)))
-          (println))
-        (when print-time?
-          (println (format "Linter %s took %.1f millisec" linter time-msec)))))
-    (when exception
-      (swap! exception-count inc)
-      (println "Exception thrown during phase" exception-phase
-               "of linting namespace" ns-sym)
-      (when (= (show-exception ns-sym opts exception) :show-more-details)
-        (println "\nThe following form was being processed during the exception:")
-        (binding [*print-level* 7
-                  *print-length* 50]
-          (pp/pprint exception-form))
-        (println "\nShown again with metadata for debugging (some metadata elided for brevity):")
-        (util/pprint-form exception-form))
-      (println
-"\nAn exception was thrown while analyzing namespace" ns-sym "
+  (let [error-cb (:error-msg-cb opts)
+        note-cb (:note-msg-cb opts)
+        debug-cb (:debug-msg-cb opts)]
+    (note-cb "== Linting" ns-sym "==")
+    (let [[{:keys [analyze-results exception exception-phase exception-form]}
+           analyze-time-msec]
+          (timeit (analyze/analyze-ns ns-sym :opt opts))
+          print-time? (util/debug? #{:time} opts)]
+      (when print-time?
+        (note-cb (format "Analysis took %.1f millisec" analyze-time-msec)))
+      (doseq [linter linters]
+        (let [[results time-msec] (timeit (lint analyze-results linter))]
+          (doseq [result results]
+            (if (instance? Throwable result)
+              (do
+                (error-cb (format "Exception thrown by linter %s on namespace %s"
+                                  linter ns-sym))
+                (swap! exception-count inc)
+                (show-exception ns-sym opts result))
+              (do
+                (swap! warning-count inc)
+                ;; TBD: How to do callback with pprint?  Note that
+                ;; this is the place where we pprint normal lint
+                ;; results, which are maps.  We should probably add a
+                ;; :while-linting-namespace key to all such maps, in
+                ;; case we want to collect/collate them at the end.
+                (note-cb (with-out-str
+                           (pp/pprint result))))))
+          (when print-time?
+            (note-cb (format "Linter %s took %.1f millisec"
+                             linter time-msec)))))
+      (when exception
+        (swap! exception-count inc)
+        (error-cb "Exception thrown during phase" exception-phase
+                  "of linting namespace" ns-sym)
+        (when (= (show-exception ns-sym opts exception) :show-more-details)
+          (error-cb "\nThe following form was being processed during the exception:")
+          (error-cb
+           (with-out-str
+             (binding [*print-level* 7
+                       *print-length* 50]
+               (pp/pprint exception-form))))
+          (error-cb "\nShown again with metadata for debugging (some metadata elided for brevity):")
+          (error-cb (with-out-str
+                      (util/pprint-form exception-form))))
+        (error-cb
+         "\nAn exception was thrown while analyzing namespace" ns-sym "
 Lint results may be incomplete.  If there are compilation errors in
 your code, try fixing those.  If not, check above for info on the
 exception.")
-      exception)))
+        exception))))
 
 ;; If an exception occurs during analyze, re-throw it.  This will
 ;; cause any test written that calls lint-ns-noprint to fail, unless
@@ -544,7 +561,187 @@ file and namespace to avoid name collisions.")
       ;; else
       {:err nil, :linters linters})))
 
+
+(defn stopped-on-exception-msg [info]
+  ;; Don't report that we stopped analyzing early if we stop on the
+  ;; last namespace (it is especially bad form to print the long
+  ;; message if only one namespace was being linted).
+  (if (seq (:unanalyzed-namespaces info))
+    (format "
+Stopped analyzing namespaces after %s
+due to exception thrown.  %d namespaces left unanalyzed.
+
+If you wish to force continuation of linting after an exception in one
+namespace, make the option map key :continue-on-exception have the
+value true.
+
+WARNING: This can cause exceptions to be thrown while analyzing later
+namespaces that would not otherwise occur.  For example, if a function
+is defined in the namespace where the first exception occurs, after
+the exception, it will never be evaluated.  If the function is then
+used in namespaces analyzed later, it will be undefined, causing
+error.
+"
+            (:last-namespace info)
+            (count (:unanalyzed-namespaces info)))
+
+    "
+Exception thrown while analyzing last namespace.
+"
+    ))
+
+
+(defn eastwood
+  "Lint a sequence of namespaces using a specified collection of linters.
+
+Prerequisites:
++ eastwood.core namespace is in your classpath
++ TBD: Eastwood resources directory is in your classpath
++ eastwood.core namespace and its dependencies have been loaded.
+
+Arguments:
++ TBD: to be documented
+
+Side effects:
++ Reads source files, analyzes them, generates Clojure forms from
+  analysis results, and eval's those forms (which if there are bugs in
+  tools.analyzer or tools.analyzer.jvm, may not be identical to the
+  original forms read.  If require'ing your source files launches the
+  missiles, so will this.
++ Does create-ns on all namespaces specified, even if an exception
+  during linting causes this function to return before reading all of
+  them.  See the code for why.
++ Should not print output to any output files/streams/etc., unless
+  this occurs due to eval'ing the code being linted.
+
+Return value:
++ TBD
+"
+  [opts]
+  (let [{:keys [err1 namespaces] :as m1} (opts->namespaces opts)
+        {:keys [err2 linters] :as m2} (opts->linters opts available-linters
+                                                     default-linters)]
+    (cond
+     err1 m1
+     err2 m2
+     :else
+     (let [error-cb (:error-msg-cb opts)
+           note-cb (:note-msg-cb opts)
+           debug-cb (:debug-msg-cb opts)
+
+           warning-count (atom 0)
+           exception-count (atom 0)
+           continue-on-exception? (:continue-on-exception opts)
+           stopped-on-exc (atom false)]
+       (when (util/debug? #{:all} opts)
+         (debug-cb (format "Namespaces to be linted:"))
+         (doseq [n namespaces]
+           (debug-cb (format "    %s" n))))
+       ;; Create all namespaces to be analyzed.  This can help in some
+       ;; (unusual) situations, such as when namespace A requires B,
+       ;; so Eastwood analyzes B first, but eval'ing B assumes that
+       ;; A's namespace has been created first because B contains
+       ;; (alias 'x 'A)
+       (doseq [n namespaces]
+         (create-ns n))
+       (when (seq linters)
+         (loop [namespaces namespaces]
+           (when-first [namespace namespaces]
+             (let [e (try
+                       (lint-ns namespace linters opts
+                                warning-count exception-count)
+                       (catch RuntimeException e
+                         (error-cb "Linting failed:")
+                         (pst e nil error-cb)))]
+               (if (or continue-on-exception?
+                       (not (instance? Throwable e)))
+                 (recur (next namespaces))
+                 (reset! stopped-on-exc
+                         {:exception e
+                          :last-namespace namespace
+                          :unanalyzed-namespaces (next namespaces)}))))))
+       (merge
+        {:err nil
+         :warning-count @warning-count
+         :exception-count @exception-count}
+        (if @stopped-on-exc
+          {:err :exception-thrown
+           :msg (stopped-on-exception-msg @stopped-on-exc)}))))))
+
+
+(defn make-default-msg-cb [wrtr]
+  (let [default-wrtr (or wrtr (java.io.PrintWriter. *out* true))]
+    (fn default-msg-cb [& args]
+      (binding [*out* default-wrtr]
+        (apply println args)
+        (flush)))))
+
+(defn make-default-debug-ast-cb [wrtr]
+  (let [default-wrtr (or wrtr (java.io.PrintWriter. *out* true))]
+    (fn default-debug-ast-cb [& args]
+      (binding [*out* default-wrtr]
+        (apply util/pprint-ast-node args)
+        (flush)))))
+
+(defn make-default-form-cb [wrtr]
+  (fn [opt kind obj]
+    (binding [*out* wrtr]
+      (case kind
+        :begin-file (println (format "\n\n== Analyzing file '%s'\n" obj))
+        :form (util/pprint-form obj)))))
+
+
+(defn eastwood-from-cmdline [opts]
+  ;; Test Eastwood for a while with messages being written to file
+  ;; "east-out.txt", to see if I catch everything that was going to
+  ;; *out* with callback functions or return values.
+
+  ;; Change default-wrtr to nil to change from writing to the file to
+  ;; writing to the java.io.PrintWriter. that Eastwood did in version
+  ;; 0.1.4.
+  (let [wrtr (io/writer "east-out.txt")
+        default-cb (make-default-msg-cb wrtr)
+        default-debug-ast-cb (make-default-debug-ast-cb wrtr)
+        
+        [form-read-cb form-emitted-cb]
+        (if (util/debug? #{:compare-forms} opts)
+          (do
+            (default-cb (format "Writing files forms-read.txt and forms-emitted.txt"))
+            [ (make-default-form-cb (io/writer "forms-read.txt"))
+              (make-default-form-cb (io/writer "forms-emitted.txt")) ])
+          [])
+        
+        opts (merge opts {:error-msg-cb default-cb
+                          :note-msg-cb default-cb
+                          :debug-msg-cb default-cb
+                          :debug-ast-cb default-debug-ast-cb
+                          :form-read-cb form-read-cb
+                          :form-emitted-cb form-emitted-cb})
+        _ (default-cb (format "== Eastwood %s Clojure %s JVM %s"
+                              (eastwood-version)
+                              (clojure-version)
+                              (get (System/getProperties) "java.version")))
+        {:keys [err msg warning-count exception-count] :as ret}
+        (eastwood opts)]
+    (when err
+      ((:error-msg-cb opts) msg))
+    ((:note-msg-cb opts) (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
+                                warning-count exception-count))
+    (if (or err (> warning-count 0) (> exception-count 0))
+      ;; Exit with non-0 exit status for the benefit of any shell
+      ;; scripts invoking Eastwood that want to know if there were no
+      ;; errors, warnings, or exceptions.
+      (System/exit 1)
+      ;; Eastwood does not use future, pmap, or clojure.shell/sh now
+      ;; (at least not yet), but it may evaluate code that does when
+      ;; linting a project.  Call shutdown-agents to avoid the
+      ;; 1-minute 'hang' that would otherwise occur.
+      (shutdown-agents))))
+
+
 (defn run-eastwood [opts]
+  (eastwood-from-cmdline opts)
+(comment
   (binding [*out* (java.io.PrintWriter. *out* true)]
     (println (format "== Eastwood %s Clojure %s JVM %s"
                      (eastwood-version)
@@ -631,4 +828,6 @@ error.
         ;; (at least not yet), but it may evaluate code that does when
         ;; linting a project.  Call shutdown-agents to avoid the
         ;; 1-minute 'hang' that would otherwise occur.
-        (shutdown-agents)))))
+        (shutdown-agents))))
+)
+  )

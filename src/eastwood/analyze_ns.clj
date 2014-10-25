@@ -56,51 +56,50 @@
 
 (defn pre-analyze-debug [asts form _env ns opt]
   (let [print-normally? (util/debug? #{:forms} opt)
-        pprint? (util/debug? #{:forms-pprint} opt)]
+        pprint? (util/debug? #{:forms-pprint} opt)
+        debug-cb (or (:debug-msg-cb opt) println)]
     (when (or print-normally? pprint?)
-      (println (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
-                       (count asts) (str ns) (meta ns)))
+      (debug-cb (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
+                        (count asts) (str ns) (meta ns)))
       (when pprint?
-        (println "    form before macroexpand:")
-        (pp/pprint form))
+        (debug-cb "    form before macroexpand:")
+        (debug-cb (with-out-str (pp/pprint form))))
       (when print-normally?
-        (println "    form before macroexpand, with metadata (some elided for brevity):")
-        (util/pprint-meta-elided form))
-      (println "\n    --------------------")
+        (debug-cb "    form before macroexpand, with metadata (some elided for brevity):")
+        (debug-cb (with-out-str (util/pprint-meta-elided form))))
+      (debug-cb "\n    --------------------")
       (if (dont-expand-twice? form)
         (when print-normally?
-          (println "    form is gen-interface, so avoiding macroexpand on it"))
+          (debug-cb "    form is gen-interface, so avoiding macroexpand on it"))
         (let [exp (macroexpand form)]
           (when pprint?
-            (println "    form after macroexpand:")
-            (pp/pprint exp))
+            (debug-cb "    form after macroexpand:")
+            (debug-cb (with-out-str (pp/pprint exp))))
           (when print-normally?
-            (println "    form after macroexpand, with metadata (some elided for brevity):")
-            (util/pprint-meta-elided exp))))
-      (println "\n    --------------------"))))
+            (debug-cb "    form after macroexpand, with metadata (some elided for brevity):")
+            (debug-cb (with-out-str (util/pprint-meta-elided exp))))))
+      (debug-cb "\n    --------------------"))))
 
 (defn post-analyze-debug [asts form ast ns opt]
   (let [show-ast? (util/debug? #{:ast} opt)]
     (when (or show-ast? (util/debug? #{:progress} opt))
-      (println (format "dbg anal'd %d ns=%s%s"
-                       (count asts) (str ns)
-                       (if show-ast? " ast=" ""))))
+      ((:debug-msg-cb opt) (format "dbg anal'd %d ns=%s%s"
+                                   (count asts) (str ns)
+                                   (if show-ast? " ast=" ""))))
     (when show-ast?
-      (util/pprint-ast-node ast))
-    (when (:record-forms? opt)
-      ;; TBD: Change this to macroexpand form, at least if
-      ;; dont-expand-twice? returns false.
-      (binding [*out* (:forms-read-wrtr opt)]
-        (util/pprint-form form))
-      (binding [*out* (:forms-emitted-wrtr opt)]
-        (util/pprint-form (:form ast))))))
+      ((:debug-ast-cb opt) ast))
+    ;; TBD: Change this to macroexpand form, at least if
+    ;; dont-expand-twice? returns false.
+    (if-let [cb (:form-read-cb opt)]
+      (cb opt :form form))
+    (if-let [cb (:form-emitted-cb opt)]
+      (cb opt :form (:form ast)))))
 
 (defn begin-file-debug [filename ns opt]
-  (when (:record-forms? opt)
-    (binding [*out* (:forms-read-wrtr opt)]
-      (println (format "\n\n== Analyzing file '%s'\n" filename)))
-    (binding [*out* (:forms-emitted-wrtr opt)]
-      (println (format "\n\n== Analyzing file '%s'\n" filename)))))
+  (if-let [cb (:form-read-cb opt)]
+    (cb opt :begin-file filename))
+  (if-let [cb (:form-emitted-cb opt)]
+    (cb opt :begin-file filename)))
 
 (defn eastwood-wrong-tag-handler [t ast]
 ;;  (let [tag (if (= t :name/tag)
@@ -118,9 +117,8 @@
 
 ;; eastwood-passes is a cut-down version of run-passes in
 ;; tools.analyzer.jvm.  It eliminates phases that are not needed for
-;; linting, and which can cause analysis to fail for code that we
-;; would prefer to give linter warnings for, rather than throw an
-;; exception.
+;; linting, and which can cause analysis to throw exceptions, where in
+;; Eastwood we would prefer to give linter warnings.
 
 (def eastwood-passes
   "Set of passes that will be run by default on the AST by #'run-passes"
@@ -162,6 +160,21 @@
         (if (identical? form eof)
           forms
           (recur (conj forms form)))))))
+
+(defmacro with-out-str2
+  "Like with-out-str, but returns a map m.  (:val m) is the return
+value of the last expression in the body.  (:out m) is the string
+normally returned by with-out-str.  (:err m) is the string that would
+be returned by with-out-str if it bound *err* instead of *out* to a
+StringWriter."
+  [& body]
+  `(let [s# (new java.io.StringWriter)
+         s2# (new java.io.StringWriter)
+         x# (binding [*out* s#
+                      *err* s2#]
+              ~@body)]
+     {:val x# :out (str s#) :err (str s2#)}))
+
 
 (defn analyze-file
   "Takes a file path and optionally a pushback reader.  Returns a map
@@ -208,11 +221,15 @@
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
   [source-path & {:keys [reader opt]}]
-  (let [eof (reify)]
+  (let [note-cb (or (:note-msg-cb opt) print)
+;;        note-cb (fn [& args]
+;;                  (apply println "jafinger-dbg calling note-cb: " args))
+        eof (reify)]
     (when (util/debug? #{:ns} opt)
-      (println (format "all-ns before (analyze-file \"%s\") begins:"
-                       source-path))
-      (pp/pprint (sort (all-ns-names-set))))
+      (let [debug-cb (or (:debug-msg-cb opt) println)]
+        (debug-cb (format "all-ns before (analyze-file \"%s\") begins:"
+                          source-path))
+        (debug-cb (with-out-str (pp/pprint (sort (all-ns-names-set)))))))
     ;; If we eval a form that changes *ns*, I want it to go back to
     ;; the original before returning.
     (binding [*ns* *ns*
@@ -228,9 +245,15 @@
                     _ (pre-analyze-debug asts form cur-env *ns* opt)
                     [exc ast]
                     (try
-                      (binding [ana.jvm/run-passes run-passes]
-                        [nil (ana.jvm/analyze+eval form (ana.jvm/empty-env)
-                                                   {:passes-opts eastwood-passes-opts})])
+                      (let [{:keys [val out err]}
+                            (with-out-str2
+                              (binding [ana.jvm/run-passes run-passes]
+                                (ana.jvm/analyze+eval
+                                 form (ana.jvm/empty-env)
+                                 {:passes-opts eastwood-passes-opts})))]
+                        (when (not= out "") (note-cb out))
+                        (when (not= err "") (note-cb err))
+                        [nil val])
                       (catch Exception e
                         [e nil]))]
                 (if exc
