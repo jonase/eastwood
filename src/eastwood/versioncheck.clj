@@ -4,7 +4,7 @@
   (delay
    (do
      (require 'eastwood.core)
-     (resolve (symbol "eastwood.core/run-eastwood")))))
+     (resolve (symbol "eastwood.core/eastwood-from-cmdline")))))
 
 (defn run-eastwood [opts]
   (let [{:keys [major minor]} *clojure-version*]

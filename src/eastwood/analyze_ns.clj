@@ -57,7 +57,7 @@
 (defn pre-analyze-debug [asts form _env ns opt]
   (let [print-normally? (util/debug? #{:forms} opt)
         pprint? (util/debug? #{:forms-pprint} opt)
-        debug-cb (or (:debug-msg-cb opt) println)]
+        debug-cb (util/make-msg-cb :debug opt)]
     (when (or print-normally? pprint?)
       (debug-cb (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
                         (count asts) (str ns) (meta ns)))
@@ -81,25 +81,28 @@
       (debug-cb "\n    --------------------"))))
 
 (defn post-analyze-debug [asts form ast ns opt]
-  (let [show-ast? (util/debug? #{:ast} opt)]
+  (let [show-ast? (util/debug? #{:ast} opt)
+        cb (:callback opt)
+        debug-cb (util/make-msg-cb :debug opt)]
     (when (or show-ast? (util/debug? #{:progress} opt))
-      ((:debug-msg-cb opt) (format "dbg anal'd %d ns=%s%s"
-                                   (count asts) (str ns)
-                                   (if show-ast? " ast=" ""))))
+      (debug-cb (format "dbg anal'd %d ns=%s%s"
+                        (count asts) (str ns)
+                        (if show-ast? " ast=" ""))))
     (when show-ast?
-      ((:debug-ast-cb opt) ast))
+      (cb {:kind :debug-ast, :ast ast, :opt opt}))
     ;; TBD: Change this to macroexpand form, at least if
     ;; dont-expand-twice? returns false.
-    (if-let [cb (:form-read-cb opt)]
-      (cb opt :form form))
-    (if-let [cb (:form-emitted-cb opt)]
-      (cb opt :form (:form ast)))))
+    (cb {:kind :debug-form-read, :event :form, :form form,
+         :opt opt})
+    (cb {:kind :debug-form-emitted, :event :form, :form (:form ast),
+         :opt opt})))
 
 (defn begin-file-debug [filename ns opt]
-  (if-let [cb (:form-read-cb opt)]
-    (cb opt :begin-file filename))
-  (if-let [cb (:form-emitted-cb opt)]
-    (cb opt :begin-file filename)))
+  (let [cb (:callback opt)]
+    (cb {:kind :debug-form-read, :event :begin-file, :filename filename,
+         :opt opt})
+    (cb {:kind :debug-form-emitted, :event :begin-file, :filename filename,
+         :opt opt})))
 
 (defn eastwood-wrong-tag-handler [t ast]
 ;;  (let [tag (if (= t :name/tag)
@@ -161,19 +164,14 @@
           forms
           (recur (conj forms form)))))))
 
-(defmacro with-out-str2
-  "Like with-out-str, but returns a map m.  (:val m) is the return
-value of the last expression in the body.  (:out m) is the string
-normally returned by with-out-str.  (:err m) is the string that would
-be returned by with-out-str if it bound *err* instead of *out* to a
-StringWriter."
-  [& body]
-  `(let [s# (new java.io.StringWriter)
-         s2# (new java.io.StringWriter)
-         x# (binding [*out* s#
-                      *err* s2#]
-              ~@body)]
-     {:val x# :out (str s#) :err (str s2#)}))
+
+(defn do-eval-output-callbacks [out-msgs-str err-msgs-str opt]
+  (when (not= out-msgs-str "")
+    (doseq [s (string/split-lines out-msgs-str)]
+      ((:callback opt) {:kind :eval-out, :msg s, :opt opt})))
+  (when (not= err-msgs-str "")
+    (doseq [s (string/split-lines err-msgs-str)]
+      ((:callback opt) {:kind :eval-err, :msg s, :opt opt}))))
 
 
 (defn analyze-file
@@ -221,15 +219,12 @@ StringWriter."
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
   [source-path & {:keys [reader opt]}]
-  (let [note-cb (or (:note-msg-cb opt) print)
-;;        note-cb (fn [& args]
-;;                  (apply println "jafinger-dbg calling note-cb: " args))
+  (let [debug-cb (util/make-msg-cb :debug opt)
         eof (reify)]
     (when (util/debug? #{:ns} opt)
-      (let [debug-cb (or (:debug-msg-cb opt) println)]
-        (debug-cb (format "all-ns before (analyze-file \"%s\") begins:"
-                          source-path))
-        (debug-cb (with-out-str (pp/pprint (sort (all-ns-names-set)))))))
+      (debug-cb (format "all-ns before (analyze-file \"%s\") begins:"
+                        source-path))
+      (debug-cb (with-out-str (pp/pprint (sort (all-ns-names-set))))))
     ;; If we eval a form that changes *ns*, I want it to go back to
     ;; the original before returning.
     (binding [*ns* *ns*
@@ -246,13 +241,12 @@ StringWriter."
                     [exc ast]
                     (try
                       (let [{:keys [val out err]}
-                            (with-out-str2
+                            (util/with-out-str2
                               (binding [ana.jvm/run-passes run-passes]
                                 (ana.jvm/analyze+eval
                                  form (ana.jvm/empty-env)
                                  {:passes-opts eastwood-passes-opts})))]
-                        (when (not= out "") (note-cb out))
-                        (when (not= err "") (note-cb err))
+                        (do-eval-output-callbacks out err opt)
                         [nil val])
                       (catch Exception e
                         [e nil]))]
