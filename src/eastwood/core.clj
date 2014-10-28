@@ -67,20 +67,20 @@ describing the error."
 
 
 (defn assert-debug-form-cb-has-proper-keys [info]
-  (util/has-keys? info [:event :opt])
+  (util/assert-keys info [:event :opt])
   (case (:event info)
-    :form (util/has-keys? info [:form])
-    :begin-file (util/has-keys? info [:filename])))
+    :form (util/assert-keys info [:form])
+    :begin-file (util/assert-keys info [:filename])))
 
 
 (defn assert-cb-has-proper-keys [{:keys [kind] :as info}]
   (case (:kind info)
-    :error     (util/has-keys? info [:msg :opt])
-    :note      (util/has-keys? info [:msg :opt])
-    :eval-out  (util/has-keys? info [:msg :opt])
-    :eval-err  (util/has-keys? info [:msg :opt])
-    :debug     (util/has-keys? info [:msg :opt])
-    :debug-ast (util/has-keys? info [:ast :opt])
+    :error     (util/assert-keys info [:msg :opt])
+    :note      (util/assert-keys info [:msg :opt])
+    :eval-out  (util/assert-keys info [:msg :opt])
+    :eval-err  (util/assert-keys info [:msg :opt])
+    :debug     (util/assert-keys info [:msg :opt])
+    :debug-ast (util/assert-keys info [:ast :opt])
     :debug-form-read    (assert-debug-form-cb-has-proper-keys info)
     :debug-form-emitted (assert-debug-form-cb-has-proper-keys info)))
 

@@ -72,6 +72,23 @@ more interesting keys earlier."
     (ast/postwalk ast (fn [ast]
                         (into empty ast)))))
 
+
+(defn has-keys? [m key-seq]
+  (every? #(contains? m %) key-seq))
+
+
+(defn assert-keys [m key-seq]
+  (assert (has-keys? m key-seq)))
+
+
+(defn protocol?
+  "Make a good guess as to whether p is an object created via defprotocol."
+  [p]
+  (and (map? p)
+       (has-keys? p [:on :on-interface :sigs :var :method-map
+                     :method-builders])))
+
+
 (defn butlast+last [s]
   "Returns same value as (juxt butlast last), but slightly more
 efficient since it only traverses the input sequence s once, not
@@ -210,12 +227,44 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
                         :keep-only (select-keys ast key-set)
                         :remove-only (apply dissoc ast key-set)))))
 
+(defn elide-defprotocol-vars
+  "Motivation: pprint'ing a value containing a defprotocol Var, with
+all metadata included leads to an infinite loop.  Why?  The value of a
+defprotocol's Var is a map.
+
+(1) The value of the key :var in this map is the defprotocol Var
+    itself, and pprint'ing this recurses infinitely.
+
+(2) The value of the key :method-builders in this map has metadata
+    containing the defprotocol Var, so if metadata is being printed, this
+    also leads to an infinite loop.
+
+These problems are most simply avoided by removing these two keys from
+defprotocol maps.
+
+Note: This can replace Vars in the AST with their values, so the
+resulting AST is not as it was originally, and will likely fail if you
+try to generate code from it.  It is fine for pprint'ing."
+  [ast]
+  (ast/postwalk ast (fn [ast]
+                      (map-vals (fn [val]
+                                  (cond
+                                   (protocol? val)
+                                   (dissoc val :var :method-builders)
+
+                                   (and (var? val) (protocol? @val))
+                                   (dissoc @val :var :method-builders)
+
+                                   :else val))
+                                ast))))
+
 (defn pprint-ast-node [ast & kws]
   (let [a (if (contains? (set kws) :with-env)
             ast
             (trim-ast ast :remove-only [:env]))]
     (-> a
         (trim-ast :remove-only [:eastwood/ancestors])
+        elide-defprotocol-vars
         ast-to-ordered
         pprint-meta-elided)))
 
@@ -417,9 +466,6 @@ of these kind."
   (let [d (:debug opt)]
     (or (contains? d :all)
         (some debug-options d))))
-
-(defn has-keys? [m key-seq]
-  (assert (every? #(contains? m %) key-seq)))
 
 
 (defn make-msg-cb
