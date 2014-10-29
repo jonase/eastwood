@@ -59,7 +59,7 @@ describing the error."
                       :column
                       :linter
                       :msg
-                      :relative-file-name]))
+                      :uri-or-file-name]))
 
 ;; Use the option :backwards-compatible-warnings true to get linter
 ;; warning maps as they were generated in Eastwood 0.1.0 thru 0.1.4,
@@ -77,8 +77,8 @@ describing the error."
                 (into empty-ordered-lint-warning-map
                       (select-keys (:warn-data info)
                                    [:linter :msg :file :line :column
-                                    :relative-file-name
-                                    ;; :absolute-file-name
+                                    :uri-or-file-name
+                                    ;; :uri
                                     ;; :namespace-sym
                                     ])))]
         (pp/pprint i)
@@ -439,22 +439,33 @@ curious." eastwood-url))
       (pst e nil (util/make-msg-cb :error opts))
       :show-more-details)))
 
+
+(defn namespace-info [ns-sym cwd-file]
+  (let [uri (.toURI (analyze/uri-for-ns ns-sym))
+        ;; file-or-nil will be nil if uri is a URI like the following,
+        ;; which cannot be converted to a File:
+        ;; #<URI jar:file:/Users/jafinger/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar!/clojure/test/junit.clj>
+        file-or-nil (try (File. uri)
+                         (catch IllegalArgumentException e
+                           nil))
+        uri-or-rel-file-str
+        (if (nil? file-or-nil)
+          uri
+          (let [file-str (str file-or-nil)
+                cwd-str (str cwd-file File/separator)]
+            (if (.startsWith file-str cwd-str)
+              (subs file-str (count cwd-str))
+              file-str)))]
+    {:namespace-sym ns-sym
+     :uri uri
+     :uri-or-file-name uri-or-rel-file-str}))
+
+
 (defn lint-ns [ns-sym linters opts warning-count exception-count]
   (let [cb (:callback opts)
         error-cb (util/make-msg-cb :error opts)
         note-cb (util/make-msg-cb :note opts)
-        uri (.toURI (analyze/uri-for-ns ns-sym))
-        file-or-uri (try (File. uri)
-                         (catch IllegalArgumentException e
-                           uri))
-        ^String cwd-str (str (:cwd opts) File/separator)
-        ^String file-str (str file-or-uri)
-        rel-file-str-or-uri (cond (util/uri? file-or-uri) file-or-uri
-
-                                  (.startsWith file-str cwd-str)
-                                  (subs file-str (count cwd-str))
-
-                                  :else file-str)]
+        ns-info (namespace-info ns-sym (:cwd opts))]
     (note-cb (str "== Linting " ns-sym " =="))
     (let [[{:keys [analyze-results exception exception-phase exception-form]}
            analyze-time-msec]
@@ -473,16 +484,8 @@ curious." eastwood-url))
                 (show-exception ns-sym opts result))
               (do
                 (swap! warning-count inc)
-                ;; TBD: How to do callback with pprint?  Note that
-                ;; this is the place where we pprint normal lint
-                ;; results, which are maps.  We should probably add a
-                ;; :while-linting-namespace key to all such maps, in
-                ;; case we want to collect/collate them at the end.
                 (cb {:kind :lint-warning,
-                     :warn-data (merge result
-                                       {:namespace-sym ns-sym
-                                        :absolute-file-name file-or-uri
-                                        :relative-file-name rel-file-str-or-uri})
+                     :warn-data (merge result ns-info)
                      :opt opts}))))
           (when print-time?
             (note-cb (format "Linter %s took %.1f millisec"
