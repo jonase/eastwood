@@ -9,6 +9,7 @@
             [eastwood.copieddeps.dep10.clojure.tools.reader :as tr]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rts]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer
+             [ast :as ast]
              [env :as env]
              [passes :refer [schedule]]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
@@ -156,6 +157,20 @@
   (if (instance? eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)
     (.e ^eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)))
 
+
+(defn asts-with-eval-exception
+  "tools.analyzer.jvm/analyze+eval returns an AST with a :result key
+being a specific class of Exception object, if an exception occurred
+while eval'ing the corresponding expression.  This is easy to check at
+the top level of an AST, but since analyze+eval recurses into
+top-level do forms, analyzing and eval'ing each independently,
+checking whether any of them threw an exception during eval requires
+recursing into ASTs with :op equal to :do"
+  [ast]
+  (filter #(wrapped-exception? (:result %))
+          (ast/nodes ast)))
+
+
 (defn remaining-forms [pushback-reader forms]
   (let [eof (reify)]
     (loop [forms forms]
@@ -254,10 +269,12 @@
                   {:forms (remaining-forms reader (conj forms form)),
                    :asts asts, :exception exc, :exception-phase :analyze+eval,
                    :exception-form form}
-                  (if-let [e (wrapped-exception? (:result ast))]
+                  (if-let [first-exc-ast (first (asts-with-eval-exception ast))]
                     {:forms (remaining-forms reader (conj forms form)),
-                     :asts asts, :exception e, :exception-phase :eval,
-                     :exception-form form}
+                     :asts asts,
+                     :exception (wrapped-exception? (:result first-exc-ast)),
+                     :exception-phase :eval,
+                     :exception-form (:form first-exc-ast)}
                     (do
                       (post-analyze-debug asts form ast *ns* opt)
                       (recur (conj forms form)
