@@ -8,6 +8,7 @@
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as tr]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rts]
+            [eastwood.copieddeps.dep9.clojure.tools.namespace.move :as move]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer
              [ast :as ast]
              [env :as env]
@@ -16,20 +17,14 @@
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
              [warn-on-reflection :refer [warn-on-reflection]]]))
 
-;; munge-ns, uri-for-ns, pb-reader-for-ns were copied from library
+;; uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer, then later probably diverged from each other.
-
-(defn ^:private munge-ns [ns-sym]
-  (-> (name ns-sym)
-      (string/replace "." "/")
-      (string/replace "-" "_")
-      (str ".clj")))
 
 (defn uri-for-ns
   "Returns a URI representing the namespace. Throws an
   exception if URI not found."
   [ns-sym]
-  (let [source-path (munge-ns ns-sym)
+  (let [source-path (#'move/ns-file-name ns-sym)
         uri (io/resource source-path)]
     (when-not uri
       (throw (Exception. (str "No file found for namespace " ns-sym))))
@@ -40,7 +35,7 @@
   [ns-sym]
   (let [uri (uri-for-ns ns-sym)]
     (rts/indexing-push-back-reader (java.io.PushbackReader. (io/reader uri))
-                                   1 (munge-ns ns-sym))))
+                                   1 (#'move/ns-file-name ns-sym))))
 
 (defn all-ns-names-set []
   (set (map str (all-ns))))
@@ -303,7 +298,7 @@ recursing into ASTs with :op equal to :do"
 
   eg. (analyze-ns 'my-ns :opt {} :reader (pb-reader-for-ns 'my.ns))"
   [source-nsym & {:keys [reader opt] :or {reader (pb-reader-for-ns source-nsym)}}]
-  (let [source-path (munge-ns source-nsym)
+  (let [source-path (#'move/ns-file-name source-nsym)
         {:keys [analyze-results] :as m}
         (analyze-file source-path :reader reader :opt opt)]
     (assoc (dissoc m :forms :asts)
