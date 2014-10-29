@@ -17,6 +17,7 @@
             [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
+            [eastwood.copieddeps.dep9.clojure.tools.namespace.move :as move]
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.unused :as unused]
@@ -52,6 +53,38 @@ describing the error."
       (println (:msg info))
       (flush))))
 
+(def empty-ordered-lint-warning-map
+  (util/ordering-map [:file
+                      :line
+                      :column
+                      :linter
+                      :msg
+                      :relative-file-name]))
+
+;; Use the option :backwards-compatible-warnings true to get linter
+;; warning maps as they were generated in Eastwood 0.1.0 thru 0.1.4,
+;; intended only for comparing output from later versions against
+;; those versions more easily.
+
+(defn make-default-lint-warning-cb [wrtr]
+  (fn default-lint-warning-cb [info]
+    (binding [*out* wrtr]
+      (let [backwards-compatible-warnings? (-> info :opt
+                                               :backwards-compatible-warnings)
+            i (if backwards-compatible-warnings?
+                (select-keys (:warn-data info)
+                             [:linter :msg :file :line :column])
+                (into empty-ordered-lint-warning-map
+                      (select-keys (:warn-data info)
+                                   [:linter :msg :file :line :column
+                                    :relative-file-name
+                                    ;; :absolute-file-name
+                                    ;; :namespace-sym
+                                    ])))]
+        (pp/pprint i)
+        (println)
+        (flush)))))
+
 (defn make-default-debug-ast-cb [wrtr]
   (fn default-debug-ast-cb [info]
     (binding [*out* wrtr]
@@ -76,6 +109,7 @@ describing the error."
 (defn assert-cb-has-proper-keys [{:keys [kind] :as info}]
   (case (:kind info)
     :error     (util/assert-keys info [:msg :opt])
+    :lint-warning (util/assert-keys info [:warn-data :opt])
     :note      (util/assert-keys info [:msg :opt])
     :eval-out  (util/assert-keys info [:msg :opt])
     :eval-err  (util/assert-keys info [:msg :opt])
@@ -85,13 +119,14 @@ describing the error."
     :debug-form-emitted (assert-debug-form-cb-has-proper-keys info)))
 
 
-(defn make-eastwood-cb [{:keys [error note eval-out eval-err
+(defn make-eastwood-cb [{:keys [error lint-warning note eval-out eval-err
                                 debug debug-ast
                                 debug-form-read debug-form-emitted] :as opts}]
   (fn eastwood-cb [{:keys [kind] :as info}]
     (assert-cb-has-proper-keys info)
     (case (:kind info)
       :error     (error info)
+      :lint-warning (lint-warning info)
       :note      (note info)
       :eval-out  (eval-out info)
       :eval-err  (eval-err info)
@@ -405,8 +440,14 @@ curious." eastwood-url))
       :show-more-details)))
 
 (defn lint-ns [ns-sym linters opts warning-count exception-count]
-  (let [error-cb (util/make-msg-cb :error opts)
-        note-cb (util/make-msg-cb :note opts)]
+  (let [cb (:callback opts)
+        error-cb (util/make-msg-cb :error opts)
+        note-cb (util/make-msg-cb :note opts)
+        absolute-file-name (-> (#'move/ns-file-name ns-sym) io/resource str)
+        ^String cwd-uri-str (str (.toURI ^File (:cwd opts)))
+        relative-file-name (if (.startsWith absolute-file-name cwd-uri-str)
+                             (subs absolute-file-name (count cwd-uri-str))
+                             absolute-file-name)]
     (note-cb (str "== Linting " ns-sym " =="))
     (let [[{:keys [analyze-results exception exception-phase exception-form]}
            analyze-time-msec]
@@ -430,7 +471,12 @@ curious." eastwood-url))
                 ;; results, which are maps.  We should probably add a
                 ;; :while-linting-namespace key to all such maps, in
                 ;; case we want to collect/collate them at the end.
-                (note-cb (with-out-str (pp/pprint result))))))
+                (cb {:kind :lint-warning,
+                     :warn-data (merge result
+                                       {:namespace-sym ns-sym
+                                        :absolute-file-name absolute-file-name
+                                        :relative-file-name relative-file-name})
+                     :opt opts}))))
           (when print-time?
             (note-cb (format "Linter %s took %.1f millisec"
                              linter time-msec)))))
@@ -780,6 +826,7 @@ Return value:
   (let [;;wrtr (io/writer "east-out.txt")   ; see comment above
         wrtr (java.io.PrintWriter. *out* true)
         default-cb (make-default-msg-cb wrtr)
+        default-lint-warning-cb (make-default-lint-warning-cb wrtr)
         default-debug-ast-cb (make-default-debug-ast-cb wrtr)
         
         [form-read-cb form-emitted-cb]
@@ -789,6 +836,7 @@ Return value:
           [])
         
         cb (make-eastwood-cb {:error default-cb
+                              :lint-warning default-lint-warning-cb
                               :note default-cb
                               :eval-out default-cb
                               :eval-err default-cb
@@ -796,7 +844,8 @@ Return value:
                               :debug-ast default-debug-ast-cb
                               :debug-form-read form-read-cb
                               :debug-form-emitted form-emitted-cb})
-        opts (merge opts {:callback cb})
+        opts (merge opts {:callback cb
+                          :cwd (.getCanonicalFile (io/file "."))})
         error-cb (util/make-msg-cb :error opts)
         note-cb (util/make-msg-cb :note opts)
         debug-cb (util/make-msg-cb :debug opts)
