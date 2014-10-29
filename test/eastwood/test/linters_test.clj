@@ -44,7 +44,9 @@
    {
     {:linter :redefd-vars,
      :msg
-     "Var i-am-redefd def'd 2 times at line:col locations: testcases/f01.clj:4:6 testcases/f01.clj:5:6",
+     (str "Var i-am-redefd def'd 2 times at line:col locations: "
+          (fname-from-parts "testcases" "f01.clj") ":4:6 "
+          (fname-from-parts "testcases" "f01.clj") ":5:6"),
      :file (fname-from-parts "testcases" "f01.clj"),
      :line 5, :column 6}
     1,
@@ -59,12 +61,17 @@
      :line 31, :column 7}
     1,
     {:linter :redefd-vars,
-     :msg "Var test1-redefd def'd 3 times at line:col locations: testcases/f01.clj:42:10 testcases/f01.clj:46:10 testcases/f01.clj:49:10",
+     :msg (str "Var test1-redefd def'd 3 times at line:col locations: "
+               (fname-from-parts "testcases" "f01.clj") ":42:10 "
+               (fname-from-parts "testcases" "f01.clj") ":46:10 "
+               (fname-from-parts "testcases" "f01.clj") ":49:10"),
      :file (fname-from-parts "testcases" "f01.clj"),
      :line 46, :column 10}
     1,
     {:linter :redefd-vars,
-     :msg "Var i-am-redefd2 def'd 2 times at line:col locations: testcases/f01.clj:70:6 testcases/f01.clj:73:8",
+     :msg (str "Var i-am-redefd2 def'd 2 times at line:col locations: "
+               (fname-from-parts "testcases" "f01.clj") ":70:6 "
+               (fname-from-parts "testcases" "f01.clj") ":73:8"),
      :file (fname-from-parts "testcases" "f01.clj"),
      :line 73, :column 8}
     1,
@@ -94,12 +101,16 @@
    {}
    {
     {:linter :redefd-vars,
-     :msg "Var i-am-defonced-and-defmultid def'd 2 times at line:col locations: testcases/f02.clj:8:10 testcases/f02.clj:10:11",
+     :msg (str "Var i-am-defonced-and-defmultid def'd 2 times at line:col locations: "
+               (fname-from-parts "testcases" "f02.clj") ":8:10 "
+               (fname-from-parts "testcases" "f02.clj") ":10:11"),
      :file (fname-from-parts "testcases" "f02.clj"),
      :line 10, :column 11}
     1,
     {:linter :redefd-vars,
-     :msg "Var i-am-a-redefd-defmulti def'd 2 times at line:col locations: testcases/f02.clj:16:11 testcases/f02.clj:18:11",
+     :msg (str "Var i-am-a-redefd-defmulti def'd 2 times at line:col locations: "
+               (fname-from-parts "testcases" "f02.clj") ":16:11 "
+               (fname-from-parts "testcases" "f02.clj") ":18:11"),
      :file (fname-from-parts "testcases" "f02.clj"),
      :line 18, :column 11}
     1,
