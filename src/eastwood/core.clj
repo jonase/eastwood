@@ -443,11 +443,18 @@ curious." eastwood-url))
   (let [cb (:callback opts)
         error-cb (util/make-msg-cb :error opts)
         note-cb (util/make-msg-cb :note opts)
-        absolute-file-name (-> (#'move/ns-file-name ns-sym) io/resource str)
-        ^String cwd-uri-str (str (.toURI ^File (:cwd opts)))
-        relative-file-name (if (.startsWith absolute-file-name cwd-uri-str)
-                             (subs absolute-file-name (count cwd-uri-str))
-                             absolute-file-name)]
+        uri (.toURI (analyze/uri-for-ns ns-sym))
+        file-or-uri (try (File. uri)
+                         (catch IllegalArgumentException e
+                           uri))
+        ^String cwd-str (str (:cwd opts) File/separator)
+        ^String file-str (str file-or-uri)
+        rel-file-str-or-uri (cond (util/uri? file-or-uri) file-or-uri
+
+                                  (.startsWith file-str cwd-str)
+                                  (subs file-str (count cwd-str))
+
+                                  :else file-str)]
     (note-cb (str "== Linting " ns-sym " =="))
     (let [[{:keys [analyze-results exception exception-phase exception-form]}
            analyze-time-msec]
@@ -474,8 +481,8 @@ curious." eastwood-url))
                 (cb {:kind :lint-warning,
                      :warn-data (merge result
                                        {:namespace-sym ns-sym
-                                        :absolute-file-name absolute-file-name
-                                        :relative-file-name relative-file-name})
+                                        :absolute-file-name file-or-uri
+                                        :relative-file-name rel-file-str-or-uri})
                      :opt opts}))))
           (when print-time?
             (note-cb (format "Linter %s took %.1f millisec"

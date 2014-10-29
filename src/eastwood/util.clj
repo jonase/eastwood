@@ -1,5 +1,6 @@
 (ns eastwood.util
   (:import [java.io StringReader]
+           [java.net URI]
            [clojure.lang LineNumberingPushbackReader])
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
@@ -8,6 +9,9 @@
             [eastwood.copieddeps.dep10.clojure.tools.reader :as trdr]
             [clojure.pprint :as pp]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rdr-types]))
+
+(defn uri? [obj]
+  (instance? java.net.URI obj))
 
 ;; ordering-map copied under Eclipse Public License v1.0 from useful
 ;; library available at: https://github.com/flatland/useful

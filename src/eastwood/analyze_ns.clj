@@ -20,12 +20,22 @@
 ;; uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer, then later probably diverged from each other.
 
+(defn ^:private ns-resource-name
+  "clojure.java.io/resource and Java in general expects components of
+a resource path name to be separated by '/' characters, regardless of
+the value of File/separator for the platform."
+  [ns-sym]
+  (-> (name ns-sym)
+      (string/replace "." "/")
+      (string/replace "-" "_")
+      (str ".clj")))
+
 (defn uri-for-ns
   "Returns a URI representing the namespace. Throws an
   exception if URI not found."
   [ns-sym]
-  (let [source-path (#'move/ns-file-name ns-sym)
-        uri (io/resource source-path)]
+  (let [rsrc-path (ns-resource-name ns-sym)
+        uri (io/resource rsrc-path)]
     (when-not uri
       (throw (Exception. (str "No file found for namespace " ns-sym))))
     uri))
@@ -302,7 +312,7 @@ recursing into ASTs with :op equal to :do"
         {:keys [analyze-results] :as m}
         (analyze-file source-path :reader reader :opt opt)]
     (assoc (dissoc m :forms :asts)
-      :analyze-results {:source (slurp (io/resource source-path))
+      :analyze-results {:source (slurp (uri-for-ns source-nsym))
                         :namespace source-nsym
                         :forms (:forms m)
                         :asts (:asts m)})))
