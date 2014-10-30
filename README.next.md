@@ -228,6 +228,10 @@ value that is a set of keywords, e.g.
 
 ### Running Eastwood in a REPL
 
+TBD: Re-check and update these instructions before 0.1.5 release, and
+preferably make the 'API' something closer to what I'm willing to
+commit to longer term, while still marking it experimental.
+
 This is _experimental_.  Before you try it, note that Eastwood does these steps:
 
 * analyzes the source code you give it
@@ -249,13 +253,13 @@ and development work.
 Merge this into your project's project.clj file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.1.4" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.1.5" :exclusions [org.clojure/clojure]]]}}
 ```
 
 From within your REPL:
 
 ```clojure
-(require '[eastwood.core :as e])
+(require '[eastwood.lint :as e])
 
 (defn lint [ns]
   (e/lint-ns-noprint ns @#'e/default-linters {}))
@@ -296,6 +300,9 @@ become potemkin 0.3.5 (not released as of this writing).  The change
 in Eastwood behavior was due to a conscious design choice in
 `tools.analyzer`.
 
+TBD: Check whether these have been eliminated, and note it in the docs
+as a change in Eastwood 0.1.5 if so.
+
 Currently, the Clojure Contrib libraries
 [`data.fressian`](https://github.com/clojure/data.fressian) and
 [`test.generative`](https://github.com/clojure/test.generative) cannot
@@ -306,20 +313,6 @@ Other libraries known to cause problems for Eastwood because of
 `test.generative`: [Cheshire](https://github.com/dakrone/cheshire)
 (TBD whether this is truly due to `test.generative`, or something
 else).
-
-
-### Warning messages near beginning of Eastwood output
-
-With Eastwood version 0.1.2 and 0.1.1, it is unfortunately perfectly
-normal to see these warning messages near the beginning of the output:
-
-    Reflection warning, clojure/data/priority_map.clj:215:19 - call to equiv can't be resolved.
-    Reflection warning, clojure/core/memoize.clj:72:23 - reference to field cache can't be resolved.
-
-Eastwood will still work correctly despite these warnings.
-
-Recommendation: Ignore the warnings, or upgrade to Eastwood 0.1.3,
-which eliminates them.
 
 
 ### Code analysis engine is more picky than the Clojure compiler

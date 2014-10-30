@@ -5,6 +5,13 @@
 * Update tools.analyzer(.jvm) and tools.reader to latest versions and
   retest to see if anything unusual happens in results.
 
+* See about fixing: Issue
+  [#81](https://github.com/jonase/eastwood/issues/81).
+
+* Come up with proposed API for running Eastwood from within REPL that
+  gives full power of options from command line, and update my current
+  README.next.md docs of it to match.
+
 * Scrutinize :wrong-tags linter a bit more to see if
   tools.analyzer(.jvm) is catching anything that Eastwood is currently
   ignoring.
