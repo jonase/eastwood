@@ -1,7 +1,7 @@
 # Change log for Eastwood
 
 
-## Changes from version 0.1.4 to 0.1.5
+## Changes from version 0.1.4 to 0.1.5-alpha1
 
 * New linter `:local-shadows-var` that warns if a local name (e.g. a
   function argument or let binding) has the same name as a global Var,
@@ -13,7 +13,8 @@
   a Var name being def'd or defn'd should be given in the form `^{:tag
   'int}` instead.  Also it is best if Java class names outside of the
   `java.lang` package are fully qualified when used to hint the return
-  type of a function on its argument vector.
+  type of a function on its argument vector.  Issue
+  [#37](https://github.com/jonase/eastwood/issues/37).
 
 * The default behavior is now to stop analyzing namespaces after the
   first exception thrown during analysis or evaluation.  The new
@@ -29,12 +30,30 @@
   are now more precise than they were before with those linters, and
   also for the `:suspicious-test` linter.
 
+* Lint warning maps contain a new key :uri-or-file-name, which has the
+  advantage of making it easier to know the exact directory of the
+  file being linted when the warning was found, including the
+  directory of your classpath that the file is in (the :file name
+  string is relative to the classpath the file is in).  The value of
+  :uri-or-file-name is either: (a) a string with the relative path
+  name to the file containing the namespace being linted when the
+  warning was found (relative to where the 'lein eastwood' command was
+  run, (b) the absolute full path name if the file is not beneath the
+  current directory, or (c) a URI like the following if it is a
+  namespace inside of a JAR file:
+
+    #<URI jar:file:/Users/jafinger/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar!/clojure/test/junit.clj>
+
+* Eliminated an exception thrown when running the :suspicious-test
+  linter on forms of the kind (clojure.test/is ((my-fn args)
+  more-args)).  Issue
+  [#88](https://github.com/jonase/eastwood/issues/88).
+
 * Eastwood 0.1.4, and perhaps a few earlier versions as well,
   unintentionally 'hid' exception thrown by the Clojure compiler while
   doing eval.  Such exceptions are now made visible to the user.
 
-* Updated `tools.analyzer` and `tools.analyzer.jvm` to versions
-  shortly after release 0.6.0, with fixes up to Sep 30 2014.
+* Updated `tools.analyzer` and `tools.analyzer.jvm` to version 0.6.1.
 
 * Updated `tools.namespace` to version 0.2.6.
 
@@ -46,6 +65,17 @@
   reliable by using `tools.analyzer(.jvm)` enhancement that preserves
   the original forms of code that goes through macro expansion.  Issue
   [#71](https://github.com/jonase/eastwood/issues/71).
+
+* Modified pprint-ast-node to avoid an infinite loop for ASTs of code
+  containing defprotocol forms.  Issue
+  [#90](https://github.com/jonase/eastwood/issues/90).
+
+* Extensive internal plumbing changes of hard-coded println calls to
+  call a probably-too-complex callback function instead.  The hope is
+  that this or something like it will make it easier for IDE
+  developers to invoke Eastwood and control where the different kinds
+  of output go, and get more of it as Clojure data rather than
+  strings.
 
 
 ## Changes from version 0.1.3 to 0.1.4
