@@ -1,5 +1,14 @@
 # Change log for Eastwood
 
+## Planned changes after 0.1.5-alpha1 before releasing 0.1.5
+
+* Update tools.analyzer(.jvm) and tools.reader to latest versions and
+  retest to see if anything unusual happens in results.
+
+* Scrutinize :wrong-tags linter a bit more to see if
+  tools.analyzer(.jvm) is catching anything that Eastwood is currently
+  ignoring.
+
 
 ## Changes from version 0.1.4 to 0.1.5-alpha1
 
