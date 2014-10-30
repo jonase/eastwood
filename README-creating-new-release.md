@@ -41,5 +41,5 @@ with -SNAPSHOT appended:
 
 * project.clj just after jonase/eastwood
 * README.md instructions for developers (if not already done above)
-* src/eastwood/core.clj var *eastwood-version*
+* src/eastwood/lint.clj var *eastwood-version*
 * src/leiningen/eastwood.clj var eastwood-version-string
