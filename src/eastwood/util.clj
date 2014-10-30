@@ -93,10 +93,11 @@ more interesting keys earlier."
                      :method-builders])))
 
 
-(defn butlast+last [s]
+(defn butlast+last
   "Returns same value as (juxt butlast last), but slightly more
 efficient since it only traverses the input sequence s once, not
 twice."
+  [s]
   (loop [butlast (transient [])
          s s]
     (if-let [xs (next s)]
