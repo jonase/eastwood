@@ -1,5 +1,6 @@
 (ns eastwood.analyze-ns
   (:refer-clojure :exclude [macroexpand-1])
+  (:import (java.net URL))
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
@@ -30,7 +31,7 @@ the value of File/separator for the platform."
       (string/replace "-" "_")
       (str ".clj")))
 
-(defn uri-for-ns
+(defn ^java.net.URL uri-for-ns
   "Returns a URI representing the namespace. Throws an
   exception if URI not found."
   [ns-sym]
