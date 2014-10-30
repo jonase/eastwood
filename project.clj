@@ -6,7 +6,16 @@
                  [org.ow2.asm/asm-all "4.2"]]
   :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.2"]
                                   [jafingerhut/dolly "0.1.0"]]
-                   :source-paths [ "cases" ]}
+                   ;; I want the namespaces defined in files in
+                   ;; "cases" and its subdirectories to be accessible
+                   ;; during 'lein test' in the classpath, but they
+                   ;; themselves should not be eval'd by 'lein test'.
+                   ;; I also want those namespaces available for
+                   ;; one-off tests at the command line like "lein
+                   ;; eastwood '{:namespaces [testcases.testtest]}'",
+                   ;; and for that, the :test profile does not work,
+                   ;; so put them in :dev
+                   :resource-paths [ "cases" ]}
              :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
   ;; Note: comment out the following line if you want to do 'lein
