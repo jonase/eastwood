@@ -45,7 +45,7 @@
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as readers]
 
             [eastwood.copieddeps.dep3.clojure.core.memoize :refer [memo-clear!]])
-  (:import clojure.lang.IObj))
+  (:import (clojure.lang IObj RT Compiler Var)))
 
 (def specials
   "Set of the special forms for clojure in the JVM"
@@ -193,7 +193,10 @@
   "Creates a Var for sym and returns it.
    The Var gets interned in the env namespace."
   [sym {:keys [ns]}]
-  (or (find-var (symbol (str ns) (name sym)))
+  (let [v (get-in (env/deref-env) [:namespaces ns :mappings (symbol (name sym))])]
+    (if (and v (or (class? v)
+                   (= ns (ns-name (.ns ^Var v) ))))
+      v
       (intern ns (vary-meta sym merge
                             (let [{:keys [inline inline-arities arglists]} (meta sym)]
                               (merge {}
@@ -202,7 +205,7 @@
                                      (when inline
                                        {:inline (eval inline)})
                                      (when inline-arities
-                                       {:inline-arities (eval inline-arities)})))))))
+                                       {:inline-arities (eval inline-arities)}))))))))
 
 (defmethod parse 'var
   [[_ var :as form] env]
@@ -457,18 +460,18 @@
   ([form] (analyze form (empty-env) {}))
   ([form env] (analyze form env {}))
   ([form env opts]
-     (with-bindings (merge {clojure.lang.Compiler/LOADER (clojure.lang.RT/makeClassLoader)
-                            #'ana/macroexpand-1          macroexpand-1
-                            #'ana/create-var             create-var
-                            #'ana/parse                  parse
-                            #'ana/var?                   var?
-                            #'elides                     (merge {:fn    #{:line :column :end-line :end-column :file :source}
-                                                                 :reify #{:line :column :end-line :end-column :file :source}}
-                                                                elides)}
+     (with-bindings (merge {Compiler/LOADER     (RT/makeClassLoader)
+                            #'ana/macroexpand-1 macroexpand-1
+                            #'ana/create-var    create-var
+                            #'ana/parse         parse
+                            #'ana/var?          var?
+                            #'elides            (merge {:fn    #{:line :column :end-line :end-column :file :source}
+                                                        :reify #{:line :column :end-line :end-column :file :source}}
+                                                       elides)}
                            (:bindings opts))
        (env/ensure (global-env)
          (env/with-env (swap! env/*env* mmerge
-                              {:passes-opts (or (:passes-opts opts) default-passes-opts)})
+                              {:passes-opts (get opts :passes-opts default-passes-opts)})
            (run-passes (-analyze form env)))))))
 
 (deftype ExceptionThrown [e])
@@ -486,7 +489,8 @@
   ([form env opts]
      (env/ensure (global-env)
        (update-ns-map!)
-       (let [[mform raw-forms] (binding [ana/macroexpand-1 (get-in opts [:bindings #'ana/macroexpand-1] macroexpand-1)]
+       (let [[mform raw-forms] (with-bindings {Compiler/LOADER     (RT/makeClassLoader)
+                                               #'ana/macroexpand-1 (get-in opts [:bindings #'ana/macroexpand-1] macroexpand-1)}
                                  (loop [form form raw-forms []]
                                    (let [mform (ana/macroexpand-1 form env)]
                                      (if (= mform form)
@@ -541,21 +545,21 @@
   ([ns env] (analyze-ns ns env {}))
   ([ns env opts]
      (env/ensure (global-env)
-                 (let [res (ns-resource ns)]
-                   (assert res (str "Can't find " ns " in classpath"))
-                   (let [filename (source-path res)
-                         path (res-path res)]
-                     (when-not (get-in (env/deref-env) [::analyzed-clj path])
-                       (binding [*ns* *ns*]
-                         (with-open [rdr (io/reader res)]
-                           (let [pbr (readers/indexing-push-back-reader
-                                      (java.io.PushbackReader. rdr) 1 filename)
-                                 eof (Object.)]
-                             (loop []
-                               (let [form (reader/read pbr nil eof)]
-                                 (when-not (identical? form eof)
-                                   (swap! *env* update-in [::analyzed-clj path]
-                                          (fnil conj [])
-                                          (analyze+eval form (assoc env :ns (ns-name *ns*)) opts))
-                                   (recur))))))))
-                     (get-in @*env* [::analyzed-clj path]))))))
+       (let [res (ns-resource ns)]
+         (assert res (str "Can't find " ns " in classpath"))
+         (let [filename (source-path res)
+               path (res-path res)]
+           (when-not (get-in (env/deref-env) [::analyzed-clj path])
+             (binding [*ns* *ns*]
+               (with-open [rdr (io/reader res)]
+                 (let [pbr (readers/indexing-push-back-reader
+                            (java.io.PushbackReader. rdr) 1 filename)
+                       eof (Object.)]
+                   (loop []
+                     (let [form (reader/read pbr nil eof)]
+                       (when-not (identical? form eof)
+                         (swap! *env* update-in [::analyzed-clj path]
+                                (fnil conj [])
+                                (analyze+eval form (assoc env :ns (ns-name *ns*)) opts))
+                         (recur))))))))
+           (get-in @*env* [::analyzed-clj path]))))))

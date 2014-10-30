@@ -18,7 +18,8 @@
   (:import (clojure.lang PersistentHashSet IMeta
                          RT Symbol Reflector Var IObj
                          PersistentVector IRecord Namespace)
-           java.lang.reflect.Constructor))
+           java.lang.reflect.Constructor
+           java.util.regex.Pattern))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; helpers
@@ -39,8 +40,7 @@
   [rdr initch]
   (if-not initch
     (reader-error rdr "EOF while reading")
-    (loop [sb (doto (StringBuilder.) (.append initch))
-           ch (read-char rdr)]
+    (loop [sb (StringBuilder.) ch initch]
       (if (or (whitespace? ch)
               (macro-terminating? ch)
               (nil? ch))
@@ -108,7 +108,10 @@
   [rdr backslash]
   (let [ch (read-char rdr)]
     (if-not (nil? ch)
-      (let [token (read-token rdr ch)
+      (let [token (if (or (macro-terminating? ch)
+                          (whitespace? ch))
+                    (str ch)
+                    (read-token rdr ch))
             token-len (count token)]
         (cond
 
@@ -354,12 +357,25 @@
 
 (defn- read-set
   [rdr _]
-  (PersistentHashSet/createWithCheck (read-delimited \} rdr true)))
+  (let [[start-line start-column] (when (indexing-reader? rdr)
+                                    [(get-line-number rdr) (int (dec (get-column-number rdr)))])
+        the-set (PersistentHashSet/createWithCheck (read-delimited \} rdr true))
+        [end-line end-column] (when (indexing-reader? rdr)
+                                [(get-line-number rdr) (int (get-column-number rdr))])]
+    (with-meta the-set
+      (when start-line
+        (merge
+         (when-let [file (get-file-name rdr)]
+           {:file file})
+         {:line start-line
+          :column start-column
+          :end-line end-line
+          :end-column end-column})))))
 
 (defn- read-discard
   [rdr _]
-  (read rdr true nil true)
-  rdr)
+  (doto rdr
+    (read true nil true)))
 
 (def ^:private ^:dynamic arg-env)
 
@@ -424,31 +440,7 @@
   [rdr _]
   (when-not *read-eval*
     (reader-error rdr "#= not allowed when *read-eval* is false"))
-  (let [o (read rdr true nil true)]
-    (if (symbol? o)
-      (RT/classForName (str ^Symbol o))
-      (if (list? o)
-        (let [fs (first o)
-              o (rest o)
-              fs-name (name fs)]
-          (cond
-           (= fs 'var) (let [vs (first o)]
-                         (RT/var (namespace vs) (name vs)))
-           (.endsWith fs-name ".")
-           (let [args (to-array o)]
-             (-> fs-name (subs 0 (dec (count fs-name)))
-                RT/classForName (Reflector/invokeConstructor args)))
-
-           (Compiler/namesStaticMember fs)
-           (let [args (to-array o)]
-             (Reflector/invokeStaticMethod (namespace fs) fs-name args))
-
-           :else
-           (let [v (Compiler/maybeResolveIn *ns* fs)]
-             (if (var? v)
-               (apply v o)
-               (reader-error rdr "Can't resolve " fs)))))
-        (throw (IllegalArgumentException. "Unsupported #= form"))))))
+  (eval (read rdr true nil true)))
 
 (def ^:private ^:dynamic gensym-env nil)
 
@@ -499,7 +491,7 @@
         (set! gensym-env (assoc gensym-env sym gs))
         gs)))
 
-(defn- resolve-symbol [s]
+(defn ^:dynamic resolve-symbol [s]
   (if (pos? (.indexOf (name s) "."))
     s
     (if-let [ns-str (namespace s)]
@@ -517,17 +509,22 @@
 
 (defn- add-meta [form ret]
   (if (and (instance? IObj form)
-           (dissoc (meta form) :line :column :end-line :end-column :file))
+           (seq (dissoc (meta form) :line :column :end-line :end-column :file :source)))
     (list 'clojure.core/with-meta ret (syntax-quote* (meta form)))
     ret))
 
 (defn- syntax-quote-coll [type coll]
-  (let [res (list 'clojure.core/seq
+  (let [res (list 'clojure.core/sequence
                   (cons 'clojure.core/concat
                         (expand-list coll)))]
     (if type
       (list 'clojure.core/apply type res)
       res)))
+
+(defn map-func [coll]
+  (if (>= (count (:val coll)) 16)
+    'clojure.core/hash-map
+    'clojure.core/array-map))
 
 (defn- syntax-quote* [form]
   (->>
@@ -560,21 +557,26 @@
 
     (coll? form)
     (cond
+
      (instance? IRecord form) form
-     (map? form) (syntax-quote-coll 'clojure.core/hash-map (flatten-map form))
-     (vector? form) (syntax-quote-coll 'clojure.core/vector form)
+     (map? form) (syntax-quote-coll (map-func form) (flatten-map form))
+     (vector? form) (list 'clojure.core/vec (syntax-quote-coll nil form))
      (set? form) (syntax-quote-coll 'clojure.core/hash-set form)
      (or (seq? form) (list? form))
      (let [seq (seq form)]
        (if seq
          (syntax-quote-coll nil seq)
          '(clojure.core/list)))
+
      :else (throw (UnsupportedOperationException. "Unknown Collection type")))
 
     (or (keyword? form)
         (number? form)
         (char? form)
-        (string? form))
+        (string? form)
+        (nil? form)
+        (instance? Boolean form)
+        (instance? Pattern form))
     form
 
     :else (list 'quote form))

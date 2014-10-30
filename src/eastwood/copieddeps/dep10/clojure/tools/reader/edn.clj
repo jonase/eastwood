@@ -45,8 +45,8 @@
       (reader-error rdr "Invalid leading character: " initch)
 
       :else
-      (loop [sb (doto (StringBuilder.) (.append initch))
-             ch (peek-char rdr)]
+      (loop [sb (StringBuilder.)
+             ch (do (unread rdr initch) initch)]
         (if (or (whitespace? ch)
                 (macro-terminating? ch)
                 (nil? ch))
@@ -115,7 +115,11 @@
   [rdr backslash opts]
   (let [ch (read-char rdr)]
     (if-not (nil? ch)
-      (let [token (read-token rdr ch false)
+      (let [token (if (or (macro-terminating? ch)
+                          (not-constituent? ch)
+                          (whitespace? ch))
+                    (str ch)
+                    (read-token rdr ch false))
             token-len (count token)]
         (cond
 
@@ -289,8 +293,8 @@
 
 (defn- read-discard
   [rdr _ opts]
-  (read rdr true nil opts)
-  rdr)
+  (doto rdr
+    (read true nil true)))
 
 (defn- macros [ch]
   (case ch

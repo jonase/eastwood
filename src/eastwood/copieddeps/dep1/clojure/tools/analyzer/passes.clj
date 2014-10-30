@@ -1,22 +1,43 @@
 (ns eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
-  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [prewalk postwalk]]))
+  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [prewalk postwalk]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [update-vals]]))
 
-(defn has-deps? [pass]
+(def ^:private ffilter (comp first filter))
+
+(defn ^:private ffilter-walk [f c]
+  (ffilter (comp f :walk) c))
+
+(defn ^:private has-deps?
+  "Returns true if the pass has some dependencies"
+  [pass]
   (seq (:dependencies pass)))
 
-(defn group-by-walk [passes]
+(defn ^:private group-by-walk
+  "Takes a set of pass-infos and returns a map grouping them by :walk.
+   Possible keys are :any, :none, :pre and :post"
+  [passes]
   (reduce-kv (fn [m k v] (assoc m k (set (map :name v))))
              {} (group-by :walk passes)))
 
-(defn indicize [passes]
+(defn ^:private indicize
+  "Takes a set of pass-infos and returns a map of pass-name -> pass-info"
+  [passes]
   (zipmap (map :name passes) passes))
 
-(defn remove-pass [passes pass]
+(defn ^:private remove-pass
+  "Takes a set of pass-infos and a pass, and removes the pass from the set of
+   pass-infos, updating :dependencies and :dependants aswell"
+  [passes pass]
   (indicize (reduce (fn [m p] (conj m (-> p (update-in [:dependencies] disj pass)
                                         (update-in [:dependants] disj pass))))
                     #{} (vals (dissoc passes pass)))))
 
-(defn calc-deps [m k deps passes]
+(defn ^:private calc-deps
+  "Takes a map of pass-name -> pass deps, a pass name, the explicit pass dependencies
+   and a set of available pass-infos.
+   Resolves all the transitive deps of the pass and assocs them to the map, indexed by
+   the pass name."
+  [m k deps passes]
   (if (m k)
     m
     (reduce (fn [m dep]
@@ -26,10 +47,13 @@
               (update-in m [k] into (conj (or (m dep) #{}) dep)))
             (assoc m k deps) deps)))
 
-(defn calculate-deps [passes]
-  (let [dependencies (reduce-kv (fn [deps pname {:keys [depends after]}]
+(defn calculate-deps
+  "Takes a map of pass-name -> pass-info and adds to each pass-info :dependencies and
+   :dependants info, which also contain the transitive dependencies"
+  [passes]
+  (let [dependencies (reduce-kv (fn [deps pname {:keys [depends after affects]}]
                                   (calc-deps deps pname
-                                             (into depends (concat (filter passes after)
+                                             (into depends (concat (filter passes (into after affects))
                                                                    (mapv key (filter #(get (-> % val :before) pname) passes)))) passes))
                                 {} passes)
         dependants   (reduce-kv (fn [m k v] (reduce (fn [m v] (update-in m [v] (fnil conj #{}) k))
@@ -39,7 +63,17 @@
                                             {:dependencies (set v) :dependants (set (dependants k))})))
                {} dependencies)))
 
-(defn group [state]
+(defn group
+  "Takes a scheduler state and returns a vector of three elements (or nil):
+   * the :walk of the current group
+   * a vector of consecutive passes that can be collapsed in a single pass (the current group)
+   * the remaining scheduler state
+
+   E.g. given:
+   [{:walk :any .. } {:walk :pre ..} {:walk :post ..} {:walk :pre ..}]
+   it will return:
+   [:pre [{:walk :any ..} {:walk :pre ..}] [{:walk :post ..} {:walk :pre ..}]]"
+  [state]
   (loop [w nil group [] [cur & rest :as state] state]
     (if (seq state)
       (cond
@@ -60,48 +94,42 @@
          (recur (:walk cur) (conj group cur) rest)))
       [w group state])))
 
-(defn reorder [state]
-  (if (and (first state)
-           (not= :own (:walk (first state))))
-    (let [[g1-w g1 state'] (group state)
-          [_    g2 state'] (group state')
-          [g3-w g3 state'] (group state')
-          g1-nodes         (mapv :name g1)
-          g2-nodes         (mapv :name g2)]
-      (if (and (seq g1) (seq g2) (seq g3)
-               (= g1-w g3-w))
-        (cond
-         (not-any? #(seq (filter (:dependencies %) g1-nodes)) g2)
-         (concat (into (into g2 g1) g3) state')
+(defn satisfies-affected? [{:keys [affects walk]} passes]
+  (loop [passes passes]
+    (let [free (vals (filter (comp empty? :dependants val) passes))]
+      (if-let [available-passes (seq (filter (comp #{walk :any} :walk) free))]
+        (recur (reduce remove-pass passes (mapv :name available-passes)))
+        (empty? (filter (fn [{:keys [name]}] ((set affects) name)) (vals passes)))))))
 
-         (not-any? #(seq (filter (:dependencies %) g2-nodes)) g3)
-         (concat (into (into g1 g3) g2) state')
-
-         :else
-         state)
-        state))
-    state))
-
-(def ffilter (comp first filter))
-
-(defn ffilter-walk [f c]
-  (ffilter (comp f :walk) c))
+(defn maybe-looping-pass [free passes]
+  (if-let [looping (seq (filter :affects free))]
+    (loop [[l & ls] looping]
+      (if l
+        (if (satisfies-affected? l (remove-pass passes (:name l)))
+          ;; all deps satisfied
+          l
+          (recur ls))
+        (if-let [p (first (remove :affects free))]
+          ;; pick a random avaliable non-looping pass
+          p
+          (throw (ex-info (str "looping pass doesn't encompass affected passes: " (:name l))
+                          {:pass l})))))
+    ;; pick a random available pass
+    (first free)))
 
 (defn schedule* [state passes]
-  (let [state                     (reorder state)
-        f                         (filter (comp empty? :dependants val) passes)
+  (let [f                         (filter (comp empty? :dependants val) passes)
         [free & frs :as free-all] (vals f)
-        [w g _]                   (group state)]
+        w                         (first (group state))
+        non-looping-free          (remove :affects free-all)]
     (if (seq passes)
-      (if-let [x (or (ffilter :compiler free-all)
-                     (and w (or (ffilter-walk #{w} free-all)
-                                (ffilter-walk #{:any} free-all)))
-                     (ffilter-walk #{:none} free-all)
-                     (ffilter :affects free-all))]
-        (recur (cons (assoc x :passes [(:name x)]) state)
-               (remove-pass passes (:name x)))
-        (recur (cons (assoc free :passes [(:name free)]) state)
-               (remove-pass passes (:name free))))
+      (let [{:keys [name] :as pass} (or (ffilter :compiler free-all)
+                                        (and w (or (ffilter-walk #{w} non-looping-free)
+                                                   (ffilter-walk #{:any} non-looping-free)))
+                                        (ffilter-walk #{:none} free-all)
+                                        (maybe-looping-pass free-all passes))]
+        (recur (cons (assoc pass :passes [name]) state)
+               (remove-pass passes name)))
       state)))
 
 (defn collapse [state]
@@ -110,13 +138,7 @@
       (if (= :none (:walk cur))
         (recur rest (conj ret cur))
         (let [[w g state] (group state)]
-          (recur state (conj ret (merge {:walk (or w :pre) :passes (mapv :name g)}
-                                        (when-let [affects (first (filter :affects g))]
-                                          (let [passes (set (mapv :name g))]
-                                            (when (not-every? passes (:affects affects))
-                                              (throw (ex-info (str "looping pass doesn't encompass affected passes: " (:name affects))
-                                                              {:pass affects}))))
-                                          {:loops true}))))))
+          (recur state (conj ret {:walk (or w :pre) :passes (mapv :name g)}))))
       ret)))
 
 (defn schedule-passes
@@ -130,8 +152,24 @@
     (when (next (filter :compiler (vals passes)))
       (throw (ex-info "Only one compiler pass allowed" passes)))
 
-    (mapv #(select-keys % [:passes :walk :loops])
-          (collapse (schedule* () passes)))))
+    (collapse (schedule* () passes))))
+
+(defn compile-passes [passes walk info]
+  (let [with-state (filter (comp :state info) passes)
+        state      (zipmap with-state (mapv #(:state (info %)) with-state))
+        pfns       (reduce (fn [f p]
+                             (let [i (info p)
+                                   p (cond
+                                      (:state i)
+                                      (fn [_ s ast] (p (s p) ast))
+                                      (:affects i)
+                                      (fn [a _ ast] ((p a) ast))
+                                      :else
+                                      (fn [_ _ ast] (p ast)))]
+                               (fn [a s ast]
+                                 (p a s (f a s ast))))) (fn [_ _ ast] ast) passes)]
+    (fn analyze [ast]
+      (walk ast (partial pfns analyze (update-vals state #(%)))))))
 
 (defn schedule
   "Takes a set of Vars that represent tools.analyzer passes and returns a function
@@ -158,7 +196,7 @@
                the specified passes must partecipate in
                This pass must take a function as argument and return the actual pass, the
                argument represents the reified tree traversal which the pass can use to
-               control a recursive traversal
+               control a recursive traversal, implies :depends
    * :state    a no-arg function that should return the init value of an atom that will be
                passed as the first argument to the pass (the pass will thus take the ast
                as the second parameter), the atom will be the same for the whole tree traversal
@@ -174,23 +212,11 @@
     (if (not= passes passes+deps)
       (recur passes+deps [opts])
       (if (:debug? opts)
-        (schedule-passes info)
-        (reduce (fn [f {:keys [passes walk loops]}]
-                  (-> (if (= walk :none)
-                       (first passes)
-                       (let [walk (if (= :pre walk) prewalk postwalk)
-                             passes (rseq passes)
-                             pfns (fn [state analyze]
-                                    (let [passes (if loops
-                                                   (cons ((first passes) analyze)
-                                                         (rest passes))
-                                                   passes)]
-                                      (mapv (fn [p] (if (:state (info p))
-                                                     (partial p (state p))
-                                                     p)) passes)))
-                             with-state (filter (comp :state info) passes)]
-                         (fn analyze [ast]
-                           (let [state (zipmap with-state (mapv #((:state (info %))) with-state))]
-                             (walk ast (reduce comp (pfns state analyze)))))))
-                    (comp f)))
+        (mapv #(select-keys % [:passes :walk])
+              (schedule-passes info))
+        (reduce (fn [f {:keys [passes walk]}]
+                  (let [pass (if (= walk :none)
+                               (first passes)
+                               (compile-passes passes (if (= :pre walk) prewalk postwalk) info))]
+                    (comp pass f)))
                 identity (schedule-passes info))))))

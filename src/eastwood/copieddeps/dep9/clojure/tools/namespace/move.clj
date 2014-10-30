@@ -53,7 +53,7 @@
 
 (defn replace-ns-symbol
   "ALPHA: subject to change. Given Clojure source as a string, replaces
-  all occurances of the namespace name old-sym with new-sym and
+  all occurrences of the namespace name old-sym with new-sym and
   returns modified source as a string."
   [source old-sym new-sym]
   (let [old-name (name old-sym)
@@ -86,7 +86,7 @@
 (defn move-ns
   "ALPHA: subject to change. Moves the .clj source file (found relative
   to source-path) for the namespace named old-sym to new-sym and
-  replace all occurances of the old name with the new name in all
+  replace all occurrences of the old name with the new name in all
   Clojure source files found in dirs.
 
   This is a purely textual transformation. It does not work on

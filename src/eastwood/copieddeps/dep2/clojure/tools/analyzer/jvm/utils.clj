@@ -62,13 +62,14 @@
               (.replace \/ \.)))))
 
 (def maybe-class-from-string
-  (lru (fn maybe-class-from-string [s]
-         (try
-           (RT/classForName s)
-           (catch Exception _
-             (if-let [maybe-class ((ns-map *ns*) (symbol s))]
-               (when (class? maybe-class)
-                 maybe-class)))))))
+  (lru (fn maybe-class-from-string [^String s]
+         (if (or (pos? (.indexOf s "."))
+                 (= \[ (first s)))
+           (try (RT/classForName s)
+                (catch ClassNotFoundException _))
+           (when-let [maybe-class ((ns-map *ns*) (symbol s))]
+             (when (class? maybe-class)
+               maybe-class))))))
 
 (defmethod maybe-class :default [_] nil)
 (defmethod maybe-class Class [c] c)
@@ -162,7 +163,9 @@
        (= c1 c2)
        (.isAssignableFrom c2 c1)
        (and (primitive? c2)
-            ((convertible-primitives c2) c1))))))
+            ((convertible-primitives c2) c1))
+       (and (primitive? c1)
+            (.isAssignableFrom (box c1) c2))))))
 
 (def wider-than
   "If the argument is a numeric primitive Class, returns a set of primitive Classes
@@ -321,29 +324,29 @@
                       prev-decl   (maybe-class (:declaring-class prev))
                       next-decl   (maybe-class (:declaring-class next))]
                   (cond
-                  (not prev)
-                  [next]
-                  (= prev-params next-params)
-                  (cond
-                   (= prev-ret next-ret)
+                   (not prev)
+                   [next]
+                   (= prev-params next-params)
                    (cond
-                    (.isAssignableFrom prev-decl next-decl)
+                    (= prev-ret next-ret)
+                    (cond
+                     (.isAssignableFrom prev-decl next-decl)
+                     [next]
+                     (.isAssignableFrom next-decl prev-decl)
+                     p
+                     :else
+                     (conj p next))
+                    (.isAssignableFrom prev-ret next-ret)
                     [next]
-                    (.isAssignableFrom next-decl prev-decl)
+                    (.isAssignableFrom next-ret prev-ret)
                     p
                     :else
                     (conj p next))
-                   (.isAssignableFrom prev-ret next-ret)
+                   (and (some true? (map subsumes? next-params prev-params))
+                        (not-any? true? (map subsumes? prev-params next-params)))
                    [next]
-                   (.isAssignableFrom next-ret prev-ret)
-                   p
                    :else
-                   (conj p next))
-                  (and (some true? (map subsumes? next-params prev-params))
-                       (not-any? true? (map subsumes? prev-params next-params)))
-                  [next]
-                  :else
-                  (conj p next)))) [] methods)
+                   (conj p next)))) [] methods)
       methods)))
 
 (defn source-path [x]
@@ -356,11 +359,11 @@
 
 (defn ns-resource [ns]
   (let [f (ns->relpath ns)]
-   (cond
-    (instance? File f) f
-    (instance? URL f) f
-    (re-find #"^file://" f) (URL. f)
-    :else (io/resource f))))
+    (cond
+     (instance? File f) f
+     (instance? URL f) f
+     (re-find #"^file://" f) (URL. f)
+     :else (io/resource f))))
 
 (defn res-path [res]
   (if (instance? File res)

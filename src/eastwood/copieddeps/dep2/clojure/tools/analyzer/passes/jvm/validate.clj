@@ -166,6 +166,11 @@
 
 (defmethod -validate :def
   [ast]
+  (when-not (var? (:var ast))
+    (throw (ex-info (str "Cannot def " (:name ast) " as it refers to the class "
+                         (.getName ^Class (:var ast)))
+                    (merge {:ast      (prewalk ast cleanup)}
+                           (source-info (:env ast))))))
   (merge
    ast
    (when-let [tag (-> ast :name meta :tag)]

@@ -75,9 +75,9 @@
           (if (= source-name target-name)
             (refer ns-name :only (list source-name))
             (refer ns-name :only () :rename {source-name target-name}))))))
-  (doseq [[alias ns-name] aliases]
+  (doseq [[alias-sym ns-name] aliases]
     (when (find-ns ns-name)
-      (alias alias ns-name))))
+      (alias alias-sym ns-name))))
 
 (defn- do-refresh [scan-fn after-sym]
   (when after-sym

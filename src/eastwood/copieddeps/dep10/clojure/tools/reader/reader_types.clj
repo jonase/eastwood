@@ -11,7 +11,7 @@
   eastwood.copieddeps.dep10.clojure.tools.reader.reader-types
   (:refer-clojure :exclude [char read-line])
   (:use eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils)
-  (:import (clojure.lang LineNumberingPushbackReader Var)
+  (:import clojure.lang.LineNumberingPushbackReader
            (java.io InputStream BufferedReader)))
 
 (defmacro ^:private update! [what f]
@@ -306,10 +306,9 @@ logging frames. Called when pushing a character back."
       nil
       0
       file-name
-      (.. Var
-          (create {:buffer (StringBuilder.)
-                   :offset 0})
-          setDynamic))))
+      (doto (make-var)
+        (alter-var-root (constantly {:buffer (StringBuilder.)
+                                     :offset 0}))))))
 
 (defn read-line
   "Reads a line from the reader or from *in* if no reader is specified"

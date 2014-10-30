@@ -41,7 +41,7 @@
 
   Depmap is a map describing the new or modified namespaces. Keys in
   the map are namespace names (symbols). Values in the map are sets of
-  symbols naming the birect dependencies of each namespace. For
+  symbols naming the direct dependencies of each namespace. For
   example, assuming these ns declarations:
 
       (ns alpha (:require beta))

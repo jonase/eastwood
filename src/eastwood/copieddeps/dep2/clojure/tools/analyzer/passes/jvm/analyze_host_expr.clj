@@ -149,7 +149,15 @@
   {:pass-info {:walk :post :depends #{}}}
   [{:keys [op target form tag env class] :as ast}]
   (if (#{:host-interop :host-call :host-field :maybe-class :var} op)
-    (let [class? (and (= :const (:op target))
+    (let [target (if-let [the-class (and (= :local (:op target))
+                                         (maybe-class (:form target)))]
+                   (merge target
+                          (assoc (ana/analyze-const the-class env :class)
+                            :tag   Class
+                            :o-tag Class
+                            :form  form))
+                   target)
+          class? (and (= :const (:op target))
                       (= :class (:type target))
                       (:form target))
           target-type (if class? :static :instance)]

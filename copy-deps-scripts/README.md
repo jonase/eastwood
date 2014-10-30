@@ -60,37 +60,30 @@ available:
 
 ### Current dependencies of project deps
 
-As of September 18 2014:
+As of October 30 2014:
 
     % lein deps :tree
-    (Possibly confusing dependencies found:)
-    ([org.clojure/tools.reader "0.8.4"])
-    ( overrides)
-    ([org.clojure/tools.analyzer.jvm "0.6.0"] -> [org.clojure/tools.reader "0.8.8"])
-    (
-    Consider using these exclusions:)
-    ([org.clojure/tools.analyzer.jvm "0.6.0" :exclusions [org.clojure/tools.reader]])
-    nil
-     [clojure-complete "0.2.3" :exclusions [[org.clojure/clojure]]]
+    warn
+     [clojure-complete "0.2.3" :scope "test" :exclusions [[org.clojure/clojure]]]
+     [jafingerhut/dolly "0.1.0" :scope "test"]
+       [rhizome "0.2.1" :scope "test"]
      [leinjacker "0.4.1"]
        [org.clojure/core.contracts "0.0.1"]
          [org.clojure/core.unify "0.5.3"]
      [org.clojars.brenton/google-diff-match-patch "0.1"]
      [org.clojure/clojure "1.6.0"]
-     [org.clojure/tools.analyzer.jvm "0.6.0"]
+     [org.clojure/tools.analyzer.jvm "0.6.3"]
        [org.clojure/core.memoize "0.5.6"]
          [org.clojure/core.cache "0.6.3"]
            [org.clojure/data.priority-map "0.0.2"]
        [org.ow2.asm/asm-all "4.2"]
-     [org.clojure/tools.analyzer "0.6.0"]
-     [org.clojure/tools.macro "0.1.2"]
-     [org.clojure/tools.namespace "0.2.6"]
-     [org.clojure/tools.nrepl "0.2.3" :exclusions [[org.clojure/clojure]]]
-     [org.clojure/tools.reader "0.8.4"]
-     [org.clojure/tools.trace "0.7.8"]
+     [org.clojure/tools.analyzer "0.6.2"]
+     [org.clojure/tools.macro "0.1.2" :scope "test"]
+     [org.clojure/tools.namespace "0.2.7"]
+     [org.clojure/tools.nrepl "0.2.6" :scope "test" :exclusions [[org.clojure/clojure]]]
+     [org.clojure/tools.reader "0.8.10"]
     
     % lein ancient
-    [org.clojure/tools.reader "0.8.9"] is available but we use "0.8.4"
     [leinjacker "0.4.2"] is available but we use "0.4.1"
     [org.clojure/tools.macro "0.1.5"] is available but we use "0.1.2"
 

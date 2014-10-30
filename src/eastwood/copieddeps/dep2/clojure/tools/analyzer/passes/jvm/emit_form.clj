@@ -18,7 +18,7 @@
   (let [expr (-emit-form ast opts)]
     (if-let [m (and (instance? clojure.lang.IObj expr)
                     (meta form))]
-      (with-meta expr (merge (meta expr) m))
+      (with-meta expr (merge m (meta expr)))
       expr)))
 
 (defn emit-form
@@ -154,3 +154,12 @@
     (with-meta (symbol (-> var .ns ns-name name) (-> var .sym name))
       (meta form))
     form))
+
+(defmethod -emit-form :def
+  [ast opts]
+  (let [f (default/-emit-form ast opts)]
+    (if (:qualified-symbols opts)
+      `(def ~(with-meta (symbol (-> ast :env :ns name) (str (second f)))
+               (meta (second f)))
+         ~@(nthrest f 2))
+      f)))

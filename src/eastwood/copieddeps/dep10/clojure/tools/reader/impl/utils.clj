@@ -41,8 +41,8 @@
     (defn ex-info? [ex]
       (instance? eastwood.copieddeps.dep10.clojure.tools.reader.impl.ExceptionInfo ex)))
 
-    (defn ex-info? [ex]
-      (instance? clojure.lang.ExceptionInfo ex)))
+  (defn ex-info? [ex]
+    (instance? clojure.lang.ExceptionInfo ex)))
 
 (defn whitespace?
   "Checks whether a given character is whitespace"
@@ -75,3 +75,8 @@
     (symbol? f)  {:tag f}
     (string? f)  {:tag f}
     :else        f))
+
+(defn make-var
+  "Returns an anonymous unbound Var"
+  []
+  (with-local-vars [x nil] x))
