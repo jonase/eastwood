@@ -793,7 +793,7 @@ Return value:
            exception-count (atom 0)
            continue-on-exception? (:continue-on-exception opts)
            stopped-on-exc (atom false)]
-       (when (util/debug? #{:all} opts)
+       (when (util/debug? #{:ns} opts)
          (debug-cb (format "Namespaces to be linted:"))
          (doseq [n namespaces]
            (debug-cb (format "    %s" n))))
