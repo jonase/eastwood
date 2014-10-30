@@ -69,9 +69,9 @@
   unintentionally 'hid' exception thrown by the Clojure compiler while
   doing eval.  Such exceptions are now made visible to the user.
 
-* Updated `tools.analyzer` and `tools.analyzer.jvm` to version 0.6.1.
-
-* Updated `tools.namespace` to version 0.2.6.
+* Updated versions of several libraries used: `tools.analyzer` 0.6.2,
+  `tools.analyzer.jvm` 0.6.3, `tools.reader` 0.8.10, `tools.namespace`
+  0.2.7
 
 * Added some new utility/debug functions for showing ASTs trimmed of
   unwanted data, and sorting the keys in orders that put the most
@@ -86,12 +86,11 @@
   containing defprotocol forms.  Issue
   [#90](https://github.com/jonase/eastwood/issues/90).
 
-* Extensive internal plumbing changes of hard-coded println calls to
-  call a probably-too-complex callback function instead.  The hope is
-  that this or something like it will make it easier for IDE
-  developers to invoke Eastwood and control where the different kinds
-  of output go, and get more of it as Clojure data rather than
-  strings.
+* Extensive internal plumbing changes: replace many println calls with
+  a probably-too-complex callback function instead.  The hope is that
+  this will make it easier for IDE developers to invoke Eastwood and
+  control where the different kinds of output go, and get more of it
+  as Clojure data rather than strings.
 
 
 ## Changes from version 0.1.3 to 0.1.4
