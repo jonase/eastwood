@@ -53,7 +53,14 @@ describing the error."
       (println (:msg info))
       (flush))))
 
-(def empty-ordered-lint-warning-map
+(def empty-ordered-lint-warning-map-v1
+  (util/ordering-map [:linter
+                      :msg
+                      :file
+                      :line
+                      :column]))
+
+(def empty-ordered-lint-warning-map-v2
   (util/ordering-map [:file
                       :line
                       :column
@@ -72,9 +79,10 @@ describing the error."
       (let [lint-warning-format (or (-> info :opt :lint-warning-format)
                                     :v2)
             i (case lint-warning-format
-                :v1 (select-keys (:warn-data info)
-                                 [:linter :msg :file :line :column])
-                :v2 (into empty-ordered-lint-warning-map
+                :v1 (into empty-ordered-lint-warning-map-v1
+                          (select-keys (:warn-data info)
+                                       [:linter :msg :file :line :column]))
+                :v2 (into empty-ordered-lint-warning-map-v2
                           (select-keys (:warn-data info)
                                        [:linter :msg :file :line :column
                                         :uri-or-file-name
