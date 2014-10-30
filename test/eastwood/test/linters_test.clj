@@ -1,6 +1,6 @@
 (ns eastwood.test.linters-test
   (:use [clojure.test])
-  (:use [eastwood.core])
+  (:use [eastwood.lint])
   (:require [clojure.data :as data]
             [clojure.string :as str]
             [eastwood.test.cc-compare :as ccmp])
@@ -844,7 +844,7 @@
     })
   (lint-test
    'testcases.wrongtag
-   @#'eastwood.core/default-linters
+   @#'eastwood.lint/default-linters
    {}
    {
     {:linter :wrong-tag,

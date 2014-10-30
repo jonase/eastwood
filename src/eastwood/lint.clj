@@ -1,4 +1,4 @@
-(ns eastwood.core
+(ns eastwood.lint
   (:require [clojure.java.io :as io]
             [eastwood.analyze-ns :as analyze]
             [eastwood.util :as util]
@@ -757,9 +757,9 @@ Exception thrown while analyzing last namespace.
   "Lint a sequence of namespaces using a specified collection of linters.
 
 Prerequisites:
-+ eastwood.core namespace is in your classpath
++ eastwood.lint namespace is in your classpath
 + TBD: Eastwood resources directory is in your classpath
-+ eastwood.core namespace and its dependencies have been loaded.
++ eastwood.lint namespace and its dependencies have been loaded.
 
 Arguments:
 + TBD: to be documented

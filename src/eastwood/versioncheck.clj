@@ -3,8 +3,8 @@
 (def main
   (delay
    (do
-     (require 'eastwood.core)
-     (resolve (symbol "eastwood.core/eastwood-from-cmdline")))))
+     (require 'eastwood.lint)
+     (resolve (symbol "eastwood.lint/eastwood-from-cmdline")))))
 
 (defn run-eastwood [opts]
   (let [{:keys [major minor]} *clojure-version*]
