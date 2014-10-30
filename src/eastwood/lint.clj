@@ -61,26 +61,26 @@ describing the error."
                       :msg
                       :uri-or-file-name]))
 
-;; Use the option :backwards-compatible-warnings true to get linter
-;; warning maps as they were generated in Eastwood 0.1.0 thru 0.1.4,
-;; intended only for comparing output from later versions against
-;; those versions more easily.
+;; Use the option :lint-warning-format :v1 to get linter warning maps
+;; as they were generated in Eastwood 0.1.0 thru 0.1.4, intended only
+;; for comparing output from later versions against those versions
+;; more easily.
 
 (defn make-default-lint-warning-cb [wrtr]
   (fn default-lint-warning-cb [info]
     (binding [*out* wrtr]
-      (let [backwards-compatible-warnings? (-> info :opt
-                                               :backwards-compatible-warnings)
-            i (if backwards-compatible-warnings?
-                (select-keys (:warn-data info)
-                             [:linter :msg :file :line :column])
-                (into empty-ordered-lint-warning-map
-                      (select-keys (:warn-data info)
-                                   [:linter :msg :file :line :column
-                                    :uri-or-file-name
-                                    ;; :uri
-                                    ;; :namespace-sym
-                                    ])))]
+      (let [lint-warning-format (or (-> info :opt :lint-warning-format)
+                                    :v2)
+            i (case lint-warning-format
+                :v1 (select-keys (:warn-data info)
+                                 [:linter :msg :file :line :column])
+                :v2 (into empty-ordered-lint-warning-map
+                          (select-keys (:warn-data info)
+                                       [:linter :msg :file :line :column
+                                        :uri-or-file-name
+                                        ;; :uri
+                                        ;; :namespace-sym
+                                        ])))]
         (pp/pprint i)
         (println)
         (flush)))))

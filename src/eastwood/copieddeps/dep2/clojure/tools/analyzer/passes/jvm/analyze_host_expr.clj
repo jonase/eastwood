@@ -150,12 +150,11 @@
   [{:keys [op target form tag env class] :as ast}]
   (if (#{:host-interop :host-call :host-field :maybe-class :var} op)
     (let [target (if-let [the-class (and (= :local (:op target))
-                                         (maybe-class (:form target)))]
+                                         (maybe-class-literal (:form target)))]
                    (merge target
                           (assoc (ana/analyze-const the-class env :class)
                             :tag   Class
-                            :o-tag Class
-                            :form  form))
+                            :o-tag Class))
                    target)
           class? (and (= :const (:op target))
                       (= :class (:type target))
@@ -173,8 +172,8 @@
                                     target (or class? (:tag target)) env)
 
                 :maybe-class
-                (when-let [the-class (or (maybe-class class)
-                                         (maybe-class (resolve-var class env)))]
+                (when-let [the-class (or (maybe-class-literal class)
+                                         (maybe-class-literal (resolve-var class env)))]
                   (assoc (ana/analyze-const the-class env :class)
                     :tag   Class
                     :o-tag Class
@@ -183,7 +182,7 @@
                 :var
                 (if-let [the-class (and (not (namespace form))
                                         (pos? (.indexOf (str form) "."))
-                                        (maybe-class form))]
+                                        (maybe-class-literal form))]
                   (assoc (ana/analyze-const the-class env :class)
                     :tag   Class
                     :o-tag Class

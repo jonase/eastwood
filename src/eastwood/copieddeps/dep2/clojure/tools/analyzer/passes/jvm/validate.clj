@@ -58,25 +58,30 @@
   [{:keys [args] :as ast}]
   (if (:validated? ast)
     ast
-    (let [^Class class (-> ast :class :val)
-          c-name (symbol (.getName class))
-          argc (count args)
-          tags (mapv :tag args)]
-      (let [[ctor & rest] (->> (filter #(= (count (:parameter-types %)) argc)
+    (if-not (= :class (-> ast :class :type))
+      (throw (ex-info (str "Unable to resolve classname: " (:form (:class ast)))
+                      (merge {:class (:form (:class ast))
+                              :ast   ast}
+                             (source-info (:env ast)))))
+      (let [^Class class (-> ast :class :val)
+            c-name (symbol (.getName class))
+            argc (count args)
+            tags (mapv :tag args)]
+        (let [[ctor & rest] (->> (filter #(= (count (:parameter-types %)) argc)
                                        (u/members class c-name))
                                (try-best-match tags))]
-        (if ctor
-          (if (empty? rest)
-            (let [arg-tags (mapv u/maybe-class (:parameter-types ctor))
-                  args (mapv (fn [arg tag] (assoc arg :tag tag)) args arg-tags)]
-              (assoc ast
-                :args       args
-                :validated? true))
-            ast)
-          (throw (ex-info (str "no ctor found for ctor of class: " class " and given signature")
-                          (merge {:class class
-                                  :args  (mapv (fn [a] (prewalk a cleanup)) args)}
-                                 (source-info (:env ast))))))))))
+          (if ctor
+            (if (empty? rest)
+              (let [arg-tags (mapv u/maybe-class (:parameter-types ctor))
+                    args (mapv (fn [arg tag] (assoc arg :tag tag)) args arg-tags)]
+                (assoc ast
+                  :args       args
+                  :validated? true))
+              ast)
+            (throw (ex-info (str "no ctor found for ctor of class: " class " and given signature")
+                            (merge {:class class
+                                    :args  (mapv (fn [a] (prewalk a cleanup)) args)}
+                                   (source-info (:env ast)))))))))))
 
 (defn validate-call [{:keys [class instance method args tag env op] :as ast}]
   (let [argc (count args)

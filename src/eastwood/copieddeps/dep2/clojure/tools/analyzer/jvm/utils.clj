@@ -88,6 +88,13 @@
           ret
           (maybe-class-from-string sname))))))
 
+(defn maybe-class-literal [x]
+  (cond
+   (class? x) x
+   (symbol? x) (and (not (namespace x))
+                    (maybe-class-from-string (name x)))
+   (string? x) (maybe-class-from-string x)))
+
 (def primitive?
   "Returns non-nil if the argument represents a primitive Class other than Void"
   #{Double/TYPE Character/TYPE Byte/TYPE Boolean/TYPE
