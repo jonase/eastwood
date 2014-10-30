@@ -30,7 +30,7 @@
 (def eastwood-url "https://github.com/jonase/eastwood")
 
 (def ^:dynamic *eastwood-version*
-  {:major 0, :minor 1, :incremental 5, :qualifier "alpha1"})
+  {:major 0, :minor 1, :incremental 5, :qualifier "SNAPSHOT"})
 
 (defn eastwood-version []
   (let [{:keys [major minor incremental qualifier]} *eastwood-version*]
