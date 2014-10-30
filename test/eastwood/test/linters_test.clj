@@ -24,10 +24,15 @@
 (defn make-sorted [c]
   (clojure.walk/postwalk to-sorted-map c))
 
+(defn select-tested-keys [lint-warning]
+  (select-keys lint-warning
+               [:linter :msg :file :line :column]))
+
 (defmacro lint-test [ns-sym linters opts expected-lint-result]
   `(is (= (make-sorted (take 2 (data/diff
-                                (frequencies (lint-ns-noprint ~ns-sym ~linters
-                                                              ~opts))
+                                (->> (lint-ns-noprint ~ns-sym ~linters ~opts)
+                                     (map select-tested-keys)
+                                     frequencies)
                                 ~expected-lint-result)))
           (make-sorted [nil nil]))))
 
