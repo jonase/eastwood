@@ -81,6 +81,20 @@ more interesting keys earlier."
   (every? #(contains? m %) key-seq))
 
 
+(defn keys-in-map
+  "Return the subset of key-set that are keys of map m, or nil if no
+element of key-set is a key of m."
+  [key-set m]
+  (let [keys-in-m (reduce (fn [result item]
+                            (if (contains? m item)
+                              (conj result item)
+                              result))
+                          (empty key-set) key-set)]
+    (if (empty? keys-in-m)
+      nil
+      keys-in-m)))
+
+
 (defn assert-keys [m key-seq]
   (assert (has-keys? m key-seq)))
 

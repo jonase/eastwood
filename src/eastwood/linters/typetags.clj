@@ -23,27 +23,78 @@ significance needed by the user."
                   #"@[0-9a-fA-F]+"
                   (string/re-quote-replacement "@<somehex>")))
 
+
+(def keys-indicating-wrong-tag #{:eastwood/name-tag
+                                 :eastwood/tag
+                                 :eastwood/o-tag
+                                 :eastwood/return-tag})
+
+(defn has-wrong-tag? [ast]
+  (some #(contains? ast %) keys-indicating-wrong-tag))
+
+
 (defn wrong-tag-from-analyzer [{:keys [asts]}]
   (for [{:keys [op name form env] :as ast} (->> (mapcat ast/nodes asts)
-                                                (filter :eastwood/wrong-tag))
-        :let [kind (:eastwood/wrong-tag ast)
+                                                (filter has-wrong-tag?))
+        :let [wrong-tag-keys (util/keys-in-map keys-indicating-wrong-tag ast)
+;;              _ (do
+;;                  (when wrong-tag-keys
+;;                    (println (format "jafinger-dbg1: op=%s name=%s wrong-tag-keys=%s"
+;;                                     op name wrong-tag-keys))))
               [typ tag loc]
-              (cond (= kind :name/tag)
+              (cond (= wrong-tag-keys #{:eastwood/name-tag})
                     [:wrong-tag-on-var (-> name meta :tag) env]
                     
-                    (= kind :tag)
-                    [:tag (get ast kind) (meta form)]
-
-                    (= op :var)
-                    [:var (get ast kind) env]
-                    
-                    (= op :fn-method)
+                    (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
+                         (= op :fn-method))
                     [:fn-method
                      (-> form first meta :tag)
                      (-> form first meta)]
                     
+                    ;; This set of wrong-tag-keys sometimes occurs for
+                    ;; op :local, but since those can be multiple
+                    ;; times, one for each use, I am hoping I can make
+                    ;; the warnings less redundant by restricting them
+                    ;; to the :binding ops (checked for below), and
+                    ;; still not lose any important warnings.
+                    (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
+                         (= op :local))
+                    [nil nil nil]
+
+                    (or (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
+                             (= op :binding))
+                        (and (= wrong-tag-keys #{:eastwood/tag})
+                             (= op :local)))
+                    [:tag (get ast :tag) (meta form)]
+
+                    (and (= wrong-tag-keys #{:eastwood/return-tag})
+                         (= op :var))
+                    [:var (get ast :return-tag) env]
+                    
+                    ;; I have seen this case for this form:
+                    ;; (def avlf1 (fn ^{:tag 'LinkedList} [coll] (java.util.LinkedList. coll)))
+                    ;; Without warning about this case, I believe one
+                    ;; of the other cases already issues a warning for
+                    ;; this.
+                    (and (= wrong-tag-keys #{:eastwood/return-tag})
+                         (#{:def :fn} op))
+                    [nil nil nil]
+                    ;;[:var (get ast :return-tag) env]
+
                     :else
-                    [nil nil nil])]
+                    (do
+                      ;; Use this to help detect wrong-tag cases I may
+                      ;; be missing completely.
+                      (println (format "eastwood-dbg: wrong-tag-from-analyzer: op=%s name=%s wrong-tag-keys=%s env=%s"
+                                       op name wrong-tag-keys env))
+                      (flush)
+                      (assert false)
+                      [nil nil nil]))
+;;              _ (do
+;;                  (println (format "jafinger-dbg2: typ=%s tag=%s loc=%s"
+;;                                   typ tag loc))
+;;                  )
+              ]
         :when typ]
     (merge {:linter :wrong-tag
             :msg
@@ -89,7 +140,12 @@ significance needed by the user."
                                   (ancestors (- n 2))))
               private-var? (and grandparent-ast
                                 (= :def (:op grandparent-ast))
-                                (-> grandparent-ast :meta :val :private))]
+                                (-> grandparent-ast :meta :val :private))
+;;              _ (when tag
+;;                  (println (format "jafinger-dbg3: tag=%s op=%s gp-op=%s loc=%s"
+;;                                   tag op (:op grandparent-ast) loc))
+;;                  )
+              ]
         :when (and tag
                    (not private-var?)
                    (symbol? tag)

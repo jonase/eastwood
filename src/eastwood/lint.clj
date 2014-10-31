@@ -526,10 +526,12 @@ exception."))
   (let [lint-warnings (atom [])
         warning-count (atom 0)
         exception-count (atom 0)
-        only-warnings-cb (fn only-warnings-cb [info]
-                           (if (= :lint-warning (:kind info))
-                             (swap! lint-warnings conj (:warn-data info))))
-        opts (assoc opts :callback only-warnings-cb)
+        cb (fn cb [info]
+             (case (:kind info)
+               :lint-warning (swap! lint-warnings conj (:warn-data info))
+               (:eval-out :eval-err) (println (:msg info))
+               :default))
+        opts (assoc opts :callback cb)
         exception (lint-ns ns-sym linters opts warning-count exception-count)]
     (if exception
       (throw exception)

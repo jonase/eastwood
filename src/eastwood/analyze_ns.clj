@@ -115,15 +115,25 @@ the value of File/separator for the platform."
 ;;  (let [tag (if (= t :name/tag)
 ;;              (-> ast :name meta :tag)
 ;;              (get ast t))]
-;;    (println (format "jafinger-dbg: Wrong tag: %s (%s) in def: %s   t=%s"
-;;                     tag (class tag)
+;;    ;; (assert false)
+;;    (println (format "\nWrong tag: t=%s %s (%s) in %s"
+;;                     t tag (class tag)
 ;;                     ;;(eval tag) (class (eval tag))
-;;                     (:name ast) t))
+;;                     (:name ast)))
+;;    (println (format "  op=%s form=%s" (:op ast) (:form ast)))
 ;;    (pp/pprint (:form ast))
-;;    (util/pprint-ast-node ast))
-  ;; Key/value pairs to be merged into ast for later code to find
-  ;; and issue warnings.
-  {:eastwood/wrong-tag t})
+;;    (util/pprint-ast-node ast)
+;;    (flush))
+  ;; Key/value pairs to be merged into ast for later code to find and
+  ;; issue warnings.  We use a different map key for each different
+  ;; value of t, because if we used the same map key, only the last
+  ;; one merged in would remain, the way tools.analyzer.jvm uses this
+  ;; return value.
+  (case t
+    :name/tag {:eastwood/name-tag t}
+    :tag {:eastwood/tag t}
+    :o-tag {:eastwood/o-tag t}
+    :return-tag {:eastwood/return-tag t}))
 
 ;; eastwood-passes is a cut-down version of run-passes in
 ;; tools.analyzer.jvm.  It eliminates phases that are not needed for
