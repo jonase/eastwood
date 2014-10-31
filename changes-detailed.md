@@ -7,31 +7,9 @@ interest.
 
 ## Changes from version 0.1.4 to 0.1.5-SNAPSHOT on Oct 30 2014
 
-Improvement: These namespaces used to throw exceptions because of bad
-tags, but now they generate a :wrong-tag warning (or multiple such
-warnings) instead:
-
-    cheshire.test.generative
-    clojure.data.fressian-test
-    clojure.test.core-test
-    clojure.test.array-test
-    clojure.test.math-test
-    clojurewerkz.titanium.query
-
-Improvement? Non-nil line/col for warings in these namespaces, formerly nil
-
-    clojurewerkz.elastisch.rest-api.multi-test (:suspicious-test)
-    me.raynes.core-test (:unused-ret-vals)
-    clojure.java.data (:unused-ret-vals)
-    potemkin (:unused-ret-vals)
-    potemkin.collections-test (:unused-ret-vals)
-    clojure.tools.namespace.parse (:unused-ret-vals)
-    clojure.tools.namespace (:unused-ret-vals)
-
-Improvement?  or masking what should be a warning?  0.1.4 threw
-exception because of what may be a wrong tag in namespace
+WORSE: 0.1.4 threw exception because of a wrong tag in namespace
 clojurewerkz.meltdown.reactor, but 0.1.5 does not even give a warning
-about it:
+about it.  It should give a :wrong-tag warning about it:
 
     Exception thrown during phase :analyze+eval of linting namespace clojurewerkz.meltdown.reactor
     Local name 'dispatcher-type' has been given a type tag 'DeferredStreamSpec' here:
@@ -41,50 +19,88 @@ about it:
      :line 107,
      :file "clojurewerkz/meltdown/reactor.clj"}
 
-Improvement or worse? No longer an analysis exception for namespace:
-
-    flatland.useful.deftype
-
-Similarly for these namespaces
+Similarly for these namespaces, I think:
 
     clojurewerkz.meltdown.selectors-test
     clojurewerkz.meltdown.reactor-test
 
-Better or worse?  Namespaces below used to issue more reflection
-warnings, but now a subset.
+    seesaw.widgets.log-window - Better to have :wrong-tag warning than
+      exception, but latest 0.1.5 gives neither for (extend-type
+      (class (log-window-proxy nil)) ...) expression.  Nicola believes
+      analyzer should tag that with wrong tag.
 
-    reply.eval-modes.nrepl
+Improvement or worse? No longer an analysis exception for namespace:
 
-Better or worse?  Namespaces below issue a superset of reflection
-warnings compared to 0.1.4:
-
-    seesaw.widgets.log-window
-    clojure.test.array-test - (also :wrong-tag warnings with no line/col)
+    flatland.useful.deftype
 
 Better?  Used to be exception thrown analyzing this namespace, now
 none.
 
-    seesaw.widgets.log-window
-    clojure.reflect
+    clojure.reflect - Check with Nicola, but this appears to be a good
+      change in behavior to me.
 
-Worse: 
 
-Some line/column numbers were numbers before, now nil, in these
+Better if the line/col numbers are reasonable: Non-nil line/col for
+warnings in these namespaces, formerly nil
+
+    clojurewerkz.elastisch.rest-api.multi-test (:suspicious-test)
+    me.raynes.core-test (:unused-ret-vals)
+    clojure.java.data (:unused-ret-vals)
+    potemkin (:unused-ret-vals)
+    potemkin.collections-test (:unused-ret-vals)
+    clojure.tools.namespace.parse (:unused-ret-vals)
+    clojure.tools.namespace (:unused-ret-vals)
+
+Worse: Some line/column numbers were numbers before, now nil, in these
 namespaces:
 
     clojure.core.constraints-tests (:redefd-vars)
     potemkin.collections-test (:redefd-vars)
+    clojure.test.array-test - (:wrong-tag, which didn't exist in 0.1.4, so not technically worse, but not good)
 
-Namespace clojure.core.logic.nominal.tests throws exception:
-
-    CompilerException java.lang.IllegalStateException: record? already refers to: #'clojure.core.logic/record? in namespace: clojure.core.logic.nominal, compiling:(clojure/core/logic/nominal.clj:1:1)
-
-
-TBD: better or worse?  Changed line/column numbers:
+Better?  Changed line/column numbers:
 
     clojure.core.match.date (:deprecations)
     clojure.core.unify (:unused-ret-vals)
     flatland.useful.java-test (:unused-ret-vals)
+
+
+Investigated:
+
+Better: These namespaces used to throw exceptions because of bad tags,
+but now they generate a :wrong-tag warning (or multiple such warnings)
+instead:
+
+    cheshire.test.generative
+    clojure.data.fressian-test
+    clojure.test.core-test
+    clojure.test.array-test
+    clojure.test.math-test
+    clojurewerkz.titanium.query
+
+Better: Namespaces below used to issue more reflection warnings, but
+now a subset.  I've verified new output matches 'lein check'
+reflection warnings for this namespace (modulo line/col numbers), so
+good.
+
+    reply.eval-modes.nrepl
+
+Better: Namespaces below issue a superset of reflection warnings
+compared to 0.1.4, but they turn out to be identical to those issued
+by 'lein check', so they are better (modulo line/col numbers are
+typically different than 'lein check' output):
+
+    seesaw.widgets.log-window
+    clojure.test.array-test
+
+Worse: Namespace clojure.core.logic.nominal.tests throws exception:
+
+    CompilerException java.lang.IllegalStateException: record? already refers to: #'clojure.core.logic/record? in namespace: clojure.core.logic.nominal, compiling:(clojure/core/logic/nominal.clj:1:1)
+
+    Exception only occurs for Clojure 1.6.0 and later, and for the
+    older core.logic-2014-02-21, not for core.logic-2014-03-28, which
+    has a compile-if conditional wrapper around its definition of
+    record?  I don't think I'll worry too much about this one.
 
 
 ## Changes from version 0.1.3 to 0.1.4
