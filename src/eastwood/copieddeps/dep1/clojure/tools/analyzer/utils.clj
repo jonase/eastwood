@@ -208,7 +208,8 @@
 (defn -source-info
   "Returns the source-info of x"
   [x env]
-  (merge' (source-info (meta x))
+  (merge' (source-info env)
+          (source-info (meta x))
           (when-let [file (and (not= *file* "NO_SOURCE_FILE")
                                *file*)]
             {:file file})))

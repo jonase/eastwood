@@ -18,9 +18,6 @@
   "Adds (when avaliable) :line, :column, :end-line, :end-column and :file info to the AST :env"
   {:pass-info {:walk :pre :depends #{}}}
   [ast]
-  (let [source-info (-source-info (:form ast) nil)
-        merge-source-info (-merge-source-info source-info)
-        ast (merge-source-info ast)]
-    (if (= :with-meta (:op ast))
-      (update-children ast merge-source-info)
-      ast)))
+  (let [source-info (-source-info (:form ast) (:env ast))
+        merge-source-info (-merge-source-info source-info)]
+    (update-children (merge-source-info ast) merge-source-info)))

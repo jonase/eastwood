@@ -9,14 +9,14 @@ git clone https://github.com/clojure/tools.analyzer.git
 cd tools.analyzer
 #git checkout tools.analyzer-0.6.2
 # One more commit after 0.6.2
-git checkout 8ef610c0991ab58bcef4964e6cfad969c79d625c
+git checkout 88e3d8ca1e3b94cd8961d6993afa607d35097d34
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
 #git checkout tools.analyzer.jvm-0.6.3
 # A few commits after 0.6.3
-git checkout c72d5c9407a5e25e8bd01fb2518521341856c059
+git checkout 7998e2f3827987b62d52076fcbbd7bbd8f1702c4
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git
@@ -44,9 +44,7 @@ cd ..
 
 git clone https://github.com/clojure/tools.reader.git
 cd tools.reader
-#git checkout tools.reader-0.8.10
-# A few more fixes after 0.8.10
-git checkout 7812e704ceef683970ff2e28fd099bafefe4eba0
+git checkout tools.reader-0.8.11
 cd ..
 
 git clone https://github.com/sattvik/leinjacker.git
