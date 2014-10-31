@@ -292,27 +292,20 @@ deal with.
 ### Known libraries Eastwood has difficulty with
 
 [`potemkin`](https://github.com/ztellman/potemkin) version 0.3.4 and
-earlier, and libraries that depend on it
-(e.g. [`ogre`](https://github.com/clojurewerkz/ogre)) now throw
-exceptions during linting as of Eastwood 0.1.3 (and 0.1.2).  A
-suggested change to `potemkin` has been incorporated into what will
-become potemkin 0.3.5 (not released as of this writing).  The change
-in Eastwood behavior was due to a conscious design choice in
-`tools.analyzer`.
+earlier, and libraries that depend on it now throw exceptions during
+linting as of Eastwood 0.1.3 (and 0.1.2).  A suggested change to
+`potemkin` was made in version 0.3.5 that should eliminate this issue.
+The change in Eastwood behavior was due to a conscious design choice
+in `tools.analyzer`.
 
-TBD: Check whether these have been eliminated, and note it in the docs
-as a change in Eastwood 0.1.5 if so.
-
-Currently, the Clojure Contrib libraries
+With Eastwood 0.1.4 and earlier, the Clojure Contrib libraries
 [`data.fressian`](https://github.com/clojure/data.fressian) and
 [`test.generative`](https://github.com/clojure/test.generative) cannot
 be analyzed due to a known bug in `tools.analyer.jvm`:
-[TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24)
-
-Other libraries known to cause problems for Eastwood because of
-`test.generative`: [Cheshire](https://github.com/dakrone/cheshire)
-(TBD whether this is truly due to `test.generative`, or something
-else).
+[TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24).  With
+Eastwood 0.1.5, `tools.analyzer.jvm` has been enhanced to enable
+Eastwood to issue warnings instead, which it does as part of the
+`:wrong-tag` linter.
 
 
 ### Code analysis engine is more picky than the Clojure compiler
@@ -323,14 +316,6 @@ Eastwood uses
 to analyze Clojure source code.  It performs some sanity checks on the
 source code that the Clojure compiler does not (at least as of Clojure
 versions 1.5.1 and 1.6.0).
-
-For example, Eastwood will throw an exception when analyzing code with
-a type hint `^Typename` where the type name is a Java class that has
-not been imported by default by the Clojure compiler, nor by an
-`:import` inside of an `ns` form.  In most cases, an explanatory
-message should be given by Eastwood explaining the problem's cause,
-and what you can do to change your code so that Eastwood can analyze
-it.
 
 
 ### Explicit use of Clojure environment `&env`
@@ -348,22 +333,8 @@ there's no way for `tools.analyzer.jvm` to provide a compatible `&env`
 The following exception being thrown while linting is a symptom of
 this issue:
 
-    Exception thrown during phase :analyze of linting namespace immutable-bitset
+    Exception thrown during phase :analyze+eval of linting namespace immutable-bitset
     ClassCastException clojure.lang.PersistentArrayMap cannot be cast to clojure.lang.Compiler$LocalBinding
-
-
-### Namespaces collision
-
-As of Eastwood version 0.1.3, it no longer depends upon common Clojure
-contrib libraries such as `core.cache`, `core.memoize`, and
-`tools.analyzer`.  Instead, it contains a local copy of those
-libraries that have been renamed to have a different namespace within
-the `eastwood.*` namespace hierarchy.
-
-This should successfully avoid all (or most) of the namespace
-collision issues that existed with Eastwood 0.1.2 and earlier when
-linting projects that depended upon different versions of these
-libraries.
 
 
 ### Unreliable reflection warnings during linting
