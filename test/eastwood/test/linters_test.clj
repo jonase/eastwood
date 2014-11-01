@@ -16,6 +16,11 @@
                [1 6])
       0))
 
+(def clojure-1-7-or-later
+  (>= (compare ((juxt :major :minor) *clojure-version*)
+               [1 7])
+      0))
+
 (defn to-sorted-map [c]
   (if (map? c)
     (into (sorted-map-by ccmp/cc-cmp) c)
@@ -842,11 +847,8 @@
      :line 3, :column 9}
     1,
     })
-  (lint-test
-   'testcases.wrongtag
-   @#'eastwood.lint/default-linters
-   {}
-   {
+  (let [common-expected-warnings
+        {
     {:linter :wrong-tag,
      :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lv1",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
@@ -927,7 +929,29 @@
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 88, :column 25}
     1,
-    })
+    }
+        clojure-1-6-or-earlier-expected-warnings
+        common-expected-warnings
+
+        clojure-1-7-or-later-expected-warnings
+        (assoc common-expected-warnings
+    {:linter :wrong-tag,
+     :msg "Tag: LinkedList for return type of fn on arg vector: [& p__7386] should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 93, :column 26}
+    1)]
+    (lint-test
+     'testcases.wrongtag
+     @#'eastwood.lint/default-linters
+     {}
+     (if clojure-1-7-or-later
+       ;; This is actually the expected result only for 1.7.0-alpha2
+       ;; or later, because the behavior changed with the fix for
+       ;; CLJ-887, so it will fail if you run the test with
+       ;; 1.7.0-alpha1.  I won't bother checking the version that
+       ;; precisely, though.
+       clojure-1-7-or-later-expected-warnings
+       clojure-1-6-or-earlier-expected-warnings)))
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace
   ;; before lint-test does, and thus the namespace is already there

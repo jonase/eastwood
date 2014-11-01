@@ -86,6 +86,11 @@
 ;; right way to specify the type, but not fully qualified, and public
 (def avlf3 (fn ^LinkedList [coll] (java.util.LinkedList. coll)))
 (defn avlf4 ^LinkedList [coll] (java.util.LinkedList. coll))
+;; The following will not warn with Clojure <= 1.7.0-alpha1, but will
+;; with Clojure >= 1.7.0-alpha2, because of the fix for ticket
+;; CLJ-887.  Before that fix, metadata was lost argument vectors that
+;; use destructuring.
+(defn avlf4b ^LinkedList [& {:keys [coll]}] (java.util.LinkedList. coll))
 
 ;; No warnings for these cases
 
