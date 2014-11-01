@@ -68,7 +68,7 @@ significance needed by the user."
                     (or (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
                              (= op :binding))
                         (and (= wrong-tag-keys #{:eastwood/tag})
-                             (= op :local)))
+                             (#{:local :const} op)))
                     [:tag (get ast :tag) (meta form)]
 
                     (and (= wrong-tag-keys #{:eastwood/return-tag})
