@@ -61,6 +61,10 @@ significance needed by the user."
                          (= op :local))
                     [nil nil nil]
 
+                    (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
+                         (= op :invoke))
+                    [:invoke (-> ast :tag) (meta form)]
+
                     (or (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
                              (= op :binding))
                         (and (= wrong-tag-keys #{:eastwood/tag})
@@ -85,8 +89,9 @@ significance needed by the user."
                     (do
                       ;; Use this to help detect wrong-tag cases I may
                       ;; be missing completely.
-                      (println (format "eastwood-dbg: wrong-tag-from-analyzer: op=%s name=%s wrong-tag-keys=%s env=%s"
+                      (println (format "eastwood-dbg: wrong-tag-from-analyzer: op=%s name=%s wrong-tag-keys=%s env=%s ast="
                                        op name wrong-tag-keys env))
+                      (util/pprint-ast-node ast)
                       (flush)
                       (assert false)
                       [nil nil nil]))
@@ -110,7 +115,10 @@ significance needed by the user."
                            form
                            (-> ast :var meta :name)
                            (-> ast :var meta :ns))
-              :fn-method (format "Tag: %s for return type of fn on arg vector: %s should be Java class name (fully qualified if not in java.lang package)"
+              :invoke (format "Tag: %s for return type of function %s should be Java class name (fully qualified if not in java.lang package).  It may be defined in another namespace."
+                              (replace-variable-tag-part tag)
+                              (-> form first))
+              :fn-method (format "Tag: %s for return type of function on arg vector: %s should be Java class name (fully qualified if not in java.lang package)"
                                  (replace-variable-tag-part tag)
                                  (-> form first)))}
            (select-keys loc #{:file :line :column}))))
@@ -152,7 +160,7 @@ significance needed by the user."
                    (not (contains? default-classname-mapping tag))
                    (nil? (fq-classname-to-class (str tag))))]
     (merge {:linter :wrong-tag
-            :msg (format "Tag: %s for return type of fn on arg vector: %s should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)"
+            :msg (format "Tag: %s for return type of function on arg vector: %s should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)"
                          tag (-> form first))}
            (select-keys loc #{:file :line :column}))))
 

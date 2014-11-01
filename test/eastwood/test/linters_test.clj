@@ -910,22 +910,22 @@
      :line 38, :column 1}
     1,
     {:linter :wrong-tag,
-     :msg "Tag: (quote LinkedList) for return type of fn on arg vector: [coll] should be Java class name (fully qualified if not in java.lang package)",
+     :msg "Tag: (quote LinkedList) for return type of function on arg vector: [coll] should be Java class name (fully qualified if not in java.lang package)",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 84, :column 36}
     1,
     {:linter :wrong-tag,
-     :msg "Tag: (quote LinkedList) for return type of fn on arg vector: [coll] should be Java class name (fully qualified if not in java.lang package)",
+     :msg "Tag: (quote LinkedList) for return type of function on arg vector: [coll] should be Java class name (fully qualified if not in java.lang package)",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 85, :column 33}
     1,
     {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of fn on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)",
+     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 87, :column 28}
     1,
     {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of fn on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)",
+     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 88, :column 25}
     1,
@@ -936,7 +936,7 @@
         clojure-1-7-or-later-expected-warnings
         (assoc common-expected-warnings
     {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of fn on arg vector: [& p__7386] should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)",
+     :msg "Tag: LinkedList for return type of function on arg vector: [& p__7386] should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 93, :column 26}
     1)]
