@@ -5,29 +5,7 @@ Intended for Eastwood developers to track down when they have time and
 interest.
 
 
-## Changes from version 0.1.4 to 0.1.5-SNAPSHOT on Oct 30 2014
-
-WORSE: 0.1.4 threw exception because of a wrong tag in namespace
-clojurewerkz.meltdown.reactor, but 0.1.5 does not even give a warning
-about it.  It should give a :wrong-tag warning about it:
-
-    Exception thrown during phase :analyze+eval of linting namespace clojurewerkz.meltdown.reactor
-    Local name 'dispatcher-type' has been given a type tag 'DeferredStreamSpec' here:
-    {:end-column 34,
-     :end-line 107,
-     :column 15,
-     :line 107,
-     :file "clojurewerkz/meltdown/reactor.clj"}
-
-Similarly for these namespaces, I think:
-
-    clojurewerkz.meltdown.selectors-test
-    clojurewerkz.meltdown.reactor-test
-
-    seesaw.widgets.log-window - Better to have :wrong-tag warning than
-      exception, but latest 0.1.5 gives neither for (extend-type
-      (class (log-window-proxy nil)) ...) expression.  Nicola believes
-      analyzer should tag that with wrong tag.
+## Changes from version 0.1.4 to 0.1.5-alpha2 on Oct 31 2014
 
 Improvement or worse? No longer an analysis exception for namespace:
 
@@ -51,8 +29,9 @@ warnings in these namespaces, formerly nil
     clojure.tools.namespace.parse (:unused-ret-vals)
     clojure.tools.namespace (:unused-ret-vals)
 
-Worse: Some line/column numbers were numbers before, now nil, in these
-namespaces:
+Re-evaluate after latest update -- I think there are no more :line nil
+or :column nil occurrences with latest tools.analyzer update: Some
+line/column numbers were numbers before, now nil, in these namespaces:
 
     clojure.core.constraints-tests (:redefd-vars)
     potemkin.collections-test (:redefd-vars)

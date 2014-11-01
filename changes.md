@@ -2,9 +2,6 @@
 
 ## Planned changes after 0.1.5-alpha1 before releasing 0.1.5
 
-* Update tools.analyzer(.jvm) and tools.reader to latest versions and
-  retest to see if anything unusual happens in results.
-
 * See about fixing: Issue
   [#81](https://github.com/jonase/eastwood/issues/81).
 
@@ -12,7 +9,10 @@
   gives full power of options from command line, and update my current
   README.next.md docs of it to match.
 
-* Scrutinize :wrong-tags linter a bit more to see if
+* DONE: Update tools.analyzer(.jvm) and tools.reader to latest
+  versions and retest to see if anything unusual happens in results.
+
+* DONE: Scrutinize :wrong-tags linter a bit more to see if
   tools.analyzer(.jvm) is catching anything that Eastwood is currently
   ignoring.
 
