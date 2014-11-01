@@ -6,14 +6,6 @@
             [clojure.string :as str]
             [clojure.pprint :as pp]
             [clojure.repl :as repl]
-            ;; The latest version of tools.namespace (0.2.4 as of this
-            ;; writing) has function find-namespaces-in-dir in
-            ;; namespace c.t.n.find, but that namespace does not exist
-            ;; in older versions of tools.namespace.  If we continue
-            ;; to use the deprecated version in namespace c.t.n, then
-            ;; it will avoid the problem of not being able to find
-            ;; namespace c.t.n.find when running Eastwood on a project
-            ;; that uses an older version of tools.namespace.
             [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
