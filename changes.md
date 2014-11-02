@@ -2,9 +2,6 @@
 
 ## Planned changes after 0.1.5-alpha1 before releasing 0.1.5
 
-* See about fixing: Issue
-  [#81](https://github.com/jonase/eastwood/issues/81).
-
 * Come up with proposed API for running Eastwood from within REPL that
   gives full power of options from command line, and update my current
   README.next.md docs of it to match.
@@ -15,6 +12,12 @@
 * DONE: Scrutinize :wrong-tags linter a bit more to see if
   tools.analyzer(.jvm) is catching anything that Eastwood is currently
   ignoring.
+
+* DONE: See about fixing: Issue
+  [#74](https://github.com/jonase/eastwood/issues/74).  Also created
+  issue #93 to remind me to change the suspicious-expression linter
+  not to rely on source forms, which is the source of most or all of
+  the incorrect suspicious-expression warnings.
 
 
 ## Changes from version 0.1.4 to 0.1.5-alpha1
@@ -29,7 +32,9 @@
   a Var name being def'd or defn'd should be given in the form `^{:tag
   'int}` instead.  Also it is best if Java class names outside of the
   `java.lang` package are fully qualified when used to hint the return
-  type of a function on its argument vector.  Issue
+  type of a function on its argument vector.  Introducing this linter
+  depends upon changes to `tools.analyzer.jvm` that no longer throw
+  exceptions when linting source code with these problems.  Issue
   [#37](https://github.com/jonase/eastwood/issues/37).
 
 * The default behavior is now to stop analyzing namespaces after the
@@ -39,6 +44,10 @@
   about undefined Vars that can be confusing to users.  Issue
   [#79](https://github.com/jonase/eastwood/issues/79).
 
+* The `:suspicious-expression` warnings are no longer issued for forms
+  inside quote forms.  Issue
+  [#74](https://github.com/jonase/eastwood/issues/74).
+
 * The warning messages for linters `:unused-fn-args`
   `:unused-ret-vals` have changed slightly to remove details that were
   not easy to continue to provide with the newest `tools.analyzer`
@@ -46,14 +55,14 @@
   are now more precise than they were before with those linters, and
   also for the `:suspicious-test` linter.
 
-* Lint warning maps contain a new key :uri-or-file-name, which has the
-  advantage of making it easier to know the exact directory of the
+* Lint warning maps contain a new key `:uri-or-file-name`, which has
+  the advantage of making it easier to know the exact directory of the
   file being linted when the warning was found, including the
-  directory of your classpath that the file is in (the :file name
+  directory of your classpath that the file is in (the `:file` name
   string is relative to the classpath the file is in).  The value of
-  :uri-or-file-name is either: (a) a string with the relative path
+  `:uri-or-file-name1 is either: (a) a string with the relative path
   name to the file containing the namespace being linted when the
-  warning was found (relative to where the 'lein eastwood' command was
+  warning was found (relative to where the `lein eastwood` command was
   run, (b) the absolute full path name if the file is not beneath the
   current directory, or (c) a URI like the following if it is a
   namespace inside of a JAR file:
@@ -61,13 +70,15 @@
     #<URI jar:file:/Users/jafinger/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar!/clojure/test/junit.clj>
 
 * Eliminated an exception thrown when running the :suspicious-test
-  linter on forms of the kind (clojure.test/is ((my-fn args)
-  more-args)).  Issue
+  linter on forms of the kind `(clojure.test/is ((my-fn args)
+  more-args))`.  Issue
   [#88](https://github.com/jonase/eastwood/issues/88).
 
 * Eastwood 0.1.4, and perhaps a few earlier versions as well,
   unintentionally 'hid' exception thrown by the Clojure compiler while
-  doing eval.  Such exceptions are now made visible to the user.
+  doing `eval`.  Such exceptions are now made visible to the user,
+  which makes errors occur earlier, and closer to the actual source of
+  the problem.
 
 * Updated versions of several libraries used: `tools.analyzer` 0.6.2,
   `tools.analyzer.jvm` 0.6.3, `tools.reader` 0.8.10, `tools.namespace`
