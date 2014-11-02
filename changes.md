@@ -6,7 +6,7 @@
   gives full power of options from command line.  This should also
   address issue [#56](https://github.com/jonase/eastwood/issues/56).
 
-* See about fixing: Issue
+* See about fixing issue
   [#93](https://github.com/jonase/eastwood/issues/93).  This should
   help with the next one.
 
@@ -31,6 +31,12 @@
   depends upon changes to `tools.analyzer.jvm` that no longer throw
   exceptions when linting source code with these problems.  Issue
   [#37](https://github.com/jonase/eastwood/issues/37).
+
+* New API for running Eastwood from a REPL session, nearly identical
+  to what is available from the command line.  This should be used
+  with caution due to problems that might result if you run Eastwood
+  multiple times from the same REPL session, because it reloads and
+  re-evaluates your code each time.
 
 * The default behavior is now to stop analyzing namespaces after the
   first exception thrown during analysis or evaluation.  The new

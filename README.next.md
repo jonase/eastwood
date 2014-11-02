@@ -13,12 +13,15 @@ Clojure versions earlier than 1.4.0.
 
 ## Installation & Quick usage
 
-Eastwood is a [Leiningen](http://leiningen.org) plugin, tested with
-Leiningen 2.3.x.  Merge the following into your `~/.lein/profiles.clj`
-file:
+Eastwood can be run from the command line as a
+[Leiningen](http://leiningen.org) plugin, or from within a REPL.
+
+As a Leiningen plugin, Eastwood has been tested most with Leiningen
+versions 2.4.x and 2.5.x.  Merge the following into your
+`~/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.1.4"]] }}
+{:user {:plugins [[jonase/eastwood "0.1.5"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -36,18 +39,16 @@ no more dangerous.  To confine linting to files in your
 
     $ lein eastwood '{:namespaces [:source-paths]}'
 
-See the "Usage" section below for more notes on side effects in test
-code.
+See the [Usage](https://github.com/jonase/eastwood#usage) section
+below for more notes on side effects in test code, and instructions on
+[running Eastwood in a REPL
+session](https://github.com/jonase/eastwood#running-eastwood-in-a-repl).
 
 Eastwood can only finish linting a file if Clojure itself can compile
 it.  It is recommended to use a command like `lein check` to check for
 compiler errors before running Eastwood.  Even better, `lein test`
 will compile files in your source paths and test paths, not merely
 your source paths as `lein check` does.
-
-It is experimental right now, but you should be able to run Eastwood
-on namespaces from within a running REPL, without having to start a
-new JVM.  See section [Running Eastwood in a REPL](tbd-link).
 
 See section [For Eastwood
 developers](https://github.com/jonase/eastwood#for-eastwood-developers)
@@ -89,9 +90,10 @@ the command line to enable or disable the linter.
   including unused return values of pure functions, and some others
   functions where it rarely makes sense to discard its return
   value. [[more]](https://github.com/jonase/eastwood#unused-ret-vals-and-unused-ret-vals-in-try---values-that-are-not-used)
-- `:local-shadows-var` - A local name, e.g. a fn arg or let binding,
-  has the same name as a global Var, and is called as a function (new
-  in version 0.1.5). [[more]](https://github.com/jonase/eastwood#local-shadows-var---a-local-name-that-is-same-as-a-global-name-called-as-a-function)
+- `:local-shadows-var` - A local name, e.g. a function arg or let
+  binding, has the same name as a global Var, and is called as a
+  function (new in version
+  0.1.5). [[more]](https://github.com/jonase/eastwood#local-shadows-var---a-local-name-that-is-same-as-a-global-name-called-as-a-function)
 - `:wrong-tag` - An incorrect type tag for which the Clojure compiler
   does not give an error (new in version 0.1.5). [[more]](https://github.com/jonase/eastwood#wrong-tag---an-incorrect-type-tag)
 - `:unused-private-vars` - Unused private vars (needs updating).
@@ -110,6 +112,8 @@ the command line to enable or disable the linter.
 
 
 ## Usage
+
+### From the command line as a Leiningen plugin
 
 Running
 
@@ -228,29 +232,28 @@ value that is a set of keywords, e.g.
 
 ### Running Eastwood in a REPL
 
-TBD: Re-check and update these instructions before 0.1.5 release, and
-preferably make the 'API' something closer to what I'm willing to
-commit to longer term, while still marking it experimental.
+This is _experimental_.  Before you try it, note that Eastwood does
+these things:
 
-This is _experimental_.  Before you try it, note that Eastwood does these steps:
-
-* analyzes the source code you give it
-* generates _new_ forms from the analysis results.  Note: if there are
+* Reads and analyzes the source code you specify.
+* Generates _new_ forms from the analysis results.  Note: if there are
   bugs, these new forms might not be identical to the original source
   code.
 * Calls `eval` on the generated forms.
 
-Hopefully you can see from this the possibility of Eastwood bugs
-leading to incorrect Clojure code being loaded into a running JVM.
+Hopefully you can see from this that Eastwood bugs, especially in the
+portion up to generating new forms to be evaluated, could lead to
+incorrect Clojure code being loaded into a running JVM.
 
 If you want to run Eastwood in this way to avoid starting up a new JVM
 every time you lint your code, I recommend doing so in a separate JVM
 process used only for linting purposes.  It would be foolhardy to do
 this in a JVM running a live production system.  Preferably you should
 not even use the same JVM process where you do your ongoing testing
-and development work.
+and development work, but that would be much less risky than doing it
+in a production JVM process.
 
-Merge this into your project's project.clj file first:
+Merge this into your project's `project.clj` file first:
 
 ```clojure
 :profiles {:dev {:dependencies [[jonase/eastwood "0.1.5" :exclusions [org.clojure/clojure]]]}}
@@ -261,29 +264,40 @@ From within your REPL:
 ```clojure
 (require '[eastwood.lint :as e])
 
-(defn lint [ns]
-  (e/lint-ns-noprint ns @#'e/default-linters {}))
-
-(use 'clojure.pprint)
-
-(pprint (lint 'my.ns))
+;; Replace the values of :source-paths and :test-paths with whatever
+;; is appropriate for your project.  You may omit them, and then the
+;; default behavior is to search all directories in your Java
+;; classpath, and their subdirectories recursively, for Clojure source
+;; files.
+(e/eastwood {:source-paths ["src"] :test-paths ["test"]})
 ```
 
-Replace `my.ns` with the namespace you wish to lint.
+All of the same options that can be given on the command line may be
+used in the map given to the `eastwood` function.
 
-Note: This approach will read the namespace code from the source file,
-and it will evaluate its forms just as doing `use` or `require` on the
-namespace would.  It will throw an exception if running Eastwood on
-that namespace would throw an exception.  It can print messages to
-`*out*`, e.g. if `*warn-on-reflection*` is true, or if an exception is
-thrown.  The return value is a sequence of maps that are the same as
-the ones you would see printed by Eastwood when run from a shell.
+This will behave much as running Eastwood from the command line will,
+except it will not exit the JVM at the end.  There is a `:callback`
+key that can be added to the argument with a value of a callback
+function that gives one significant control of where warning and error
+messages appear, but by default these all appear on the writer
+`*out*`.  There is no documentation for this callback function yet,
+and while you are welcome to read Eastwood source code, this is new
+alpha-state code that will likely change in future Eastwood versions.
 
-This approach requires you to manage your namespaces manually.
-Eastwood will not force the removal of any namespaces, and I would
-guess if there are any issues from reloading a namespace that is
-already loaded with protocols, deftype, etc. then they are yours to
-deal with.
+Running Eastwood from the REPL requires you to manage your namespaces
+manually.  Eastwood will not force the removal of any namespaces, and
+I would guess if there are any issues from reloading a namespace that
+is already loaded with protocols, `deftype`, etc. then they are yours
+to deal with.
+
+Stuart Sierra's [component](https://github.com/stuartsierra/component)
+library and workflow may be able to enhance the use of Eastwood
+multiple times from within the same REPL session, or in general any
+library or manual methods you may have for removing Clojure namespaces
+after they have been loaded, before loading them again.  If you have
+specific suggestions or instructions to suggest here that you have
+used with Eastwood, please file a Github issue so they can be added
+to, or linked from, here.
 
 
 ## Known issues
@@ -1133,7 +1147,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein install
 
-Then add `[jonase/eastwood "0.1.5-SNAPSHOT"]` (or whatever is the
+Then add `[jonase/eastwood "0.2.0-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `~/.lein/profiles.clj` file.
