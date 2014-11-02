@@ -755,7 +755,7 @@ Exception thrown while analyzing last namespace.
       )))
 
 
-(defn eastwood
+(defn eastwood-core
   "Lint a sequence of namespaces using a specified collection of linters.
 
 Prerequisites:
@@ -839,7 +839,7 @@ Return value:
 ;; Use the java.io.PrintWriter shown below to write messages to the
 ;; same place as Eastwood does in version 0.1.4.
 
-(defn eastwood-from-cmdline [opts]
+(defn eastwood [opts]
   (let [;;wrtr (io/writer "east-out.txt")   ; see comment above
         wrtr (java.io.PrintWriter. *out* true)
         default-cb (make-default-msg-cb wrtr)
@@ -874,7 +874,7 @@ Return value:
             (when (util/debug? #{:compare-forms} opts)
               (debug-cb "Writing files forms-read.txt and forms-emitted.txt")))
         {:keys [err warning-count exception-count] :as ret}
-        (eastwood opts)]
+        (eastwood-core opts)]
     (when err
       (error-cb (error-msg ret)))
     (when (number? warning-count)
@@ -882,6 +882,13 @@ Return value:
                        warning-count exception-count)))
     (if (or err (and (number? warning-count)
                      (or (> warning-count 0) (> exception-count 0))))
+      {:some-warnings true}
+      {:some-warnings false})))
+
+
+(defn eastwood-from-cmdline [opts]
+  (let [ret (eastwood opts)]
+    (if (:some-warnings ret)
       ;; Exit with non-0 exit status for the benefit of any shell
       ;; scripts invoking Eastwood that want to know if there were no
       ;; errors, warnings, or exceptions.
