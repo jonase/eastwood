@@ -146,6 +146,11 @@
   (is (== 6) (+ 2 4))
   )
 
+(deftest when-in-quoted-expr
+  ;; Should not give :suspicious-expression warnings for expressions
+  ;; inside of (quote ...)
+  (is (= 'when (first (fnext '(first (when (foo bar))))))))
+
 (comment
   ;; Best not to warn for things inside of (comment ...)
   (= 5)
