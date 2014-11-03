@@ -44,7 +44,7 @@ cd ..
 
 git clone https://github.com/clojure/tools.reader.git
 cd tools.reader
-git checkout tools.reader-0.8.11
+git checkout tools.reader-0.8.12
 cd ..
 
 git clone https://github.com/sattvik/leinjacker.git

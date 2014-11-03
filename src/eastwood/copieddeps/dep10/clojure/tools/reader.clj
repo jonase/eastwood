@@ -523,7 +523,7 @@
       res)))
 
 (defn map-func [coll]
-  (if (>= (count (:val coll)) 16)
+  (if (>= (count coll) 16)
     'clojure.core/hash-map
     'clojure.core/array-map))
 
