@@ -1094,6 +1094,10 @@ with `:refer :all`, like so:
   (:require [clojure.string :refer :all]))
 ```
 
+In addition, since it is so common (and in my opinion, harmless) to do
+an unlimited use of namespace `clojure.test` in test files, this
+linter never warns about `clojure.test`.
+
 
 For an infrequently-changing namespace like `clojure.string`, the set
 of symbols referred by this `use` is pretty stable across Clojure

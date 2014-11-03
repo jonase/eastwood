@@ -42,6 +42,11 @@
   about undefined Vars that can be confusing to users.  Issue
   [#79](https://github.com/jonase/eastwood/issues/79).
 
+* `:unlimited-use` warnings are no longer issued for the namespace
+  `clojure.test`.  It is very common for Clojure developers to have
+  `(:use clojure.test)` in test namespaces.  Issue
+  [#95](https://github.com/jonase/eastwood/issues/95).
+
 * `:suspicious-expression` warnings are no longer issued for forms
   inside quote forms.  Issue
   [#74](https://github.com/jonase/eastwood/issues/74).

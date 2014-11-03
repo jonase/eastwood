@@ -839,9 +839,9 @@ the next."
    {}
    {
     {:linter :unlimited-use,
-     :msg "Unlimited use of (clojure.test [clojure.reflect] [clojure inspector] [clojure [set]] [clojure.java.io :as io]) in testcases.unlimiteduse",
+     :msg "Unlimited use of ([clojure.reflect] [clojure inspector] [clojure [set]] [clojure.java.io :as io]) in testcases.unlimiteduse",
      :file (fname-from-parts "testcases" "unlimiteduse.clj"),
-     :line 5, :column 9}
+     :line 6, :column 10}
     1,
     {:linter :unlimited-use,
      :msg "Unlimited use of ((clojure [pprint :as pp] [uuid :as u])) in testcases.unlimiteduse",
@@ -855,9 +855,9 @@ the next."
    {}
    {
     {:linter :unlimited-use,
-     :msg "Unlimited use of (clojure.test clojure.set [testcases.f01 :as t1]) in testcases.in-ns-switching",
+     :msg "Unlimited use of (clojure.set [testcases.f01 :as t1]) in testcases.in-ns-switching",
      :file (fname-from-parts "testcases" "in_ns_switching.clj"),
-     :line 3, :column 9}
+     :line 4, :column 9}
     1,
     })
   (let [common-expected-warnings
