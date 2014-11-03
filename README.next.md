@@ -276,13 +276,17 @@ All of the same options that can be given on the command line may be
 used in the map given to the `eastwood` function.
 
 This will behave much as running Eastwood from the command line will,
-except it will not exit the JVM at the end.  There is a `:callback`
-key that can be added to the argument with a value of a callback
-function that gives one significant control of where warning and error
-messages appear, but by default these all appear on the writer
-`*out*`.  There is no documentation for this callback function yet,
-and while you are welcome to read Eastwood source code, this is new
-alpha-state code that will likely change in future Eastwood versions.
+except it will not exit the JVM at the end.
+
+There is a `:callback` key that can be added to the argument map.  Its
+value is a callback function that gives you significant control of
+where warning and error messages appear -- by default these all appear
+on the writer `*out*`.
+
+There is no documentation for this callback function yet.  You you are
+welcome to read Eastwood source code to see examples of how to write
+one, but note that this is alpha-status code that will likely have API
+changes in future Eastwood versions.
 
 Running Eastwood from the REPL requires you to manage your namespaces
 manually.  Eastwood will not force the removal of any namespaces, and
@@ -291,13 +295,10 @@ is already loaded with protocols, `deftype`, etc. then they are yours
 to deal with.
 
 Stuart Sierra's [component](https://github.com/stuartsierra/component)
-library and workflow may be able to enhance the use of Eastwood
-multiple times from within the same REPL session, or in general any
-library or manual methods you may have for removing Clojure namespaces
-after they have been loaded, before loading them again.  If you have
-specific suggestions or instructions to suggest here that you have
-used with Eastwood, please file a Github issue so they can be added
-to, or linked from, here.
+library and workflow might be helpful in automatically removing old
+versions of namespaces from a JVM process.  If you have instructions
+that you have used with Eastwood and component or a similar tool,
+please file a Github issue so they can be included here.
 
 
 ## Known issues
