@@ -9,14 +9,14 @@ git clone https://github.com/clojure/tools.analyzer.git
 cd tools.analyzer
 #git checkout tools.analyzer-0.6.2
 # One more commit after 0.6.2
-git checkout 88e3d8ca1e3b94cd8961d6993afa607d35097d34
+git checkout 349ea4623d4465fd9a044b40db51886582ce1d72
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
 #git checkout tools.analyzer.jvm-0.6.3
 # A few commits after 0.6.3
-git checkout 7998e2f3827987b62d52076fcbbd7bbd8f1702c4
+git checkout b31d97b07bf5c0911c24803b2a8f4cbe2afda2e5
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git

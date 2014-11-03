@@ -7,7 +7,8 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils
-  (:require [clojure.reflect :as reflect]
+  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as u]
+            [clojure.reflect :as reflect]
             [clojure.string :as s]
             [eastwood.copieddeps.dep3.clojure.core.memoize :refer [lru]]
             [clojure.java.io :as io])
@@ -21,6 +22,20 @@
   (apply reflect/type-reflect typeref
          :reflector (reflect/->JavaReflector (RT/baseLoader))
          options))
+
+(defn macro? [sym env]
+  (when-let [v (u/resolve-var sym env)]
+    (and (not (-> env :locals (get sym)))
+         (u/macro? v)
+         v)))
+
+(defn inline? [sym args env]
+  (when-let [v (u/resolve-var sym env)]
+    (let [inline-arities-f (:inline-arities (meta v))]
+      (and (not (-> env :locals (get sym)))
+           (or (not inline-arities-f)
+               (inline-arities-f (count args)))
+           (:inline (meta v))))))
 
 (defn specials [c]
   (case c

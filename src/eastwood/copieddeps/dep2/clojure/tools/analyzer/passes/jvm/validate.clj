@@ -248,9 +248,9 @@
       If bound to a function, will invoke that function instead of
       throwing on invalid tag.
       The function takes the tag key (or :name/tag if the node is :def and
-      the wrong tag is the one on the :name field meta) and must return a
-      map (or nil) that will be merged into the AST, possibly shadowing the
-      wrong tag with Object or nil.
+      the wrong tag is the one on the :name field meta) and the originating
+      AST node and must return a map (or nil) that will be merged into the AST,
+      possibly shadowing the wrong tag with Object or nil.
    * :validate/unresolvable-symbol-handler
       If bound to a function, will invoke that function instead of
       throwing on unresolvable symbol.

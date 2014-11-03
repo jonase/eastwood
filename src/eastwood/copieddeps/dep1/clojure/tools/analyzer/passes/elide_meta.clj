@@ -20,15 +20,12 @@
 
 (defn replace-meta [meta new-meta]
   (if (= :const (:op meta))
-    (assoc meta
-      ;:form new-meta
-      :val  new-meta)
+    (assoc meta :val  new-meta)
     (let [meta-map (mapv (fn [k v]
-                       (when-not (elides (:form k))
-                         [k v]))
-                     (:keys meta) (:vals meta))]
+                           (when-not (elides (:form k))
+                             [k v]))
+                         (:keys meta) (:vals meta))]
       (assoc meta
-        ;:form new-meta
         :keys (vec (keep first meta-map))
         :vals (vec (keep second meta-map))))))
 
@@ -52,30 +49,32 @@
         new-meta (apply dissoc form (filter (get-elides ast) (keys form)))]
     (case op
       :const
-        (if (or (not meta)
+      (if (or (not meta)
               (= new-meta (:form meta)))
-          ast
-          (if (not (empty? new-meta))
-            (assoc-in ast [:meta :val] new-meta)
-            (-> ast
-                (update-in [:val] with-meta nil)
-                ;(update-in [:form] with-meta nil)
-                (dissoc :children :meta))))
+        ast
+        (if (not (empty? new-meta))
+          (assoc-in ast [:meta :val] new-meta)
+          (-> ast
+            (update-in [:val] with-meta nil)
+            (dissoc :children :meta))))
       :with-meta
-        (if (not (empty? new-meta))
-          (if (= new-meta (:form meta))
-            ast
-            (assoc ast :meta (replace-meta meta new-meta)))
-          (-> expr
-              (assoc-in [:env :context] (:context env))
-              (update-in [:form] with-meta {})))
+      (if (not (empty? new-meta))
+        (if (= new-meta (:form meta))
+          ast
+          (assoc ast :meta (replace-meta meta new-meta)))
+        (let [ret (-> expr
+                    (assoc-in [:env :context] (:context env))
+                    (update-in [:form] with-meta {}))]
+          (if (:raw-forms ast)
+            (update-in ret [:raw-forms] (partial concat (:raw-forms ast)))
+            ast)))
       :def
-        (if (not (empty? new-meta))
-          (if (= new-meta (:form meta))
-            ast
-            (assoc ast :meta (replace-meta meta new-meta)))
-          (assoc (dissoc ast :meta) :children [:init]))
-        ast)))
+      (if (not (empty? new-meta))
+        (if (= new-meta (:form meta))
+          ast
+          (assoc ast :meta (replace-meta meta new-meta)))
+        (assoc (dissoc ast :meta) :children [:init]))
+      ast)))
 
 (defn elide-meta
   "If elides is not empty and the AST node contains metadata,

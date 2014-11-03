@@ -69,10 +69,12 @@
                  (all-ns))))
 
 (defn update-ns-map! []
-  (swap! *env* assoc-in [:namespaces] (build-ns-map)))
+  ((get (env/deref-env) :update-ns-map! #())))
 
 (defn global-env []
-  (atom {:namespaces (build-ns-map)}))
+  (atom {:namespaces     (build-ns-map)
+         :update-ns-map! (fn update-ns-map! []
+                           (swap! *env* assoc-in [:namespaces] (build-ns-map)))}))
 
 (defn empty-env
   "Returns an empty env map"
@@ -489,7 +491,8 @@
   ([form env opts]
      (env/ensure (global-env)
        (update-ns-map!)
-       (let [[mform raw-forms] (with-bindings {Compiler/LOADER     (RT/makeClassLoader)
+       (let [env (merge env (-source-info form env))
+             [mform raw-forms] (with-bindings {Compiler/LOADER     (RT/makeClassLoader)
                                                #'ana/macroexpand-1 (get-in opts [:bindings #'ana/macroexpand-1] macroexpand-1)}
                                  (loop [form form raw-forms []]
                                    (let [mform (ana/macroexpand-1 form env)]
