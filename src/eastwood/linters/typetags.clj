@@ -57,8 +57,15 @@ significance needed by the user."
                     ;; the warnings less redundant by restricting them
                     ;; to the :binding ops (checked for below), and
                     ;; still not lose any important warnings.
+                    ;; This can also occur for op :quote, but in the
+                    ;; case that I have seen this occur so far
+                    ;; (Prismatic's Schema library), the wrong tag was
+                    ;; also detected on other 'nearby' ASTs, so
+                    ;; ignoring the op :quote one seems to avoid
+                    ;; duplicate warnings while still reporting the
+                    ;; issue.
                     (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
-                         (= op :local))
+                         (#{:local :quote} op))
                     [nil nil nil]
 
                     (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
