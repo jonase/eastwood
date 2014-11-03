@@ -33,10 +33,23 @@
   (select-keys lint-warning
                [:linter :msg :file :line :column]))
 
+(defn msg-replace-auto-numbered-symbol-names
+  "In warning messages, replace symbols like p__7346 containing
+auto-generated numeric values with p__<num>, so they can be compared
+against expected results that will not change from one run/whatever to
+the next."
+  [s]
+  (str/replace s #"__\d+"
+               (str/re-quote-replacement "__<num>")))
+
+(defn warning-replace-auto-numbered-symbol-names [warn]
+  (update-in warn [:msg] msg-replace-auto-numbered-symbol-names))
+
 (defmacro lint-test [ns-sym linters opts expected-lint-result]
   `(is (= (make-sorted (take 2 (data/diff
                                 (->> (lint-ns-noprint ~ns-sym ~linters ~opts)
                                      (map select-tested-keys)
+                                     (map warning-replace-auto-numbered-symbol-names)
                                      frequencies)
                                 ~expected-lint-result)))
           (make-sorted [nil nil]))))
@@ -936,7 +949,7 @@
         clojure-1-7-or-later-expected-warnings
         (assoc common-expected-warnings
     {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of function on arg vector: [& p__7386] should be fully qualified Java class name, or else it may cause exception if used from another namespace",
+     :msg "Tag: LinkedList for return type of function on arg vector: [& p__<num>] should be fully qualified Java class name, or else it may cause exception if used from another namespace",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 93, :column 26}
     1)]
