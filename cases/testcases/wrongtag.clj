@@ -20,7 +20,7 @@
 (def ^{:tag int} iv2 -2)
 ;; No warnings
 (def ^{:tag 'int} iv3 -2)
-(def ^{:tag 'bytes} bvv1 (byte-array [1 2 3]))
+(def ^{:tag 'bytes} bvv1 (byte-array (map byte [1 2 3])))  ; map byte needed to avoid bug in Clojure 1.5.1
 
 ;; Similarly for tags on Vars whose values are functions.  Again, such
 ;; tags do not cause the return type of the function created to be a
