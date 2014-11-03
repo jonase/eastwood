@@ -160,7 +160,7 @@ significance needed by the user."
                    (not (contains? default-classname-mapping tag))
                    (nil? (fq-classname-to-class (str tag))))]
     (merge {:linter :wrong-tag
-            :msg (format "Tag: %s for return type of function on arg vector: %s should be fully qualified Java class name, or else it may cause exception if used from another namespace (see CLJ-1232)"
+            :msg (format "Tag: %s for return type of function on arg vector: %s should be fully qualified Java class name, or else it may cause exception if used from another namespace"
                          tag (-> form first))}
            (select-keys loc #{:file :line :column}))))
 
