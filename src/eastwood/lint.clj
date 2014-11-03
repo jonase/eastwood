@@ -839,10 +839,10 @@ Return value:
 ;; Use the java.io.PrintWriter shown below to write messages to the
 ;; same place as Eastwood does in version 0.1.4.
 
-(defn eastwood [opts]
+(defn make-default-cb [opts]
   (let [;;wrtr (io/writer "east-out.txt")   ; see comment above
         wrtr (java.io.PrintWriter. *out* true)
-        default-cb (make-default-msg-cb wrtr)
+        default-msg-cb (make-default-msg-cb wrtr)
         default-lint-warning-cb (make-default-lint-warning-cb wrtr)
         default-debug-ast-cb (make-default-debug-ast-cb wrtr)
         
@@ -850,19 +850,24 @@ Return value:
         (if (util/debug? #{:compare-forms} opts)
           [ (make-default-form-cb (io/writer "forms-read.txt"))
             (make-default-form-cb (io/writer "forms-emitted.txt")) ]
-          [])
-        
-        cb (make-eastwood-cb {:error default-cb
-                              :lint-warning default-lint-warning-cb
-                              :note default-cb
-                              :eval-out default-cb
-                              :eval-err default-cb
-                              :debug default-cb
-                              :debug-ast default-debug-ast-cb
-                              :debug-form-read form-read-cb
-                              :debug-form-emitted form-emitted-cb})
-        opts (merge opts {:callback cb
-                          :cwd (.getCanonicalFile (io/file "."))})
+          [])]
+    (make-eastwood-cb {:error default-msg-cb
+                       :lint-warning default-lint-warning-cb
+                       :note default-msg-cb
+                       :eval-out default-msg-cb
+                       :eval-err default-msg-cb
+                       :debug default-msg-cb
+                       :debug-ast default-debug-ast-cb
+                       :debug-form-read form-read-cb
+                       :debug-form-emitted form-emitted-cb})))
+
+
+(defn eastwood [opts]
+  ;; Use caller-provided :cwd and :callback values if provided
+  (let [opts (merge {:cwd (.getCanonicalFile (io/file "."))} opts)
+        opts (if (contains? opts :callback)
+               opts
+               (assoc opts :callback (make-default-cb opts)))
         error-cb (util/make-msg-cb :error opts)
         note-cb (util/make-msg-cb :note opts)
         debug-cb (util/make-msg-cb :debug opts)
