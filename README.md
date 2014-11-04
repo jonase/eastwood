@@ -259,6 +259,10 @@ Merge this into your project's `project.clj` file first:
 :profiles {:dev {:dependencies [[jonase/eastwood "0.1.5" :exclusions [org.clojure/clojure]]]}}
 ```
 
+Note: This should work even if you do not use Leiningen for your
+project.  You will need to add the dependency above in the manner
+appropriate for your build tool.
+
 From within your REPL:
 
 ```clojure
