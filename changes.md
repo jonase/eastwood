@@ -11,7 +11,7 @@
   [#21](https://github.com/jonase/eastwood/issues/21).
 
 
-## Changes from version 0.1.4 to 0.1.5-MASTER as of Nov 2 2014
+## Changes from version 0.1.4 to 0.1.5
 
 * New linter `:local-shadows-var` that warns if a local name (e.g. a
   function argument or let binding) has the same name as a global Var,
