@@ -1,5 +1,8 @@
 (defproject jonase/eastwood "0.1.5"
   :description "A Clojure lint tool"
+  :url "https://github.com/jonase/eastwood"
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
   :aot [eastwood.copieddeps.dep10.clojure.tools.reader.impl.ExceptionInfo]
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
