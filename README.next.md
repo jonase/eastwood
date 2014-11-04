@@ -6,9 +6,9 @@ uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
 and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.  It has
-been tested with Clojure 1.5.1 and 1.6.0.  It has been very lightly
-tested with Clojure 1.4.0, but it definitely does not work with
-Clojure versions earlier than 1.4.0.
+been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 alpha versions.  It
+has been very lightly tested with Clojure 1.4.0, but it definitely
+does not work with Clojure versions earlier than 1.4.0.
 
 
 ## Installation & Quick usage
@@ -277,6 +277,15 @@ used in the map given to the `eastwood` function.
 
 This will behave much as running Eastwood from the command line will,
 except it will not exit the JVM at the end.
+
+Before reporting problems with Eastwood when run from the REPL, please
+verify that: (a) the problem occurs when Eastwood is run from the
+command line on your project, which starts up a fresh JVM process, or
+(b) you can still see the problem after starting a new JVM process,
+with as few Clojure forms evaluated between starting the JVM and
+running Eastwood as possible.  Please include any such sequence in
+your problem report, if you cannot reproduce the issue running
+Eastwood from the command line.
 
 There is a `:callback` key that can be added to the argument map.  Its
 value is a callback function that gives you significant control of
