@@ -14,7 +14,8 @@ does not work with Clojure versions earlier than 1.4.0.
 ## Installation & Quick usage
 
 Eastwood can be run from the command line as a
-[Leiningen](http://leiningen.org) plugin, or from within a REPL.
+[Leiningen](http://leiningen.org) plugin, or from within a REPL, even
+if you do not use Leiningen.
 
 As a Leiningen plugin, Eastwood has been tested most with Leiningen
 versions 2.4.x and 2.5.x.  Merge the following into your
