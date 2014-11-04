@@ -6,19 +6,22 @@ uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
 and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.  It has
-been tested with Clojure 1.5.1 and 1.6.0.  It has been very lightly
-tested with Clojure 1.4.0, but it definitely does not work with
-Clojure versions earlier than 1.4.0.
+been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 alpha versions.  It
+has been very lightly tested with Clojure 1.4.0, but it definitely
+does not work with Clojure versions earlier than 1.4.0.
 
 
 ## Installation & Quick usage
 
-Eastwood is a [Leiningen](http://leiningen.org) plugin, tested with
-Leiningen 2.3.x.  Merge the following into your `~/.lein/profiles.clj`
-file:
+Eastwood can be run from the command line as a
+[Leiningen](http://leiningen.org) plugin, or from within a REPL.
+
+As a Leiningen plugin, Eastwood has been tested most with Leiningen
+versions 2.4.x and 2.5.x.  Merge the following into your
+`~/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.1.4"]] }}
+{:user {:plugins [[jonase/eastwood "0.1.5"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -36,8 +39,10 @@ no more dangerous.  To confine linting to files in your
 
     $ lein eastwood '{:namespaces [:source-paths]}'
 
-See the "Usage" section below for more notes on side effects in test
-code.
+See the [Usage](https://github.com/jonase/eastwood#usage) section
+below for more notes on side effects in test code, and instructions on
+[running Eastwood in a REPL
+session](https://github.com/jonase/eastwood#running-eastwood-in-a-repl).
 
 Eastwood can only finish linting a file if Clojure itself can compile
 it.  It is recommended to use a command like `lein check` to check for
@@ -45,8 +50,10 @@ compiler errors before running Eastwood.  Even better, `lein test`
 will compile files in your source paths and test paths, not merely
 your source paths as `lein check` does.
 
-See section "For Eastwood developers" below for instructions on trying
-out the latest unreleased version of Eastwood.
+See section [For Eastwood
+developers](https://github.com/jonase/eastwood#for-eastwood-developers)
+below for instructions on trying out the latest unreleased version of
+Eastwood.
 
 
 ## What's there?
@@ -83,6 +90,12 @@ the command line to enable or disable the linter.
   including unused return values of pure functions, and some others
   functions where it rarely makes sense to discard its return
   value. [[more]](https://github.com/jonase/eastwood#unused-ret-vals-and-unused-ret-vals-in-try---values-that-are-not-used)
+- `:local-shadows-var` - A local name, e.g. a function arg or let
+  binding, has the same name as a global Var, and is called as a
+  function (new in version
+  0.1.5). [[more]](https://github.com/jonase/eastwood#local-shadows-var---a-local-name-that-is-same-as-a-global-name-called-as-a-function)
+- `:wrong-tag` - An incorrect type tag for which the Clojure compiler
+  does not give an error (new in version 0.1.5). [[more]](https://github.com/jonase/eastwood#wrong-tag---an-incorrect-type-tag)
 - `:unused-private-vars` - Unused private vars (needs updating).
 - `:unused-fn-args` - Unused function arguments (disabled by
   default). [[more]](https://github.com/jonase/eastwood#unused-fn-args---unused-arguments-of-functions-macros-methods)
@@ -99,6 +112,8 @@ the command line to enable or disable the linter.
 
 
 ## Usage
+
+### From the command line as a Leiningen plugin
 
 Running
 
@@ -177,6 +192,18 @@ the tests, please create an Issue for Eastwood on Github.
 If you have a code base you do not trust to load, consider a sandbox,
 throwaway virtual machine, etc.
 
+New in Eastwood 0.1.5 is an option to force continuing to lint more
+files even if an exception was thrown while analyzing or evaluating an
+earlier file.  To do this, set the key `:continue-on-exception` to
+`true` in the option map.  Without this option, the default behavior
+is to stop linting if an exception is thrown.
+
+Warning: Setting `:continue-on-exception` to true can cause exceptions
+while analyzing later namespaces that would not otherwise occur.  For
+example, if namespace `A` is analyzed first, and throws an exception
+before function `A/foo` is defined, analyzing a later namespace `B`
+that uses `A/foo` will throw an exception because it is undefined.
+
 There are also options that enable printing of additional debug
 messages during linting.  These are only intended for tracking down
 the cause of errors in Eastwood.  You specify the key `:debug` with a
@@ -203,44 +230,106 @@ value that is a set of keywords, e.g.
   `use` form).
 
 
+### Running Eastwood in a REPL
+
+This is _experimental_.  Before you try it, note that Eastwood does
+these things:
+
+* Reads and analyzes the source code you specify.
+* Generates _new_ forms from the analysis results.  Note: if there are
+  bugs, these new forms might not be identical to the original source
+  code.
+* Calls `eval` on the generated forms.
+
+Hopefully you can see from this that Eastwood bugs, especially in the
+portion up to generating new forms to be evaluated, could lead to
+incorrect Clojure code being loaded into a running JVM.
+
+If you want to run Eastwood in this way to avoid starting up a new JVM
+every time you lint your code, I recommend doing so in a separate JVM
+process used only for linting purposes.  It would be foolhardy to do
+this in a JVM running a live production system.  Preferably you should
+not even use the same JVM process where you do your ongoing testing
+and development work, but that would be much less risky than doing it
+in a production JVM process.
+
+Merge this into your project's `project.clj` file first:
+
+```clojure
+:profiles {:dev {:dependencies [[jonase/eastwood "0.1.5" :exclusions [org.clojure/clojure]]]}}
+```
+
+From within your REPL:
+
+```clojure
+(require '[eastwood.lint :as e])
+
+;; Replace the values of :source-paths and :test-paths with whatever
+;; is appropriate for your project.  You may omit them, and then the
+;; default behavior is to search all directories in your Java
+;; classpath, and their subdirectories recursively, for Clojure source
+;; files.
+(e/eastwood {:source-paths ["src"] :test-paths ["test"]})
+```
+
+All of the same options that can be given on the command line may be
+used in the map given to the `eastwood` function.
+
+This will behave much as running Eastwood from the command line will,
+except it will not exit the JVM at the end.
+
+Before reporting problems with Eastwood when run from the REPL, please
+verify that: (a) the problem occurs when Eastwood is run from the
+command line on your project, which starts up a fresh JVM process, or
+(b) you can still see the problem after starting a new JVM process,
+with as few Clojure forms evaluated between starting the JVM and
+running Eastwood as possible.  Please include any such sequence in
+your problem report, if you cannot reproduce the issue running
+Eastwood from the command line.
+
+There is a `:callback` key that can be added to the argument map.  Its
+value is a callback function that gives you significant control of
+where warning and error messages appear -- by default these all appear
+on the writer `*out*`.
+
+There is no documentation for this callback function yet.  You you are
+welcome to read Eastwood source code to see examples of how to write
+one, but note that this is alpha-status code that will likely have API
+changes in future Eastwood versions.
+
+Running Eastwood from the REPL requires you to manage your namespaces
+manually.  Eastwood will not force the removal of any namespaces, and
+I would guess if there are any issues from reloading a namespace that
+is already loaded with protocols, `deftype`, etc. then they are yours
+to deal with.
+
+Stuart Sierra's [component](https://github.com/stuartsierra/component)
+library and workflow might be helpful in automatically removing old
+versions of namespaces from a JVM process.  If you have instructions
+that you have used with Eastwood and component or a similar tool,
+please file a Github issue so they can be included here.
+
+
 ## Known issues
 
 
 ### Known libraries Eastwood has difficulty with
 
 [`potemkin`](https://github.com/ztellman/potemkin) version 0.3.4 and
-earlier, and libraries that depend on it
-(e.g. [`ogre`](https://github.com/clojurewerkz/ogre)) now throw
-exceptions during linting as of Eastwood 0.1.3 (and 0.1.2).  A
-suggested change to `potemkin` has been incorporated into what will
-become potemkin 0.3.5 (not released as of this writing).  The change
-in Eastwood behavior was due to a conscious design choice in
-`tools.analyzer`.
+earlier, and libraries that depend on it now throw exceptions during
+linting as of Eastwood 0.1.3 (and 0.1.2).  A suggested change to
+`potemkin` was made in version 0.3.5 that should eliminate this issue.
+The change in Eastwood behavior was due to a conscious design choice
+in `tools.analyzer`.
 
-Currently, the Clojure Contrib libraries
+With Eastwood 0.1.4 and earlier, the Clojure Contrib libraries
 [`data.fressian`](https://github.com/clojure/data.fressian) and
 [`test.generative`](https://github.com/clojure/test.generative) cannot
 be analyzed due to a known bug in `tools.analyer.jvm`:
-[TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24)
-
-Other libraries known to cause problems for Eastwood because of
-`test.generative`: [Cheshire](https://github.com/dakrone/cheshire)
-(TBD whether this is truly due to `test.generative`, or something
-else).
-
-
-### Warning messages near beginning of Eastwood output
-
-With Eastwood version 0.1.2 and 0.1.1, it is unfortunately perfectly
-normal to see these warning messages near the beginning of the output:
-
-    Reflection warning, clojure/data/priority_map.clj:215:19 - call to equiv can't be resolved.
-    Reflection warning, clojure/core/memoize.clj:72:23 - reference to field cache can't be resolved.
-
-Eastwood will still work correctly despite these warnings.
-
-Recommendation: Ignore the warnings, or upgrade to Eastwood 0.1.3,
-which eliminates them.
+[TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24).  With
+Eastwood 0.1.5, `tools.analyzer.jvm` has been enhanced to enable
+Eastwood to issue warnings instead, which it does as part of the
+`:wrong-tag` linter.
 
 
 ### Code analysis engine is more picky than the Clojure compiler
@@ -251,14 +340,6 @@ Eastwood uses
 to analyze Clojure source code.  It performs some sanity checks on the
 source code that the Clojure compiler does not (at least as of Clojure
 versions 1.5.1 and 1.6.0).
-
-For example, Eastwood will throw an exception when analyzing code with
-a type hint `^Typename` where the type name is a Java class that has
-not been imported by default by the Clojure compiler, nor by an
-`:import` inside of an `ns` form.  In most cases, an explanatory
-message should be given by Eastwood explaining the problem's cause,
-and what you can do to change your code so that Eastwood can analyze
-it.
 
 
 ### Explicit use of Clojure environment `&env`
@@ -276,22 +357,8 @@ there's no way for `tools.analyzer.jvm` to provide a compatible `&env`
 The following exception being thrown while linting is a symptom of
 this issue:
 
-    Exception thrown during phase :analyze of linting namespace immutable-bitset
+    Exception thrown during phase :analyze+eval of linting namespace immutable-bitset
     ClassCastException clojure.lang.PersistentArrayMap cannot be cast to clojure.lang.Compiler$LocalBinding
-
-
-### Namespaces collision
-
-As of Eastwood version 0.1.3, it no longer depends upon common Clojure
-contrib libraries such as `core.cache`, `core.memoize`, and
-`tools.analyzer`.  Instead, it contains a local copy of those
-libraries that have been renamed to have a different namespace within
-the `eastwood.*` namespace hierarchy.
-
-This should successfully avoid all (or most) of the namespace
-collision issues that existed with Eastwood 0.1.2 and earlier when
-linting projects that depended upon different versions of these
-libraries.
 
 
 ### Unreliable reflection warnings during linting
@@ -792,6 +859,182 @@ functions will cause similar warnings, but right now any function not
 in this map will never cause one of these warnings.
 
 
+### `:local-shadows-var` - A local name that is same as a global name, called as a function
+
+New in Eastwood version 0.1.5
+
+Many functions in `clojure.core` have names that you might like to use
+as local names, such as function arguments or let bindings.  This is
+not necessarily a mistake, and Clojure certainly allows it, but it is
+easy to do so and accidentally introduce a bug.
+
+For example, below the intent was to call `clojure.core/count` on the
+collection `data`, but instead the `let` binds a value to `count`, and
+that value is called as a function instead (or at least Clojure tries
+to call it as a function):
+
+```clojure
+(let [{count :count
+       data  :data} (fetch-data)
+      real-count (count data)]
+  ... )
+```
+
+It is very common in Clojure code to 'shadow' the names of global Vars
+like `name`, `list`, `symbol`, etc., so the `:local-shadows-var`
+linter does not warn every time you use such a local name.  It only
+does so if:
+
+* The name is used as the first position in a form, as for a function
+  call, and
+* Eastwood cannot prove that the value bound to the name is a
+  function.
+
+For example, this will not cause a warning, because it is assumed that
+the developer has intentionally used the name `replace` as a locally
+defined function.
+
+```clojure
+(let [replace #(str (biginteger %))]
+  (println (replace 5)))
+```
+
+The following _will_ cause a warning, because Eastwood's analysis is
+not sophisticated enough to determine that the value bound to
+`replace` is a function.
+
+```clojure
+(let [replace (comp str biginteger)]
+  (println (replace 5)))
+```
+
+The following example will not cause a warning, because even though
+`pmap` is determined to have a non-function value, Eastwood does not
+'know' that the function call to `map` will use `pmap`'s value as a
+function.
+
+```clojure
+(let [pmap {:a 1 :b 2}]
+  (println (map pmap [1 2 3])))
+```
+
+
+### `:wrong-tag` - An incorrect type tag
+
+New in Eastwood version 0.1.5
+
+You can use a type tag on a Var name, like in the examples below.
+This does not force the type of the value assigned to the Var, but
+Clojure does use the type tag to avoid reflection in Java interop
+calls where the Var name is used as an argument.
+
+```clojure
+;; Correct primitive/primitive-array type hints on Vars
+(def ^{:tag 'int} my-int -2)
+(def ^{:tag 'bytes} bytearr1 (byte-array [2 3 4]))
+(defn ^{:tag 'boolean} positive? [x] (> x 0))
+```
+
+However, the following examples cause Clojure to use the values of the
+functions `clojure.core/int`, `clojure.core/bytes`, and
+`clojure.core/boolean` as (incorrect) type tags.  They will not help
+Clojure avoid reflection in Java interop calls.  Clojure gives no
+errors or warnings for such type hints, but Eastwood will.
+
+```clojure
+;; Incorrect primitive/primitive-array type hints on Vars, for which
+;; Eastwood will warn
+(def ^int my-int -2)
+(def ^bytes bytearr1 (byte-array [2 3 4]))
+(defn ^boolean positive? [x] (> x 0))
+```
+
+For Java classes, it is correct to use type tags on Vars like in these
+examples:
+
+```clojure
+;; Correct Java class type hints on Vars
+(def ^Integer my-int -2)
+(defn ^Boolean positive? [x] (> x 0))
+(defn ^java.util.LinkedList ll [coll] (java.util.LinkedList. coll))
+
+;; For type tags on the Var name, you may even avoid fully qualifying
+;; the name, as long as you have imported the class.  Unlike some
+;; examples below with type tags on the argument vector, this does not
+;; cause problems for Clojure.
+(defn ^LinkedList l2 [coll] (java.util.LinkedList. coll))
+```
+
+You can define functions that take primitive long or double values as
+arguments, or that return a primitive long or double as its return
+value, as shown in the examples below.  Note that the return type tag
+must be given immediately before the argument vector, _not_ before the
+name of the function.
+
+```clojure
+;; correct primitive type hints on function arguments and return value
+(defn add ^long [^long x ^long y] (+ x y))
+(defn reciprocal ^double [^long x] (/ 1.0 x))
+```
+
+Clojure will give a compilation error with a clear message if you
+attempt to use any primitive type besides long or double in this way.
+
+You can also type hint function arguments and return values with Java
+class names.
+
+Such type hints on function arguments can help avoid reflection in
+Java interop calls within the function body, and it does not matter
+whether such type hints use fully qualified Java class names
+(e.g. `java.util.LinkedList`) or not (e.g. `LinkedList`), although
+using the version that is not fully qualified only works if it is in
+the `java.lang` package, or you have imported the package into the
+Clojure namespace.
+
+Such type hints on function return values can also help avoid
+relection in Java interop calls, but in this case the places where it
+can help are wherever the function is called, and its return value is
+used in a Java interop call.  If that is in the same namespace where
+the function is defined, then the same rules apply as for function
+arguments.  Note: You should consider putting the type hint on the Var
+name rather than on the argument vector if it is a Java class, as
+shown above, since this avoids the problems described below.
+
+If:
+
+* the Java class type tag is on the argument vector, and
+* the class name is not fully qualified, i.e. it is `LinkedList`
+  rather than `java.util.LinkedList`, and
+* the function is called in a different namespace where you have not
+  imported the class, and
+* the Java class is not imported by default by Clojure, i.e. it is
+  outside the `java.lang` package,
+
+then Clojure will give an error (see Clojure ticket
+[CLJ-1232](http://dev.clojure.org/jira/browse/CLJ-1232)).  For this
+reason, Eastwood will give a warning for function definitions that
+have a type tag on the argument vector that is not in `java.lang`, and
+is not fully qualified.
+
+```clojure
+;; Eastwood issues a warning for this
+(defn linklist1 ^LinkedList [coll] (java.util.LinkedList. coll))
+
+;; no warning for this because the tag is on the Var name, not the
+;; argument vector, and the CLJ-1232 behavior does not apply
+(defn ^LinkedList linklist2 [coll] (java.util.LinkedList. coll))
+
+;; no warning for this since it is fully qualified
+(defn linklist3 ^java.util.LinkedList [coll] (java.util.LinkedList. coll))
+
+;; no warning for this because it is private
+(defn ^:private linklist4 ^LinkedList [coll] (java.util.LinkedList. coll))
+
+;; no warning for this because Class is in java.lang package
+(defn cls ^Class [obj] (class obj))
+```
+
+
 ### `:unused-fn-args` - Unused arguments of functions, macros, methods
 
 This linter is disabled by default, because it often produces a large
@@ -860,6 +1103,10 @@ with `:refer :all`, like so:
   (:require [clojure.string :refer :all]))
 ```
 
+In addition, since it is so common (and in my opinion, harmless) to do
+an unlimited use of namespace `clojure.test` in test files, this
+linter never warns about `clojure.test`.
+
 
 For an infrequently-changing namespace like `clojure.string`, the set
 of symbols referred by this `use` is pretty stable across Clojure
@@ -914,7 +1161,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein install
 
-Then add `[jonase/eastwood "0.1.5-SNAPSHOT"]` (or whatever is the
+Then add `[jonase/eastwood "0.2.0-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `~/.lein/profiles.clj` file.
