@@ -147,51 +147,39 @@ generate varying strings while the test is running."
 ;;         (println (format "Found (is (thrown? ...)) with thrown-arg2=%s: %s" thrown-arg2 isf)))
        (cond
         (and (= n 2) (string? is-arg1))
-        [{:linter :suspicious-test,
-          :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test")
-          :file (:file is-loc)
-          :line (:line is-loc)
-          :column (:column is-loc)}]
+        [(util/add-loc-info is-loc
+          {:linter :suspicious-test,
+           :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test")})]
         
         (and (constant-expr-logical-true? is-arg1)
              (not (list? is-arg1)))
-        [{:linter :suspicious-test,
-          :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test")
-          :file (:file is-loc)
-          :line (:line is-loc)
-          :column (:column is-loc)}]
+        [(util/add-loc-info is-loc
+          {:linter :suspicious-test,
+           :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test")})]
         
         (and (= n 2)
              (let [arg2 (second is-args)]
                (not (or (string? arg2)
                         (and (sequential? arg2)
                              (fn-call-returns-string? (first arg2)))))))
-        [{:linter :suspicious-test,
-          :msg (format "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.")
-          :file (:file is-loc)
-          :line (:line is-loc)
-          :column (:column is-loc)}]
+        [(util/add-loc-info is-loc
+          {:linter :suspicious-test,
+           :msg (format "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.")})]
         
         (and thrown? (util/regex? thrown-arg2))
-        [{:linter :suspicious-test,
-          :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")
-          :file (:file is-loc)
-          :line (:line is-loc)
-          :column (:column is-loc)}]
+        [(util/add-loc-info is-loc
+          {:linter :suspicious-test,
+           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")})]
         
         (and thrown? (string? thrown-arg2))
-        [{:linter :suspicious-test,
-          :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")
-          :file (:file is-loc)
-          :line (:line is-loc)
-          :column (:column is-loc)}]
+        [(util/add-loc-info is-loc
+          {:linter :suspicious-test,
+           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")})]
         
         (and thrown? (some string? thrown-args))
-        [{:linter :suspicious-test,
-          :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")
-          :file (:file is-loc)
-          :line (:line is-loc)
-          :column (:column is-loc)}]
+        [(util/add-loc-info is-loc
+          {:linter :suspicious-test,
+           :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")})]
         
         :else nil)))))
 
@@ -214,15 +202,13 @@ generate varying strings while the test is running."
         [(let [meta-loc (-> f meta)
                loc (or (pass/has-code-loc? meta-loc)
                        (pass/code-loc (pass/nearest-ast-with-loc ast)))]
-           {:linter :suspicious-test,
-            :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
-                         (cond (-> meta-loc :line) ""
-                               (string? f) (str " \"" f "\"")
-                               :else (str " " f))
-                         (if f (.getName (class f)) "nil") form-type)
-            :file (-> loc :file)
-            :line (-> loc :line)
-            :column (-> loc :column)})]
+           (util/add-loc-info loc
+            {:linter :suspicious-test,
+             :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
+                          (cond (-> meta-loc :line) ""
+                                (string? f) (str " \"" f "\"")
+                                :else (str " " f))
+                          (if f (.getName (class f)) "nil") form-type)}))]
         
         (sequential? f)
         (let [ff (first f)
@@ -235,20 +221,16 @@ generate varying strings while the test is running."
               loc (-> ff meta)]
           (cond
            (and var-info (get var-info :predicate))
-           [{:linter :suspicious-test,
-             :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
-                          ff form-type ff)
-             :file (-> loc :file)
-             :line (-> loc :line)
-             :column (-> loc :column)}]
+           [(util/add-loc-info loc
+             {:linter :suspicious-test,
+              :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
+                           ff form-type ff)})]
            
            (and var-info (get var-info :pure-fn))
-           [{:linter :suspicious-test,
-             :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
-                          ff form-type)
-             :file (-> loc :file)
-             :line (-> loc :line)
-             :column (-> loc :column)}]
+           [(util/add-loc-info loc
+             {:linter :suspicious-test,
+              :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
+                           ff form-type)})]
            
            :else nil))
         :else nil)))))
@@ -384,18 +366,16 @@ generate varying strings while the test is running."
              suspicious-args (get core-first-vars-that-do-little fn-sym)
              info (get suspicious-args num-args)]
          (if (contains? suspicious-args num-args)
-           [{:linter :suspicious-expression,
-             :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"
-                          fn-sym num-args fn-sym
-                          (if (> num-args 0)
-                            (str " " (str/join " " (:args info)))
-                            "")
-                          (if (= "" (:ret-val info))
-                            "\"\""
-                            (print-str (:ret-val info))))
-             :file (-> loc :file)
-             :line (-> loc :line)
-             :column (-> loc :column)}]))))))
+           [(util/add-loc-info loc
+             {:linter :suspicious-expression,
+              :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"
+                           fn-sym num-args fn-sym
+                           (if (> num-args 0)
+                             (str " " (str/join " " (:args info)))
+                             "")
+                           (if (= "" (:ret-val info))
+                             "\"\""
+                             (print-str (:ret-val info))))})]))))))
 
 ;; Note: Looking for asts that contain :invoke nodes for the function
 ;; 'clojure.core/= will not find expressions like (clojure.test/is (=
@@ -463,18 +443,16 @@ generate varying strings while the test is running."
               suspicious-args (core-fns-that-do-little fn-fqsym)
               info (get suspicious-args num-args)]
           (if (contains? suspicious-args num-args)
-            {:linter :suspicious-expression,
-             :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
-                          fn-sym num-args fn-sym
-                          (if (> num-args 0)
-                            (str " " (str/join " " (:args info)))
-                            "")
-                          (if (= "" (:ret-val info))
-                            "\"\""
-                            (print-str (:ret-val info))))
-             :file (-> loc :file)
-             :line (-> loc :line)
-             :column (-> loc :column)})))))))
+            (util/add-loc-info loc
+             {:linter :suspicious-expression,
+              :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
+                           fn-sym num-args fn-sym
+                           (if (> num-args 0)
+                             (str " " (str/join " " (:args info)))
+                             "")
+                           (if (= "" (:ret-val info))
+                             "\"\""
+                             (print-str (:ret-val info))))}))))))))
 
 (defn suspicious-expression [& args]
   (concat

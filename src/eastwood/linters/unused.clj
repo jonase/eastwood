@@ -27,12 +27,11 @@
   (let [pdefs (private-defs asts)
         vfreq (var-freq asts)]
     (for [pvar pdefs
-          :when (nil? (vfreq pvar))]
-      {:linter :unused-private-vars
-       :msg (format "Private var %s is never used" pvar)
-       :file (-> pvar :env :file)
-       :line (-> pvar :env :line)
-       :column (-> pvar :env :column)})))
+          :when (nil? (vfreq pvar))
+          :let [loc (:env pvar)]]
+      (util/add-loc-info loc
+       {:linter :unused-private-vars
+        :msg (format "Private var %s is never used" pvar)}))))
 
 ;; Unused fn args
 
@@ -75,11 +74,9 @@ selectively disable such warnings if they wish."
                             set)]
           unused-sym unused
           :let [loc (-> unused-sym meta)]]
-      {:linter :unused-fn-args
-       :msg (format "Function arg %s never used" unused-sym)
-       :file (-> loc :file)
-       :line (-> loc :line)
-       :column (-> loc :column)})))
+      (util/add-loc-info loc
+       {:linter :unused-fn-args
+        :msg (format "Function arg %s never used" unused-sym)}))))
 
 
 ;; Unused namespaces
@@ -258,26 +255,24 @@ discarded inside null: null'."
         nil
 
         (:lazy-fn :pure-fn :pure-fn-if-fn-args-pure :warn-if-ret-val-unused)
-        {:linter (case location
-                   :outside-try :unused-ret-vals
-                   :inside-try :unused-ret-vals-in-try)
-         :msg
-         (case action
-           :lazy-fn
-           (format "Lazy %s return value is discarded%s: %s"
-                   stmt-desc-str extra-msg form)
-           :pure-fn
-           (format "Pure %s return value is discarded%s: %s"
-                   stmt-desc-str extra-msg form)
-           :pure-fn-if-fn-args-pure
-           (format "Return value is discarded for a %s that only has side effects if the functions passed to it as args have side effects%s: %s"
-                   stmt-desc-str extra-msg form)
-           :warn-if-ret-val-unused
-           (format "Should use return value of %s, but it is discarded%s: %s"
-                   stmt-desc-str extra-msg form))
-         :file (-> loc :file)
-         :line (-> loc :line)
-         :column (-> loc :column)}
+        (util/add-loc-info loc
+         {:linter (case location
+                    :outside-try :unused-ret-vals
+                    :inside-try :unused-ret-vals-in-try)
+          :msg
+          (case action
+            :lazy-fn
+            (format "Lazy %s return value is discarded%s: %s"
+                    stmt-desc-str extra-msg form)
+            :pure-fn
+            (format "Pure %s return value is discarded%s: %s"
+                    stmt-desc-str extra-msg form)
+            :pure-fn-if-fn-args-pure
+            (format "Return value is discarded for a %s that only has side effects if the functions passed to it as args have side effects%s: %s"
+                    stmt-desc-str extra-msg form)
+            :warn-if-ret-val-unused
+            (format "Should use return value of %s, but it is discarded%s: %s"
+                    stmt-desc-str extra-msg form))})
 
         ;; default case, where we have no information about the type
         ;; of function or method it is.  Note that for Clojure
@@ -354,24 +349,22 @@ discarded inside null: null'."
                      loc (if name-found?
                            (-> stmt :env :name meta)
                            (pass/code-loc (pass/nearest-ast-with-loc stmt)))]
-                 {:linter :unused-ret-vals
-                  :msg (format "%s value is discarded%s: %s"
-                               (case (:op stmt)
-                                 :const "Constant"
-                                 :var "Var"
-                                 :local "Local")
-                               (if name-found?
-                                 (str " inside " (-> stmt :env :name))
-                                 "")
-                               (if (nil? (:form stmt))
-                                 "nil"
-                                 (str/trim-newline
-                                  (with-out-str
-                                    (binding [pp/*print-right-margin* nil]
-                                      (pp/pprint (:form stmt)))))))
-                  :file (-> loc :file)
-                  :line (-> loc :line)
-                  :column (-> loc :column)}))
+                 (util/add-loc-info loc
+                  {:linter :unused-ret-vals
+                   :msg (format "%s value is discarded%s: %s"
+                                (case (:op stmt)
+                                  :const "Constant"
+                                  :var "Var"
+                                  :local "Local")
+                                (if name-found?
+                                  (str " inside " (-> stmt :env :name))
+                                  "")
+                                (if (nil? (:form stmt))
+                                  "nil"
+                                  (str/trim-newline
+                                   (with-out-str
+                                     (binding [pp/*print-right-margin* nil]
+                                       (pp/pprint (:form stmt)))))))})))
               
               (util/static-call? stmt)
               (let [cls (:class stmt)

@@ -141,6 +141,14 @@ twice."
   (fn [ast]
     (= (:op ast) op)))
 
+(defn add-loc-info
+  "Return a map that is the same as warn-map, plus file location,
+currently in keys :file :line :column, from a map 'loc' containing the
+location."
+  [loc warn-map]
+  (merge warn-map
+         (select-keys loc #{:file :line :column})))
+
 (defn walk
   "Traverses form, an arbitrary data structure.  inner and outer are
   functions.  Applies inner to each element of form, building up a

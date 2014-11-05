@@ -79,11 +79,9 @@
                               first-bad-use
                               (first first-bad-use))
           loc (meta first-bad-use-sym)]
-      {:linter :unlimited-use
-       :msg (format "Unlimited use of %s in %s" (seq s) (-> ast :env :ns))
-       :file (-> loc :file)
-       :line (-> loc :line)
-       :column (-> loc :column)})))
+      (util/add-loc-info loc
+       {:linter :unlimited-use
+        :msg (format "Unlimited use of %s in %s" (seq s) (-> ast :env :ns))}))))
 
 ;; Misplaced docstring
 
@@ -102,11 +100,9 @@
         :when (and (= (:op ast) :def)
                    (misplaced-docstring? ast))
         :let [loc (-> ast var-of-ast meta)]]
-    {:linter :misplaced-docstrings
-     :msg (format "Possibly misplaced docstring, %s" (var-of-ast ast))
-     :file (-> loc :file)
-     :line (-> loc :line)
-     :column (-> loc :column)}))
+    (util/add-loc-info loc
+     {:linter :misplaced-docstrings
+      :msg (format "Possibly misplaced docstring, %s" (var-of-ast ast))})))
 
 ;; Nondynamic earmuffed var
 
@@ -120,14 +116,13 @@
   (for [expr (mapcat ast/nodes asts)
         :when (= (:op expr) :def)
         :let [^clojure.lang.Var v (:var expr)
-              s (.sym v)]
+              s (.sym v)
+              loc (:env expr)]
         :when (and (earmuffed? s)
                    (not (:is-dynamic expr)))]
-    {:linter :non-dynamic-earmuffs
-     :msg (format "%s should be marked dynamic" v)
-     :file (-> expr :env :file)
-     :line (-> expr :env :line)
-     :column (-> expr :env :column)}))
+    (util/add-loc-info loc
+     {:linter :non-dynamic-earmuffs
+      :msg (format "%s should be marked dynamic" v)})))
 
 ;; redef'd vars
 
@@ -318,19 +313,17 @@ significantly faster than the otherwise equivalent (= (count s) n)"
   (let [defd-var-asts (defd-vars asts)
         defd-var-groups (group-by #(-> % :form second) defd-var-asts)]
     (for [[defd-var-ast ast-list] defd-var-groups
-          :when (> (count ast-list) 1)]
-      (let [ast2 (second ast-list)
-            loc2 (redefd-var-loc ast2)]
-        {:linter :redefd-vars
-         :msg (format "Var %s def'd %d times at line:col locations: %s"
-                      (var-of-ast ast2)
-                      (count ast-list)
-                      (string/join
-                       " "
-                       (map redefd-var-loc-desc ast-list)))
-         :file (-> loc2 :file)
-         :line (-> loc2 :line)
-         :column (-> loc2 :column)}))))
+          :when (> (count ast-list) 1)
+          :let [ast2 (second ast-list)
+                loc2 (redefd-var-loc ast2)]]
+      (util/add-loc-info loc2
+       {:linter :redefd-vars
+        :msg (format "Var %s def'd %d times at line:col locations: %s"
+                     (var-of-ast ast2)
+                     (count ast-list)
+                     (string/join
+                      " "
+                      (map redefd-var-loc-desc ast-list)))}))))
 
 
 ;; Def-in-def
@@ -348,15 +341,13 @@ significantly faster than the otherwise equivalent (= (count s) n)"
   (let [nested-vars (def-in-def-vars asts)]
     (for [nested-var-ast nested-vars
           :let [loc (-> nested-var-ast var-of-ast meta)]]
-      {:linter :def-in-def
-       :msg (format "There is a def of %s nested inside def %s"
-                    (var-of-ast nested-var-ast)
-                    (-> nested-var-ast
-                        :eastwood/enclosing-def-ast
-                        var-of-ast))
-       :file (-> loc :file)
-       :line (-> loc :line)
-       :column (-> loc :column)})))
+      (util/add-loc-info loc
+       {:linter :def-in-def
+        :msg (format "There is a def of %s nested inside def %s"
+                     (var-of-ast nested-var-ast)
+                     (-> nested-var-ast
+                         :eastwood/enclosing-def-ast
+                         var-of-ast))}))))
 
 
 ;; Wrong arity
@@ -367,14 +358,12 @@ significantly faster than the otherwise equivalent (= (count s) n)"
                    (filter :maybe-arity-mismatch))]
     (for [expr exprs
           :let [loc (-> expr :fn :form meta)]]
-      {:linter :wrong-arity
-       :msg (format "Function on var %s called with %s args, but it is only known to take one of the following args: %s"
-                    (-> expr :fn :var)
-                    (count (-> expr :args))
-                    (string/join "  " (-> expr :fn :arglists)))
-       :file (-> loc :file)
-       :line (-> loc :line)
-       :column (-> loc :column)})))
+      (util/add-loc-info loc
+       {:linter :wrong-arity
+        :msg (format "Function on var %s called with %s args, but it is only known to take one of the following args: %s"
+                     (-> expr :fn :var)
+                     (count (-> expr :args))
+                     (string/join "  " (-> expr :fn :arglists)))}))))
 
 ;; Bad :arglists
 
@@ -468,15 +457,13 @@ significantly faster than the otherwise equivalent (= (count s) n)"
              loc (-> a var-of-ast meta)]
          (if (and (not (nil? meta-arglists))
                   (not= fn-sigs meta-sigs))
-           [{:linter :bad-arglists
-             :msg (format "%s on var %s defined taking # args %s but :arglists metadata has # args %s"
-                          (if macro? "Macro" "Function")
-                          (-> a :name)
-                          fn-sigs
-                          meta-sigs)
-             :file (-> loc :file)
-             :line (-> loc :line)
-             :column (-> loc :column)}]))))))
+           [(util/add-loc-info loc
+             {:linter :bad-arglists
+              :msg (format "%s on var %s defined taking # args %s but :arglists metadata has # args %s"
+                           (if macro? "Macro" "Function")
+                           (-> a :name)
+                           fn-sigs
+                           meta-sigs)})]))))))
 
 ;; TBD: Consider also looking for local symbols in positions of forms
 ;; where they appeared to be used as functions, e.g. as the second arg
@@ -491,6 +478,6 @@ significantly faster than the otherwise equivalent (= (count s) n)"
                    (contains? (:locals env) (:form fn)))
         :let [v (env/ensure (j/global-env) (resolve-var (:form fn) env))]
         :when v]
-    (merge {:linter :local-shadows-var
-            :msg (str "local: " (:form fn) " invoked as function shadows var: " v)}
-           (select-keys env #{:line :column :file}))))
+    (util/add-loc-info env
+     {:linter :local-shadows-var
+      :msg (str "local: " (:form fn) " invoked as function shadows var: " v)})))
