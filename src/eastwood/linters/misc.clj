@@ -70,7 +70,9 @@
               ;; Don't warn about unlimited use of clojure.test.  It
               ;; is very common, and seems harmless enough to me in
               ;; test code.
-              s (remove #{'clojure.test '(clojure.test) ['clojure.test]} s)]
+              s (remove #{'clojure.test '(clojure.test) ['clojure.test]
+                          '(clojure test) ['clojure 'test]}
+                        s)]
         :when (seq s)]
     (let [first-bad-use (first s)
           first-bad-use-sym (if (symbol? first-bad-use)
