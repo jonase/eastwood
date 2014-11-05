@@ -1,6 +1,7 @@
 (ns eastwood.linters.typetags
   (:require [clojure.string :as string]
             [eastwood.util :as util]
+            [eastwood.passes :as pass]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]))
 
 (def default-classname-mapping
@@ -76,7 +77,19 @@ significance needed by the user."
                              (= op :binding))
                         (and (= wrong-tag-keys #{:eastwood/tag})
                              (#{:local :const} op)))
-                    [:tag (get ast :tag) (meta form)]
+                    [:tag (get ast :tag)
+                     (or (pass/has-code-loc? (meta form))
+                         (pass/code-loc (pass/nearest-ast-with-loc ast)))]
+
+                    ;; So far I have only seen this case in ztellman's
+                    ;; byte-streams library, and the warnings from a
+                    ;; different case were more clear and closer to
+                    ;; the source of the problem.  At least for now,
+                    ;; don't issue warnings for this case.
+                    (and (= wrong-tag-keys #{:eastwood/o-tag})
+                         (#{:local} op))
+                    ;;[:tag (get ast :o-tag) (meta form)]
+                    [nil nil nil]
 
                     (and (= wrong-tag-keys #{:eastwood/return-tag})
                          (= op :var))
@@ -102,6 +115,11 @@ significance needed by the user."
                       (flush)
                       (assert false)
                       [nil nil nil]))
+              _ (when (and typ (not (util/has-keys? loc #{:file :line :column})))
+                  (println (format "eastwood-dbg: wrong-tag-no-loc: op=%s name=%s wrong-tag-keys=%s typ=%s tag=%s loc=%s ast="
+                                   op name wrong-tag-keys
+                                   typ tag loc))
+                  (util/pprint-ast-node ast))
 ;;              _ (do
 ;;                  (println (format "jafinger-dbg2: typ=%s tag=%s loc=%s"
 ;;                                   typ tag loc))
