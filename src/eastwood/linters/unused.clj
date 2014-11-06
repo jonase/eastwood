@@ -346,9 +346,29 @@ discarded inside null: null'."
                
                :else
                (let [name-found? (contains? (-> stmt :env) :name)
-                     loc (if name-found?
-                           (-> stmt :env :name meta)
-                           (pass/code-loc (pass/nearest-ast-with-loc stmt)))]
+;;                     _ (do
+;;                         (println (format "jafinger-dbg: (code-loc stmt)=%s (has-code-loc? meta first :raw-forms)=%s"
+;;                                          (select-keys (pass/code-loc stmt)
+;;                                                       [:file :line :column])
+;;                                          (select-keys (pass/has-code-loc? (-> stmt :raw-forms first meta))
+;;                                                       [:file :line :column])))
+;;                         )
+                     loc (or
+                          (pass/has-code-loc? (-> stmt :raw-forms first meta))
+                          (if name-found?
+                            (-> stmt :env :name meta)
+                            (pass/code-loc (pass/nearest-ast-with-loc stmt))))]
+;;                 (println (format "jafinger-dbg: unused const/var/local sequence of enclosing asts:"))
+;;                 (let [ast-keys-to-debug [:op :children :form ; :var
+;;                                          :raw-forms]
+;;                       places (take 2 (concat [stmt]
+;;                                              (rseq (:eastwood/ancestors stmt))))]
+;;                   (doseq [[i ast] (map-indexed (fn [i ast] [i ast]) places)]
+;;                     (println (format "jafinger-dbg: ast #%d" (inc i)))
+;;                     (util/pprint-ast-node
+;;                      (merge (select-keys ast ast-keys-to-debug)
+;;                             {:env (select-keys (:env ast) [:file :line :column])})
+;;                      :with-env)))
                  (util/add-loc-info loc
                   {:linter :unused-ret-vals
                    :msg (format "%s value is discarded%s: %s"
