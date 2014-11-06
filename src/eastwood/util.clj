@@ -216,12 +216,17 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
     (let [orig-dispatch clojure.pprint/*print-pprint-dispatch*]
       (clojure.pprint/with-pprint-dispatch
         (fn pm [o]
-          (when (meta o)
-            (print "^")
-            (pm (meta o))
-            (.write ^java.io.Writer *out* " ")
-            (clojure.pprint/pprint-newline :fill))
-          (orig-dispatch o))
+          (let [o (if (protocol? o)
+                    (assoc o
+                      :var :true-value-replaced-to-avoid-pprint-infinite-loop
+                      :method-builders :true-value-replaced-to-avoid-pprint-infinite-loop)
+                    o)]
+            (when (meta o)
+              (print "^")
+              (pm (meta o))
+              (.write ^java.io.Writer *out* " ")
+              (clojure.pprint/pprint-newline :fill))
+            (orig-dispatch o)))
         (clojure.pprint/pprint obj)))))
 
 (defn elide-meta [form elide-key-set]
@@ -271,7 +276,11 @@ defprotocol maps.
 
 Note: This can replace Vars in the AST with their values, so the
 resulting AST is not as it was originally, and will likely fail if you
-try to generate code from it.  It is fine for pprint'ing."
+try to generate code from it.  It is fine for pprint'ing.
+
+There are cases where this function misses things.  It seems like it
+may be simpler to detect protocol occurrences while doing
+pprint-meta instead."
   [ast]
   (ast/postwalk ast (fn [ast]
                       (map-vals (fn [val]
@@ -291,7 +300,6 @@ try to generate code from it.  It is fine for pprint'ing."
             (trim-ast ast :remove-only [:env]))]
     (-> a
         (trim-ast :remove-only [:eastwood/ancestors])
-        elide-defprotocol-vars
         ast-to-ordered
         pprint-meta-elided)))
 
