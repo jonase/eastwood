@@ -199,6 +199,11 @@ value that is a set of keywords, e.g.
   namespaces (typically as the result of evaluating a `require` or
   `use` form).
 
+Additionally, there is a `:results-file` option which should have a
+boolean value. When `true` all the linters' output will be written to
+a file named `eastwood-results.txt`. The content of this file can be
+used by other programs that might want to show the results in a
+different way or do some post-processing on them.
 
 ## Known issues
 
@@ -572,7 +577,7 @@ to some other thing used purely for documentation purposes.
 It is true that even Clojure itself does not conform to this
 restriction.  For example, the arglists of `defn`, `defmacro`, and
 several other macros override `:arglists` for purposes of clearer
-documentation.  However, all but these few exceptional macros 
+documentation.  However, all but these few exceptional macros
 
 Other facts supporting this belief are:
 
