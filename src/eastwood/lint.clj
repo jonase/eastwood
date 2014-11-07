@@ -147,8 +147,15 @@ return value followed by the time it took to evaluate in millisec."
          elapsed-msec# (/ (double (- (. System (nanoTime)) start#)) 1000000.0)]
      [ret# elapsed-msec#]))
 
+
+;; Note: :no-ns-form-found can be enabled/disabled from opt map like
+;; other linters, but it is a bit different in its implementation as
+;; it has no separate function to call on each namespace.  It is done
+;; very early, and is not specific to a namespace.
+
 (def ^:private available-linters
-  {:misplaced-docstrings misc/misplaced-docstrings
+  {:no-ns-form-found nil
+   :misplaced-docstrings misc/misplaced-docstrings
    :deprecations deprecated/deprecations
    :redefd-vars misc/redefd-vars
    :def-in-def misc/def-in-def
@@ -168,7 +175,8 @@ return value followed by the time it took to evaluate in millisec."
    :non-dynamic-earmuffs misc/non-dynamic-earmuffs})
 
 (def ^:private default-linters
-  #{:misplaced-docstrings
+  #{:no-ns-form-found
+    :misplaced-docstrings
     :deprecations
     :redefd-vars
     :def-in-def
@@ -183,10 +191,11 @@ return value followed by the time it took to evaluate in millisec."
     :wrong-tag})
 
 (defn- lint [exprs kw]
-  (try
-    (doall ((available-linters kw) exprs))
-    (catch Throwable e
-      [e])))
+  (if-let [lint-fn (available-linters kw)]
+    (try
+      (doall (lint-fn exprs))
+      (catch Throwable e
+        [e]))))
 
 ;; Copied from clojure.repl/pst then modified to 'print' using a
 ;; callback function, and to use depth nil to print all stack frames.
@@ -440,8 +449,16 @@ curious." eastwood-url))
       :show-more-details)))
 
 
-(defn namespace-info [ns-sym cwd-file]
-  (let [uri (.toURI (analyze/uri-for-ns ns-sym))
+(defn ^java.net.URI to-uri [x]
+  (cond (instance? java.net.URI x) x
+        (instance? java.io.File x) (.toURI ^java.io.File x)
+        (instance? java.net.URL x) (.toURI ^java.net.URL x)
+        (string? x) (.toURI (File. ^String x))
+        :else (assert false)))
+
+
+(defn file-warn-info [f cwd-file]
+  (let [uri (to-uri f)
         ;; file-or-nil will be nil if uri is a URI like the following,
         ;; which cannot be converted to a File:
         ;; #<URI jar:file:/Users/jafinger/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar!/clojure/test/junit.clj>
@@ -456,9 +473,15 @@ curious." eastwood-url))
             (if (.startsWith file-str cwd-str)
               (subs file-str (count cwd-str))
               file-str)))]
-    {:namespace-sym ns-sym
-     :uri uri
+    {:uri uri
      :uri-or-file-name uri-or-rel-file-str}))
+
+
+(defn namespace-info [ns-sym cwd-file]
+  (let [uri (to-uri (analyze/uri-for-ns ns-sym))]
+    (merge
+     {:namespace-sym ns-sym}
+     (file-warn-info uri cwd-file))))
 
 
 (defn lint-ns [ns-sym linters opts warning-count exception-count]
@@ -587,20 +610,77 @@ exception."))
                :recommended-fname desired-fname,
                :recommended-namespace desired-ns}]))))
 
-(defn canonical-filename [fname]
+(defn canonical-filename
+  "Returns the canonical file name for the given file name.  A
+canonical file name is platform dependent, but is both absolute and
+unique.  See the Java docs for getCanonicalPath for some more details,
+and the examples below.
+
+    http://docs.oracle.com/javase/7/docs/api/java/io/File.html#getCanonicalPath%28%29
+
+Examples:
+
+Context: A Linux or Mac OS X system, where the current working
+directory is /Users/jafinger/clj/dolly
+
+user=> (ns/canonical-filename \"README.md\")
+\"/Users/jafinger/clj/dolly/README.md\"
+
+user=> (ns/canonical-filename \"../../Documents/\")
+\"/Users/jafinger/Documents\"
+
+user=> (ns/canonical-filename \"../.././clj/../Documents/././\")
+\"/Users/jafinger/Documents\"
+
+Context: A Windows 7 system, where the current working directory is
+C:\\Users\\jafinger\\clj\\dolly
+
+user=> (ns/canonical-filename \"README.md\")
+\"C:\\Users\\jafinger\\clj\\dolly\\README.md\"
+
+user=> (ns/canonical-filename \"..\\..\\Documents\\\")
+\"C:\\Users\\jafinger\\Documents\"
+
+user=> (ns/canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
+\"C:\\Users\\jafinger\\Documents\""
+  [fname]
   (let [^java.io.File f (if (instance? java.io.File fname)
                           fname
                           (java.io.File. ^String fname))]
     (.getCanonicalPath f)))
 
 
-(defn nss-in-dirs [dir-name-strs]
-  (let [dir-name-strs (map canonical-filename dir-name-strs)
+(defn nss-in-dirs [dir-name-strs opt warning-count]
+  (let [cb (:callback opt)
+        dir-name-strs (map canonical-filename dir-name-strs)
         mismatches (filename-namespace-mismatches dir-name-strs)]
     (if (seq mismatches)
       {:err :namespace-filename-mismatch
        :err-data {:mismatches mismatches}}
       (let [tracker (apply dir/scan-all (track/tracker) dir-name-strs)]
+        (when (some #{:no-ns-form-found} (:enabled-linters opt))
+          (let [tfiles (-> tracker
+                           :eastwood.copieddeps.dep9.clojure.tools.namespace.dir/files
+                           set)
+                tfilemap (-> tracker
+                             :eastwood.copieddeps.dep9.clojure.tools.namespace.file/filemap
+                             keys
+                             set)
+                files-no-ns-form-found (set/difference tfiles tfilemap)]
+            (doseq [f files-no-ns-form-found]
+              (swap! warning-count inc)
+              (cb {:kind :lint-warning,
+                   ;; TBD: should include :uri and :uri-or-file-name keys
+                   ;; with vals as returned by namespace-info, but no
+                   ;; :namespace-sym since that might not even exist for
+                   ;; this file.
+                   :warn-data (let [inf (file-warn-info f (:cwd opt))]
+                                (merge
+                                 {:linter :no-ns-form-found
+                                  :msg (format "No ns form was found in file '%s'.  It will not be linted."
+                                               (:uri-or-file-name inf))}
+                                 inf))
+                   :opt opt}))))
         {:err nil
          :namespaces
          (:eastwood.copieddeps.dep9.clojure.tools.namespace.track/load
@@ -657,7 +737,7 @@ file and namespace to avoid name collisions."))))
 ;; TBD: Abort with an easily understood error message if a namespace
 ;; is given that cannot be found.
 
-(defn opts->namespaces [opts]
+(defn opts->namespaces [opts warning-count]
   (let [namespaces (distinct (or (:namespaces opts)
                                  [:source-paths :test-paths]))
         excluded-namespaces (set (:exclude-namespaces opts))]
@@ -677,9 +757,9 @@ file and namespace to avoid name collisions."))))
      ;; needed.
      (let [all-ns (concat namespaces excluded-namespaces)
            sp (if (some #{:source-paths} all-ns)
-                (nss-in-dirs (:source-paths opts)))
+                (nss-in-dirs (:source-paths opts) opts warning-count))
            tp (if (some #{:test-paths} all-ns)
-                (nss-in-dirs (:test-paths opts)))]
+                (nss-in-dirs (:test-paths opts) opts warning-count))]
        (cond
         (:err sp) sp
         (:err tp) tp
@@ -782,17 +862,18 @@ Return value:
 + TBD
 "
   [opts]
-  (let [{:keys [namespaces] :as m1} (opts->namespaces opts)
-        {:keys [linters] :as m2} (opts->linters opts available-linters
-                                                default-linters)]
+  (let [warning-count (atom 0)
+        exception-count (atom 0)
+        {:keys [linters] :as m1} (opts->linters opts available-linters
+                                                default-linters)
+        opts (assoc opts :enabled-linters linters)
+        {:keys [namespaces] :as m2} (opts->namespaces opts warning-count)]
     (cond
      (:err m1) m1
      (:err m2) m2
      :else
      (let [error-cb (util/make-msg-cb :error opts)
            debug-cb (util/make-msg-cb :debug opts)
-           warning-count (atom 0)
-           exception-count (atom 0)
            continue-on-exception? (:continue-on-exception opts)
            stopped-on-exc (atom false)]
        (when (util/debug? #{:ns} opts)
@@ -806,11 +887,11 @@ Return value:
        ;; (alias 'x 'A)
        (doseq [n namespaces]
          (create-ns n))
-       (when (seq linters)
+       (when (seq (:enabled-linters opts))
          (loop [namespaces namespaces]
            (when-first [namespace namespaces]
              (let [e (try
-                       (lint-ns namespace linters opts
+                       (lint-ns namespace (:enabled-linters opts) opts
                                 warning-count exception-count)
                        (catch RuntimeException e
                          (error-cb "Linting failed:")
