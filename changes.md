@@ -6,7 +6,7 @@
   [#93](https://github.com/jonase/eastwood/issues/93).  This should
   help with the next one.
 
-* Implement a way to enable/disable linters on indivudual Clojure
+* Implement a way to enable/disable linters on individual Clojure
   expressions.  Issue
   [#21](https://github.com/jonase/eastwood/issues/21).
 
