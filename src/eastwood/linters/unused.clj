@@ -112,38 +112,44 @@ selectively disable such warnings if they wish."
 
 ;; Unused return values
 
-(defn make-invoke-val-unused-action-map [cur-map rsrc-name]
-  (if (nil? cur-map)
-    (let [sym-info-map (edn/read-string (slurp (io/resource rsrc-name)))]
-      (into {}
-            (for [[sym properties] sym-info-map]
-              [sym
-               (cond (:macro properties) nil
-                     (:side-effect properties) :side-effect
-                     (:lazy properties) :lazy-fn
-                     (:pure-fn properties) :pure-fn
-                     (:pure-fn-if-fn-args-pure properties) :pure-fn-if-fn-args-pure
-                     (:warn-if-ret-val-unused properties) :warn-if-ret-val-unused
-                     :else nil)])))
-    cur-map))
+(defn make-invoke-val-unused-action-map [rsrc-name]
+  (let [sym-info-map (edn/read-string (slurp (io/resource rsrc-name)))]
+    (into {}
+          (for [[sym properties] sym-info-map]
+            [sym
+             (cond (:macro properties) nil
+                   (:side-effect properties) :side-effect
+                   (:lazy properties) :lazy-fn
+                   (:pure-fn properties) :pure-fn
+                   (:pure-fn-if-fn-args-pure properties) :pure-fn-if-fn-args-pure
+                   (:warn-if-ret-val-unused properties) :warn-if-ret-val-unused
+                   :else nil)]))))
 
-(defn make-static-method-val-unused-action-map [cur-map rsrc-name]
-  (if (nil? cur-map)
-    (let [static-method-info-map (edn/read-string (slurp (io/resource rsrc-name)))]
-      (into {}
-            (for [[static-method properties] static-method-info-map]
-              [(assoc static-method
-                 :class (Class/forName (str (:class static-method))))
-               (cond (:side-effect properties) :side-effect
-                     (:lazy properties) :lazy-fn
-                     (:pure-fn properties) :pure-fn
-                     (:pure-fn-if-fn-args-pure properties) :pure-fn-if-fn-args-pure
-                     (:warn-if-ret-val-unused properties) :warn-if-ret-val-unused
-                     :else nil)])))
-    cur-map))
+(defn make-static-method-val-unused-action-map [rsrc-name]
+  (let [static-method-info-map (edn/read-string (slurp (io/resource rsrc-name)))]
+    (into {}
+          (for [[static-method properties] static-method-info-map]
+            [(assoc static-method
+               :class (Class/forName (str (:class static-method))))
+             (cond (:side-effect properties) :side-effect
+                   (:lazy properties) :lazy-fn
+                   (:pure-fn properties) :pure-fn
+                   (:pure-fn-if-fn-args-pure properties) :pure-fn-if-fn-args-pure
+                   (:warn-if-ret-val-unused properties) :warn-if-ret-val-unused
+                   :else nil)]))))
 
-(def ^:dynamic *warning-if-invoke-ret-val-unused* (atom nil))
-(def ^:dynamic *warning-if-static-ret-val-unused* (atom nil))
+
+(def warning-if-invoke-ret-val-unused-delayed
+  (delay
+   ;;(println "Reading var-info.edn for :unused-ret-vals linter")
+   (make-invoke-val-unused-action-map "var-info.edn")))
+
+
+(def warning-if-static-ret-val-unused-delayed
+  (delay
+   ;;(println "Reading jvm-method-info.edn for :unused-ret-vals linter")
+   (make-static-method-val-unused-action-map "jvm-method-info.edn")))
+
 
 (defn- mark-things-in-defprotocol-expansion-post [{:keys [env] :as ast}]
   (if (not-any? #(= % 'clojure.core/defprotocol) (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms ast)))
@@ -231,7 +237,7 @@ discarded inside null: null'."
                    "static method call" (-> stmt :form meta)))
                 (pass/code-loc (pass/nearest-ast-with-loc stmt)))
         ;; If there is no info about the method m in
-        ;; *warning-if-static-ret-val-unused*, use reflection to see
+        ;; warning-if-static-ret-val-unused, use reflection to see
         ;; if the return type of the method is void.  That is a fairly
         ;; sure sign that it is intended to be called for side
         ;; effects.
@@ -286,12 +292,8 @@ discarded inside null: null'."
           (debug-unknown-fn-methods fn-or-method stmt-desc-str stmt))))))
 
 (defn unused-ret-vals-2 [location {:keys [asts]}]
-  (swap! *warning-if-invoke-ret-val-unused*
-         make-invoke-val-unused-action-map "var-info.edn")
-  (swap! *warning-if-static-ret-val-unused*
-         make-static-method-val-unused-action-map "jvm-method-info.edn")
-  (let [warning-if-invoke-ret-val-unused @*warning-if-invoke-ret-val-unused*
-        warning-if-static-ret-val-unused @*warning-if-static-ret-val-unused*
+  (let [warning-if-invoke-ret-val-unused @warning-if-invoke-ret-val-unused-delayed
+        warning-if-static-ret-val-unused @warning-if-static-ret-val-unused-delayed
         unused-ret-val-exprs (->> asts
                                   (map util/mark-exprs-in-try-body)
                                   (map mark-things-in-defprotocol-expansion)

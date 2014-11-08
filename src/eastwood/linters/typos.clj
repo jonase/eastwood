@@ -183,15 +183,15 @@ generate varying strings while the test is running."
         
         :else nil)))))
 
-(def ^:dynamic *var-info-map* (atom nil))
 
-(defn read-var-info-map-if-needed [cur-map resource-name]
-  (if (nil? cur-map)
-    (edn/read-string (slurp (io/resource resource-name)))
-    cur-map))
+(def var-info-map-delayed
+  (delay
+   ;;(println "Reading var-info.edn for :suspicious-test linter")
+   (edn/read-string (slurp (io/resource "var-info.edn")))))
+
 
 (defn predicate-forms [subexpr-maps form-type]
-  (let [var-info-map @*var-info-map*]
+  (let [var-info-map @var-info-map-delayed]
     (apply
      concat
      (for [{:keys [subexpr ast]} subexpr-maps
@@ -252,7 +252,6 @@ generate varying strings while the test is running."
 ;; second argument to be issued, if we check it.
 
 (defn suspicious-test [{:keys [asts]}]
-  (swap! *var-info-map* read-var-info-map-if-needed "var-info.edn")
   (let [frms (fn [ast] (remove #(symbol? (second %))
                                (map list
                                     (:eastwood/partly-resolved-forms ast)
