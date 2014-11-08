@@ -69,10 +69,15 @@
               s (remove use-arg-ok? use-args)
               ;; Don't warn about unlimited use of clojure.test.  It
               ;; is very common, and seems harmless enough to me in
-              ;; test code.
-              s (remove #{'clojure.test '(clojure.test) ['clojure.test]
-                          '(clojure test) ['clojure 'test]}
-                        s)]
+              ;; test code.  Note: No need to have separate versions
+              ;; of the expressions as vectors, since the lists are
+              ;; equal to them.  Also, even though it doesn't cause a
+              ;; compile time error if we include ['clojure.test] in
+              ;; the set below, it does cause a run-time duplicate
+              ;; item exception in createWithCheck if we use Eastwood
+              ;; to lint itself, after it re-evaluates this source
+              ;; file.  I don't fully understand that yet.
+              s (remove #{'clojure.test '(clojure.test) '(clojure test)} s)]
         :when (seq s)]
     (let [first-bad-use (first s)
           first-bad-use-sym (if (symbol? first-bad-use)
