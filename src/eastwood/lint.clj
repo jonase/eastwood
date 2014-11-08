@@ -45,6 +45,19 @@ describing the error."
       (println (:msg info))
       (flush))))
 
+
+(defn make-default-dirs-scanned-cb [wrtr]
+  (fn default-dirs-scanned-cb [info]
+    (binding [*out* wrtr]
+      (println "Directories scanned for source files:")
+      (print " ")
+      (doseq [d (:dirs-scanned info)]
+        (print " ")
+        (print (:uri-or-file-name d)))
+      (println)
+      (flush))))
+
+
 (def empty-ordered-lint-warning-map-v1
   (util/ordering-map [:linter
                       :msg
@@ -109,6 +122,7 @@ describing the error."
 (defn assert-cb-has-proper-keys [{:keys [kind] :as info}]
   (case (:kind info)
     :error     (util/assert-keys info [:msg :opt])
+    :dirs-scanned (util/assert-keys info [:dirs-scanned :opt])
     :lint-warning (util/assert-keys info [:warn-data :opt])
     :note      (util/assert-keys info [:msg :opt])
     :eval-out  (util/assert-keys info [:msg :opt])
@@ -119,13 +133,15 @@ describing the error."
     :debug-form-emitted (assert-debug-form-cb-has-proper-keys info)))
 
 
-(defn make-eastwood-cb [{:keys [error lint-warning note eval-out eval-err
+(defn make-eastwood-cb [{:keys [error dirs-scanned lint-warning note
+                                eval-out eval-err
                                 debug debug-ast
                                 debug-form-read debug-form-emitted] :as opts}]
   (fn eastwood-cb [{:keys [kind] :as info}]
     (assert-cb-has-proper-keys info)
     (case (:kind info)
       :error     (error info)
+      :dirs-scanned (dirs-scanned info)
       :lint-warning (lint-warning info)
       :note      (note info)
       :eval-out  (eval-out info)
@@ -652,6 +668,8 @@ user=> (ns/canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
 
 (defn nss-in-dirs [dir-name-strs opt warning-count]
   (let [cb (:callback opt)
+        dir-name-strs (or (seq dir-name-strs)
+                          (#'eastwood.copieddeps.dep9.clojure.tools.namespace.dir/dirs-on-classpath))
         dir-name-strs (map canonical-filename dir-name-strs)
         mismatches (filename-namespace-mismatches dir-name-strs)]
     (if (seq mismatches)
@@ -682,6 +700,7 @@ user=> (ns/canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
                                  inf))
                    :opt opt}))))
         {:err nil
+         :dirs (map #(file-warn-info % (:cwd opt)) dir-name-strs)
          :namespaces
          (:eastwood.copieddeps.dep9.clojure.tools.namespace.track/load
           tracker)}))))
@@ -738,24 +757,24 @@ file and namespace to avoid name collisions."))))
 ;; is given that cannot be found.
 
 (defn opts->namespaces [opts warning-count]
-  (let [namespaces (distinct (or (:namespaces opts)
-                                 [:source-paths :test-paths]))
+  (let [namespaces1 (distinct (or (:namespaces opts)
+                                  [:source-paths :test-paths]))
         excluded-namespaces (set (:exclude-namespaces opts))]
     ;; Return an error if any keywords appear in the namespace lists
     ;; that are not recognized.
     (or
-     (unknown-ns-keywords namespaces #{:source-paths :test-paths}
+     (unknown-ns-keywords namespaces1 #{:source-paths :test-paths}
                           ":namespaces")
      (unknown-ns-keywords excluded-namespaces #{:source-paths :test-paths}
                           ":exclude-namespaces")
-     ;; If keyword :source-paths occurs in namespaces or
+     ;; If keyword :source-paths occurs in namespaces1 or
      ;; excluded-namespaces, replace it with all namespaces found in
      ;; the directories in (:source-paths opts), in an order that
      ;; honors dependencies, and similarly for :test-paths.
      ;; nss-in-dirs traverses part of the file system, so only call it
      ;; once for each of :source-paths and :test-paths, and only if
      ;; needed.
-     (let [all-ns (concat namespaces excluded-namespaces)
+     (let [all-ns (concat namespaces1 excluded-namespaces)
            sp (if (some #{:source-paths} all-ns)
                 (nss-in-dirs (:source-paths opts) opts warning-count))
            tp (if (some #{:test-paths} all-ns)
@@ -766,14 +785,18 @@ file and namespace to avoid name collisions."))))
         :else
         (let [source-paths (:namespaces sp)
               test-paths (:namespaces tp)
-              namespaces (replace-ns-keywords namespaces
+              namespaces (replace-ns-keywords namespaces1
                                               source-paths test-paths)
               namespaces (distinct namespaces)
               excluded-namespaces (set (replace-ns-keywords excluded-namespaces
                                                             source-paths
                                                             test-paths))
               namespaces (remove excluded-namespaces namespaces)]
-          {:err nil, :namespaces namespaces}))))))
+          {:err nil, :namespaces namespaces,
+           :dirs (distinct (concat (if (some #{:source-paths} namespaces1)
+                                     (:dirs sp))
+                                   (if (some #{:test-paths} namespaces1)
+                                     (:dirs tp))))}))))))
 
 
 (defn opts->linters [opts available-linters default-linters]
@@ -864,10 +887,13 @@ Return value:
   [opts]
   (let [warning-count (atom 0)
         exception-count (atom 0)
+        cb (:callback opts)
         {:keys [linters] :as m1} (opts->linters opts available-linters
                                                 default-linters)
         opts (assoc opts :enabled-linters linters)
-        {:keys [namespaces] :as m2} (opts->namespaces opts warning-count)]
+        {:keys [namespaces dirs] :as m2} (opts->namespaces opts warning-count)]
+    (when (seq dirs)
+      (cb {:kind :dirs-scanned, :dirs-scanned dirs, :opt opts}))
     (cond
      (:err m1) m1
      (:err m2) m2
@@ -924,6 +950,7 @@ Return value:
   (let [;;wrtr (io/writer "east-out.txt")   ; see comment above
         wrtr (java.io.PrintWriter. *out* true)
         default-msg-cb (make-default-msg-cb wrtr)
+        default-dirs-scanned-cb (make-default-dirs-scanned-cb wrtr)
         default-lint-warning-cb (make-default-lint-warning-cb wrtr)
         default-debug-ast-cb (make-default-debug-ast-cb wrtr)
         
@@ -933,6 +960,7 @@ Return value:
             (make-default-form-cb (io/writer "forms-emitted.txt")) ]
           [])]
     (make-eastwood-cb {:error default-msg-cb
+                       :dirs-scanned default-dirs-scanned-cb
                        :lint-warning default-lint-warning-cb
                        :note default-msg-cb
                        :eval-out default-msg-cb
