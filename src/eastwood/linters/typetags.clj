@@ -76,7 +76,7 @@ significance needed by the user."
                     (or (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
                              (= op :binding))
                         (and (= wrong-tag-keys #{:eastwood/tag})
-                             (#{:local :const} op)))
+                             (#{:local :const :var} op)))
                     [:tag (get ast :tag)
                      (or (pass/has-code-loc? (meta form))
                          (pass/code-loc (pass/nearest-ast-with-loc ast)))]
