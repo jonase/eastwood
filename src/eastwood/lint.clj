@@ -671,43 +671,30 @@ user=> (ns/canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
 
 
 (defn nss-in-dirs [dir-name-strs opt warning-count]
-  (let [cb (:callback opt)
-        dir-name-strs (or (seq dir-name-strs)
+  (let [dir-name-strs (or (seq dir-name-strs)
                           (#'eastwood.copieddeps.dep9.clojure.tools.namespace.dir/dirs-on-classpath))
         dir-name-strs (map canonical-filename dir-name-strs)
         mismatches (filename-namespace-mismatches dir-name-strs)]
     (if (seq mismatches)
       {:err :namespace-filename-mismatch
        :err-data {:mismatches mismatches}}
-      (let [tracker (apply dir/scan-all (track/tracker) dir-name-strs)]
-        (when (some #{:no-ns-form-found} (:enabled-linters opt))
-          (let [tfiles (-> tracker
-                           :eastwood.copieddeps.dep9.clojure.tools.namespace.dir/files
-                           set)
-                tfilemap (-> tracker
-                             :eastwood.copieddeps.dep9.clojure.tools.namespace.file/filemap
-                             keys
-                             set)
-                files-no-ns-form-found (set/difference tfiles tfilemap)]
-            (doseq [f files-no-ns-form-found]
-              (swap! warning-count inc)
-              (cb {:kind :lint-warning,
-                   ;; TBD: should include :uri and :uri-or-file-name keys
-                   ;; with vals as returned by namespace-info, but no
-                   ;; :namespace-sym since that might not even exist for
-                   ;; this file.
-                   :warn-data (let [inf (file-warn-info f (:cwd opt))]
-                                (merge
-                                 {:linter :no-ns-form-found
-                                  :msg (format "No ns form was found in file '%s'.  It will not be linted."
-                                               (:uri-or-file-name inf))}
-                                 inf))
-                   :opt opt}))))
+      (let [tracker (apply dir/scan-all (track/tracker) dir-name-strs)
+            files-no-ns-form-found
+            (when (some #{:no-ns-form-found} (:enabled-linters opt))
+              (let [tfiles (-> tracker
+                               :eastwood.copieddeps.dep9.clojure.tools.namespace.dir/files
+                               set)
+                    tfilemap (-> tracker
+                                 :eastwood.copieddeps.dep9.clojure.tools.namespace.file/filemap
+                                 keys
+                                 set)]
+                (set/difference tfiles tfilemap)))]
         {:err nil
          :dirs (map #(file-warn-info % (:cwd opt)) dir-name-strs)
          :non-clojure-files
          (:eastwood.copieddeps.dep9.clojure.tools.namespace.dir/non-clojure-files
           tracker)
+         :no-ns-form-found-files files-no-ns-form-found
          :namespaces
          (:eastwood.copieddeps.dep9.clojure.tools.namespace.track/load
           tracker)}))))
@@ -805,6 +792,10 @@ file and namespace to avoid name collisions."))))
            :namespaces namespaces,
            :dirs (distinct (concat (if sp-included? (:dirs sp))
                                    (if tp-included? (:dirs tp))))
+           :no-ns-form-found-files
+           (concat
+            (if sp-included? (:no-ns-form-found-files sp))
+            (if tp-included? (:no-ns-form-found-files tp)))
            :non-clojure-files (concat
                                (if sp-included? (:non-clojure-files sp))
                                (if tp-included? (:non-clojure-files tp)))}))))))
@@ -902,12 +893,26 @@ Return value:
         {:keys [linters] :as m1} (opts->linters opts available-linters
                                                 default-linters)
         opts (assoc opts :enabled-linters linters)
-        {:keys [namespaces dirs non-clojure-files] :as m2} (opts->namespaces
-                                                            opts warning-count)]
+
+        {:keys [namespaces dirs no-ns-form-found-files
+                non-clojure-files] :as m2}
+          (opts->namespaces opts warning-count)]
     (when (seq dirs)
       (cb {:kind :dirs-scanned, :dirs-scanned dirs, :opt opts}))
+    (when (some #{:no-ns-form-found} (:enabled-linters opts))
+      (doseq [f no-ns-form-found-files]
+        (swap! warning-count inc)
+        (cb {:kind :lint-warning,
+             :warn-data (let [inf (file-warn-info f (:cwd opts))]
+                          (merge
+                           {:linter :no-ns-form-found
+                            :msg (format "No ns form was found in file '%s'.  It will not be linted."
+                                         (:uri-or-file-name inf))}
+                           inf))
+             :opt opts})))
     (when (some #{:non-clojure-file} (:enabled-linters opts))
       (doseq [f non-clojure-files]
+        (swap! warning-count inc)
         (cb {:kind :lint-warning,
              :warn-data (let [inf (file-warn-info f (:cwd opts))]
                           (merge
