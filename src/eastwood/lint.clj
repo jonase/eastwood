@@ -164,13 +164,15 @@ return value followed by the time it took to evaluate in millisec."
      [ret# elapsed-msec#]))
 
 
-;; Note: :no-ns-form-found can be enabled/disabled from opt map like
-;; other linters, but it is a bit different in its implementation as
-;; it has no separate function to call on each namespace.  It is done
-;; very early, and is not specific to a namespace.
+;; Note: Linters below with nil for a value, e.g. :no-ns-form-found,
+;; can be enabled/disabled from the opt map like other linters, but
+;; they are a bit different in their implementation as they have no
+;; separate function to call on each namespace.  They are done very
+;; early, and are not specific to a namespace.
 
 (def ^:private available-linters
   {:no-ns-form-found nil
+   :non-clojure-file nil
    :misplaced-docstrings misc/misplaced-docstrings
    :deprecations deprecated/deprecations
    :redefd-vars misc/redefd-vars
@@ -192,6 +194,7 @@ return value followed by the time it took to evaluate in millisec."
 
 (def ^:private default-linters
   #{:no-ns-form-found
+    :non-clojure-file
     :misplaced-docstrings
     :deprecations
     :redefd-vars
@@ -607,7 +610,8 @@ exception."))
 
 (defn filename-namespace-mismatches [dir-name-strs]
   (let [files-by-dir (into {} (for [dir-name-str dir-name-strs]
-                                [dir-name-str (#'dir/find-files [dir-name-str])]))
+                                [dir-name-str (:clojure-files
+                                               (#'dir/find-files [dir-name-str]))]))
         fd-by-dir (util/map-vals (fn [files]
                                    (#'file/files-and-deps files))
                                  files-by-dir)]
@@ -701,6 +705,9 @@ user=> (ns/canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
                    :opt opt}))))
         {:err nil
          :dirs (map #(file-warn-info % (:cwd opt)) dir-name-strs)
+         :non-clojure-files
+         (:eastwood.copieddeps.dep9.clojure.tools.namespace.dir/non-clojure-files
+          tracker)
          :namespaces
          (:eastwood.copieddeps.dep9.clojure.tools.namespace.track/load
           tracker)}))))
@@ -759,6 +766,8 @@ file and namespace to avoid name collisions."))))
 (defn opts->namespaces [opts warning-count]
   (let [namespaces1 (distinct (or (:namespaces opts)
                                   [:source-paths :test-paths]))
+        sp-included? (some #{:source-paths} namespaces1)
+        tp-included? (some #{:test-paths} namespaces1)
         excluded-namespaces (set (:exclude-namespaces opts))]
     ;; Return an error if any keywords appear in the namespace lists
     ;; that are not recognized.
@@ -792,11 +801,13 @@ file and namespace to avoid name collisions."))))
                                                             source-paths
                                                             test-paths))
               namespaces (remove excluded-namespaces namespaces)]
-          {:err nil, :namespaces namespaces,
-           :dirs (distinct (concat (if (some #{:source-paths} namespaces1)
-                                     (:dirs sp))
-                                   (if (some #{:test-paths} namespaces1)
-                                     (:dirs tp))))}))))))
+          {:err nil,
+           :namespaces namespaces,
+           :dirs (distinct (concat (if sp-included? (:dirs sp))
+                                   (if tp-included? (:dirs tp))))
+           :non-clojure-files (concat
+                               (if sp-included? (:non-clojure-files sp))
+                               (if tp-included? (:non-clojure-files tp)))}))))))
 
 
 (defn opts->linters [opts available-linters default-linters]
@@ -891,9 +902,20 @@ Return value:
         {:keys [linters] :as m1} (opts->linters opts available-linters
                                                 default-linters)
         opts (assoc opts :enabled-linters linters)
-        {:keys [namespaces dirs] :as m2} (opts->namespaces opts warning-count)]
+        {:keys [namespaces dirs non-clojure-files] :as m2} (opts->namespaces
+                                                            opts warning-count)]
     (when (seq dirs)
       (cb {:kind :dirs-scanned, :dirs-scanned dirs, :opt opts}))
+    (when (some #{:non-clojure-file} (:enabled-linters opts))
+      (doseq [f non-clojure-files]
+        (cb {:kind :lint-warning,
+             :warn-data (let [inf (file-warn-info f (:cwd opts))]
+                          (merge
+                           {:linter :non-clojure-file
+                            :msg (format "Non-Clojure file '%s'.  It will not be linted."
+                                         (:uri-or-file-name inf))}
+                           inf))
+             :opt opts})))
     (cond
      (:err m1) m1
      (:err m2) m2
