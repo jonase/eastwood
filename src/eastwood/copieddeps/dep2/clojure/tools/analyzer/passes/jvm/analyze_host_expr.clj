@@ -8,7 +8,7 @@
 
 (ns eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.analyze-host-expr
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer :as ana]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [ctx source-info resolve-var merge']]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [ctx source-info merge']]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :refer :all]))
 
 (defn maybe-static-field [[_ class sym]]
@@ -172,8 +172,7 @@
                                     target (or class? (:tag target)) env)
 
                 :maybe-class
-                (when-let [the-class (or (maybe-class-literal class)
-                                         (maybe-class-literal (resolve-var class env)))]
+                (when-let [the-class (maybe-class-literal class)]
                   (assoc (ana/analyze-const the-class env :class)
                     :tag   Class
                     :o-tag Class

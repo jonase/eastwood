@@ -24,7 +24,6 @@
 
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
              [source-info :refer [source-info]]
-             [cleanup :refer [cleanup]]
              [elide-meta :refer [elide-meta elides]]
              [warn-earmuff :refer [warn-earmuff]]
              [uniquify :refer [uniquify-locals]]]
@@ -62,7 +61,8 @@
 
 (defn build-ns-map []
   (into {} (mapv #(vector (ns-name %)
-                          {:mappings (ns-map %)
+                          {:mappings (merge (ns-map %) {'in-ns #'clojure.core/in-ns
+                                                        'ns    #'clojure.core/ns})
                            :aliases  (reduce-kv (fn [a k v] (assoc a k (ns-name v)))
                                                 {} (ns-aliases %))
                            :ns       (ns-name %)})
@@ -87,7 +87,7 @@
   (let [sym-ns (namespace form)]
     (if-let [target (and sym-ns
                          (not (resolve-ns (symbol sym-ns) env))
-                         (maybe-class sym-ns))]                           ;; Class/field
+                         (maybe-class-literal sym-ns))]          ;; Class/field
       (with-meta (list '. target (symbol (str "-" (name form)))) ;; transform to (. Class -field)
         (meta form))
       form)))
@@ -99,10 +99,9 @@
             opns   (namespace op)]
         (if-let [target (and opns
                              (not (resolve-ns (symbol opns) env))
-                             (maybe-class opns))] ; (class/field ..)
+                             (maybe-class-literal opns))] ; (class/field ..)
 
-          (let [target (maybe-class opns)
-                op (symbol opname)]
+          (let [op (symbol opname)]
             (with-meta (list '. target (if (zero? (count expr))
                                          op
                                          (list* op expr)))
@@ -111,8 +110,7 @@
           (cond
            (.startsWith opname ".")     ; (.foo bar ..)
            (let [[target & args] expr
-                 target (if-let [target (and (not (get (:locals env) target))
-                                             (maybe-class target))]
+                 target (if-let [target (maybe-class-literal target)]
                           (with-meta (list 'do target)
                             {:tag 'java.lang.Class})
                           target)
@@ -199,15 +197,11 @@
     (if (and v (or (class? v)
                    (= ns (ns-name (.ns ^Var v) ))))
       v
-      (intern ns (vary-meta sym merge
-                            (let [{:keys [inline inline-arities arglists]} (meta sym)]
-                              (merge {}
-                                     (when arglists
-                                       {:arglists (qualify-arglists arglists)})
-                                     (when inline
-                                       {:inline (eval inline)})
-                                     (when inline-arities
-                                       {:inline-arities (eval inline-arities)}))))))))
+      (let [meta (dissoc (meta sym) :inline :inline-arities :macro)
+            meta (if-let [arglists (:arglists meta)]
+                   (assoc meta :arglists (qualify-arglists arglists))
+                   meta)]
+       (intern ns (with-meta sym meta))))))
 
 (defmethod parse 'var
   [[_ var :as form] env]
@@ -398,8 +392,10 @@
 
 (defmethod parse 'catch
   [[_ etype ename & body :as form] env]
-  (let [etype (if (= etype :default) Throwable etype)] ;; catch-all
-    (ana/-parse `(catch ~etype ~ename ~@body) env)))
+  (if-not (:in-try env)
+    (ana/parse-invoke form env)
+    (let [etype (if (= etype :default) Throwable etype)] ;; catch-all
+      (ana/-parse `(catch ~etype ~ename ~@body) env))))
 
 (def default-passes
   "Set of passes that will be run by default on the AST by #'run-passes"
@@ -469,7 +465,8 @@
                             #'ana/var?          var?
                             #'elides            (merge {:fn    #{:line :column :end-line :end-column :file :source}
                                                         :reify #{:line :column :end-line :end-column :file :source}}
-                                                       elides)}
+                                                       elides)
+                            #'*ns*              (the-ns (:ns env))}
                            (:bindings opts))
        (env/ensure (global-env)
          (env/with-env (swap! env/*env* mmerge
@@ -493,6 +490,7 @@
        (update-ns-map!)
        (let [env (merge env (-source-info form env))
              [mform raw-forms] (with-bindings {Compiler/LOADER     (RT/makeClassLoader)
+                                               #'*ns*              (the-ns (:ns env))
                                                #'ana/macroexpand-1 (get-in opts [:bindings #'ana/macroexpand-1] macroexpand-1)}
                                  (loop [form form raw-forms []]
                                    (let [mform (ana/macroexpand-1 form env)]
@@ -503,21 +501,20 @@
            ;; handle the Gilardi scenario
            (let [[statements ret] (butlast+last (rest mform))
                  statements-expr (mapv (fn [s] (analyze+eval s (-> env
-                                                                   (ctx :statement)
-                                                                   (assoc :ns (ns-name *ns*)))
-                                                             opts))
+                                                                (ctx :statement)
+                                                                (assoc :ns (ns-name *ns*)))
+                                                            opts))
                                        statements)
                  ret-expr (analyze+eval ret (assoc env :ns (ns-name *ns*)) opts)]
-             (-> {:op         :do
-                 :top-level  true
-                 :form       mform
-                 :statements statements-expr
-                 :ret        ret-expr
-                 :children   [:statements :ret]
-                 :env        env
-                 :result     (:result ret-expr)
-                 :raw-forms  raw-forms}
-               source-info))
+             {:op         :do
+              :top-level  true
+              :form       mform
+              :statements statements-expr
+              :ret        ret-expr
+              :children   [:statements :ret]
+              :env        env
+              :result     (:result ret-expr)
+              :raw-forms  raw-forms})
            (let [a (analyze mform env opts)
                  frm (emit-form a)
                  result (try (eval frm) ;; eval the emitted form rather than directly the form to avoid double macroexpansion
@@ -525,20 +522,6 @@
                                (ExceptionThrown. e)))]
              (merge a {:result    result
                        :raw-forms raw-forms})))))))
-
-(defn analyze'
-  "Like `analyze` but runs cleanup on the AST"
-  ([form] (analyze' form (empty-env)))
-  ([form env] (analyze' form env {}))
-  ([form env opts]
-     (prewalk (analyze form env opts) cleanup)))
-
-(defn analyze+eval'
-  "Like `analyze+eval` but runs cleanup on the AST"
-  ([form] (analyze+eval' form (empty-env)))
-  ([form env] (analyze+eval' form env {}))
-  ([form env opts]
-     (prewalk (analyze+eval form env opts) cleanup)))
 
 (defn analyze-ns
   "Analyzes a whole namespace, returns a vector of the ASTs for all the

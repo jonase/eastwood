@@ -396,8 +396,9 @@
     (if (and (empty? cblocks)
              (empty? fblocks))
       (assoc (analyze-body body env) :form form) ;; discard the useless try
-      (let [body (analyze-body body (assoc env :no-recur true :in-try true)) ;; cannot recur across try
-            cenv (ctx env :ctx/expr)
+      (let [env' (assoc env :in-try true)
+            body (analyze-body body (assoc env' :no-recur true)) ;; cannot recur across try
+            cenv (ctx env' :ctx/expr)
             cblocks (mapv #(parse % cenv) cblocks)
             fblock (when-not (empty? fblock)
                      (analyze-body (rest fblock) (ctx env :ctx/statement)))]
@@ -410,26 +411,31 @@
                  {:finally fblock})
                {:children `[:body :catches ~@(when fblock [:finally])]})))))
 
+(declare parse-invoke)
 (defmethod -parse 'catch
   [[_ etype ename & body :as form] env]
-  (when-not (valid-binding-symbol? ename)
-    (throw (ex-info (str "Bad binding form: " ename)
-                    (merge {:sym ename
-                            :form form}
-                           (-source-info form env)))))
-  (let [local {:op    :binding
-               :env   env
-               :form  ename
-               :name  ename
-               :local :catch
-               :tag   etype}]
-    {:op          :catch
-     :class       (analyze-form etype (assoc env :locals {}))
-     :local       local
-     :env         env
-     :form        form
-     :body        (analyze-body body (assoc-in env [:locals ename] (dissoc-env local)))
-     :children    [:class :local :body]}))
+  (if-not (:in-try env)
+    (parse-invoke form env)
+    (do
+      (when-not (valid-binding-symbol? ename)
+        (throw (ex-info (str "Bad binding form: " ename)
+                        (merge {:sym ename
+                                :form form}
+                               (-source-info form env)))))
+      (let [env (dissoc env :in-try)
+            local {:op    :binding
+                   :env   env
+                   :form  ename
+                   :name  ename
+                   :local :catch
+                   :tag   etype}]
+        {:op          :catch
+         :class       (analyze-form etype (assoc env :locals {}))
+         :local       local
+         :env         env
+         :form        form
+         :body        (analyze-body body (assoc-in env [:locals ename] (dissoc-env local)))
+         :children    [:class :local :body]}))))
 
 (defmethod -parse 'throw
   [[_ throw :as form] env]
@@ -784,7 +790,7 @@
              :m-or-f      (symbol (name m-or-f))
              :children    [:target]}))))
 
-(defmethod -parse :invoke
+(defn parse-invoke
   [[f & args :as form] env]
   (let [fn-expr (analyze-form f (ctx env :ctx.invoke/target))
         args-expr (mapv (analyze-in-env (ctx env :ctx.invoke/param)) args)
@@ -797,3 +803,7 @@
            (when m
              {:meta m}) ;; meta on invoke form will not be evaluated
            {:children [:fn :args]})))
+
+(defmethod -parse :invoke
+  [form env]
+  (parse-invoke form env))
