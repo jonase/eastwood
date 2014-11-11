@@ -11,6 +11,54 @@
   [#21](https://github.com/jonase/eastwood/issues/21).
 
 
+## Changes from version 0.1.5 to 0.2.0
+
+* New linter `:non-clojure-file` that warns about each non-Clojure
+  file found in your `:source-paths` or `:test-paths`, if you specify
+  those in the list of namespaces to lint, or leave them there as the
+  default.  Enabled by default, but you may wish to disable it in
+  projects that intentionally have some of these files.  Issue
+  [#102](https://github.com/jonase/eastwood/issues/102).  TBD: Add
+  docs to README.next.md about this one.
+
+* New linter `:no-ns-form-found` that warns about each Clojure file
+  found where Eastwood could not find an `ns` form.  Most likely that
+  is because there is none, but more unusually there could be an `ns`
+  form that is nested inside of another top level form like `let` or
+  `if` that Eastwood does not detect.  Warns only about files in
+  `:source-paths` or `:test-paths`, as for the `:non-clojure-file`
+  linter described above.  TBD: Add docs to README.next.md about this
+  one.
+
+* New option `:warning-output-file` to specify a file name where
+  warnings are written instead of to the standard output.  Issue
+  [#104](https://github.com/jonase/eastwood/issues/104).
+
+* Corrections to the `:wrong-tag` linter where it was throwing
+  exceptions while linting some projects -- ones that had not been
+  tested before Eastwood 0.1.5 release.
+
+* Corrected a case where `:unlimited-use` warnings were still being
+  issued for the namespace `clojure.test`, which was `(:use [clojure
+  test])`.  Issue [#95](https://github.com/jonase/eastwood/issues/95).
+
+* For namespace / file name consistency check error messages, made the
+  message a little clearer for common special case of file name having
+  '-' characters instead of '_'.  Issue
+  [#103](https://github.com/jonase/eastwood/issues/103).
+
+* Improved line/column location info for a few `:unused-ret-val`
+  warnings.
+
+* Update `tools.analyzer` to version tbd, and `tools.analyzer.jvm` to
+  version tbd.  Issues:
+  [#100](https://github.com/jonase/eastwood/issues/100).
+
+* Added several projects to the 'crucible' set of projects on which
+  Eastwood is regularly tested: Instaparse, Schema, Plumbing, Carmine,
+  Compojure.
+
+
 ## Changes from version 0.1.4 to 0.1.5
 
 * New linter `:local-shadows-var` that warns if a local name (e.g. a
