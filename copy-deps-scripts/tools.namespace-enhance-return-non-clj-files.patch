@@ -1,0 +1,60 @@
+diff --git a/src/eastwood/copieddeps/dep9/clojure/tools/namespace/dir.clj b/src/eastwood/copieddeps/dep9/clojure/tools/namespace/dir.clj
+index 07b59bb..6202612 100644
+--- a/src/eastwood/copieddeps/dep9/clojure/tools/namespace/dir.clj
++++ b/src/eastwood/copieddeps/dep9/clojure/tools/namespace/dir.clj
+@@ -18,12 +18,19 @@
+   (:import (java.io File) (java.util.regex Pattern)))
+ 
+ (defn- find-files [dirs]
+-  (->> dirs
+-       (map io/file)
+-       (filter #(.exists ^File %))
+-       (mapcat file-seq)
+-       (filter file/clojure-file?)
+-       (map #(.getCanonicalFile ^File %))))
++  (let [all-files (->> dirs
++                       (map io/file)
++                       (filter #(.exists ^File %))
++                       (mapcat file-seq)
++                       (remove #(.isDirectory ^File %)))
++        clojure-files (->> all-files
++                           (filter file/clojure-file?)
++                           (map #(.getCanonicalFile ^File %)))
++        non-clojure-files (->> all-files
++                               (remove file/clojure-file?)
++                               (map #(.getCanonicalFile ^File %)))]
++    {:clojure-files clojure-files
++     :non-clojure-files non-clojure-files}))
+ 
+ (defn- modified-files [tracker files]
+   (filter #(< (::time tracker 0) (.lastModified ^File %)) files))
+@@ -55,12 +62,14 @@
+   If no dirs given, defaults to all directories on the classpath."
+   [tracker & dirs]
+   (let [ds (or (seq dirs) (dirs-on-classpath))
+-        files (find-files ds)
++        {:keys [clojure-files non-clojure-files]} (find-files ds)
++        files clojure-files
+         deleted (seq (deleted-files tracker files))
+         modified (seq (modified-files tracker files))]
+-    (if (or deleted modified)
+-      (update-files tracker deleted modified)
+-      tracker)))
++    (assoc (if (or deleted modified)
++             (update-files tracker deleted modified)
++             tracker)
++      ::non-clojure-files non-clojure-files)))
+ 
+ (defn scan-all
+   "Scans directories for all Clojure source files and updates the
+@@ -68,6 +77,8 @@
+   all directories on the classpath."
+   [tracker & dirs]
+   (let [ds (or (seq dirs) (dirs-on-classpath))
+-        files (find-files ds)
++        {:keys [clojure-files non-clojure-files]} (find-files ds)
++        files clojure-files
+         deleted (seq (deleted-files tracker files))]
+-    (update-files tracker deleted files)))
++    (assoc (update-files tracker deleted files)
++      ::non-clojure-files non-clojure-files)))

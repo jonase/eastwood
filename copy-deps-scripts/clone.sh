@@ -40,6 +40,7 @@ cd tools.namespace
 #git checkout tools.namespace-0.2.7
 # One more commit after 0.2.7
 git checkout 122e3d1d4fb01e4f1412d5cc7ec80dce76e8778a
+patch -p1 < ../../tools.namespace-enhance-return-non-clj-files.patch
 cd ..
 
 git clone https://github.com/clojure/tools.reader.git
