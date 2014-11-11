@@ -14,7 +14,8 @@ does not work with Clojure versions earlier than 1.4.0.
 ## Installation & Quick usage
 
 Eastwood can be run from the command line as a
-[Leiningen](http://leiningen.org) plugin, or from within a REPL.
+[Leiningen](http://leiningen.org) plugin, or from within a REPL, even
+if you do not use Leiningen.
 
 As a Leiningen plugin, Eastwood has been tested most with Leiningen
 versions 2.4.x and 2.5.x.  Merge the following into your
@@ -187,7 +188,7 @@ effects.
 
 If you know how to write tests using other Clojure test libraries
 besides `clojure.test` so that merely loading the file does not run
-the tests, please create an Issue for Eastwood on Github.
+the tests, please create an Issue for Eastwood on GitHub.
 
 If you have a code base you do not trust to load, consider a sandbox,
 throwaway virtual machine, etc.
@@ -259,6 +260,12 @@ Merge this into your project's `project.clj` file first:
 :profiles {:dev {:dependencies [[jonase/eastwood "0.1.5" :exclusions [org.clojure/clojure]]]}}
 ```
 
+Note: This should work even if you do not use Leiningen for your
+project.  You will need to add the dependency above in the manner
+appropriate for your build tool.  See
+[Clojars](https://clojars.org/jonase/eastwood) for Gradle and Maven
+syntax.
+
 From within your REPL:
 
 ```clojure
@@ -307,7 +314,7 @@ Stuart Sierra's [component](https://github.com/stuartsierra/component)
 library and workflow might be helpful in automatically removing old
 versions of namespaces from a JVM process.  If you have instructions
 that you have used with Eastwood and component or a similar tool,
-please file a Github issue so they can be included here.
+please file a GitHub issue so they can be included here.
 
 
 ## Known issues
@@ -992,7 +999,7 @@ the `java.lang` package, or you have imported the package into the
 Clojure namespace.
 
 Such type hints on function return values can also help avoid
-relection in Java interop calls, but in this case the places where it
+reflection in Java interop calls, but in this case the places where it
 can help are wherever the function is called, and its return value is
 used in a Java interop call.  If that is in the same namespace where
 the function is defined, then the same rules apply as for function
@@ -1182,19 +1189,19 @@ License 1.0.
 
 [core.cache](https://github.com/clojure/core.cache)
 
-Copyright (c) Rich Hickey, Michael Fogus and contributors, 2012. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound bythe terms of this license.  You must not remove this notice, or any other, from this software.
+Copyright (c) Rich Hickey, Michael Fogus and contributors, 2012. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound by the terms of this license.  You must not remove this notice, or any other, from this software.
 
 ### core.contracts
 
 [core.contracts](https://github.com/clojure/core.contracts)
 
-Copyright (c) Rich Hickey, Michael Fogus and contributors, 2012. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound bythe terms of this license.  You must not remove this notice, or any other, from this software.
+Copyright (c) Rich Hickey, Michael Fogus and contributors, 2012. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound by the terms of this license.  You must not remove this notice, or any other, from this software.
 
 ### core.memoize
 
 [core.memoize](https://github.com/clojure/core.memoize)
 
-Copyright (c) Rich Hickey and Michael Fogus, 2012, 2013. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound bythe terms of this license.  You must not remove this notice, or any other, from this software.
+Copyright (c) Rich Hickey and Michael Fogus, 2012, 2013. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound by the terms of this license.  You must not remove this notice, or any other, from this software.
 
 ### core.unify
 
