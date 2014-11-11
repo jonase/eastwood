@@ -710,8 +710,12 @@ with their file names:")
         (println (format "Directory: %s" dir))
         (println (format "    File                 : %s" fname))
         (println (format "    has namespace        : %s" namespace))
-        (println (format "    should have namespace: %s" recommended-namespace))
-        (println (format "    or should be in file : %s" recommended-fname)))
+        (if (= namespace recommended-namespace)
+          ;; Give somewhat clearer message in this case
+          (println (format "    should be in file    : %s" recommended-fname))
+          (do
+            (println (format "    should have namespace: %s" recommended-namespace))
+            (println (format "    or should be in file : %s" recommended-fname)))))
       (println "
 No other linting checks will be performed until these problems have
 been corrected.
