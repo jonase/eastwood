@@ -262,7 +262,9 @@ Merge this into your project's `project.clj` file first:
 
 Note: This should work even if you do not use Leiningen for your
 project.  You will need to add the dependency above in the manner
-appropriate for your build tool.
+appropriate for your build tool.  See
+[Clojars](https://clojars.org/jonase/eastwood) for Gradle and Maven
+syntax.
 
 From within your REPL:
 
