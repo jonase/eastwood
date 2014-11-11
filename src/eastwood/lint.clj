@@ -980,9 +980,12 @@ Return value:
 (defn make-default-cb [opts]
   (let [;;wrtr (io/writer "east-out.txt")   ; see comment above
         wrtr (java.io.PrintWriter. *out* true)
+        warn-wrtr (if (contains? opts :warning-output-file)
+                    (io/writer (:warning-output-file opts))
+                    wrtr)
         default-msg-cb (make-default-msg-cb wrtr)
         default-dirs-scanned-cb (make-default-dirs-scanned-cb wrtr)
-        default-lint-warning-cb (make-default-lint-warning-cb wrtr)
+        default-lint-warning-cb (make-default-lint-warning-cb warn-wrtr)
         default-debug-ast-cb (make-default-debug-ast-cb wrtr)
         
         [form-read-cb form-emitted-cb]
