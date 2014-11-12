@@ -965,6 +965,77 @@ the next."
        ;; precisely, though.
        clojure-1-7-or-later-expected-warnings
        clojure-1-6-or-earlier-expected-warnings)))
+  (lint-test
+   'testcases.macrometa
+   [:unlimited-use :local-shadows-var :wrong-tag :unused-meta-on-macro]
+   {}
+   {
+    {:linter :unused-meta-on-macro,
+     :msg "Java constructor call 'StringWriter.' has metadata with keys (:foo).  All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 20, :column 28}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Java constructor call 'StringWriter.' has metadata with keys (:tag).  All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 21, :column 28}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Java instance method call '.close' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 35, :column 20}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Java instance method call '.close' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 37, :column 20}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Java static method call 'Math/abs' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 44, :column 20}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Java static method call 'Math/abs' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 46, :column 20}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Macro invocation of 'my-writer-macro' has metadata with keys (:foo) that are almost certainly ignored.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 76, :column 20}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Macro invocation of 'my-writer-macro' has metadata with keys (:tag) that are almost certainly ignored.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 77, :column 20}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Macro invocation of 'my-writer-macro' has metadata with keys (:foo :tag) that are almost certainly ignored.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 78, :column 20}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Java static field access 'Long/MAX_VALUE' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 92, :column 20}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Java static field access 'Long/MAX_VALUE' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 94, :column 20}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Java instance method/field access '.x' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 102, :column 20}
+    1,
+    {:linter :unused-meta-on-macro,
+     :msg "Java instance method/field access '.x' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :file (fname-from-parts "testcases" "macrometa.clj"),
+     :line 104, :column 20}
+    1,
+    })
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace
   ;; before lint-test does, and thus the namespace is already there

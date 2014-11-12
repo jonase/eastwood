@@ -30,6 +30,15 @@
   linter described above.  TBD: Add docs to README.next.md about this
   one.
 
+* New linter `:unused-meta-on-macro` that warns when metadata is used
+  to annotate a macro invocation, but the Clojure compiler will ignore
+  it because it is discarded during macro expansion.  Issue
+  [#97](https://github.com/jonase/eastwood/issues/97).  TBD: Add docs
+  to README.next.md about this one.  They should mention the exception
+  that Prismatic Schema's `schema.core/fn` macro is an exception to
+  the rule, since it explicitly preserves metadata in the way it is
+  written.
+
 * New option `:warning-output-file` to specify a file name where
   warnings are written instead of to the standard output.  Issue
   [#104](https://github.com/jonase/eastwood/issues/104).

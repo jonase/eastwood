@@ -187,6 +187,7 @@ return value followed by the time it took to evaluate in millisec."
    :unused-private-vars unused/unused-private-vars
    :unused-fn-args unused/unused-fn-args
    :unused-namespaces unused/unused-namespaces
+   :unused-meta-on-macro unused/unused-meta-on-macro
    :unlimited-use misc/unlimited-use
    :wrong-tag typetags/wrong-tag
    :keyword-typos typos/keyword-typos
@@ -206,6 +207,7 @@ return value followed by the time it took to evaluate in millisec."
     :suspicious-expression
     :unused-ret-vals
     :unused-ret-vals-in-try
+    :unused-meta-on-macro
     :unlimited-use
     :wrong-tag})
 
