@@ -459,15 +459,16 @@ generate varying strings while the test is running."
    (apply suspicious-expression-asts args)))
 
 
-(defn logical-true-test?
-  "Return true if the ast represents not necessarily a constant
-expression, but definitely an expression that evaluates as logical
-true in an if test, e.g. vectors, maps, and sets, even if they have
-contents that vary at run time, are always logical true."
+(defn logical-true-test
+  "Return the ast to report a warning for, if the 'ast' argument
+represents not necessarily a constant expression, but definitely an
+expression that evaluates as logical true in an if test, e.g. vectors,
+maps, and sets, even if they have contents that vary at run time, are
+always logical true.  Otherwise, return nil."
   [ast]
-  (or (#{:vector :map :set :quote} (:op ast))
-      (and (= :with-meta (:op ast))
-           (logical-true-test? (:expr ast)))))
+  (cond (#{:vector :map :set :quote} (:op ast)) ast
+        (= :with-meta (:op ast)) (logical-true-test (:expr ast))
+        :else nil))
 
 
 (defn pure-fn-ast? [ast]
@@ -478,23 +479,28 @@ contents that vary at run time, are always logical true."
            sym))))
 
 
-(declare constant-ast?)
+(declare constant-ast)
 
 
 (defn constant-map? [ast]
   (and (= :map (:op ast))
-       (every? constant-ast? (:keys ast))
-       (every? constant-ast? (:vals ast))))
+       (every? constant-ast (:keys ast))
+       (every? constant-ast (:vals ast))))
 
 
 (defn constant-vector-or-set? [ast]
   (and (#{:vector :set} (:op ast))
-       (every? constant-ast? (:items ast))))
+       (every? constant-ast (:items ast))))
 
 
-(defn constant-ast? [ast]
-  (or (and (= :with-meta (:op ast))
-           (constant-ast? (:expr ast)))
+(defn constant-ast
+  "Return nil if 'ast' is not one that we can determine to be a
+constant value.  Does not do all compile-time evaluation that would be
+possible, to keep things relatively simple.  If we can determine it to
+be a constant value, return an ast that can be used to issue a
+warning, that contains the constant value."
+  [ast]
+  (cond (= :with-meta (:op ast))    (constant-ast (:expr ast))
 
       ;;; BEGIN new stuff
 ;;      (and (= :local (:op ast))
@@ -509,15 +515,21 @@ contents that vary at run time, are always logical true."
 ;;               (constant-ast? bound-val-ast))))
       ;;; END new stuff
 
-      (#{:const :quote} (:op ast))
-      (constant-map? ast)
-      (constant-vector-or-set? ast)
-      (and (= :invoke (:op ast))
-           (let [pfn (pure-fn-ast? (:fn ast))]
-             (or (and pfn (every? constant-ast? (:args ast)))
-                 (and (= 'clojure.core/not pfn)
-                      (logical-true-test? (-> ast :args first))))))))
+      (#{:const :quote} (:op ast))  ast
+      (constant-map? ast)           ast
+      (constant-vector-or-set? ast) ast
 
+      (= :invoke (:op ast))
+      (let [pfn (pure-fn-ast? (:fn ast))]
+        (cond (and pfn (every? constant-ast (:args ast)))
+              ast
+              
+              (= 'clojure.core/not pfn)
+              (logical-true-test (-> ast :args first))
+              
+              :else nil))
+
+      :else nil))
 
 (defn assert-expansion? [ast]
   (and (= :if (:op ast))
@@ -526,15 +538,15 @@ contents that vary at run time, are always logical true."
                                    first first))))
 
 
-(defn if-with-predictable-test? [ast]
-  (and (= :if (:op ast))
-       (not (assert-expansion? ast))
-       (or (constant-ast? (-> ast :test))
-           (logical-true-test? (-> ast :test)))))
+(defn if-with-predictable-test [ast]
+  (if (and (= :if (:op ast))
+           (not (assert-expansion? ast)))
+    (or (constant-ast (-> ast :test))
+        (logical-true-test (-> ast :test)))))
 
 
 ;; Assumption: Only call this function if
-;; if-with-predictable-test? returned true for the ast.
+;; if-with-predictable-test returned true for the ast.
 (defn default-case-at-end-of-cond? [ast]
   ;; I have seen true and :default used in several projects rather
   ;; than :else
@@ -547,12 +559,13 @@ contents that vary at run time, are always logical true."
 (defn constant-test [{:keys [asts]}]
   (let [const-tests (->> asts
                          (mapcat ast/nodes)
-                         (filter #(and (if-with-predictable-test? %)
-                                       (not (default-case-at-end-of-cond? %)))))]
+                         (keep #(if (default-case-at-end-of-cond? %)
+                                  nil
+                                  (if-with-predictable-test %))))]
     (for [ast const-tests
-          :let [form (-> ast :test :form)
+          :let [form (-> ast :form)
                 form-to-print (if (nil? form) "nil" form)
-                loc (or (pass/has-code-loc? (-> ast :test :form meta))
+                loc (or (pass/has-code-loc? (-> ast :form meta))
                         (pass/code-loc (pass/nearest-ast-with-loc ast)))]]
       (util/add-loc-info loc
        {:linter :constant-test

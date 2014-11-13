@@ -1127,19 +1127,19 @@ the next."
      :line 30, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not [(inc 41)])",
+     :msg "Test expression is always logical true or always logical false: [(inc 41)]",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 31, :column 1}
+     :line 31, :column 9}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not #{(dec 43)})",
+     :msg "Test expression is always logical true or always logical false: #{(dec 43)}",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 32, :column 1}
+     :line 32, :column 10}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not {:a (/ 84 2)})",
+     :msg "Test expression is always logical true or always logical false: {:a (/ 84 2)}",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 33, :column 1}
+     :line 33, :column 9}
     1,
     {:linter :constant-test,
      :msg "Test expression is always logical true or always logical false: (clojure.core/not (seq {:a 1}))",
