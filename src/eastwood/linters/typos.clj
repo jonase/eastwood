@@ -457,3 +457,104 @@ generate varying strings while the test is running."
   (concat
    (apply suspicious-expression-forms args)
    (apply suspicious-expression-asts args)))
+
+
+(defn logical-true-test?
+  "Return true if the ast represents not necessarily a constant
+expression, but definitely an expression that evaluates as logical
+true in an if test, e.g. vectors, maps, and sets, even if they have
+contents that vary at run time, are always logical true."
+  [ast]
+  (or (#{:vector :map :set :quote} (:op ast))
+      (and (= :with-meta (:op ast))
+           (logical-true-test? (:expr ast)))))
+
+
+(defn pure-fn-ast? [ast]
+  (and (= :var (:op ast))
+       (var? (:var ast))
+       (let [sym (util/var-to-fqsym (:var ast))]
+         (if (:pure-fn (@var-info-map-delayed sym))
+           sym))))
+
+
+(declare constant-ast?)
+
+
+(defn constant-map? [ast]
+  (and (= :map (:op ast))
+       (every? constant-ast? (:keys ast))
+       (every? constant-ast? (:vals ast))))
+
+
+(defn constant-vector-or-set? [ast]
+  (and (#{:vector :set} (:op ast))
+       (every? constant-ast? (:items ast))))
+
+
+(defn constant-ast? [ast]
+  (or (and (= :with-meta (:op ast))
+           (constant-ast? (:expr ast)))
+
+      ;;; BEGIN new stuff
+;;      (and (= :local (:op ast))
+;;           (let [local-sym (:form ast)
+;;                 bound-val-binding (-> ast :env :locals local-sym)
+;;                 bound-val-ast (if (= :binding (:op bound-val-binding))
+;;                                 (:init bound-val-binding))]
+;;             (println (format "Found ast op=:local with local-sym=%s val-form=%s line=%s"
+;;                              local-sym (:form bound-val-ast)
+;;                              (-> bound-val-ast :form meta :line)))
+;;             (if bound-val-ast
+;;               (constant-ast? bound-val-ast))))
+      ;;; END new stuff
+
+      (#{:const :quote} (:op ast))
+      (constant-map? ast)
+      (constant-vector-or-set? ast)
+      (and (= :invoke (:op ast))
+           (let [pfn (pure-fn-ast? (:fn ast))]
+             (or (and pfn (every? constant-ast? (:args ast)))
+                 (and (= 'clojure.core/not pfn)
+                      (logical-true-test? (-> ast :args first))))))))
+
+
+(defn assert-expansion? [ast]
+  (and (= :if (:op ast))
+       (seq (:raw-forms ast))
+       (= 'clojure.core/assert (-> ast :eastwood/partly-resolved-forms
+                                   first first))))
+
+
+(defn if-with-predictable-test? [ast]
+  (and (= :if (:op ast))
+       (not (assert-expansion? ast))
+       (or (constant-ast? (-> ast :test))
+           (logical-true-test? (-> ast :test)))))
+
+
+;; Assumption: Only call this function if
+;; if-with-predictable-test? returned true for the ast.
+(defn default-case-at-end-of-cond? [ast]
+  ;; I have seen true and :default used in several projects rather
+  ;; than :else
+  (and (#{:else :default true} (-> ast :test :form))
+       (seq (:eastwood/partly-resolved-forms ast))
+       (= 'clojure.core/cond
+          (-> ast :eastwood/partly-resolved-forms first first))))
+
+
+(defn constant-test [{:keys [asts]}]
+  (let [const-tests (->> asts
+                         (mapcat ast/nodes)
+                         (filter #(and (if-with-predictable-test? %)
+                                       (not (default-case-at-end-of-cond? %)))))]
+    (for [ast const-tests
+          :let [form (-> ast :test :form)
+                form-to-print (if (nil? form) "nil" form)
+                loc (or (pass/has-code-loc? (-> ast :test :form meta))
+                        (pass/code-loc (pass/nearest-ast-with-loc ast)))]]
+      (util/add-loc-info loc
+       {:linter :constant-test
+        :msg (format "Test expression is always logical true or always logical false: %s"
+                     form-to-print)}))))

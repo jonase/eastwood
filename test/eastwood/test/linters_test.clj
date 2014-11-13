@@ -1036,6 +1036,137 @@ the next."
      :line 104, :column 20}
     1,
     })
+  (lint-test
+   'testcases.constanttestexpr
+   [:constant-test]
+   {}
+   {
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: false",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 13, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: [nil]",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 14, :column 5}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: #{}",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 15, :column 6}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: {:a 1}",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 16, :column 5}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (quote ())",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 17, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (quote (\"string\"))",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 18, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: [(inc 41)]",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 19, :column 5}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: #{(dec 43)}",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 20, :column 6}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: {:a (/ 84 2)}",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 21, :column 5}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (seq {:a 1})",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 22, :column 5}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote x))",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 24, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/not false)",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 25, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/not [nil])",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 26, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/not #{})",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 27, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/not {:a 1})",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 28, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote ()))",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 29, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote (\"string\")))",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 30, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/not [(inc 41)])",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 31, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/not #{(dec 43)})",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 32, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/not {:a (/ 84 2)})",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 33, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/not (seq {:a 1}))",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 34, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: nil",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 36, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: [nil]",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 37, :column 11},
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: :x",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 50, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: false",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 64, :column 1}
+    1,
+    })
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace
   ;; before lint-test does, and thus the namespace is already there

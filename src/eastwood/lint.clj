@@ -182,6 +182,7 @@ return value followed by the time it took to evaluate in millisec."
    :local-shadows-var misc/local-shadows-var
    :suspicious-test typos/suspicious-test
    :suspicious-expression typos/suspicious-expression
+   :constant-test typos/constant-test
    :unused-ret-vals unused/unused-ret-vals
    :unused-ret-vals-in-try unused/unused-ret-vals-in-try
    :unused-private-vars unused/unused-private-vars
@@ -205,6 +206,7 @@ return value followed by the time it took to evaluate in millisec."
     :local-shadows-var
     :suspicious-test
     :suspicious-expression
+    :constant-test
     :unused-ret-vals
     :unused-ret-vals-in-try
     :unused-meta-on-macro
