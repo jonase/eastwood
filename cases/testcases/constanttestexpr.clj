@@ -1,5 +1,5 @@
-(ns testcases.constanttestexpr)
-
+(ns testcases.constanttestexpr
+  (:require [clojure.pprint :as pprint]))
 ;; Expressions that evaluate to a constant value as a test
 
 ;; not truthy:
@@ -8,7 +8,7 @@
 
 ;; truthy:
 ;; any other expression that is a compile-time constant
-
+(def shrouded-false (not (seq {:a (/ 84 2)})))  ; false, but defined in a way that the :constant-test linter cannot determine that the test will always go the same way
 ;; Warn about these
 (if false 1 2)
 (if [nil] 1 2)
@@ -64,16 +64,77 @@
 (if false
   (assert false "This won't be reached, but shouldn't warn about it whether it can be reached or not."))
 
-(if-let [x [false]] "w" "v")  ; tbd: needs local binding resolve handling
-(when-let [x #{5 7}] (println "Hello"))  ; tbd: needs to resolve local binding val
-(when-first [x [1 2]] (println "Goodbye"))  ; tbd
+(if-let [x [false]] "w" "v")
+(when-let [x #{5 7}] (println "Hello"))
+(when-first [x [1 2]] (println "Goodbye"))
 
-(and (nil? nil) 7 (inc 2))  ; tbd: same as if-let above
-(or false 2)                ; tbd: same as if-let above
+(and (nil? nil) 7 (inc 2))
+(or false 2)
 
-(if-some [x {:a 1}] "w" "v")  ; tbd: needs local binding resolve + (nil? const) handling
-(when-some [x "w"] nil)  ; tbd: same as if-some above
+(if-some [x {:a 1}] "w" "v")  ; tbd: needs (nil? const) handling as in-line
+(when-some [x "w"] nil)       ; tbd: same as if-some
 
+(if shrouded-false
+  (assert nil "string"))
+(if shrouded-false
+  (assert nil))
+;; Both of the following should give a warning because they are
+;; neither assert false nor assert nil, which are the only special
+;; cases of constant assert expressions we should avoid warning about.
+(assert true "string")
+(assert [false])
+
+;; Make sure *not* to get bindings from loop statements when looking
+;; for let bindings.  There should be no warnings for the function
+;; below.
+
+(defn input-ranges [s]
+  (loop [accumulator [], start nil, end nil, s (sort s)]
+    (if (empty? s)
+      (if end
+        (conj accumulator [start end])
+        accumulator)
+      (let [x (first s)]
+        (cond
+          (and end (= (inc end) x))
+          (recur accumulator start x (rest s))
+          
+          end
+          (recur (conj accumulator [start end]) x x (rest s))
+          
+          :else
+          (recur accumulator x x (rest s)))))))
+
+;; A precondition similar to the one below should trigger a warning, I
+;; think.
+
+(defn wrongly-written-precondition [i]
+  {:pre (<= 0 i 32)}
+  (dec i))
+
+;; A function like this in data.json gave :constant-test warnings
+;; before.  I don't see yet why that might happen.  Answer:
+;; pprint/formatter-out is a macro, not a function.  It exapnds to
+;; include an expression of the form (if (string? "string-arg")
+;; then-expr else-expr).  That is what causes the warning.
+
+(defn- pprint-array [s]
+  ((pprint/formatter-out "~<[~;~@{~w~^, ~:_~}~;]~:>") s))
+
+;; The linter is able to detect this as a constant test expression,
+;; since it is a pure function call on a pure function call on
+;; constants.
+(if (map? (list [:p "a"] [:p "b"])) 1 2)
+
+;; It can detect this, too.
+(let [x (map? (list [:p "a"] [:p "b"]))]
+  (if x 1 2))
+
+;; TBD: Why is it not able to issue a warning for a line like this in
+;; test/hiccup/test/core.clj ?
+;; (is (= (html (list [:p "a"] [:p "b"])) "<p>a</p><p>b</p>"))
+;; It does detect this one right next to it
+;; (is (= (html [:body (list "foo" "bar")]) "<body>foobar</body>"))
 
 ;; TBD? condp
 ;; TBD? while

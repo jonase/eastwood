@@ -1166,6 +1166,66 @@ the next."
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 64, :column 1}
     1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: [false]",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 67, :column 12}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: #{7 5}",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 68, :column 15}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/seq [1 2])",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 69, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: 7",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 71, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: false",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 72, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: true",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 84, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: [false]",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 85, :column 9}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: 0",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 111, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: 32",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 111, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (clojure.core/string? format-in__<num>__auto__)",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 122, :column 4}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (map? (list [:p \"a\"] [:p \"b\"]))",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 127, :column 5}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (map? (list [:p \"a\"] [:p \"b\"]))"
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 130, :column 9}
+    1,
     })
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace

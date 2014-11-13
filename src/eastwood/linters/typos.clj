@@ -237,7 +237,7 @@ generate varying strings while the test is running."
 
 ;; suspicious-test used to do its job only examining source forms, but
 ;; now it goes through the forms on the
-;; :eastwood-partly-resolved-forms lists of AST nodes that have such a
+;; :eastwood/partly-resolved-forms lists of AST nodes that have such a
 ;; key.  This is useful for distinguishing occurrences of (is ...)
 ;; forms that are from clojure.test/is, vs. ones from
 ;; clojure.core.typed/is from core.typed.
@@ -502,51 +502,61 @@ warning, that contains the constant value."
   [ast]
   (cond (= :with-meta (:op ast))    (constant-ast (:expr ast))
 
-      ;;; BEGIN new stuff
-;;      (and (= :local (:op ast))
-;;           (let [local-sym (:form ast)
-;;                 bound-val-binding (-> ast :env :locals local-sym)
-;;                 bound-val-ast (if (= :binding (:op bound-val-binding))
-;;                                 (:init bound-val-binding))]
-;;             (println (format "Found ast op=:local with local-sym=%s val-form=%s line=%s"
-;;                              local-sym (:form bound-val-ast)
-;;                              (-> bound-val-ast :form meta :line)))
-;;             (if bound-val-ast
-;;               (constant-ast? bound-val-ast))))
-      ;;; END new stuff
+        (= :local (:op ast))
+        (let [local-sym (:form ast)
+              bound-val-binding (-> ast :env :locals local-sym)
+              bound-val-ast (if (and (= :binding (:op bound-val-binding))
+                                     ;; loop and fn arg bindings can
+                                     ;; never be constants.  Only
+                                     ;; examine let bindings, which
+                                     ;; might be constants.
+                                     (= :let (:local bound-val-binding)))
+                              (:init bound-val-binding))]
+;;          (println (format "Found ast op=:local with local-sym=%s val-form=%s line=%s"
+;;                           local-sym (:form bound-val-ast)
+;;                           (-> bound-val-ast :form meta :line)))
+          (if bound-val-ast
+            (constant-ast bound-val-ast)))
+        
+        (#{:const :quote} (:op ast))  ast
+        (constant-map? ast)           ast
+        (constant-vector-or-set? ast) ast
+        
+        (= :invoke (:op ast))
+        (let [pfn (pure-fn-ast? (:fn ast))]
+          (cond (and pfn (every? constant-ast (:args ast)))
+                ast
+                
+                (= 'clojure.core/not pfn)
+                (logical-true-test (-> ast :args first))
+                
+                :else nil))
+        
+        :else nil))
 
-      (#{:const :quote} (:op ast))  ast
-      (constant-map? ast)           ast
-      (constant-vector-or-set? ast) ast
 
-      (= :invoke (:op ast))
-      (let [pfn (pure-fn-ast? (:fn ast))]
-        (cond (and pfn (every? constant-ast (:args ast)))
-              ast
-              
-              (= 'clojure.core/not pfn)
-              (logical-true-test (-> ast :args first))
-              
-              :else nil))
-
-      :else nil))
-
-(defn assert-expansion? [ast]
+(defn assert-false-expansion? [ast]
   (and (= :if (:op ast))
        (seq (:raw-forms ast))
+;;       (do
+;;         (if-let [x (-> ast :eastwood/partly-resolved-forms first first)]
+;;           (println (format "jafinger-dbg: x=%s %s %s"
+;;                            x (= 'clojure.core/assert x)
+;;                            (-> ast :eastwood/partly-resolved-forms first))))
+;;         true)
        (= 'clojure.core/assert (-> ast :eastwood/partly-resolved-forms
-                                   first first))))
+                                   first first))
+       (= :const (-> ast :test :op))
+       (contains? #{false nil} (-> ast :test :val))))
 
 
 (defn if-with-predictable-test [ast]
   (if (and (= :if (:op ast))
-           (not (assert-expansion? ast)))
+           (not (assert-false-expansion? ast)))
     (or (constant-ast (-> ast :test))
         (logical-true-test (-> ast :test)))))
 
 
-;; Assumption: Only call this function if
-;; if-with-predictable-test returned true for the ast.
 (defn default-case-at-end-of-cond? [ast]
   ;; I have seen true and :default used in several projects rather
   ;; than :else
