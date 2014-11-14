@@ -471,10 +471,86 @@ generate varying strings while the test is running."
                              "\"\""
                              (print-str (:ret-val info))))}))))))))
 
+
+;; This code may get a bit hackish, trying to recognize exactly the
+;; macroexpansion of clojure.test/try-expr, in particular the case
+;; where it is of the form (fn args ...), rather than some other
+;; expression like a macro invocation, which already seems to be
+;; handled well by suspicious-macro-invocations.
+
+(defn suspicious-is-try-expr [{:keys [asts]}]
+  (let [try-expr-asts
+        (->> asts
+             (mapcat ast/nodes)
+             (filter (fn [ast]
+                       (and (= :try (:op ast))
+                            (= 'clojure.test/try-expr
+                               (-> ast :raw-forms last first))))))]
+    (for [ast try-expr-asts
+          :let [raw-form (-> ast :raw-forms last)
+                let-bindings-ast (-> ast
+                                     :body ; in :op :try
+                                     :ret  ; in :op :do
+                                     :bindings ; in :op :let
+                                     )
+                fn-args-ast-vec (-> let-bindings-ast
+                                    first  ; in vector of 2 bindings
+                                    :init  ; in :op :binding
+                                    :args  ; in :op :invoke for clojure.core/list
+                                    )
+                num-args (count fn-args-ast-vec)
+                fn-var (-> let-bindings-ast
+                           second  ; in vector of 2 bindings
+                           :init   ; in :op :binding
+                           :args   ; in :op :invoke for clojure.core/apply
+                           first   ; in vector of 2 args to apply
+                           :var    ; in :op :var
+                           )
+                fn-sym (util/var-to-fqsym fn-var)
+                loc (-> raw-form last meta)
+                suspicious-args (core-fns-that-do-little fn-sym)
+                info (get suspicious-args num-args)
+;;                _ (do
+;;                    (println (format "try-expr-dbg: last-arg=%s class(es)=%s"
+;;                                     (last raw-form)
+;;                                     (if (sequential? (last raw-form))
+;;                                       (seq (map class (last raw-form)))
+;;                                       (class raw-form))))
+;;                    (println (format "    form="))
+;;                    (util/pprint-form (-> ast :form))
+;;                    (println (format "    (-> ast :body ... :init)="))
+;;                    (util/pprint-ast-node (-> let-bindings-ast
+;;                                              first   ; in vector of 2 bindings
+;;                                              :init  ; in :op :binding
+;;                                              ))
+;;                    (println (format "    fqsym=%s (%s)  num-args=%s args=%s"
+;;                                     fn-sym (class fn-sym)
+;;                                     num-args
+;;                                     (seq (map :form fn-args-ast-vec))))
+;;                    (println (format "    suspicious-args=%s"
+;;                                     suspicious-args))
+;;                    (println (format "    loc=%s" loc))
+;;                    )
+                ]
+          :when (contains? suspicious-args num-args)]
+      (util/add-loc-info
+       loc
+       {:linter :suspicious-expression
+        :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
+                     (name fn-sym) num-args (name fn-sym)
+                     (if (> num-args 0)
+                       (str " " (str/join " " (:args info)))
+                       "")
+                     (if (= "" (:ret-val info))
+                       "\"\""
+                       (print-str (:ret-val info))))}))))
+
+
 (defn suspicious-expression [& args]
   (concat
    (apply suspicious-macro-invocations args)
-   (apply suspicious-fn-calls args)))
+   (apply suspicious-fn-calls args)
+   (apply suspicious-is-try-expr args)))
 
 
 (defn logical-true-test

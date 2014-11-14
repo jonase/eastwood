@@ -542,12 +542,17 @@ the next."
     {:linter :suspicious-expression,
      :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?",
      :file (fname-from-parts "testcases" "testtest.clj"),
-     :line 82, :column 8}
+     :line 82, :column 7}
     1,
     {:linter :suspicious-test,
      :msg "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 83, :column 4}
+    1,
+    {:linter :suspicious-expression,
+     :msg "> called with 1 args.  (> x) always returns true.  Perhaps there are misplaced parentheses?",
+     :file (fname-from-parts "testcases" "testtest.clj"),
+     :line 83, :column 7}
     1,
     {:linter :suspicious-expression,
      :msg "min-key called with 2 args.  (min-key f x) always returns x.  Perhaps there are misplaced parentheses?",
@@ -799,7 +804,7 @@ the next."
      :linter :suspicious-expression,
      :msg "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 145, :column 8,
+    {:line 145, :column 7,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
      :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?"}
@@ -809,7 +814,7 @@ the next."
      :linter :suspicious-test,
      :msg "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning."}
     1,
-    {:line 146, :column 8,
+    {:line 146, :column 7,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
      :msg "== called with 1 args.  (== x) always returns true.  Perhaps there are misplaced parentheses?"}
