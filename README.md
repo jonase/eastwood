@@ -69,47 +69,47 @@ the command line to enable or disable the linter.
 - `:misplaced-docstrings` - Function or macro doc strings placed after
   the argument vector, instead of before the argument vector where
   they
-  belong. [[more]](https://github.com/jonase/eastwood#misplaced-docstrings---strings-that-appear-to-be-misplaced-documentation-strings)
+  belong. [[more]](https://github.com/jonase/eastwood#misplaced-docstrings)
 - `:deprecations` - Deprecated Clojure Vars, and deprecated Java
   instance methods, static fields, static methods, and
-  constructors. [[more]](https://github.com/jonase/eastwood#deprecations---deprecated-java-methodsfieldsconstructors-and-clojure-vars)
+  constructors. [[more]](https://github.com/jonase/eastwood#deprecations)
 - `:redefd-vars` - Redefinitions of the same name in the same
-  namespace. [[more]](https://github.com/jonase/eastwood#redefd-vars---redefinitions-of-the-same-name-in-the-same-namespace)
+  namespace. [[more]](https://github.com/jonase/eastwood#redefd-vars)
 - `:def-in-def` - def's nested inside other
-  def's. [[more]](https://github.com/jonase/eastwood#def-in-def---defs-nested-inside-other-defs)
+  def's. [[more]](https://github.com/jonase/eastwood#def-in-def)
 - `:wrong-arity` - Function calls that seem to have the wrong number
   of
-  arguments. [[more]](https://github.com/jonase/eastwood#wrong-arity---function-call-with-wrong-number-of-arguments)
+  arguments. [[more]](https://github.com/jonase/eastwood#wrong-arity)
 - `:bad-arglists` - Function/macro `:arglists` metadata that does not
   match the number of args it is defined with (new in version
-  0.1.1). [[more]](https://github.com/jonase/eastwood#bad-arglists---functionmacro-definitions-with-arg-vectors-differing-from-their-arglists-metadata)
+  0.1.1). [[more]](https://github.com/jonase/eastwood#bad-arglists)
 - `:suspicious-test` - Tests using `clojure.test` that may be written
-  incorrectly. [[more]](https://github.com/jonase/eastwood#suspicious-test---suspicious-tests-that-may-be-written-incorrectly)
+  incorrectly. [[more]](https://github.com/jonase/eastwood#suspicious-test)
 - `:suspicious-expression` - Suspicious expressions that appear
   incorrect, because they always return trivial values.
 - `:unused-ret-vals` and `:unused-ret-vals-in-try` - Unused values,
   including unused return values of pure functions, and some others
   functions where it rarely makes sense to discard its return
-  value. [[more]](https://github.com/jonase/eastwood#unused-ret-vals-and-unused-ret-vals-in-try---values-that-are-not-used)
+  value. [[more]](https://github.com/jonase/eastwood#unused-ret-vals)
 - `:local-shadows-var` - A local name, e.g. a function arg or let
   binding, has the same name as a global Var, and is called as a
   function (new in version
-  0.1.5). [[more]](https://github.com/jonase/eastwood#local-shadows-var---a-local-name-that-is-same-as-a-global-name-called-as-a-function)
+  0.1.5). [[more]](https://github.com/jonase/eastwood#local-shadows-var)
 - `:wrong-tag` - An incorrect type tag for which the Clojure compiler
-  does not give an error (new in version 0.1.5). [[more]](https://github.com/jonase/eastwood#wrong-tag---an-incorrect-type-tag)
+  does not give an error (new in version 0.1.5). [[more]](https://github.com/jonase/eastwood#wrong-tag)
 - `:unused-private-vars` - Unused private vars (needs updating).
 - `:unused-fn-args` - Unused function arguments (disabled by
-  default). [[more]](https://github.com/jonase/eastwood#unused-fn-args---unused-arguments-of-functions-macros-methods)
+  default). [[more]](https://github.com/jonase/eastwood#unused-fn-args)
 - `:unused-namespaces` - Warn if a namespace is given in an `ns` form
   after `:use` or `:require`, but no Vars within the namespace are
-  ever mentioned (disabled by default).
+  ever mentioned (disabled by default). [[more]](https://github.com/jonase/eastwood#unused-namespaces)
 - `:unlimited-use` - Unlimited `(:use ...)` without `:refer` or
   `:only` to limit the symbols referred by
-  it. [[more]](https://github.com/jonase/eastwood#unlimited-use---use-statements-that-do-not-explicitly-limit-the-symbols-they-refer)
+  it. [[more]](https://github.com/jonase/eastwood#unlimited-use)
 - `:keyword-typos` - Keyword names that may be typos because they
   occur only once in the source code and are slight variations on
   other keywords (disabled by
-  default). [[more]](https://github.com/jonase/eastwood#keyword-typos---keywords-that-may-have-typographical-errors)
+  default). [[more]](https://github.com/jonase/eastwood#keyword-typos)
 
 
 ## Usage
@@ -440,7 +440,9 @@ cases of printing error messages that make it difficult to determine
 what went wrong.  Fix the problems indicated and try again.
 
 
-### `:misplaced-docstrings` - Strings that appear to be misplaced documentation strings
+### `:misplaced-docstrings`
+
+#### Function or macro doc strings placed after the argument vector, instead of before the argument vector where they belong.
 
 The correct place to put a documentation string for a function or
 macro is just before the arguments, like so:
@@ -468,7 +470,9 @@ this way, so `(doc my-function)` will not show what you intended, and
 tools that extract documentation from Clojure code will not find it.
 
 
-### `:deprecations` - Deprecated Java methods/fields/constructors and Clojure vars
+### `:deprecations`
+
+#### Deprecated Clojure Vars, and deprecated Java instance methods, static fields, static methods, and constructors.
 
 The warnings issued are based upon the particular JDK you are using
 when running Eastwood, and can change between different JDK versions.
@@ -492,7 +496,9 @@ below.
 ```
 
 
-### `:redefd-vars` - Redefinitions of the same name in the same namespace
+### `:redefd-vars`
+
+#### Redefinitions of the same name in the same namespace.
 
 It is possible to accidentally define the same var multiple times in
 the same namespace.  Eastwood's `:redefd-vars` linter will warn about
@@ -560,7 +566,9 @@ others, consider using `declare` for all but the last definition, if
 possible, and Eastwood will ignore all but that last definition.
 
 
-### `:def-in-def` - Defs nested inside other defs
+### `:def-in-def`
+
+#### def'd nested inside other def's
 
 If you come to Clojure having learned Scheme earlier, you may write
 Clojure code with `def` statements inside of functions.  Or you might
@@ -587,7 +595,9 @@ particular effect, it is recommended to take `:def-in-def` warnings as
 a sign to change your code.
 
 
-### `:wrong-arity` - Function call with wrong number of arguments
+### `:wrong-arity`
+
+#### Function calls that seem to have the wrong number of arguments.
 
 Eastwood warns if a function call is found that has a number of
 arguments not equal to any of the defined signatures (also called
@@ -616,7 +626,9 @@ developer to specify a list of functions that should never have
 accurate.
 
 
-### `:bad-arglists` - Function/macro definitions with arg vectors differing from their `:arglists` metadata
+### `:bad-arglists`
+
+#### Function/macro `:arglists` metadata that does not match the number of args it is defined with
 
 New in Eastwood version 0.1.1
 
@@ -665,7 +677,9 @@ linter) and other Clojure development tools could rely upon
 have been defined.
 
 
-### `:suspicious-test` - Suspicious tests that may be written incorrectly
+### `:suspicious-test`
+
+#### Tests using `clojure.test` that may be written incorrectly.
 
 It is easy to misunderstand or forget the correct arguments to
 `clojure.test`'s `is` macro, and as a result write unit tests that do
@@ -740,12 +754,18 @@ test.
 ```
 
 
-### `:suspicious-expression` - Suspicious expressions that may be incorrect
+### `:suspicious-expression`
+
+#### Suspicious expressions that appear incorrect, because they always return trivial values.
 
 TBD.  Explain and give a few examples.
 
 
-### `:unused-ret-vals` and `:unused-ret-vals-in-try` - values that are not used
+### `:unused-ret-vals`
+
+#### Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value.
+
+The variant `:unused-ret-vals-in-try` is also documented here.
 
 Values which are unused are sometimes a sign of a problem in your
 code.  These can be constant values, values of locally bound symbols
@@ -866,7 +886,9 @@ functions will cause similar warnings, but right now any function not
 in this map will never cause one of these warnings.
 
 
-### `:local-shadows-var` - A local name that is same as a global name, called as a function
+### `:local-shadows-var`
+
+#### A local name, e.g. a function arg or let binding, has the same name as a global Var, and is called as a function
 
 New in Eastwood version 0.1.5
 
@@ -926,7 +948,9 @@ function.
 ```
 
 
-### `:wrong-tag` - An incorrect type tag
+### `:wrong-tag`
+
+#### An incorrect type tag for which the Clojure compiler does not give an error
 
 New in Eastwood version 0.1.5
 
@@ -1042,7 +1066,9 @@ is not fully qualified.
 ```
 
 
-### `:unused-fn-args` - Unused arguments of functions, macros, methods
+### `:unused-fn-args`
+
+#### Unused arguments of functions, macros, methods
 
 This linter is disabled by default, because it often produces a large
 number of warnings that are not errors.  You must explicitly enable it
@@ -1066,7 +1092,21 @@ consider prepending an underscore to their names to silence the
 warnings.
 
 
-### `:unlimited-use` - Use statements that do not explicitly limit the symbols they refer
+### `:unused-namespaces`
+
+#### A namespace you use/require could be removed
+
+This linter is disabled by default, because it can be fairly noisy.
+You must explicitly enable it if you wish to see these warnings.
+
+Warn if a namespace is given in an `ns` form after `:use` or
+`:require`, but no Vars within the namespace are ever mentioned within
+the namespace.  Thus the namespace could be eliminated.
+
+
+### `:unlimited-use`
+
+#### Unlimited `(:use ...)` without `:refer` or `:only` to limit the symbols referred by it.
 
 An `ns` statement like the one below will refer all of the public
 symbols in the namespace `clojure.string`:
@@ -1128,7 +1168,9 @@ changed and their code would not run, which is better than a subtle
 bug in running code.
 
 
-### `:keyword-typos` - Keywords that may have typographical errors
+### `:keyword-typos`
+
+#### Keywords that may have typographical errors
 
 This linter is disabled by default, because it often produces a large
 number of warnings that are not errors.  You must explicitly enable it
