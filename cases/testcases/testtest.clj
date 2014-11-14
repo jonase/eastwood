@@ -151,6 +151,11 @@
   ;; inside of (quote ...)
   (is (= 'when (first (fnext '(first (when (foo bar))))))))
 
+(deftest macros-inside-is
+  (is (-> 1 (= 1))) ; should be no warning for this
+  (is (-> 1 (=)))   ; do warn for this, but should be for 1-arg = call, not 0-arg
+  )
+
 (comment
   ;; Best not to warn for things inside of (comment ...)
   (= 5)

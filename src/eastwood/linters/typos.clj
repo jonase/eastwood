@@ -301,80 +301,98 @@ generate varying strings while the test is running."
             (predicate-forms pr-deftest-subexprs 'deftest)
             (predicate-forms pr-testing-subexprs 'testing))))
 
-;; Suspicious function calls and macro invocations
+;; Suspicious macro invocations
 
-(def core-first-vars-that-do-little
+(def core-macros-that-do-little
   '{
-    ;; TBD: It seems like = == and not= are redundant with the
-    ;; corresponding entries in core-fns-that-do-little below.  See if
-    ;; this map can be made only for macros, and that one only for
-    ;; functions, and all that is detected now continues to be
-    ;; detected.
-    =        {1 {:args [x] :ret-val true}}
-    ==       {1 {:args [x] :ret-val true}}
-    not=     {1 {:args [x] :ret-val false}}
-    lazy-cat {0 {:args [] :ret-val ()}}  ; macro where (lazy-cat) expands to (concat).  TBD: add concat to this list?
+    clojure.core/lazy-cat {0 {:args [] :ret-val ()}}  ; macro where (lazy-cat) expands to (concat).  TBD: add concat to this list?
     ;; Note: (->> x) throws arity exception, so no lint warning for it.
-    ->       {1 {:args [x] :ret-val x}}  ; macro where (-> x) expands to x
+    clojure.core/->       {1 {:args [x] :ret-val x}}  ; macro where (-> x) expands to x
     ;; Note: (if x) is a compiler error, as is (if a b c d) or more args
-    cond     {0 {:args [] :ret-val nil}}  ; macro where (cond) -> nil
-    case     {2 {:args [x y] :ret-val y}}  ; macro (case 5 2) -> (let* [x 5] 2)
-    condp    {3 {:args [pred test-expr expr] :ret-val expr}}  ;; macro (condp = 5 2) -> (let* [pred = expr 5] 2)
-    when     {1 {:args [test] :ret-val nil}} ; macro (when 5) -> (if 5 (do))
-    when-not {1 {:args [test] :ret-val nil}} ; macro (when-not 5) -> (if 5 nil (do))
-    when-let {1 {:args [[x y]] :ret-val nil}} ; macro (when-let [x 5]) -> (let* [temp 5] (when temp (let [x temp])))
-    doseq    {1 {:args [[x coll]] :ret-val nil}} ; macro (doseq [x [1 2 3]]) has big expansion
-    dotimes  {1 {:args [[i n]] :ret-val nil}} ; macro (dotimes [i 10]) has medium-sized expansion using loop
-    with-out-str {0 {:args [] :ret-val ""}}
-    and      {0 {:args []  :ret-val true},  ; macro (and) -> true
-              1 {:args [x] :ret-val x}}     ; macro (and 5) -> 5
-    or       {0 {:args []  :ret-val nil},   ; macro (or) -> nil
-              1 {:args [x] :ret-val x}}     ; macro (or 5) -> 5
-    doto     {1 {:args [x] :ret-val x}}     ; macro (doto x) -> (let* [temp x] temp)
-    declare  {0 {:args []  :ret-val nil}}   ; macro (declare) -> (do)
+    clojure.core/cond     {0 {:args [] :ret-val nil}}  ; macro where (cond) -> nil
+    clojure.core/case     {2 {:args [x y] :ret-val y}}  ; macro (case 5 2) -> (let* [x 5] 2)
+    clojure.core/condp    {3 {:args [pred test-expr expr] :ret-val expr}}  ;; macro (condp = 5 2) -> (let* [pred = expr 5] 2)
+    clojure.core/when     {1 {:args [test] :ret-val nil}} ; macro (when 5) -> (if 5 (do))
+    clojure.core/when-not {1 {:args [test] :ret-val nil}} ; macro (when-not 5) -> (if 5 nil (do))
+    clojure.core/when-let {1 {:args [[x y]] :ret-val nil}} ; macro (when-let [x 5]) -> (let* [temp 5] (when temp (let [x temp])))
+    clojure.core/doseq    {1 {:args [[x coll]] :ret-val nil}} ; macro (doseq [x [1 2 3]]) has big expansion
+    clojure.core/dotimes  {1 {:args [[i n]] :ret-val nil}} ; macro (dotimes [i 10]) has medium-sized expansion using loop
+    clojure.core/with-out-str {0 {:args [] :ret-val ""}}
+    clojure.core/and      {0 {:args []  :ret-val true},  ; macro (and) -> true
+                           1 {:args [x] :ret-val x}}     ; macro (and 5) -> 5
+    clojure.core/or       {0 {:args []  :ret-val nil},   ; macro (or) -> nil
+                           1 {:args [x] :ret-val x}}     ; macro (or 5) -> 5
+    clojure.core/doto     {1 {:args [x] :ret-val x}}     ; macro (doto x) -> (let* [temp x] temp)
+    clojure.core/declare  {0 {:args []  :ret-val nil}}   ; macro (declare) -> (do)
     })
 
-;; Note that suspicious-expression-forms is implemented on the
-;; original source code, before macro expansion, so it can give false
-;; positives for expressions like this:
+;; suspicious-macro-invocations was formerly called
+;; suspicious-expressions-forms, and implemented to use the 'forms'
+;; key, not the asts.  That was closer to the original source code,
+;; before macro expansion, so it would give warnings for expressions
+;; that we would prefer it not warn, like this one:
 
 ;; (-> x (doto (method args)))     ; macro expands to (doto x (method args))
 
-;; For most suspicious function calls, we check for them in the ast in
-;; suspicious-expression-asts below, but that will not find suspicious
-;; calls on macros, or on (is (= expr)) forms because of how is
-;; macro-expands.
+;; The newer version suspicious-macro-invocations uses the asts, which
+;; contain forms on the key :eastwood/partly-resolved-forms, to see
+;; what the forms looked like before macroexpansion.  This should
+;; avoid the issue above.
 
-;; Another possibility is to avoid issuing warnings on the original
-;; un-macro-expanded code if one of these expressions appears directly
-;; inside of a -> or ->> macro, which is a bit hackish, but should
-;; avoid most of the incorrect warnings I have seen so far in real
-;; code.
+;; For suspicious function calls, we check for them in the asts in
+;; suspicious-fn-calls below, but that will not find suspicious calls
+;; on macros, nor on clojure.test/is forms.
 
-(defn suspicious-expression-forms [{:keys [forms]}]
-  (apply
-   concat
-   (let [fs (-> forms
-                util/replace-comments-and-quotes-with-nil
-                (util/subforms-with-first-in-set
-                 (set (keys core-first-vars-that-do-little))))]
-     (for [f fs]
-       (let [fn-sym (first f)
-             loc (-> fn-sym meta)
-             num-args (dec (count f))
-             suspicious-args (get core-first-vars-that-do-little fn-sym)
-             info (get suspicious-args num-args)]
-         (if (contains? suspicious-args num-args)
-           [(util/add-loc-info loc
-             {:linter :suspicious-expression,
-              :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"
-                           fn-sym num-args fn-sym
-                           (if (> num-args 0)
-                             (str " " (str/join " " (:args info)))
-                             "")
-                           (if (= "" (:ret-val info))
-                             "\"\""
-                             (print-str (:ret-val info))))})]))))))
+;; TBD: Still need different code for detecting suspicious
+;; clojure.test/is forms like these examples below.  Special detection
+;; code is needed because of the unusual way that clojure.test/is
+;; macroexpands.
+
+;; (is (= (+ 1 1)) 2)   warn for (= x)
+;; (is (> (+ 1 1)) 1)   warn for (> x)
+;; (is (-> 1 (= 1)))    This case is warning as desired already, no warning
+;; (is (-> 1 (=)))      Also warning as desired now, warn for (= x) not (=)
+
+
+(defn safe-first [x]
+  (try
+    (first x)
+    (catch Exception e
+      nil)))
+
+
+(defn pr-form-of-interest? [pr-form core-macros-that-do-little]
+  (get core-macros-that-do-little (safe-first pr-form)))
+
+
+(defn suspicious-macro-invocations [{:keys [asts]}]
+  (let [selected-macro-invoke-asts
+        (->> asts
+             (mapcat ast/nodes)
+             (filter (fn [ast]
+                       (some #(pr-form-of-interest? % core-macros-that-do-little)
+                             (:eastwood/partly-resolved-forms ast)))))]
+    (for [ast selected-macro-invoke-asts
+          pr-form (filter #(pr-form-of-interest? % core-macros-that-do-little)
+                          (:eastwood/partly-resolved-forms ast))
+          :let [fn-sym (first pr-form)
+                loc (-> ast :raw-forms first meta)
+                num-args (dec (count pr-form))
+                suspicious-args (get core-macros-that-do-little fn-sym)
+                info (get suspicious-args num-args)]
+          :when (contains? suspicious-args num-args)]
+      (util/add-loc-info
+       loc
+       {:linter :suspicious-expression
+        :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
+                     (name fn-sym) num-args (name fn-sym)
+                     (if (> num-args 0)
+                       (str " " (str/join " " (:args info)))
+                       "")
+                     (if (= "" (:ret-val info))
+                       "\"\""
+                       (print-str (:ret-val info))))}))))
+
 
 ;; Note: Looking for asts that contain :invoke nodes for the function
 ;; 'clojure.core/= will not find expressions like (clojure.test/is (=
@@ -421,7 +439,7 @@ generate varying strings while the test is running."
    ;; Note: (- x) and (/ x) do something useful
    })
 
-(defn suspicious-expression-asts [{:keys [asts]}]
+(defn suspicious-fn-calls [{:keys [asts]}]
   (let [fn-sym-set (set (keys core-fns-that-do-little))
         invoke-asts (->> asts
                          (mapcat ast/nodes)
@@ -455,8 +473,8 @@ generate varying strings while the test is running."
 
 (defn suspicious-expression [& args]
   (concat
-   (apply suspicious-expression-forms args)
-   (apply suspicious-expression-asts args)))
+   (apply suspicious-macro-invocations args)
+   (apply suspicious-fn-calls args)))
 
 
 (defn logical-true-test

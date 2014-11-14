@@ -540,7 +540,7 @@ the next."
      :line 82, :column 4}
     1,
     {:linter :suspicious-expression,
-     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>",
+     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 82, :column 8}
     1,
@@ -559,30 +559,15 @@ the next."
      :linter :suspicious-expression,
      :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 86, :column 17,
-     :file (fname-from-parts "testcases" "testtest.clj"),
-     :linter :suspicious-expression,
-     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
-    1,
     {:line 87, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
      :msg "== called with 1 args.  (== x) always returns true.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 87, :column 17,
-     :file (fname-from-parts "testcases" "testtest.clj"),
-     :linter :suspicious-expression,
-     :msg "== called with 1 args.  (== x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
-    1,
     {:line 88, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
      :msg "not= called with 1 args.  (not= x) always returns false.  Perhaps there are misplaced parentheses?"}
-    1,
-    {:line 88, :column 17,
-     :file (fname-from-parts "testcases" "testtest.clj"),
-     :linter :suspicious-expression,
-     :msg "not= called with 1 args.  (not= x) always returns false.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
     1,
     {:line 89, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
@@ -709,10 +694,10 @@ the next."
      :linter :suspicious-expression,
      :msg "print-str called with 0 args.  (print-str) always returns \"\".  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 116, :column 17,
+    {:line 116, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "with-out-str called with 0 args.  (with-out-str) always returns \"\".  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "with-out-str called with 0 args.  (with-out-str) always returns \"\".  Perhaps there are misplaced parentheses?"}
     1,
     {:line 117, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
@@ -734,90 +719,90 @@ the next."
      :linter :suspicious-expression,
      :msg "partial called with 1 args.  (partial f) always returns f.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 121, :column 17,
+    {:line 121, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "lazy-cat called with 0 args.  (lazy-cat) always returns ().  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "lazy-cat called with 0 args.  (lazy-cat) always returns ().  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 122, :column 17,
+    {:line 122, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "-> called with 1 args.  (-> x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "-> called with 1 args.  (-> x) always returns x.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 123, :column 17,
+    {:line 123, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "cond called with 0 args.  (cond) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "cond called with 0 args.  (cond) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 124, :column 17,
+    {:line 124, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "case called with 2 args.  (case x y) always returns y.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "case called with 2 args.  (case x y) always returns y.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 125, :column 17,
+    {:line 125, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "condp called with 3 args.  (condp pred test-expr expr) always returns expr.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "condp called with 3 args.  (condp pred test-expr expr) always returns expr.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 126, :column 17,
+    {:line 126, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "when called with 1 args.  (when test) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "when called with 1 args.  (when test) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 127, :column 17,
+    {:line 127, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "when-not called with 1 args.  (when-not test) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "when-not called with 1 args.  (when-not test) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 128, :column 17,
+    {:line 128, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "when-let called with 1 args.  (when-let [x y]) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "when-let called with 1 args.  (when-let [x y]) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 129, :column 17,
+    {:line 129, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "doseq called with 1 args.  (doseq [x coll]) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "doseq called with 1 args.  (doseq [x coll]) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 130, :column 17,
+    {:line 130, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "dotimes called with 1 args.  (dotimes [i n]) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "dotimes called with 1 args.  (dotimes [i n]) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 131, :column 17,
+    {:line 131, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "and called with 0 args.  (and) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "and called with 0 args.  (and) always returns true.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 132, :column 17,
+    {:line 132, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "and called with 1 args.  (and x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "and called with 1 args.  (and x) always returns x.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 133, :column 17,
+    {:line 133, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "or called with 0 args.  (or) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "or called with 0 args.  (or) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 134, :column 17,
+    {:line 134, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "or called with 1 args.  (or x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "or called with 1 args.  (or x) always returns x.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 135, :column 17,
+    {:line 135, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?"}
     1,
-    {:line 136, :column 17,
+    {:line 136, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?"}
     1,
     {:line 145, :column 8,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?"}
     1,
     {:line 146, :column 4,
      :file (fname-from-parts "testcases" "testtest.clj"),
@@ -827,7 +812,12 @@ the next."
     {:line 146, :column 8,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "== called with 1 args.  (== x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>"}
+     :msg "== called with 1 args.  (== x) always returns true.  Perhaps there are misplaced parentheses?"}
+    1,
+    {:line 156, :column 7,
+     :file (fname-from-parts "testcases" "testtest.clj"),
+     :linter :suspicious-expression,
+     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?"}
     1,
     })
   ;; It is strange that the :unlimited-use linter has nil for :line
