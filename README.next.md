@@ -440,7 +440,10 @@ cases of printing error messages that make it difficult to determine
 what went wrong.  Fix the problems indicated and try again.
 
 
-### `:misplaced-docstrings` - Strings that appear to be misplaced documentation strings
+### `:misplaced-docstrings`
+
+#### Function or macro doc strings placed after the argument vector,
+     instead of before the argument vector where they belong.
 
 The correct place to put a documentation string for a function or
 macro is just before the arguments, like so:
@@ -469,6 +472,9 @@ tools that extract documentation from Clojure code will not find it.
 
 
 ### `:deprecations` - Deprecated Java methods/fields/constructors and Clojure vars
+
+#### Deprecated Clojure Vars, and deprecated Java instance methods,
+     static fields, static methods, and constructors.
 
 The warnings issued are based upon the particular JDK you are using
 when running Eastwood, and can change between different JDK versions.
