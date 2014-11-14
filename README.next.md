@@ -102,7 +102,7 @@ the command line to enable or disable the linter.
   default). [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#unused-fn-args)
 - `:unused-namespaces` - Warn if a namespace is given in an `ns` form
   after `:use` or `:require`, but no Vars within the namespace are
-  ever mentioned (disabled by default).
+  ever mentioned (disabled by default). [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#unused-namespaces)
 - `:unlimited-use` - Unlimited `(:use ...)` without `:refer` or
   `:only` to limit the symbols referred by
   it. [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#unlimited-use)
@@ -566,7 +566,7 @@ others, consider using `declare` for all but the last definition, if
 possible, and Eastwood will ignore all but that last definition.
 
 
-### `:def-in-def` - Defs nested inside other defs
+### `:def-in-def`
 
 #### def'd nested inside other def's
 
@@ -1090,6 +1090,18 @@ and extended by Eastwood.  If you wish to enable the `:unused-fn-args`
 linter, but have several unused arguments that are acceptable to you,
 consider prepending an underscore to their names to silence the
 warnings.
+
+
+### `:unused-namespaces`
+
+#### A namespace you use/require could be removed
+
+This linter is disabled by default, because it can be fairly noisy.
+You must explicitly enable it if you wish to see these warnings.
+
+Warn if a namespace is given in an `ns` form after `:use` or
+`:require`, but no Vars within the namespace are ever mentioned within
+the namespace.  Thus the namespace could be eliminated.
 
 
 ### `:unlimited-use`
