@@ -365,6 +365,14 @@ generate varying strings while the test is running."
   (get core-macros-that-do-little (safe-first pr-form)))
 
 
+(defn and-or-self-expansion? [ast]
+  (let [parent-ast (-> ast :eastwood/ancestors peek)]
+    (and (= :if (-> parent-ast :op))
+         (= :local (-> parent-ast :test :op))
+         (#{'clojure.core/and 'clojure.core/or}
+          (-> ast :raw-forms first first)))))
+
+
 (defn suspicious-macro-invocations [{:keys [asts]}]
   (let [selected-macro-invoke-asts
         (->> asts
@@ -380,7 +388,12 @@ generate varying strings while the test is running."
                 num-args (dec (count pr-form))
                 suspicious-args (get core-macros-that-do-little fn-sym)
                 info (get suspicious-args num-args)]
-          :when (contains? suspicious-args num-args)]
+          :when (and (contains? suspicious-args num-args)
+                     ;; Avoid warning in the special cases of
+                     ;; clojure.core/and and clojure.core/or
+                     ;; macroexpanding to versions of themselves with
+                     ;; fewer arguments.
+                     (not (and-or-self-expansion? ast)))]
       (util/add-loc-info
        loc
        {:linter :suspicious-expression
