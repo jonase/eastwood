@@ -13,6 +13,9 @@
 
 ## Changes from version 0.1.5 to 0.2.0
 
+Version 0.2.0 is not released yet.  These changes are available in
+latest master version only.
+
 * New linter `:non-clojure-file` that warns about each non-Clojure
   file found in your `:source-paths` or `:test-paths`, if you specify
   those in the list of namespaces to lint, or leave them there as the
