@@ -4,6 +4,53 @@
 Intended for Eastwood developers to track down when they have time and
 interest.
 
+## Changes from version 0.1.5 to 0.2.0-alpha1 plus a few commits on Nov 14 2014
+
+Regression:
+
+This warning no longer appears, but should:
+
+== Linting clojure.algo.test-monads ==
+{:file "clojure/algo/test_monads.clj",
+ :line 223,
+ :column 10,
+ :linter :suspicious-expression,
+ :msg
+ "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>",
+ :uri-or-file-name "src/test/clojure/clojure/algo/test_monads.clj"}
+
+== Linting clojure.tools.analyzer.jvm ==
+{:file "clojure/tools/analyzer/jvm.clj",
+ :line 178,
+ :column 8,
+ :linter :suspicious-expression,
+ :msg
+ "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>",
+ :uri-or-file-name "src/main/clojure/clojure/tools/analyzer/jvm.clj"}
+
+
+Many new :suspicious-expression warnings in namespace
+clojure.core.match.test.core that should be double-checked and
+probably eliminated.
+
+1 new :suspicious-expression warning that maybe should be eliminated
+in:
+
+    potemkin.collections-test
+
+
+Improvements:
+
+Namespaces with new correct warnings found.  Yay!
+
+    clojurewerkz.elastisch.rest-api.facets-test
+
+Namespaces with incorrect warnings that used to be generated inside of
+-> or ->>, but no longer are.  Yay!
+
+    net.cgrand.xml in enlive
+    flatland.useful.io
+
 
 ## Changes from version 0.1.4 to 0.1.5-alpha2 on Oct 31 2014
 
