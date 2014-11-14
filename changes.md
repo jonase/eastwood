@@ -39,6 +39,14 @@
   the rule, since it explicitly preserves metadata in the way it is
   written.
 
+* New linter `:constant-test` that warns when a conditional test
+  expression in an `if`, `cond`, `if-let`, etc. is obviously a
+  constant, or a non-constant literal collection that will always
+  evaluate as true.  Issue
+  [#77](https://github.com/jonase/eastwood/issues/77).  TBD: Add docs
+  to README.next.md about this one.  TBD: See the issue for a few more
+  things it would be good to add to this linter.
+
 * New option `:warning-output-file` to specify a file name where
   warnings are written instead of to the standard output.  Issue
   [#104](https://github.com/jonase/eastwood/issues/104).
