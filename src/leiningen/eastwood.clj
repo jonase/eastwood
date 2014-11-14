@@ -2,7 +2,7 @@
   (:require [eastwood.copieddeps.dep6.leinjacker.eval :as leval]
             [eastwood.copieddeps.dep6.leinjacker.deps :refer [add-if-missing]]))
 
-(def eastwood-version-string "0.2.0-SNAPSHOT")
+(def eastwood-version-string "0.2.0-alpha1")
 
 (defn help []
   "Lint your Clojure code.")
