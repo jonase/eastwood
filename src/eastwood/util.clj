@@ -134,6 +134,15 @@ twice."
   (into (empty m)
         (filter (fn [[_ v]] (f v)) m)))
 
+(defn nth-last
+  "Return the nth-last element of a vector v, where n=1 means the last
+element, n=2 is the second-to-last, etc.  Returns nil if there are
+fewer than n elements in the vector."
+  [v n]
+  (let [c (count v)]
+    (if (>= c n)
+      (v (- c n)))))
+
 (defn var-to-fqsym [^clojure.lang.Var v]
   (if v (symbol (str (.ns v)) (str (.sym v)))))
 
