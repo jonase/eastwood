@@ -65,51 +65,51 @@ the command line to enable or disable the linter.
 
 - Inconsistencies between file names and the namespaces declared
   within them (new in version 0.1.1) (not a linter, and cannot be
-  disabled). [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#check-consistency-of-namespace-and-file-names)
+  disabled). [[more]](https://github.com/jonase/eastwood#check-consistency-of-namespace-and-file-names)
 - `:misplaced-docstrings` - Function or macro doc strings placed after
   the argument vector, instead of before the argument vector where
   they
-  belong. [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#misplaced-docstrings)
+  belong. [[more]](https://github.com/jonase/eastwood#misplaced-docstrings)
 - `:deprecations` - Deprecated Clojure Vars, and deprecated Java
   instance methods, static fields, static methods, and
-  constructors. [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#deprecations)
+  constructors. [[more]](https://github.com/jonase/eastwood#deprecations)
 - `:redefd-vars` - Redefinitions of the same name in the same
-  namespace. [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#redefd-vars)
+  namespace. [[more]](https://github.com/jonase/eastwood#redefd-vars)
 - `:def-in-def` - def's nested inside other
-  def's. [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#def-in-def)
+  def's. [[more]](https://github.com/jonase/eastwood#def-in-def)
 - `:wrong-arity` - Function calls that seem to have the wrong number
   of
-  arguments. [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#wrong-arity)
+  arguments. [[more]](https://github.com/jonase/eastwood#wrong-arity)
 - `:bad-arglists` - Function/macro `:arglists` metadata that does not
   match the number of args it is defined with (new in version
-  0.1.1). [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#bad-arglists)
+  0.1.1). [[more]](https://github.com/jonase/eastwood#bad-arglists)
 - `:suspicious-test` - Tests using `clojure.test` that may be written
-  incorrectly. [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#suspicious-test)
+  incorrectly. [[more]](https://github.com/jonase/eastwood#suspicious-test)
 - `:suspicious-expression` - Suspicious expressions that appear
   incorrect, because they always return trivial values.
 - `:unused-ret-vals` and `:unused-ret-vals-in-try` - Unused values,
   including unused return values of pure functions, and some others
   functions where it rarely makes sense to discard its return
-  value. [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#unused-ret-vals)
+  value. [[more]](https://github.com/jonase/eastwood#unused-ret-vals)
 - `:local-shadows-var` - A local name, e.g. a function arg or let
   binding, has the same name as a global Var, and is called as a
   function (new in version
-  0.1.5). [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#local-shadows-var)
+  0.1.5). [[more]](https://github.com/jonase/eastwood#local-shadows-var)
 - `:wrong-tag` - An incorrect type tag for which the Clojure compiler
-  does not give an error (new in version 0.1.5). [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#wrong-tag)
+  does not give an error (new in version 0.1.5). [[more]](https://github.com/jonase/eastwood#wrong-tag)
 - `:unused-private-vars` - Unused private vars (needs updating).
 - `:unused-fn-args` - Unused function arguments (disabled by
-  default). [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#unused-fn-args)
+  default). [[more]](https://github.com/jonase/eastwood#unused-fn-args)
 - `:unused-namespaces` - Warn if a namespace is given in an `ns` form
   after `:use` or `:require`, but no Vars within the namespace are
-  ever mentioned (disabled by default). [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#unused-namespaces)
+  ever mentioned (disabled by default). [[more]](https://github.com/jonase/eastwood#unused-namespaces)
 - `:unlimited-use` - Unlimited `(:use ...)` without `:refer` or
   `:only` to limit the symbols referred by
-  it. [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#unlimited-use)
+  it. [[more]](https://github.com/jonase/eastwood#unlimited-use)
 - `:keyword-typos` - Keyword names that may be typos because they
   occur only once in the source code and are slight variations on
   other keywords (disabled by
-  default). [[more]](https://github.com/jonase/eastwood/blob/master/README.next.md#keyword-typos)
+  default). [[more]](https://github.com/jonase/eastwood#keyword-typos)
 
 
 ## Usage
