@@ -25,7 +25,7 @@ form and the last one are deleted, which makes testing and debug
 output much shorter.
 
 The current latest code seems not to be catching this in my function
-suspicious-is-try-expr becuse my function is looking for
+suspicious-is-try-expr because my function is looking for
 (clojure.test/try-expr ...) in the :raw-forms of an ast with :op :try.
 In the warning above, the (is ...) is wrapped inside of a (with-monad
 ...) macro form, which invokes clojure.tools.macro/with-symbol-macros,
