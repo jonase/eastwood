@@ -604,6 +604,37 @@ Unless you really know what you are doing and looking for a very
 particular effect, it is recommended to take `:def-in-def` warnings as
 a sign to change your code.
 
+If you want local functions that can only be used inside of an outer
+function, not visible or callable elsewhere, consider using `let`:
+
+```clojure
+(defn outer-fn-callable-elsewhere [n]
+  (let [helper-fn (fn [m] (* m m))]
+    (if (> n 10)
+      (helper-fn n)
+      (helper-fn (+ n 17)))))
+```
+
+If you need local functions that can all call each other, `let` will
+not work, but [`letfn`](http://clojuredocs.org/clojure.core/letfn)
+will.
+
+If you want to write code in a style like you would in a language that
+uses mutable variables by default, e.g. most other languages, the
+first recommendation is to learn the functional style of doing things,
+if you can find a way that keeps the code understandable.
+[`loop`](http://clojuredocs.org/clojure.core/loop) may fit your
+purpose when other ways are not easy to find.
+
+If you have considered that advice and still want local mutable
+variables, other recommendations are:
+
+* [`atom`](http://clojuredocs.org/clojure.core/atom),
+  [`reset!`](http://clojuredocs.org/clojure.core/reset!),
+  [`swap!`](http://clojuredocs.org/clojure.core/swap!)
+* Clojure's
+  [`with-local-vars`](http://clojuredocs.org/clojure.core/with-local-vars)
+  or the [proteus](https://github.com/ztellman/proteus) library
 
 ### `:wrong-arity`
 
