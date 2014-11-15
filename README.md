@@ -51,6 +51,16 @@ compiler errors before running Eastwood.  Even better, `lein test`
 will compile files in your source paths and test paths, not merely
 your source paths as `lein check` does.
 
+If you run Eastwood from a `lein` command line, it is perfectly normal
+to see the message `Subprocess failed` at the end if either the
+warning or exception thrown counts are not 0.  Eastwood exits with a
+non-0 [exit status](http://en.wikipedia.org/wiki/Exit_status) in this
+situation, so that shell scripts or build tools running Eastwood will
+have a simple way to check that something was not perfect.  If
+Eastwood quits due to some internal error that throws an exception,
+you will typically see much more voluminous output about what went
+wrong, often including a stack trace.
+
 See section [For Eastwood
 developers](https://github.com/jonase/eastwood#for-eastwood-developers)
 below for instructions on trying out the latest unreleased version of
@@ -221,7 +231,7 @@ value that is a set of keywords, e.g.
 * `:forms-pprint` - like `:forms` except pretty-print the forms
 * `:progress` - show a brief debug message after each top-level form
   is read
-* `:eval` - prett-print each form after it has been read, analyzed
+* `:eval` - pretty-print each form after it has been read, analyzed
   into an AST (abstract syntax tree), and converted back into form
   from the AST, but before that form is evaluated with `eval`.
 * `:ns` - print the initial set of namespaces loaded into the Clojure
