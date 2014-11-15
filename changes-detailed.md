@@ -19,6 +19,26 @@ This warning no longer appears, but should:
  "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>",
  :uri-or-file-name "src/test/clojure/clojure/algo/test_monads.clj"}
 
+The one above is in the last deftest of the file, and I have verified
+that Eastwood 0.1.5 issues the warning even if all forms except the ns
+form and the last one are deleted, which makes testing and debug
+output much shorter.
+
+The current latest code seems not to be catching this in my function
+suspicious-is-try-expr becuse my function is looking for
+(clojure.test/try-expr ...) in the :raw-forms of an ast with :op :try.
+In the warning above, the (is ...) is wrapped inside of a (with-monad
+...) macro form, which invokes clojure.tools.macro/with-symbol-macros,
+which expands all macros inside of it all at once with its own
+macroexpander, separate from the one used by tools.analyzer, and thus
+tools.analyzer does not put the :raw-forms that usually occur there.
+
+Sounds fairly tricky to enhance Eastwood for, and perhaps not worth
+it, given how infrequently people wrap clojure.test/is forms in other
+macros like this.
+
+
+
 == Linting clojure.tools.analyzer.jvm ==
 {:file "clojure/tools/analyzer/jvm.clj",
  :line 178,
@@ -27,6 +47,11 @@ This warning no longer appears, but should:
  :msg
  "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>",
  :uri-or-file-name "src/main/clojure/clojure/tools/analyzer/jvm.clj"}
+
+DONE: Fixed this one.  It was being masked out because the doto was
+inside of a clojure.core/or, and my code for suppressing or expansions
+from other or's was suppressing *everything* expanded inside of an or.
+Made the suppression condition more precise, for this and for cond.
 
 
 Many new :suspicious-expression warnings in namespace

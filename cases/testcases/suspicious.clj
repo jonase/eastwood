@@ -17,3 +17,7 @@
 ;; cond has 0-arg version in itsexpansion
 (cond (> 5 3) 7
       (> 5 7) 3)
+
+;; Earlier I had a bug that suppressed warnings for these
+(or (> 5 3)
+    (doto (StringBuffer.)))

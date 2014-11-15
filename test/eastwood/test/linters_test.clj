@@ -829,7 +829,13 @@ the next."
    'testcases.suspicious
    [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
    {}
-   {})
+   {
+    {:linter :suspicious-expression,
+     :msg "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
+     :line 23, :column 5}
+    1,
+    })
   ;; It is strange that the :unlimited-use linter has nil for :line
   ;; and :column here, but integer values when I use it from the
   ;; command line.  What is going on here?
