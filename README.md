@@ -578,7 +578,7 @@ possible, and Eastwood will ignore all but that last definition.
 
 ### `:def-in-def`
 
-#### def'd nested inside other def's
+#### `def` nested inside other `def`s
 
 If you come to Clojure having learned Scheme earlier, you may write
 Clojure code with `def` statements inside of functions.  Or you might
