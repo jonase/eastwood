@@ -303,14 +303,17 @@ pprint-meta instead."
                                    :else val))
                                 ast))))
 
+(defn clean-ast [ast & kws]
+  (let [kws-to-trim [:eastwood/ancestors]
+        kws-to-trim (if (contains? (set kws) :with-env)
+                      kws-to-trim
+                      (conj kws-to-trim :env))]
+    (-> ast
+        (trim-ast :remove-only kws-to-trim)
+        ast-to-ordered)))
+
 (defn pprint-ast-node [ast & kws]
-  (let [a (if (contains? (set kws) :with-env)
-            ast
-            (trim-ast ast :remove-only [:env]))]
-    (-> a
-        (trim-ast :remove-only [:eastwood/ancestors])
-        ast-to-ordered
-        pprint-meta-elided)))
+  (pprint-meta-elided (apply clean-ast ast kws)))
 
 (defn pprint-form [form]
   (pprint-meta-elided form))
@@ -538,3 +541,51 @@ StringWriter."
                       *err* s2#]
               ~@body)]
      {:val x# :out (str s#) :err (str s2#)}))
+
+(comment
+
+;; Some code useful for copying and pasting into a REPL for debugging
+;; AST contents with clojure.inspector.
+
+(require '[clojure.inspector :as insp])
+(require '[eastwood.analyze-ns :as ana] :reload)
+(require '[eastwood.util :as util] :reload)
+(require '[eastwood.linters.unused :as un] :reload)
+
+(def a (ana/analyze-ns 'testcases.f06 :opt {:callback (fn [_])}))
+(def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv util/clean-ast ast))))
+;; This version tends to be much slower due to the size of the :env
+;; data, and converting it all to strings.
+(def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv #(util/clean-ast % :with-env) ast))))
+(insp/inspect-tree a2)
+
+;; Older versions that may not be so useful any more, but kept here in
+;; case there remains something useful.
+
+(def fn1 (:init (nth a 1)))
+(def locs1 (->> fn1 util/ast-nodes (filter (util/op= :local))))
+(#'un/unused-fn-args* fn1)
+(#'un/params (-> fn1 :methods first))
+(#'un/used-locals (-> fn1 :methods first :body util/ast-nodes))
+
+(def fn4 (:init (nth a 4)))
+(def locs4 (->> fn4 util/ast-nodes (filter (util/op= :local))))
+
+(require '[clojure.tools.analyzer.jvm :as aj])
+(def form (read-string "
+(defn fn-with-unused-args3 [x y z]
+  (let [foo (fn [y z]
+              (* y z))]
+    (foo x y)))
+"))
+(def env (aj/empty-env))
+(def an (aj/analyze form env))
+(def meth1 (-> an :init :methods first))
+(def ret-expr-args (-> meth1 :body :ret :body :ret :args))
+
+(map :name (:params meth1))
+;;=> (x__#0 y__#0 z__#0)
+(map :name ret-expr-args)
+;;=> (x__#0 y__#-1)
+
+)
