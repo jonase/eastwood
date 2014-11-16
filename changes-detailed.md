@@ -6,7 +6,15 @@ interest.
 
 ## Changes from version 0.1.5 to 0.2.0-alpha1 plus a few commits on Nov 14 2014
 
-Regression:
+Regressions:
+
+1 new :suspicious-expression warning in namespace
+potemkin.collections-test.  I have checked this one out in detail.  It
+is because of how macro potemkin.collections/def-derived-map is
+defined when it is invoked with no (optional) key-vals parameter.
+This seems best handled as an Eastwood annotation, not as a special
+case for Potemkin in Eastwood source code.
+
 
 This warning no longer appears, but should:
 
@@ -38,30 +46,27 @@ it, given how infrequently people wrap clojure.test/is forms in other
 macros like this.
 
 
-
-== Linting clojure.tools.analyzer.jvm ==
-{:file "clojure/tools/analyzer/jvm.clj",
- :line 178,
- :column 8,
- :linter :suspicious-expression,
- :msg
- "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>",
- :uri-or-file-name "src/main/clojure/clojure/tools/analyzer/jvm.clj"}
-
-DONE: Fixed this one.  It was being masked out because the doto was
-inside of a clojure.core/or, and my code for suppressing or expansions
-from other or's was suppressing *everything* expanded inside of an or.
-Made the suppression condition more precise, for this and for cond.
-
-
 Many new :suspicious-expression warnings in namespace
-clojure.core.match.test.core that should be double-checked and
-probably eliminated.
+clojure.core.match.test.core.  Created issue #108 to track this.
 
-1 new :suspicious-expression warning that maybe should be eliminated
-in:
+I have double checked these, and it seems like these are very common,
+due to the way the clojure.core.match/match macro expands.  I would
+guess the best way to eliminate these would be to modify the match
+macro to suppress these :suspicious-expression warnings.  Ideally it
+would be nice to have a way to suppress them in the macro
+implementation 'itself', but still enable warnings in arguments to the
+macro that are included unmodified as part of the macroexpansion, so
+that if there are issues deserving warnings there, they still are
+warned about.  I don't know if that is easy to do.
 
-    potemkin.collections-test
+A bad thing about that idea is that it requires the source code of
+match to be modified with Eastwood-specific annotations.  It would
+also be nice if such modifications to Eastwood's behavior could be
+made without having to modify the source code of libraries one uses.
+That sounds trickier, but some way to tell Eastwood: Do not issue
+warnings of type X inside macro foo.bar/baz, without modifying
+namespace foo.bar, only a place that requires foo.bar, could be
+useful.
 
 
 Improvements:
@@ -75,6 +80,23 @@ Namespaces with incorrect warnings that used to be generated inside of
 
     net.cgrand.xml in enlive
     flatland.useful.io
+
+
+Temporarily was regression, now fixed:
+
+== Linting clojure.tools.analyzer.jvm ==
+{:file "clojure/tools/analyzer/jvm.clj",
+ :line 178,
+ :column 8,
+ :linter :suspicious-expression,
+ :msg
+ "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?  The number of args may actually be more if it is inside of a macro like -> or ->>",
+ :uri-or-file-name "src/main/clojure/clojure/tools/analyzer/jvm.clj"}
+
+Fixed this one.  It was being masked out because the doto was inside
+of a clojure.core/or, and my code for suppressing or expansions from
+other or's was suppressing *everything* expanded inside of an or.
+Made the suppression condition more precise, for this and for cond.
 
 
 ## Changes from version 0.1.4 to 0.1.5-alpha2 on Oct 31 2014
