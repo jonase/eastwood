@@ -10,6 +10,8 @@ been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 alpha versions.  As
 of Eastwood version 0.2.0, it no longer suports Clojure 1.4.0 or
 earlier versions.
 
+It supports only Clojure on Java, not ClojureScript or Clojure/CLR.
+
 
 ## Installation & Quick usage
 
@@ -89,6 +91,13 @@ the command line to enable or disable the linter.
 - Inconsistencies between file names and the namespaces declared
   within them (new in version 0.1.1) (not a linter, and cannot be
   disabled). [[more]](https://github.com/jonase/eastwood#check-consistency-of-namespace-and-file-names)
+- `:non-clojure-file` - Warn about files that will not be linted
+  because they are not Clojure source files, i.e. their name does not
+  end with '.clj' (new in version
+  0.2.0). [[more]](https://github.com/jonase/eastwood#non-clojure-file)
+- `:no-ns-form-found` - Warn about Clojure files where no `ns` form
+  could be found (new in version
+  0.2.0). [[more]](https://github.com/jonase/eastwood#no-ns-form-found)
 - `:misplaced-docstrings` - Function or macro doc strings placed after
   the argument vector, instead of before the argument vector where
   they
@@ -110,6 +119,9 @@ the command line to enable or disable the linter.
   incorrectly. [[more]](https://github.com/jonase/eastwood#suspicious-test)
 - `:suspicious-expression` - Suspicious expressions that appear
   incorrect, because they always return trivial values.
+- `:unused-meta-on-macro` - Metadata on a macro invocation is ignored
+  by Clojure (new in version
+  0.2.0). [[more]](https://github.com/jonase/eastwood#unused-meta-on-macro)
 - `:unused-ret-vals` and `:unused-ret-vals-in-try` - Unused values,
   including unused return values of pure functions, and some others
   functions where it rarely makes sense to discard its return
@@ -523,6 +535,48 @@ cases of printing error messages that make it difficult to determine
 what went wrong.  Fix the problems indicated and try again.
 
 
+### `:non-clojure-file`
+
+#### Files that will not be linted because they are not Clojure source files
+
+New in Eastwood version 0.2.0
+
+If you explicitly specify `:source-paths` or `:test-paths`, or use the
+default Eastwood options from the command line that cause it to scan
+these paths for Clojure source files, with this linter enabled (the
+default), it will warn about each file found that is not a
+Clojure/Java source file, i.e. its file name does not end with '.clj'.
+
+You may wish to disable it in projects that intentionally have such
+files, e.g. by adding a line like this to your Leiningen `project.clj`
+file:
+
+    :eastwood {:exclude-linters [:non-clojure-file]}
+
+
+### `:no-ns-form-found`
+
+#### Warn about Clojure files where no `ns` form could be found
+
+New in Eastwood version 0.2.0
+
+If you explicitly specify `:source-paths` or `:test-paths`, or use the
+default Eastwood options from the command line that cause it to scan
+these paths for Clojure source files, with this linter enabled (the
+default), it will warn about each file where it could not find an `ns`
+form.
+
+Eastwood uses library `tools.namespace` to scan for Clojure source
+files, and in each one it reads it looking for a top-level `ns` form.
+It need not be the first form, but it will not find it if it is not at
+the top level, e.g. if it is inside of a `let`, `if`, `compile-if`,
+etc.
+
+It is somewhat unusual to have such a file, but there are valid
+reasons to have one, e.g. you use `load` to include it as part of
+another source file.
+
+
 ### `:misplaced-docstrings`
 
 #### Function or macro doc strings placed after the argument vector, instead of before the argument vector where they belong.
@@ -873,6 +927,96 @@ test.
 #### Suspicious expressions that appear incorrect, because they always return trivial values.
 
 TBD.  Explain and give a few examples.
+
+
+### `:unused-meta-on-macro`
+
+#### Metadata on a macro invocation is ignored by Clojure
+
+New in Eastwood version 0.2.0
+
+When you invoke a macro an annotate it with metadata, in most cases
+that metadata will be discarded when the macro is expanded, unless the
+macro has been written explicitly to use that metadata.
+
+As a simple example, the trivial macro `my-macro` below will have all
+metadata discarded any time it is invoked:
+
+```clojure
+(require 'clojure.java.io)
+(import '(java.io Writer StringWriter))
+
+(defmacro my-macro [x]
+  `(clojure.java.io/writer ~x))
+
+;; No metadata here, so nothing to lose, and no Eastwood warning
+(def ok1 (my-macro (StringWriter.)))
+
+;; All metadata is discarded, including type tags like ^Writer, which
+;; is just a shorthand for ^{:tag Writer}
+(def meta-discarded-1 ^Writer (my-macro (StringWriter.)))
+```
+
+If your purpose for annotating a macro invocation with metadata is to
+type hint it, to avoid reflection in a Java interop call, you can work
+around this behavior by binding the macro invocation return value to a
+symbol with `let`, and type hint that symbol.  For example:
+
+```clojure
+;; Reflection warning for the .close call here, because type tag
+;; ^Writer is discarded for the form (my-macro (StringWriter.))
+
+(def reflection-and-lint-warn (.close ^Writer (my-macro (StringWriter.))))
+
+;; No reflection warning from Clojure, and no warning from Eastwood,
+;; for this.
+(let [^Writer w (my-macro (StringWriter.))]
+  (.close w))
+```
+
+A Clojure ticket has been filed for this behavior:
+[CLJ-865](http://dev.clojure.org/jira/browse/CLJ-865).  However, most
+ways of changing it would change the behavior of at least some
+existing Clojure code, so it seems unlikely to change.  Hence, this
+Eastwood linter to alert people unaware of the behavior.
+
+Most Java interop forms are macro invocations, expand like them, and
+thus lose any metadata annotating their invocations.  However, there
+are special cases in the Clojure compiler where such Java interop
+forms will have `:tag` type hint metadata preserved for them.
+Eastwood will warn if you try to use metadata on such a Java interop
+form that is discarded by the compiler.
+
+Java interop forms that remove _all_ metadata on them, even type
+hints:
+
+* constructor calls - `(ClassName. args)`
+
+Java interop forms that remove all metadata, except they explicitly
+preserve type hints:
+
+* class method calls - `(ClassName/staticMethod args)`
+* class field access - `(ClassName/staticField)`
+* instance method calls - `(.instanceMethod obj args)`
+* instance field access - `(.instanceField obj)
+
+Java interop forms that are not macroexpanded, and thus do not lose
+any metadata annotating them:
+
+* constructor calls beginning with `new` - `(new ClassName args)`
+* calls beginning with a `.` (not `.close`, but just a `.` by itself)
+  - `(. x close)`
+
+Clojure's `clojure.core/fn` macro uses the hidden `&form` argument to
+all Clojure macros to explicitly preserve the metadata on any `(fn
+...)` forms.  Eastwood has a special case not to warn about those
+cases.
+
+The macro `schema.core/fn` in Prismatic's
+[Schema](https://github.com/Prismatic/schema) library also has special
+handling similar to `clojure.core/fn`, but at least as of Eastwood
+0.2.0 there is no special handling of this case, so it will warn if
+metadata annotates an invocation of this macro.
 
 
 ### `:unused-ret-vals`

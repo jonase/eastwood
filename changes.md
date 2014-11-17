@@ -1,6 +1,8 @@
 # Change log for Eastwood
 
-## Changes planned for near future (after 0.1.5)
+## Changes planned for near future
+
+* Bump up to very latest versions of tools.analyzer(.jvm) and retest.
 
 * Implement a way to enable/disable linters on individual Clojure
   expressions.  Issue
@@ -33,10 +35,8 @@ latest master version only.
 * New linter `:non-clojure-file` that warns about each non-Clojure
   file found in your `:source-paths` or `:test-paths`, if you specify
   those in the list of namespaces to lint, or leave them there as the
-  default.  Enabled by default, but you may wish to disable it in
-  projects that intentionally have some of these files.  Issue
-  [#102](https://github.com/jonase/eastwood/issues/102).  TBD: Add
-  docs to README.next.md about this one.
+  default.  Issue
+  [#102](https://github.com/jonase/eastwood/issues/102).
 
 * New linter `:no-ns-form-found` that warns about each Clojure file
   found where Eastwood could not find an `ns` form.  Most likely that
@@ -44,17 +44,12 @@ latest master version only.
   form that is nested inside of another top level form like `let` or
   `if` that Eastwood does not detect.  Warns only about files in
   `:source-paths` or `:test-paths`, as for the `:non-clojure-file`
-  linter described above.  TBD: Add docs to README.next.md about this
-  one.
+  linter described above.
 
 * New linter `:unused-meta-on-macro` that warns when metadata is used
   to annotate a macro invocation, but the Clojure compiler will ignore
   it because it is discarded during macro expansion.  Issue
-  [#97](https://github.com/jonase/eastwood/issues/97).  TBD: Add docs
-  to README.next.md about this one.  They should mention the exception
-  that Prismatic Schema's `schema.core/fn` macro is an exception to
-  the rule, since it explicitly preserves metadata in the way it is
-  written.
+  [#97](https://github.com/jonase/eastwood/issues/97).
 
 * New linter `:constant-test` that warns when a conditional test
   expression in an `if`, `cond`, `if-let`, etc. is obviously a
