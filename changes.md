@@ -60,6 +60,14 @@ latest master version only.
   warnings are written instead of to the standard output.  Issue
   [#104](https://github.com/jonase/eastwood/issues/104).
 
+* New option `:lint-warning-format`.  If set to
+  `:emacs-compilation-mode-buffer`, warnings will be printed in a
+  format that Emacs can use to jump to the file/line/column of each
+  warning message successively, as can be done in Emacs for many other
+  compiler error/warnings messages with a similar output format.  TBD:
+  Add documentation to README.next.md on how to use this output file
+  in Emacs.
+
 * Corrections to the `:wrong-tag` linter where it was throwing
   exceptions while linting some projects -- ones that had not been
   tested before Eastwood 0.1.5 release.
