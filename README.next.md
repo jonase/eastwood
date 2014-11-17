@@ -121,8 +121,8 @@ the command line to enable or disable the linter.
   incorrect, because they always return trivial
   values. [[more]](https://github.com/jonase/eastwood#suspicious-expression)
 - `:constant-test` - A test expression always evaluates as true, or
-   always false.
-   [[more]](https://github.com/jonase/eastwood#constant-test)
+   always false (new in version
+   0.2.0). [[more]](https://github.com/jonase/eastwood#constant-test)
 - `:unused-meta-on-macro` - Metadata on a macro invocation is ignored
   by Clojure (new in version
   0.2.0). [[more]](https://github.com/jonase/eastwood#unused-meta-on-macro)
@@ -140,7 +140,7 @@ the command line to enable or disable the linter.
 - `:unused-fn-args` - Unused function arguments (disabled by
   default). [[more]](https://github.com/jonase/eastwood#unused-fn-args)
 - `:unused-locals` - Symbols bound with `let` or `loop` that are never
-  used (disabled by
+  used (new in version 0.2.0, disabled by
   default). [[more]](https://github.com/jonase/eastwood#unused-locals)
 - `:unused-namespaces` - Warn if a namespace is given in an `ns` form
   after `:use` or `:require`, but no Vars within the namespace are
