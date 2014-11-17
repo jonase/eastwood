@@ -2,10 +2,6 @@
 
 ## Changes planned for near future (after 0.1.5)
 
-* See about fixing issue
-  [#93](https://github.com/jonase/eastwood/issues/93).  This should
-  help with the next one.
-
 * Implement a way to enable/disable linters on individual Clojure
   expressions.  Issue
   [#21](https://github.com/jonase/eastwood/issues/21).
@@ -15,6 +11,12 @@
 
 Version 0.2.0 is not released yet.  These changes are available in
 latest master version only.
+
+* Enhanced `:suspicious-expression` linter so it always uses
+  macroexpanded forms, not original source forms.  Thus it no longer
+  produces incorrect warnings for expressions using `->` or `->>` like
+  `(-> 1 (= 1))`, as it used to.  Issue
+  [#93](https://github.com/jonase/eastwood/issues/93).
 
 * New linter `:non-clojure-file` that warns about each non-Clojure
   file found in your `:source-paths` or `:test-paths`, if you specify
@@ -53,8 +55,9 @@ latest master version only.
 * New linter `:unused-locals` that warns when a `let` binds values to
   symbols, but those symbols are never used.  It can be disabled on a
   per-symbol basis by using '_' as the first (or only) character in
-  the name of the symbol.  TBD: Add docs to README.next.md about this
-  one.
+  the name of the symbol.  Issue
+  [#106](https://github.com/jonase/eastwood/issues/106).  TBD: Add
+  docs to README.next.md about this one.
 
 * New option `:warning-output-file` to specify a file name where
   warnings are written instead of to the standard output.  Issue
