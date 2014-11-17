@@ -1233,6 +1233,17 @@ the next."
      :line 130, :column 9}
     1,
     })
+  (lint-test
+   'testcases.unusedlocals
+   [:unused-locals]
+   {}
+   {
+    {:linter :unused-locals,
+     :msg "let bound symbol 'undesirable-warn1' never used",
+     :file (fname-from-parts "testcases" "unusedlocals.clj"),
+     :line 50, :column 11}
+    1,
+    })
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace
   ;; before lint-test does, and thus the namespace is already there

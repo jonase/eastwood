@@ -74,11 +74,23 @@ more interesting keys earlier."
                              :vals
                              ])]
     (ast/postwalk ast (fn [ast]
-                        (into empty ast)))))
+                        (if (every? keyword? (keys ast))
+                          (into empty ast)
+                          ;; Do not make anything into a sorted map if
+                          ;; it has keys that are not keywords, since
+                          ;; that would risk having key lookups throw
+                          ;; exceptions due to incomparable keys.
+                          ast)))))
 
 
 (defn has-keys? [m key-seq]
   (every? #(contains? m %) key-seq))
+
+
+(defn nil-safe-rseq [s]
+  (if (nil? s)
+    nil
+    (rseq s)))
 
 
 (defn keys-in-map
@@ -99,10 +111,19 @@ element of key-set is a key of m."
   (assert (has-keys? m key-seq)))
 
 
+(defn sorted-map-with-non-keyword-keys? [x]
+  (and (map? x)
+       (sorted? x)
+       (some (fn [o] (not (keyword? o))) (keys x))))
+
 (defn protocol?
   "Make a good guess as to whether p is an object created via defprotocol."
   [p]
   (and (map? p)
+       ;; Don't even try to do has-keys? on a sorted map with
+       ;; non-keyword keys, since it will most likely cause compare to
+       ;; throw an exception.
+       (not (sorted-map-with-non-keyword-keys? p))
        (has-keys? p [:on :on-interface :sigs :var :method-map
                      :method-builders])))
 
@@ -507,6 +528,14 @@ of these kind."
   (or (statement-in-try-body? ast)
       (ret-expr-in-try-body? ast)))
 
+(defn deftype-for-fieldless-defrecord [ast]
+  (and (= :deftype (-> ast :op))
+       (= '(__meta __extmap) (map :form (-> ast :fields)))))
+
+(defn inside-fieldless-defrecord [ast]
+  (some deftype-for-fieldless-defrecord
+        (nil-safe-rseq (-> ast :eastwood/ancestors))))
+
 (defn debug? [debug-options opt]
   (assert (set? debug-options))
   (assert (map? opt))
@@ -552,12 +581,14 @@ StringWriter."
 (require '[eastwood.util :as util] :reload)
 (require '[eastwood.linters.unused :as un] :reload)
 
-(def a (ana/analyze-ns 'testcases.f06 :opt {:callback (fn [_])}))
+(def nssym 'testcases.f06)
+(def a (ana/analyze-ns nssym :opt {:callback (fn [_])}))
 (def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv util/clean-ast ast))))
+(insp/inspect-tree a2)
+
 ;; This version tends to be much slower due to the size of the :env
 ;; data, and converting it all to strings.
 (def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv #(util/clean-ast % :with-env) ast))))
-(insp/inspect-tree a2)
 
 ;; Older versions that may not be so useful any more, but kept here in
 ;; case there remains something useful.

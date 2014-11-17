@@ -79,6 +79,91 @@ selectively disable such warnings if they wish."
         :msg (format "Function arg %s never used" unused-sym)}))))
 
 
+;; Unused let-bound symbols
+
+;; Note: the let bindings are sequential.  It can happen that the only
+;; place a bound symbol is used is in the init expression of a later
+;; bound symbol, and not in the let body at all.  This must be handled
+;; or we will get incorrect warnings.
+
+(defn- ignore-let-symbol?
+  "Return logical true for let symbols that should never be warned
+about as unused.
+
+By convention, _ is never reported as unused, and neither is any
+symbol with a name that begins with _.  This gives eastwood users a
+way to selectively disable such warnings if they wish."
+  [arg]
+  (.startsWith (name arg) "_"))
+
+(defn all-suffixes
+  "Given a coll, returns the coll, then (next coll), then (next (next
+coll)), etc., as long as the result is not empty.
+
+Example: (all-suffixes [1 2 3])
+         => ([1 2 3] (2 3) (3))"
+  [coll]
+  (take-while seq (iterate next coll)))
+
+(defn let-symbols [let-expr]
+  (map (fn [b]
+;;         (println (format "  name=%s used-locals=%s init="
+;;                          (:name b)
+;;                          (used-locals (ast/nodes (:init b)))))
+;;         (util/pprint-ast-node (:init b))
+         (assoc (select-keys b [:form :name :init])
+           :locals-used-in-init-expr (used-locals (ast/nodes (:init b)))))
+       (:bindings let-expr)))
+
+
+(defn unused-locals* [let-expr]
+  (let [let-symbols (let-symbols let-expr)
+        locals-used-in-let-body (used-locals (ast/nodes (:body let-expr)))
+;;        _ (when (seq let-symbols)
+;;            (println "let-dbg:")
+;;            (doseq [s let-symbols]
+;;              (let [loc (or (pass/has-code-loc? (-> s :form meta))
+;;                            (pass/code-loc (pass/nearest-ast-with-loc let-expr)))]
+;;                (println (format "    binding form=%s name=%s line=%s col=%s locals-used-in-init=%s"
+;;                                 (-> s :form)
+;;                                 (-> s :name)
+;;                                 (-> loc :line)
+;;                                 (-> loc :column)
+;;                                 (-> s :locals-used-in-init-expr)))))
+;;            (doseq [s (used-locals (ast/nodes (:body let-expr)))]
+;;              (println (format "    use     form=%s name=%s line=%s col=%s"
+;;                               (-> s :form)
+;;                               (-> s :name)
+;;                               (-> s :form meta :line)
+;;                               (-> s :form meta :column)))))
+        ]
+    (loop [unused #{}
+           let-symbols let-symbols]
+      (if-let [letsym (first let-symbols)]
+        (recur (set/difference (conj unused (select-keys letsym
+                                                         [:form :name]))
+                               (:locals-used-in-init-expr letsym))
+               (next let-symbols))
+        (set/difference unused locals-used-in-let-body)))))
+
+
+(defn unused-locals [{:keys [asts]}]
+  (let [let-exprs (->> asts
+                      (mapcat ast/nodes)
+                      (filter (util/op= :let)))]
+    (for [expr let-exprs
+          :when (not (util/inside-fieldless-defrecord expr))
+          :let [unused (->> (unused-locals* expr)
+                            (map :form)
+                            (remove ignore-let-symbol?)
+                            set)]
+          unused-sym unused
+          :let [loc (-> unused-sym meta)]]
+      (util/add-loc-info loc
+       {:linter :unused-locals
+        :msg (format "let bound symbol '%s' never used" unused-sym)}))))
+
+
 ;; Unused namespaces
 
 ;; If require is called outside of an ns form, on an argument that is

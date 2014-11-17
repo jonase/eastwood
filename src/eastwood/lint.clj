@@ -208,6 +208,7 @@ return value followed by the time it took to evaluate in millisec."
    :unused-ret-vals-in-try unused/unused-ret-vals-in-try
    :unused-private-vars unused/unused-private-vars
    :unused-fn-args unused/unused-fn-args
+   :unused-locals unused/unused-locals
    :unused-namespaces unused/unused-namespaces
    :unused-meta-on-macro unused/unused-meta-on-macro
    :unlimited-use misc/unlimited-use
@@ -230,6 +231,7 @@ return value followed by the time it took to evaluate in millisec."
     :constant-test
     :unused-ret-vals
     :unused-ret-vals-in-try
+    :unused-locals
     :unused-meta-on-macro
     :unlimited-use
     :wrong-tag})

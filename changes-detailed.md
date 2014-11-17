@@ -6,6 +6,76 @@ interest.
 
 ## Changes from version 0.1.5 to 0.2.0-alpha1 plus a few commits on Nov 14 2014
 
+### Notes about behavior of new :unused-locals linter
+
+Many :unused-locals warnings in algo.monads, both clojure.algo.monads
+and clojure.algo.test-monads namespaces.  Would be nice to eliminate
+them if they are not real.  Also similar code causing many such
+warnings in namespace clojure.tools.nrepl-test.  I think this is
+because there are many uses of a macro that has code in the defmacro
+like (let [~'warn-name expr] ...), and every time the macro is invoked
+without the body using warn-name, the line/col numbers are in the
+macro definition, not where the macro is called.
+
+Ns clojure.tools.nrepl.load-file-test has several :unused-locals
+warnings that appear to have line:col numbers from a different file,
+because they do not refer to anything reasonable in the source code of
+the file they are associated with.  They might be for the file
+containing clojure.tools.nrepl-test above?
+
+These warnings in namespace clojure.core.async.impl.channels look
+incorrect to me:
+
+src/main/clojure/clojure/core/async/impl/channels.clj:121:45: unused-locals: let bound symbol 'val' never used
+src/main/clojure/clojure/core/async/impl/channels.clj:121:38: unused-locals: let bound symbol 'putter' never used
+src/main/clojure/clojure/core/async/impl/channels.clj:140:38: unused-locals: let bound symbol 'val' never used
+src/main/clojure/clojure/core/async/impl/channels.clj:140:31: unused-locals: let bound symbol 'putter' never used
+
+I have analyzed these, and created a smaller test case that warns for
+the same reason, with details in comments, in namespaces
+testcases.unusedlocals, function foo2.
+
+The warnings below in namespace clojure.core.async are confusing since
+they have no obvious correspondence with the original source code.
+Most likely this occurs because of the way go-loop macroexpands.
+
+src/main/clojure/clojure/core/async.clj:499:22: unused-locals: let bound symbol inst_8653 never used
+src/main/clojure/clojure/core/async.clj:518:17: unused-locals: let bound symbol inst_8712 never used
+
+There are many of these in the same namespace.  Would be good to find
+a way to suppress them that does not also suppress good warnings.
+Would it be too 'coarse' to try to recognize the "_<number>" suffix?
+Or perhaps have the normal :unused-locals that suppresses those, but a
+separate :unused-locals-auto-numbered that includes only those?  More
+of these in seesaw project, and spread throughout several other
+projects.
+
+This warning looks strange, since chs is not bound in a let, but in a
+defn arg vector.  What is going on here?
+
+src/main/clojure/clojure/core/async.clj:937:5: unused-locals: let bound symbol chs never used
+
+This is probably due to how go-loop expands:
+
+src/main/clojure/clojure/core/async.clj:939:18: unused-locals: let bound symbol cs never used
+
+Many :unused-locals warnings in namespace
+clojure.core.match.test.core, related to how the match macro is
+defined, I think, and perhaps similar reason for why there are so many
+:suspicious-expression warnings for match, too.
+
+These :unused-locals warnings in project core.memoize:
+
+src/test/clojure/clojure/core/memoize/tests.clj:43:9: unused-locals: let bound symbol mine never used
+src/test/clojure/clojure/core/memoize/deprecation_tests.clj:21:9: unused-locals: let bound symbol mine never used
+
+Schema has many :unused-locals warnings that appear to be at least
+misleading, if not wrong.
+
+
+
+### Changes due to updating :suspicious-expression linter to always use asts, never source forms
+
 Regressions:
 
 1 new :suspicious-expression warning in namespace
