@@ -86,9 +86,9 @@ selectively disable such warnings if they wish."
 ;; bound symbol, and not in the let body at all.  This must be handled
 ;; or we will get incorrect warnings.
 
-(defn- ignore-let-symbol?
-  "Return logical true for let symbols that should never be warned
-about as unused.
+(defn- ignore-local-symbol?
+  "Return logical true for let/loop symbols that should never be
+warned about as unused.
 
 By convention, _ is never reported as unused, and neither is any
 symbol with a name that begins with _.  This gives eastwood users a
@@ -105,6 +105,7 @@ Example: (all-suffixes [1 2 3])
   [coll]
   (take-while seq (iterate next coll)))
 
+
 (defn let-symbols [let-expr]
   (map (fn [b]
 ;;         (println (format "  name=%s used-locals=%s init="
@@ -116,11 +117,11 @@ Example: (all-suffixes [1 2 3])
        (:bindings let-expr)))
 
 
-(defn unused-locals* [let-expr]
+(defn unused-locals* [let-expr expr-desc]
   (let [let-symbols (let-symbols let-expr)
         locals-used-in-let-body (used-locals (ast/nodes (:body let-expr)))
 ;;        _ (when (seq let-symbols)
-;;            (println "let-dbg:")
+;;            (println (format "%s-dbg:" expr-desc))
 ;;            (doseq [s let-symbols]
 ;;              (let [loc (or (pass/has-code-loc? (-> s :form meta))
 ;;                            (pass/code-loc (pass/nearest-ast-with-loc let-expr)))]
@@ -157,7 +158,7 @@ Example: (all-suffixes [1 2 3])
           (-> ast :eastwood/partly-resolved-forms first first))))
 
 
-(defn unused-locals [{:keys [asts]}]
+(defn unused-let-locals [{:keys [asts]}]
   (let [let-exprs (->> asts
                       (mapcat ast/nodes)
                       (filter (fn [ast]
@@ -165,15 +166,39 @@ Example: (all-suffixes [1 2 3])
                                      (not (let-ast-from-loop-expansion ast))))))]
     (for [expr let-exprs
           :when (not (util/inside-fieldless-defrecord expr))
-          :let [unused (->> (unused-locals* expr)
+          :let [unused (->> (unused-locals* expr "let")
                             (map :form)
-                            (remove ignore-let-symbol?)
+                            (remove ignore-local-symbol?)
                             set)]
           unused-sym unused
-          :let [loc (-> unused-sym meta)]]
+          :let [loc (or (pass/has-code-loc? (-> unused-sym meta))
+                        (pass/code-loc (pass/nearest-ast-with-loc expr)))]]
       (util/add-loc-info loc
        {:linter :unused-locals
         :msg (format "let bound symbol '%s' never used" unused-sym)}))))
+
+
+(defn unused-loop-locals [{:keys [asts]}]
+  (let [loop-exprs (->> asts
+                        (mapcat ast/nodes)
+                        (filter (fn [ast]
+                                  (= :loop (:op ast)))))]
+    (for [expr loop-exprs
+          :let [unused (->> (unused-locals* expr "loop")
+                            (map :form)
+                            (remove ignore-local-symbol?)
+                            set)]
+          unused-sym unused
+          :let [loc (or (pass/has-code-loc? (-> unused-sym meta))
+                        (pass/code-loc (pass/nearest-ast-with-loc expr)))]]
+      (util/add-loc-info loc
+       {:linter :unused-locals
+        :msg (format "loop bound symbol '%s' never used" unused-sym)}))))
+
+
+(defn unused-locals [& args]
+  (concat (apply unused-let-locals args)
+          (apply unused-loop-locals args)))
 
 
 ;; Unused namespaces

@@ -1243,6 +1243,11 @@ the next."
      :file (fname-from-parts "testcases" "unusedlocals.clj"),
      :line 68, :column 11}
     1,
+    {:linter :unused-locals,
+     :msg "loop bound symbol 'unused-loop-symbol' never used",
+     :file (fname-from-parts "testcases" "unusedlocals.clj"),
+     :line 80, :column 3}
+    1,
     })
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace

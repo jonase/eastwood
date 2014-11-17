@@ -74,3 +74,9 @@
   (loop [[_unused-no-warn-because-of-_-at-beginning & rst] (seq x)]
     (when (seq rst)
       (recur (next rst)))))
+
+
+(defn foo6 [x]
+  (loop [unused-loop-symbol x, b (seq x)]
+    (when (seq b)
+      (recur b (next b)))))
