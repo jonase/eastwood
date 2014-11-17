@@ -118,7 +118,7 @@ Example: (all-suffixes [1 2 3])
 
 
 (defn unused-locals* [let-expr expr-desc]
-  (let [let-symbols (let-symbols let-expr)
+  (let [let-symbols-seq (let-symbols let-expr)
         locals-used-in-let-body (used-locals (ast/nodes (:body let-expr)))
 ;;        _ (when (seq let-symbols)
 ;;            (println (format "%s-dbg:" expr-desc))
@@ -139,13 +139,18 @@ Example: (all-suffixes [1 2 3])
 ;;                               (-> s :form meta :column)))))
         ]
     (loop [unused #{}
-           let-symbols let-symbols]
+           let-symbols let-symbols-seq]
       (if-let [letsym (first let-symbols)]
         (recur (set/difference (conj unused (select-keys letsym
                                                          [:form :name]))
                                (:locals-used-in-init-expr letsym))
                (next let-symbols))
-        (set/difference unused locals-used-in-let-body)))))
+        ;; Return them in the same order they appeared in the bindings
+        ;; form
+        (let [unused-set (set/difference unused locals-used-in-let-body)]
+          (->> let-symbols-seq
+               (map (fn [s] (select-keys s [:form :name])))
+               (filter unused-set)))))))
 
 
 ;; Never warn about symbols bound by let's that result from expanding
@@ -160,16 +165,15 @@ Example: (all-suffixes [1 2 3])
 
 (defn unused-let-locals [{:keys [asts]}]
   (let [let-exprs (->> asts
-                      (mapcat ast/nodes)
-                      (filter (fn [ast]
-                                (and (= :let (:op ast))
-                                     (not (let-ast-from-loop-expansion ast))))))]
+                       (mapcat ast/nodes)
+                       (filter (fn [ast]
+                                 (and (= :let (:op ast))
+                                      (not (let-ast-from-loop-expansion ast))))))]
     (for [expr let-exprs
           :when (not (util/inside-fieldless-defrecord expr))
           :let [unused (->> (unused-locals* expr "let")
                             (map :form)
-                            (remove ignore-local-symbol?)
-                            set)]
+                            (remove ignore-local-symbol?))]
           unused-sym unused
           :let [loc (or (pass/has-code-loc? (-> unused-sym meta))
                         (pass/code-loc (pass/nearest-ast-with-loc expr)))]]
@@ -186,8 +190,7 @@ Example: (all-suffixes [1 2 3])
     (for [expr loop-exprs
           :let [unused (->> (unused-locals* expr "loop")
                             (map :form)
-                            (remove ignore-local-symbol?)
-                            set)]
+                            (remove ignore-local-symbol?))]
           unused-sym unused
           :let [loc (or (pass/has-code-loc? (-> unused-sym meta))
                         (pass/code-loc (pass/nearest-ast-with-loc expr)))]]

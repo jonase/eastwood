@@ -1248,6 +1248,36 @@ the next."
      :file (fname-from-parts "testcases" "unusedlocals.clj"),
      :line 80, :column 3}
     1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'foo' never used"
+     :file (fname-from-parts "testcases" "unusedlocals.clj"),
+     :line 112, :column 17}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'baz' never used"
+     :file (fname-from-parts "testcases" "unusedlocals.clj"),
+     :line 112, :column 25}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'guh' never used"
+     :file (fname-from-parts "testcases" "unusedlocals.clj"),
+     :line 112, :column 29}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'unused1' never used"
+     :file (fname-from-parts "testcases" "unusedlocals.clj"),
+     :line 113, :column 11}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'unused2' never used"
+     :file (fname-from-parts "testcases" "unusedlocals.clj"),
+     :line 113, :column 22}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'unused3' never used"
+     :file (fname-from-parts "testcases" "unusedlocals.clj"),
+     :line 113, :column 40}
+    1,
     })
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace

@@ -80,3 +80,35 @@
   (loop [unused-loop-symbol x, b (seq x)]
     (when (seq b)
       (recur b (next b)))))
+
+
+;; Example with multiple unused locals so I can see whether some
+;; changes I make will show the warnings in order the symbols appear,
+;; rather than some other order.
+
+;; Note: the macroexpansion of :keys destructuring forms reverses the
+;; order of the keys given in the vector, e.g.
+
+;;user=> (pprint (macroexpand '(let [{:keys [foo bar baz guh]} x] bar)))
+;;(let*
+;; [map__1177
+;;  x
+;;  map__1177
+;;  (if
+;;   (clojure.core/seq? map__1177)
+;;   (clojure.lang.PersistentHashMap/create (clojure.core/seq map__1177))
+;;   map__1177)
+;;  guh
+;;  (clojure.core/get map__1177 :guh)
+;;  baz
+;;  (clojure.core/get map__1177 :baz)
+;;  bar
+;;  (clojure.core/get map__1177 :bar)
+;;  foo
+;;  (clojure.core/get map__1177 :foo)]
+;; bar)
+
+(defn foo7 [x]
+  (let [{:keys [foo bar baz guh]} x]
+    (let [unused1 1, unused2 2, wee 3, unused3 4]
+      [bar wee])))
