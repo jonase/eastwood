@@ -118,7 +118,8 @@ the command line to enable or disable the linter.
 - `:suspicious-test` - Tests using `clojure.test` that may be written
   incorrectly. [[more]](https://github.com/jonase/eastwood#suspicious-test)
 - `:suspicious-expression` - Suspicious expressions that appear
-  incorrect, because they always return trivial values.
+  incorrect, because they always return trivial
+  values. [[more]](https://github.com/jonase/eastwood#suspicious-expression)
 - `:unused-meta-on-macro` - Metadata on a macro invocation is ignored
   by Clojure (new in version
   0.2.0). [[more]](https://github.com/jonase/eastwood#unused-meta-on-macro)
