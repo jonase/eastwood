@@ -12,6 +12,9 @@
 Version 0.2.0 is not released yet.  These changes are available in
 latest master version only.
 
+* Eastwood version 0.2.0 requires Clojure 1.5.0 or later.  Clojure
+  1.4.0 is no longer supported.
+
 * The new default lint warning format is no longer a map, but lines of
   the form "FILE:LINE:COL: LINTER MSG".  You can put only the warnings
   lines into a file using the option `:warning-output-file` followed

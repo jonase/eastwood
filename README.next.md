@@ -6,9 +6,9 @@ uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
 and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.  It has
-been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 alpha versions.  It
-has been very lightly tested with Clojure 1.4.0, but it definitely
-does not work with Clojure versions earlier than 1.4.0.
+been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 alpha versions.  As
+of Eastwood version 0.2.0, it no longer suports Clojure 1.4.0 or
+earlier versions.
 
 
 ## Installation & Quick usage
