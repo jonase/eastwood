@@ -135,6 +135,8 @@ the command line to enable or disable the linter.
 - `:unused-private-vars` - Unused private vars (needs updating).
 - `:unused-fn-args` - Unused function arguments (disabled by
   default). [[more]](https://github.com/jonase/eastwood#unused-fn-args)
+- `:unused-locals` - Symbols bound with `let` or `loop` that are never
+  used. [[more]](https://github.com/jonase/eastwood#unused-locals)
 - `:unused-namespaces` - Warn if a namespace is given in an `ns` form
   after `:use` or `:require`, but no Vars within the namespace are
   ever mentioned (disabled by default). [[more]](https://github.com/jonase/eastwood#unused-namespaces)
@@ -551,7 +553,9 @@ You may wish to disable it in projects that intentionally have such
 files, e.g. by adding a line like this to your Leiningen `project.clj`
 file:
 
-    :eastwood {:exclude-linters [:non-clojure-file]}
+```clojure
+:eastwood {:exclude-linters [:non-clojure-file]}
+```
 
 
 ### `:no-ns-form-found`
@@ -1348,6 +1352,46 @@ and extended by Eastwood.  If you wish to enable the `:unused-fn-args`
 linter, but have several unused arguments that are acceptable to you,
 consider prepending an underscore to their names to silence the
 warnings.
+
+
+### `:unused-locals`
+
+#### Symbols bound with `let` or `loop` that are never used
+
+New in Eastwood version 0.2.0
+
+This linter is enabled by default, but you may wish to disable it if
+it annoys you.  If you use Leiningen, you can merge a line like the
+following into your `project.clj` file or user-wide
+`~/.lein/profiles.clj` file.
+
+```clojure
+:eastwood {:exclude-linters [:unused-locals]}
+```
+
+If you bind a value to a symbol in a `let` or `loop` binding, but then
+never use that symbol, this linter will issue a warning for it.  You
+can disable individual warnings by prepending the symbol name with a
+`_` character, as for the `:unused-fn-args` linter.
+
+The warning occurs even if the `let` or `loop` is the result of
+expanding a macro, so sometimes the source of the warning is not
+obvious.  If the symbol name looks like `somename__5103`, it is most
+likely from a `let` introduced during macroexpansion.  Such warnings
+may be split into a separate disabled-by-default linter in a future
+version of Eastwood.
+
+Destructuring forms like `[x & xs]` and `{:keys [keyname1 keyname2
+...] :as mymap}` are macroexpanded into `let` forms, even when used as
+function arguments, and can thus cause these warnings.  You can
+disable individual ones by prepending their names with a `_`
+character.
+
+It may seem a little odd to disable such destructuring warnings for
+keys in a map, since it changes the name of the keyword in the
+macroexpansion, and thus it will not be bound to the same value.  But
+hey, the value wasn't being used anyway, right?  Consider removing it
+from the list of keywords completely.
 
 
 ### `:unused-namespaces`
