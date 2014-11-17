@@ -60,8 +60,8 @@ latest master version only.
   things it would be good to add to this linter.
 
 * New linter `:unused-locals` that warns when a `let` binds values to
-  symbols, but those symbols are never used.  Issue
-  [#106](https://github.com/jonase/eastwood/issues/106).
+  symbols, but those symbols are never used.  Disabled by default.
+  Issue [#106](https://github.com/jonase/eastwood/issues/106).
 
 * New option `:warning-output-file` to specify a file name where
   warnings are written instead of to the standard output.  Issue

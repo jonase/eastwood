@@ -136,7 +136,8 @@ the command line to enable or disable the linter.
 - `:unused-fn-args` - Unused function arguments (disabled by
   default). [[more]](https://github.com/jonase/eastwood#unused-fn-args)
 - `:unused-locals` - Symbols bound with `let` or `loop` that are never
-  used. [[more]](https://github.com/jonase/eastwood#unused-locals)
+  used (disabled by
+  default). [[more]](https://github.com/jonase/eastwood#unused-locals)
 - `:unused-namespaces` - Warn if a namespace is given in an `ns` form
   after `:use` or `:require`, but no Vars within the namespace are
   ever mentioned (disabled by default). [[more]](https://github.com/jonase/eastwood#unused-namespaces)
@@ -1360,9 +1361,22 @@ warnings.
 
 New in Eastwood version 0.2.0
 
-This linter is enabled by default, but you may wish to disable it if
-it annoys you.  If you use Leiningen, you can merge a line like the
-following into your `project.clj` file or user-wide
+This linter is disabled by default, because it often produces a large
+number of warnings, and even the ones that are correct can be
+annoying, and usually just vestigial code that isn't really a bug (it
+might hurt your performance).
+
+Also, there are currently many warnings of this kind produced for
+`core.async`, `core.match`, and Prismatic Schema code, and probably
+also code that uses those libraries (judging from a small sample set
+which in some case only includes test code for the library).  Perhaps
+in the future Eastwood will be improved, but it is not there as of
+version 0.2.0.
+
+However, for many projects tested, the warnings are correct.  If you
+wish to eliminate such symbols from your code using these warnings,
+you must explicitly enable it.  If you use Leiningen, you can merge a
+line like the following into your `project.clj` file or user-wide
 `~/.lein/profiles.clj` file.
 
 ```clojure

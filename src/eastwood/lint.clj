@@ -231,7 +231,6 @@ return value followed by the time it took to evaluate in millisec."
     :constant-test
     :unused-ret-vals
     :unused-ret-vals-in-try
-    :unused-locals
     :unused-meta-on-macro
     :unlimited-use
     :wrong-tag})
