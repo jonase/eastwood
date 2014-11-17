@@ -51,6 +51,16 @@ compiler errors before running Eastwood.  Even better, `lein test`
 will compile files in your source paths and test paths, not merely
 your source paths as `lein check` does.
 
+If you run Eastwood from a `lein` command line, it is perfectly normal
+to see the message `Subprocess failed` at the end if either the
+warning or exception thrown counts are not 0.  Eastwood exits with a
+non-0 [exit status](http://en.wikipedia.org/wiki/Exit_status) in this
+situation, so that shell scripts or build tools running Eastwood will
+have a simple way to check that something was not perfect.  If
+Eastwood quits due to some internal error that throws an exception,
+you will typically see much more voluminous output about what went
+wrong, often including a stack trace.
+
 See section [For Eastwood
 developers](https://github.com/jonase/eastwood#for-eastwood-developers)
 below for instructions on trying out the latest unreleased version of
@@ -221,7 +231,7 @@ value that is a set of keywords, e.g.
 * `:forms-pprint` - like `:forms` except pretty-print the forms
 * `:progress` - show a brief debug message after each top-level form
   is read
-* `:eval` - prett-print each form after it has been read, analyzed
+* `:eval` - pretty-print each form after it has been read, analyzed
   into an AST (abstract syntax tree), and converted back into form
   from the AST, but before that form is evaluated with `eval`.
 * `:ns` - print the initial set of namespaces loaded into the Clojure
@@ -568,7 +578,7 @@ possible, and Eastwood will ignore all but that last definition.
 
 ### `:def-in-def`
 
-#### def'd nested inside other def's
+#### `def` nested inside other `def`s
 
 If you come to Clojure having learned Scheme earlier, you may write
 Clojure code with `def` statements inside of functions.  Or you might
@@ -594,6 +604,37 @@ Unless you really know what you are doing and looking for a very
 particular effect, it is recommended to take `:def-in-def` warnings as
 a sign to change your code.
 
+If you want local functions that can only be used inside of an outer
+function, not visible or callable elsewhere, consider using `let`:
+
+```clojure
+(defn outer-fn-callable-elsewhere [n]
+  (let [helper-fn (fn [m] (* m m))]
+    (if (> n 10)
+      (helper-fn n)
+      (helper-fn (+ n 17)))))
+```
+
+If you need local functions that can all call each other, `let` will
+not work, but [`letfn`](http://clojuredocs.org/clojure.core/letfn)
+will.
+
+If you want to write code in a style like you would in a language that
+uses mutable variables by default, e.g. most other languages, the
+first recommendation is to learn the functional style of doing things,
+if you can find a way that keeps the code understandable.
+[`loop`](http://clojuredocs.org/clojure.core/loop) may fit your
+purpose when other ways are not easy to find.
+
+If you have considered that advice and still want local mutable
+variables, other recommendations are:
+
+* [`atom`](http://clojuredocs.org/clojure.core/atom),
+  [`reset!`](http://clojuredocs.org/clojure.core/reset!),
+  [`swap!`](http://clojuredocs.org/clojure.core/swap!)
+* Clojure's
+  [`with-local-vars`](http://clojuredocs.org/clojure.core/with-local-vars)
+  or the [proteus](https://github.com/ztellman/proteus) library
 
 ### `:wrong-arity`
 
