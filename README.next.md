@@ -40,6 +40,12 @@ no more dangerous.  To confine linting to files in your
 
     $ lein eastwood '{:namespaces [:source-paths]}'
 
+If it is not obvious what a warning message means, _please_ check the
+next section, which has a `[more]` link for each type of warning.
+Most types of warning messages have a page or more of text describing
+the warning, why it occurs, and sometimes suggestions on what you can
+do about it.
+
 See [Editor
 Support](https://github.com/jonase/eastwood#editor-support) below for
 instructions on using a text editor to quickly take you to the file,
