@@ -79,7 +79,7 @@ selectively disable such warnings if they wish."
         :msg (format "Function arg %s never used" unused-sym)}))))
 
 
-;; Unused let-bound symbols
+;; Symbols in let or loop bindings that are unused
 
 ;; Note: the let bindings are sequential.  It can happen that the only
 ;; place a bound symbol is used is in the init expression of a later
@@ -106,7 +106,7 @@ Example: (all-suffixes [1 2 3])
   (take-while seq (iterate next coll)))
 
 
-(defn let-symbols [let-expr]
+(defn symbols-from-bindings [expr]
   (map (fn [b]
 ;;         (println (format "  name=%s used-locals=%s init="
 ;;                          (:name b)
@@ -114,24 +114,24 @@ Example: (all-suffixes [1 2 3])
 ;;         (util/pprint-ast-node (:init b))
          (assoc (select-keys b [:form :name :init])
            :locals-used-in-init-expr (used-locals (ast/nodes (:init b)))))
-       (:bindings let-expr)))
+       (:bindings expr)))
 
 
-(defn unused-locals* [let-expr expr-desc]
-  (let [let-symbols-seq (let-symbols let-expr)
-        locals-used-in-let-body (used-locals (ast/nodes (:body let-expr)))
-;;        _ (when (seq let-symbols)
-;;            (println (format "%s-dbg:" expr-desc))
-;;            (doseq [s let-symbols]
+(defn unused-locals* [expr]
+  (let [symbols-seq (symbols-from-bindings expr)
+        locals-used-in-body (used-locals (ast/nodes (:body expr)))
+;;        _ (when (seq symbols-seq)
+;;            (println (format "%s-dbg:" (name (:op expr))))
+;;            (doseq [s symbols-seq]
 ;;              (let [loc (or (pass/has-code-loc? (-> s :form meta))
-;;                            (pass/code-loc (pass/nearest-ast-with-loc let-expr)))]
+;;                            (pass/code-loc (pass/nearest-ast-with-loc expr)))]
 ;;                (println (format "    binding form=%s name=%s line=%s col=%s locals-used-in-init=%s"
 ;;                                 (-> s :form)
 ;;                                 (-> s :name)
 ;;                                 (-> loc :line)
 ;;                                 (-> loc :column)
 ;;                                 (-> s :locals-used-in-init-expr)))))
-;;            (doseq [s (used-locals (ast/nodes (:body let-expr)))]
+;;            (doseq [s (used-locals (ast/nodes (:body expr)))]
 ;;              (println (format "    use     form=%s name=%s line=%s col=%s"
 ;;                               (-> s :form)
 ;;                               (-> s :name)
@@ -139,16 +139,15 @@ Example: (all-suffixes [1 2 3])
 ;;                               (-> s :form meta :column)))))
         ]
     (loop [unused #{}
-           let-symbols let-symbols-seq]
-      (if-let [letsym (first let-symbols)]
-        (recur (set/difference (conj unused (select-keys letsym
-                                                         [:form :name]))
-                               (:locals-used-in-init-expr letsym))
-               (next let-symbols))
+           symbols symbols-seq]
+      (if-let [sym (first symbols)]
+        (recur (set/difference (conj unused (select-keys sym [:form :name]))
+                               (:locals-used-in-init-expr sym))
+               (next symbols))
         ;; Return them in the same order they appeared in the bindings
         ;; form
-        (let [unused-set (set/difference unused locals-used-in-let-body)]
-          (->> let-symbols-seq
+        (let [unused-set (set/difference unused locals-used-in-body)]
+          (->> symbols-seq
                (map (fn [s] (select-keys s [:form :name])))
                (filter unused-set)))))))
 
@@ -163,15 +162,20 @@ Example: (all-suffixes [1 2 3])
           (-> ast :eastwood/partly-resolved-forms first first))))
 
 
-(defn unused-let-locals [{:keys [asts]}]
-  (let [let-exprs (->> asts
-                       (mapcat ast/nodes)
-                       (filter (fn [ast]
-                                 (and (= :let (:op ast))
-                                      (not (let-ast-from-loop-expansion ast))))))]
-    (for [expr let-exprs
-          :when (not (util/inside-fieldless-defrecord expr))
-          :let [unused (->> (unused-locals* expr "let")
+(defn unused-locals [{:keys [asts]}]
+  (let [exprs (->> asts
+                   (mapcat ast/nodes)
+                   (filter (fn [ast]
+                             (or (and (= :let (:op ast))
+                                      (not (let-ast-from-loop-expansion ast)))
+                                 (= :loop (:op ast))))))]
+    (for [expr exprs
+          ;; Without a check like this, defrecord's with no fields
+          ;; have macroexpansions containing multiple let's with
+          ;; unused symbols that would be warned about.
+          :when (not (and (= :let (:op expr))
+                          (util/inside-fieldless-defrecord expr)))
+          :let [unused (->> (unused-locals* expr)
                             (map :form)
                             (remove ignore-local-symbol?))]
           unused-sym unused
@@ -179,29 +183,9 @@ Example: (all-suffixes [1 2 3])
                         (pass/code-loc (pass/nearest-ast-with-loc expr)))]]
       (util/add-loc-info loc
        {:linter :unused-locals
-        :msg (format "let bound symbol '%s' never used" unused-sym)}))))
-
-
-(defn unused-loop-locals [{:keys [asts]}]
-  (let [loop-exprs (->> asts
-                        (mapcat ast/nodes)
-                        (filter (fn [ast]
-                                  (= :loop (:op ast)))))]
-    (for [expr loop-exprs
-          :let [unused (->> (unused-locals* expr "loop")
-                            (map :form)
-                            (remove ignore-local-symbol?))]
-          unused-sym unused
-          :let [loc (or (pass/has-code-loc? (-> unused-sym meta))
-                        (pass/code-loc (pass/nearest-ast-with-loc expr)))]]
-      (util/add-loc-info loc
-       {:linter :unused-locals
-        :msg (format "loop bound symbol '%s' never used" unused-sym)}))))
-
-
-(defn unused-locals [& args]
-  (concat (apply unused-let-locals args)
-          (apply unused-loop-locals args)))
+        :msg (format "%s bound symbol '%s' never used"
+                     (-> expr :op name)
+                     unused-sym)}))))
 
 
 ;; Unused namespaces
