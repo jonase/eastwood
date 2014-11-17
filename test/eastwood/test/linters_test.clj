@@ -1239,9 +1239,9 @@ the next."
    {}
    {
     {:linter :unused-locals,
-     :msg "let bound symbol 'undesirable-warn1' never used",
+     :msg "let bound symbol 'unused-first-should-warn' never used",
      :file (fname-from-parts "testcases" "unusedlocals.clj"),
-     :line 50, :column 11}
+     :line 68, :column 11}
     1,
     })
   ;; I would prefer if this threw an exception, but I think it does

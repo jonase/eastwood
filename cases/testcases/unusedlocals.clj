@@ -59,3 +59,18 @@
          z y]
     (when (next y)
       (recur (next w) (next y) (next z)))))
+
+
+;; Similar to foo2, but should warn for some symbols because they are
+;; not used in the loop body at all.
+
+(defn foo4 [x]
+  (loop [[unused-first-should-warn & rst] (seq x)]
+    (when (seq rst)
+      (recur (next rst)))))
+
+
+(defn foo5 [x]
+  (loop [[_unused-no-warn-because-of-_-at-beginning & rst] (seq x)]
+    (when (seq rst)
+      (recur (next rst)))))

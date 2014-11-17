@@ -147,10 +147,22 @@ Example: (all-suffixes [1 2 3])
         (set/difference unused locals-used-in-let-body)))))
 
 
+;; Never warn about symbols bound by let's that result from expanding
+;; clojure.core/loop.  See function foo2 in namespace
+;; testcases.unusedlocals for an example and discussion.
+
+(defn let-ast-from-loop-expansion [ast]
+  (and (= :let (:op ast))
+       (= 'clojure.core/loop
+          (-> ast :eastwood/partly-resolved-forms first first))))
+
+
 (defn unused-locals [{:keys [asts]}]
   (let [let-exprs (->> asts
                       (mapcat ast/nodes)
-                      (filter (util/op= :let)))]
+                      (filter (fn [ast]
+                                (and (= :let (:op ast))
+                                     (not (let-ast-from-loop-expansion ast))))))]
     (for [expr let-exprs
           :when (not (util/inside-fieldless-defrecord expr))
           :let [unused (->> (unused-locals* expr)
