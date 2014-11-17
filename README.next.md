@@ -388,10 +388,8 @@ vim 'quickfix' mode with the command:
 
 The warnings tend to be longer than one screen width.  You can use
 `:copen 3` to increase the size of the window displaying locations to
-3 lines, for example.
-
-`:cn` jumps to the next warning, `:cp` to the previous.  See the Vim
-documentation for more details,
+3 lines, for example.  `:cn` jumps to the next warning, `:cp` to the
+previous.  See the Vim documentation for more details,
 e.g. [here](http://vimdoc.sourceforge.net/htmldoc/quickfix.html).
 
 
