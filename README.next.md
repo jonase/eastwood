@@ -935,6 +935,28 @@ test.
 
 TBD.  Explain and give a few examples.
 
+This linter was updated in Eastwood version 0.2.0 so that it always
+examines forms after macroexpansion.  Eastwood 0.1.5 and earlier had a
+mix of some cases caught by examining code after macroexpansion, but
+some before.
+
+The cases checked for before macroexpansion could produce false
+positives, e.g. it could warn about the `(= 1)` part of `(-> 1 (=
+1))`, even though that clearly expands to `(= 1 1)`, which should not
+be warned about.
+
+The good news is that with Eastwood version 0.2.0, those incorrect
+warnings are gone.
+
+The bad news is that with some libraries, there can be many incorrect
+warnings from this linter, because it is macroexpanding before
+checking.  In particular, if you use the `core.match` library, you may
+find warnings from this linter that have nothing obvious to do with
+your code.  They are due to the way that macros in `core.match` expand
+into code that contains suspicious expressions.  Eastwood issue
+[#108](https://github.com/jonase/eastwood/issues/108) has been created
+to track this.
+
 
 ### `:unused-meta-on-macro`
 
