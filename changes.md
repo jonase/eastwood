@@ -12,6 +12,15 @@
 Version 0.2.0 is not released yet.  These changes are available in
 latest master version only.
 
+* The new default lint warning format is no longer a map, but lines of
+  the form "FILE:LINE:COL: LINTER MSG".  You can put only the warnings
+  lines into a file using the option `:warning-output-file` followed
+  by a file name in a double-quoted string (or from the REPL, anything
+  convertible to a writer via `clojure.java.io/writer`).  Support
+  already exists in Emacs, Vim, and probably several other editors for
+  stepping through the warnings, with another buffer/window jumping to
+  the location of the warning for you.  See docs for more details.
+
 * Enhanced `:suspicious-expression` linter so it always uses
   macroexpanded forms, not original source forms.  Thus it no longer
   produces incorrect warnings for expressions using `->` or `->>` like
@@ -62,14 +71,6 @@ latest master version only.
 * New option `:warning-output-file` to specify a file name where
   warnings are written instead of to the standard output.  Issue
   [#104](https://github.com/jonase/eastwood/issues/104).
-
-* New option `:lint-warning-format`.  If set to
-  `:emacs-compilation-mode-buffer`, warnings will be printed in a
-  format that Emacs can use to jump to the file/line/column of each
-  warning message successively, as can be done in Emacs for many other
-  compiler error/warnings messages with a similar output format.  TBD:
-  Add documentation to README.next.md on how to use this output file
-  in Emacs.
 
 * Corrections to the `:wrong-tag` linter where it was throwing
   exceptions while linting some projects -- ones that had not been

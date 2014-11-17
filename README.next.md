@@ -40,16 +40,23 @@ no more dangerous.  To confine linting to files in your
 
     $ lein eastwood '{:namespaces [:source-paths]}'
 
+See [Editor
+Support](https://github.com/jonase/eastwood#editor-support) below for
+instructions on using a text editor to quickly take you to the file,
+line, and column of each warning message.
+
 See the [Usage](https://github.com/jonase/eastwood#usage) section
 below for more notes on side effects in test code, and instructions on
 [running Eastwood in a REPL
 session](https://github.com/jonase/eastwood#running-eastwood-in-a-repl).
 
 Eastwood can only finish linting a file if Clojure itself can compile
-it.  It is recommended to use a command like `lein check` to check for
-compiler errors before running Eastwood.  Even better, `lein test`
-will compile files in your source paths and test paths, not merely
-your source paths as `lein check` does.
+it (unlike some other lint tools, which try to give meaningful error
+messages for programs with syntax errors).  It is recommended to use a
+command like `lein check` to check for compiler errors before running
+Eastwood.  Even better, `lein test` will compile files in your source
+paths and test paths, not merely your source paths as `lein check`
+does.
 
 If you run Eastwood from a `lein` command line, it is perfectly normal
 to see the message `Subprocess failed` at the end if either the
@@ -325,6 +332,68 @@ library and workflow might be helpful in automatically removing old
 versions of namespaces from a JVM process.  If you have instructions
 that you have used with Eastwood and component or a similar tool,
 please file a GitHub issue so they can be included here.
+
+
+### Editor Support
+
+As of Eastwood version 0.2.0, the new default warning message format
+is no longer a Clojure map, but lines of the form:
+
+    <file>:<line>:<col>: <linter> <msg>
+
+You can still get the older map format by setting the option
+`:warning-format` to `:map-v2` (`:map-v1` is the style used in
+Eastwood 0.1.4 and earlier).  The new default format can be specified
+explicitly by setting `:warning-format` to `:location-list-v1`.
+
+You can put only the warning lines into a file using the option
+`:warning-output-file` followed by a file name in a double-quoted
+string, or when running Eastwood from the REPL, anything convertible
+to a writer via `clojure.java.io/writer`.
+
+Note: If you try to mix reflection warnings from the Clojure compiler
+in such a file, those messages contain relative path names from a
+directory on your classpath, whereas Eastwood warnings contain
+relative path names from the current directory.  For example, if the
+directory `src` is on your classpath, as it is by default in Leiningen
+projects, then Eastwood warnings will contain file names like
+`src/your/ns/core.clj`, whereas reflection warnings will not have the
+`src/` at the beginning.  If someone knows a good way to mingle
+Eastwood and Clojure messages in the same file, please open a GitHub
+issue for Eastwood.
+
+
+#### Emacs
+
+If you open a file with the warnings in their default format in Emacs,
+then do the command `M-x compilation-mode`, you can use `next-error`
+and `previous-error` commands to step through the warnings, and the
+other buffer will jump to the specified file, line, and column.
+Adding lines like the following to your Emacs init file
+(`~/.emacs.d/init.el` with recent versions of Emacs) is one way to
+create convenient function key bindings for `next-error` and
+`previous-error`.  Use `C-h f next-error RET` to see the current key
+bindings for `next-error`, since you may not mind the defaults.
+
+    (global-set-key [f9]  'previous-error)
+    (global-set-key [f10] 'next-error)
+
+
+#### Vim
+
+A file containing default-format Eastwood warnings can be opened in
+vim 'quickfix' mode with the command:
+
+    vim -q filename
+
+The warnings tend to be longer than one screen width.  You can use
+`:copen 3` to increase the size of the window displaying locations to
+3 lines, for example.
+
+`:cn` jumps to the next warning, `:cp` to the previous.  See the Vim
+documentation for more details,
+e.g. [here](http://vimdoc.sourceforge.net/htmldoc/quickfix.html).
+
 
 
 ## Known issues
