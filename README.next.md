@@ -120,6 +120,9 @@ the command line to enable or disable the linter.
 - `:suspicious-expression` - Suspicious expressions that appear
   incorrect, because they always return trivial
   values. [[more]](https://github.com/jonase/eastwood#suspicious-expression)
+- `:constant-test` - A test expression always evaluates as true, or
+   always false.
+   [[more]](https://github.com/jonase/eastwood#constant-test)
 - `:unused-meta-on-macro` - Metadata on a macro invocation is ignored
   by Clojure (new in version
   0.2.0). [[more]](https://github.com/jonase/eastwood#unused-meta-on-macro)
@@ -959,6 +962,60 @@ into code that contains suspicious expressions.  Eastwood issue
 to track this.
 
 
+### `:constant-test`
+
+#### A test expression always evaluates as true, or always false
+
+New in Eastwood version 0.2.0
+
+Warn if you have a test expression in `if`, `cond`, `if-let`,
+`when-let`, etc. that is obviously a constant, or it is a literal
+collection like a map, vector, or set that always evaluates as true.
+
+For example:
+
+```clojure
+;; These all cause :constant-test warnings, because the test condition
+;; is a compile-time constant.
+(if false 1 2)
+(if-not [nil] 1 2)
+(when-first [x [1 2]] (println "Goodbye"))
+
+;; Even though Eastwood knows that the test condition is not a compile
+;; time constant here, it is a map, which always evaluate to logical
+;; true in a test condition.
+(defn foo [x]
+  (if {:a (inc x)} 1 2))
+```
+
+Like most Eastwood linters, these checks are performed after
+macroexpansion, so at times the code that causes the warning may not
+be in your source file.  Users of the `core.match` library may see
+many such warnings that are not directly in their code, but in the way
+`core.match` macros expand.  You may wish to disable this linter,
+either from the command line or REPL using the `:exclude-linters`
+option, or from Leiningen you can merge the following into your
+`project.clj` or `~/.lein/profiles.clj` file:
+
+```clojure
+:eastwood {:exclude-linters [:constant-test]}
+```
+
+It is common across Clojure projects tested to use `:else` as the last
+'always do this case` at the end of a `cond` form.  It is also fairly
+common to use `true` or `:default` for this purpose, and Eastwood will
+not warn about these.  If you use some other constant in that
+position, Eastwood will warn.
+
+It is somewhat common to use `(assert false "msg")` to throw
+exceptions in Clojure code.  This linter has a special check never to
+warn about such forms.
+
+This linter does not yet examine tests in `if-some` or `when-some`
+forms.  It is also not able to determine that expressions like `(/ 84
+2)` are constant.
+
+
 ### `:unused-meta-on-macro`
 
 #### Metadata on a macro invocation is ignored by Clojure
@@ -1398,12 +1455,14 @@ version 0.2.0.
 
 However, for many projects tested, the warnings are correct.  If you
 wish to eliminate such symbols from your code using these warnings,
-you must explicitly enable it.  If you use Leiningen, you can merge a
-line like the following into your `project.clj` file or user-wide
+you must explicitly enable it.  You can specify it in `:add-linters`
+on the command line or when invoked from a REPL.  To avoid specifying
+it each time when using Leiningen, you can merge a line like the
+following into your `project.clj` file or user-wide
 `~/.lein/profiles.clj` file.
 
 ```clojure
-:eastwood {:exclude-linters [:unused-locals]}
+:eastwood {:add-linters [:unused-locals]}
 ```
 
 If you bind a value to a symbol in a `let` or `loop` binding, but then
