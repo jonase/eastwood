@@ -78,6 +78,8 @@ describing the error."
 ;; for comparing output from later versions against those versions
 ;; more easily.
 
+(def last-cwd-shown (atom nil))
+
 (defn make-default-lint-warning-cb [wrtr]
   (fn default-lint-warning-cb [info]
     (binding [*out* wrtr]
@@ -93,10 +95,29 @@ describing the error."
                                         :uri-or-file-name
                                         ;; :uri
                                         ;; :namespace-sym
-                                        ])))]
-        (pp/pprint i)
-        (println)
-        (flush)))))
+                                        ]))
+                :emacs-compilation-mode-buffer (:warn-data info))]
+        (if (= lint-warning-format :emacs-compilation-mode-buffer)
+          (do
+            (let [cwd (-> info :opt :cwd)]
+              (when (not= cwd @last-cwd-shown)
+                (reset! last-cwd-shown cwd)
+                (println (format "Entering directory `%s'" cwd))))
+            (println (format "%s:%s:%s: %s: %s"
+                             (-> i :uri-or-file-name str)
+                             ;; Emacs compilation-mode default regex's
+                             ;; do not recognize warning lines with
+                             ;; nil instead of decimal numbers for
+                             ;; line/col number.  Make up values if we
+                             ;; don't know them.
+                             (or (-> i :line) "1")
+                             (or (-> i :column) "1")
+                             (name (-> i :linter))
+                             (-> i :msg))))
+          (do
+            (pp/pprint i)
+            (println)
+            (flush)))))))
 
 (defn make-default-debug-ast-cb [wrtr]
   (fn default-debug-ast-cb [info]
