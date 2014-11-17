@@ -50,6 +50,12 @@ latest master version only.
   to README.next.md about this one.  TBD: See the issue for a few more
   things it would be good to add to this linter.
 
+* New linter `:unused-locals` that warns when a `let` binds values to
+  symbols, but those symbols are never used.  It can be disabled on a
+  per-symbol basis by using '_' as the first (or only) character in
+  the name of the symbol.  TBD: Add docs to README.next.md about this
+  one.
+
 * New option `:warning-output-file` to specify a file name where
   warnings are written instead of to the standard output.  Issue
   [#104](https://github.com/jonase/eastwood/issues/104).
