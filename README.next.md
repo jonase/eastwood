@@ -572,9 +572,11 @@ It need not be the first form, but it will not find it if it is not at
 the top level, e.g. if it is inside of a `let`, `if`, `compile-if`,
 etc.
 
-It is somewhat unusual to have such a file, but there are valid
-reasons to have one, e.g. you use `load` to include it as part of
-another source file.
+It is somewhat unusual to have a file with no `ns` form at all, not
+even inside of a `let`, `compile-if`, etc.  However, there are valid
+reasons to have them, e.g. you have some code that you want to use in
+common between Clojure/Java and ClojureScript, and you use `load` to
+include it from two or more other source files.
 
 
 ### `:misplaced-docstrings`
@@ -935,7 +937,7 @@ TBD.  Explain and give a few examples.
 
 New in Eastwood version 0.2.0
 
-When you invoke a macro an annotate it with metadata, in most cases
+When you invoke a macro and annotate it with metadata, in most cases
 that metadata will be discarded when the macro is expanded, unless the
 macro has been written explicitly to use that metadata.
 
@@ -965,7 +967,6 @@ symbol with `let`, and type hint that symbol.  For example:
 ```clojure
 ;; Reflection warning for the .close call here, because type tag
 ;; ^Writer is discarded for the form (my-macro (StringWriter.))
-
 (def reflection-and-lint-warn (.close ^Writer (my-macro (StringWriter.))))
 
 ;; No reflection warning from Clojure, and no warning from Eastwood,
@@ -998,14 +999,13 @@ preserve type hints:
 * class method calls - `(ClassName/staticMethod args)`
 * class field access - `(ClassName/staticField)`
 * instance method calls - `(.instanceMethod obj args)`
-* instance field access - `(.instanceField obj)
+* instance field access - `(.instanceField obj)`
 
 Java interop forms that are not macroexpanded, and thus do not lose
 any metadata annotating them:
 
 * constructor calls beginning with `new` - `(new ClassName args)`
-* calls beginning with a `.` (not `.close`, but just a `.` by itself)
-  - `(. x close)`
+* calls beginning with a `.` (not `.close`, but just a `.` by itself) - `(. x close)`
 
 Clojure's `clojure.core/fn` macro uses the hidden `&form` argument to
 all Clojure macros to explicitly preserve the metadata on any `(fn
