@@ -73,7 +73,7 @@ describing the error."
                       :msg
                       :uri-or-file-name]))
 
-;; Use the option :lint-warning-format :v1 to get linter warning maps
+;; Use the option :warning-format :map-v1 to get linter warning maps
 ;; as they were generated in Eastwood 0.1.0 thru 0.1.4, intended only
 ;; for comparing output from later versions against those versions
 ;; more easily.
@@ -83,21 +83,21 @@ describing the error."
 (defn make-default-lint-warning-cb [wrtr]
   (fn default-lint-warning-cb [info]
     (binding [*out* wrtr]
-      (let [lint-warning-format (or (-> info :opt :lint-warning-format)
-                                    :v2)
-            i (case lint-warning-format
-                :v1 (into empty-ordered-lint-warning-map-v1
-                          (select-keys (:warn-data info)
-                                       [:linter :msg :file :line :column]))
-                :v2 (into empty-ordered-lint-warning-map-v2
-                          (select-keys (:warn-data info)
-                                       [:linter :msg :file :line :column
-                                        :uri-or-file-name
-                                        ;; :uri
-                                        ;; :namespace-sym
-                                        ]))
-                :emacs-compilation-mode-buffer (:warn-data info))]
-        (if (= lint-warning-format :emacs-compilation-mode-buffer)
+      (let [warning-format (or (-> info :opt :warning-format)
+                               :location-list-v1)
+            i (case warning-format
+                :map-v1 (into empty-ordered-lint-warning-map-v1
+                              (select-keys (:warn-data info)
+                                           [:linter :msg :file :line :column]))
+                :map-v2 (into empty-ordered-lint-warning-map-v2
+                              (select-keys (:warn-data info)
+                                           [:linter :msg :file :line :column
+                                            :uri-or-file-name
+                                            ;; :uri
+                                            ;; :namespace-sym
+                                            ]))
+                :location-list-v1 (:warn-data info))]
+        (if (= warning-format :location-list-v1)
           (do
             (let [cwd (-> info :opt :cwd)]
               (when (not= cwd @last-cwd-shown)
