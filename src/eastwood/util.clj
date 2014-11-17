@@ -28,7 +28,7 @@ the special keys, sorted by the default-comparator."
                           (if-let [b-idx (indices b)]
                             (compare a-idx b-idx)
                             -1)
-                          (if-let [b-idx (indices b)]
+                          (if (indices b)
                             1
                             (default-comparator a b))))))))
 

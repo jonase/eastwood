@@ -257,10 +257,10 @@ significantly faster than the otherwise equivalent (= (count s) n)"
 
 
 (defn def-walker-post1 [ast]
-  (let [{:keys [ancestor-op-vec ancestor-op-set
-                ancestor-op-set-stack top-level-defs
+  (let [{:keys [ancestor-op-vec
+                ancestor-op-set-stack
                 ancestor-defs-vec
-                nested-defs defonce-or-defmulti-match-stack]} *def-walker-data*]
+                defonce-or-defmulti-match-stack]} *def-walker-data*]
     (set! *def-walker-data*
           (assoc *def-walker-data*
             :ancestor-op-vec (pop ancestor-op-vec)
@@ -317,7 +317,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
 (defn redefd-vars [{:keys [asts]}]
   (let [defd-var-asts (defd-vars asts)
         defd-var-groups (group-by #(-> % :form second) defd-var-asts)]
-    (for [[defd-var-ast ast-list] defd-var-groups
+    (for [[_defd-var-ast ast-list] defd-var-groups
           :when (> (count ast-list) 1)
           :let [ast2 (second ast-list)
                 loc2 (redefd-var-loc ast2)]]
@@ -474,7 +474,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
 ;; where they appeared to be used as functions, e.g. as the second arg
 ;; to map, apply, etc.
 (defn local-shadows-var [{:keys [asts]}]
-  (for [{:keys [op fn form env]} (mapcat ast/nodes asts)
+  (for [{:keys [op fn env]} (mapcat ast/nodes asts)
         :when (and (= op :invoke)
                    ;; In the examples I have looked at, (:o-tag fn) is
                    ;; also equal to 'clojure.lang.AFunction.  What is

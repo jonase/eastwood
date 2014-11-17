@@ -126,7 +126,7 @@ describing the error."
       (flush))))
 
 (defn make-default-form-cb [wrtr]
-  (fn [{:keys [event form] :as info}]
+  (fn [{:keys [event form]}]
     (binding [*out* wrtr]
       (case event
         :begin-file (println (format "\n\n== Analyzing file '%s'\n" form))
@@ -140,7 +140,7 @@ describing the error."
     :begin-file (util/assert-keys info [:filename])))
 
 
-(defn assert-cb-has-proper-keys [{:keys [kind] :as info}]
+(defn assert-cb-has-proper-keys [info]
   (case (:kind info)
     :error     (util/assert-keys info [:msg :opt])
     :dirs-scanned (util/assert-keys info [:dirs-scanned :opt])
@@ -157,8 +157,8 @@ describing the error."
 (defn make-eastwood-cb [{:keys [error dirs-scanned lint-warning note
                                 eval-out eval-err
                                 debug debug-ast
-                                debug-form-read debug-form-emitted] :as opts}]
-  (fn eastwood-cb [{:keys [kind] :as info}]
+                                debug-form-read debug-form-emitted]}]
+  (fn eastwood-cb [info]
     (assert-cb-has-proper-keys info)
     (case (:kind info)
       :error     (error info)
@@ -315,8 +315,7 @@ print-cb is called once for each line of output."
 (defn handle-bad-dot-form [ns-sym opts ^Throwable exc]
   (let [error-cb (util/make-msg-cb :error opts)
         dat (ex-data exc)
-        {:keys [form]} dat
-        msg (.getMessage exc)]
+        {:keys [form]} dat]
     (error-cb (format "Java interop calls should be of the form TBD, but found this instead (line %s):"
                       (-> form first meta :line)))
     (error-cb (with-out-str
@@ -329,8 +328,7 @@ print-cb is called once for each line of output."
 (defn handle-bad-tag [ns-sym opts ^Throwable exc]
   (let [error-cb (util/make-msg-cb :error opts)
         dat (ex-data exc)
-        ast (:ast dat)
-        msg (.getMessage exc)]
+        ast (:ast dat)]
     (cond
      (#{:var :invoke :const} (:op ast))
      (let [form (:form ast)

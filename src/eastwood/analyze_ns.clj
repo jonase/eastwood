@@ -320,8 +320,7 @@ recursing into ASTs with :op equal to :do"
   eg. (analyze-ns 'my-ns :opt {} :reader (pb-reader-for-ns 'my.ns))"
   [source-nsym & {:keys [reader opt] :or {reader (pb-reader-for-ns source-nsym)}}]
   (let [source-path (#'move/ns-file-name source-nsym)
-        {:keys [analyze-results] :as m}
-        (analyze-file source-path :reader reader :opt opt)]
+        m (analyze-file source-path :reader reader :opt opt)]
     (assoc (dissoc m :forms :asts)
       :analyze-results {:source (slurp (uri-for-ns source-nsym))
                         :namespace source-nsym

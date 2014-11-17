@@ -273,7 +273,7 @@ Example: (all-suffixes [1 2 3])
    (make-static-method-val-unused-action-map "jvm-method-info.edn")))
 
 
-(defn- mark-things-in-defprotocol-expansion-post [{:keys [env] :as ast}]
+(defn- mark-things-in-defprotocol-expansion-post [ast]
   (if (not-any? #(= % 'clojure.core/defprotocol) (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms ast)))
     ast
     (let [defprotocol-var (get-in ast [:ret :expr :val])
