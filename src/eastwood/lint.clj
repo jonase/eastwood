@@ -857,7 +857,8 @@ file and namespace to avoid name collisions."))))
                                                    excluded-linters)
                                         known-linters)
         linters (set/intersection linters-requested known-linters)]
-    (if (seq unknown-linters)
+    (if (and (seq unknown-linters)
+             (not (:disable-linter-name-checks opts)))
       {:err :unknown-linter,
        :err-data {:unknown-linters unknown-linters
                   :known-linters known-linters}}
