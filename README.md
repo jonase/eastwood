@@ -6,9 +6,11 @@ uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
 and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.  It has
-been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 alpha versions.  It
-has been very lightly tested with Clojure 1.4.0, but it definitely
-does not work with Clojure versions earlier than 1.4.0.
+been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 alpha versions.  As
+of Eastwood version 0.2.0, it no longer suports Clojure 1.4.0 or
+earlier versions.
+
+It supports only Clojure on Java, not ClojureScript or Clojure/CLR.
 
 
 ## Installation & Quick usage
@@ -40,16 +42,29 @@ no more dangerous.  To confine linting to files in your
 
     $ lein eastwood '{:namespaces [:source-paths]}'
 
+If it is not obvious what a warning message means, _please_ check the
+next section, which has a `[more]` link for each type of warning.
+Most types of warning messages have a page or more of text describing
+the warning, why it occurs, and sometimes suggestions on what you can
+do about it.
+
+See [Editor
+Support](https://github.com/jonase/eastwood#editor-support) below for
+instructions on using a text editor to quickly take you to the file,
+line, and column of each warning message.
+
 See the [Usage](https://github.com/jonase/eastwood#usage) section
 below for more notes on side effects in test code, and instructions on
 [running Eastwood in a REPL
 session](https://github.com/jonase/eastwood#running-eastwood-in-a-repl).
 
 Eastwood can only finish linting a file if Clojure itself can compile
-it.  It is recommended to use a command like `lein check` to check for
-compiler errors before running Eastwood.  Even better, `lein test`
-will compile files in your source paths and test paths, not merely
-your source paths as `lein check` does.
+it (unlike some other lint tools, which try to give meaningful error
+messages for programs with syntax errors).  It is recommended to use a
+command like `lein check` to check for compiler errors before running
+Eastwood.  Even better, `lein test` will compile files in your source
+paths and test paths, not merely your source paths as `lein check`
+does.
 
 If you run Eastwood from a `lein` command line, it is perfectly normal
 to see the message `Subprocess failed` at the end if either the
@@ -74,52 +89,74 @@ keyword below is the name of the "linter".  That name can be used on
 the command line to enable or disable the linter.
 
 - Inconsistencies between file names and the namespaces declared
-  within them (new in version 0.1.1) (not a linter, and cannot be
-  disabled). [[more]](https://github.com/jonase/eastwood#check-consistency-of-namespace-and-file-names)
+  within them (new in version 0.1.1) (has no name, and cannot be
+  disabled).
+  [[more]](https://github.com/jonase/eastwood#check-consistency-of-namespace-and-file-names)
+- `:bad-arglists` - Function/macro `:arglists` metadata that does not
+  match the number of args it is defined with (new in version 0.1.1).
+  [[more]](https://github.com/jonase/eastwood#bad-arglists)
+- `:constant-test` - A test expression always evaluates as true, or
+  always false (new in version 0.2.0).
+  [[more]](https://github.com/jonase/eastwood#constant-test)
+- `:def-in-def` - def's nested inside other def's.
+  [[more]](https://github.com/jonase/eastwood#def-in-def)
+- `:deprecations` - Deprecated Clojure Vars, and deprecated Java
+  constructors, methods, and fields.
+  [[more]](https://github.com/jonase/eastwood#deprecations)
+- `:keyword-typos` - Keyword names that may be typos because they
+  occur only once in the source code and are slight variations on
+  other keywords (disabled by default).
+  [[more]](https://github.com/jonase/eastwood#keyword-typos)
+- `:local-shadows-var` - A local name, e.g. a function arg or let
+  binding, has the same name as a global Var, and is called as a
+  function (new in version 0.1.5).
+  [[more]](https://github.com/jonase/eastwood#local-shadows-var)
 - `:misplaced-docstrings` - Function or macro doc strings placed after
   the argument vector, instead of before the argument vector where
-  they
-  belong. [[more]](https://github.com/jonase/eastwood#misplaced-docstrings)
-- `:deprecations` - Deprecated Clojure Vars, and deprecated Java
-  instance methods, static fields, static methods, and
-  constructors. [[more]](https://github.com/jonase/eastwood#deprecations)
+  they belong.
+  [[more]](https://github.com/jonase/eastwood#misplaced-docstrings)
+- `:no-ns-form-found` - Warn about Clojure files where no `ns` form
+  could be found (new in version 0.2.0).
+  [[more]](https://github.com/jonase/eastwood#no-ns-form-found)
+- `:non-clojure-file` - Warn about files that will not be linted
+  because they are not Clojure source files, i.e. their name does not
+  end with '.clj' (disabled by default, new in version 0.2.0).
+  [[more]](https://github.com/jonase/eastwood#non-clojure-file)
 - `:redefd-vars` - Redefinitions of the same name in the same
   namespace. [[more]](https://github.com/jonase/eastwood#redefd-vars)
-- `:def-in-def` - def's nested inside other
-  def's. [[more]](https://github.com/jonase/eastwood#def-in-def)
-- `:wrong-arity` - Function calls that seem to have the wrong number
-  of
-  arguments. [[more]](https://github.com/jonase/eastwood#wrong-arity)
-- `:bad-arglists` - Function/macro `:arglists` metadata that does not
-  match the number of args it is defined with (new in version
-  0.1.1). [[more]](https://github.com/jonase/eastwood#bad-arglists)
-- `:suspicious-test` - Tests using `clojure.test` that may be written
-  incorrectly. [[more]](https://github.com/jonase/eastwood#suspicious-test)
 - `:suspicious-expression` - Suspicious expressions that appear
   incorrect, because they always return trivial values.
+  [[more]](https://github.com/jonase/eastwood#suspicious-expression)
+- `:suspicious-test` - Tests using `clojure.test` that may be written
+  incorrectly. [[more]](https://github.com/jonase/eastwood#suspicious-test)
+- `:unlimited-use` - Unlimited `(:use ...)` without `:refer` or
+  `:only` to limit the symbols referred by it.
+  [[more]](https://github.com/jonase/eastwood#unlimited-use)
+- `:unused-fn-args` - Unused function arguments (disabled by
+  default). [[more]](https://github.com/jonase/eastwood#unused-fn-args)
+- `:unused-locals` - Symbols bound with `let` or `loop` that are never
+  used (new in version 0.2.0, disabled by default).
+  [[more]](https://github.com/jonase/eastwood#unused-locals)
+- `:unused-meta-on-macro` - Metadata on a macro invocation is ignored
+  by Clojure (new in version 0.2.0).
+  [[more]](https://github.com/jonase/eastwood#unused-meta-on-macro)
+- `:unused-namespaces` - Warn if a namespace is given in an `ns` form
+  after `:use` or `:require`, but no Vars within the namespace are
+  ever mentioned (disabled by default).
+  [[more]](https://github.com/jonase/eastwood#unused-namespaces)
+- `:unused-private-vars` - Unused private vars (updated in version
+  0.2.0, disabled by default).
+  [[more]](https://github.com/jonase/eastwood#unused-private-vars)
 - `:unused-ret-vals` and `:unused-ret-vals-in-try` - Unused values,
   including unused return values of pure functions, and some others
   functions where it rarely makes sense to discard its return
   value. [[more]](https://github.com/jonase/eastwood#unused-ret-vals)
-- `:local-shadows-var` - A local name, e.g. a function arg or let
-  binding, has the same name as a global Var, and is called as a
-  function (new in version
-  0.1.5). [[more]](https://github.com/jonase/eastwood#local-shadows-var)
+- `:wrong-arity` - Function calls that seem to have the wrong number
+  of arguments.
+  [[more]](https://github.com/jonase/eastwood#wrong-arity)
 - `:wrong-tag` - An incorrect type tag for which the Clojure compiler
-  does not give an error (new in version 0.1.5). [[more]](https://github.com/jonase/eastwood#wrong-tag)
-- `:unused-private-vars` - Unused private vars (needs updating).
-- `:unused-fn-args` - Unused function arguments (disabled by
-  default). [[more]](https://github.com/jonase/eastwood#unused-fn-args)
-- `:unused-namespaces` - Warn if a namespace is given in an `ns` form
-  after `:use` or `:require`, but no Vars within the namespace are
-  ever mentioned (disabled by default). [[more]](https://github.com/jonase/eastwood#unused-namespaces)
-- `:unlimited-use` - Unlimited `(:use ...)` without `:refer` or
-  `:only` to limit the symbols referred by
-  it. [[more]](https://github.com/jonase/eastwood#unlimited-use)
-- `:keyword-typos` - Keyword names that may be typos because they
-  occur only once in the source code and are slight variations on
-  other keywords (disabled by
-  default). [[more]](https://github.com/jonase/eastwood#keyword-typos)
+  does not give an error (new in version 0.1.5).
+  [[more]](https://github.com/jonase/eastwood#wrong-tag)
 
 
 ## Usage
@@ -132,19 +169,29 @@ Running
 
 in the root of your project will lint your project's namespaces -- all
 of those in your `:source-paths` and `:test-paths` directories and
-their subdirectories.  You can also lint your project's dependencies:
+their subdirectories.  You can also lint individual namespaces in your
+project, or your project's dependencies:
 
-    $ lein eastwood '{:namespaces [clojure.set clojure.java.io] :exclude-linters [:unused-fn-args]}'
-    == Linting clojure.set ==
-    {:linter :misplaced-docstrings,
-     :msg "Possibly misplaced docstring, #'clojure.set/bubble-max-key",
-     :line 13}
+    $ lein eastwood {:namespaces [compojure.handler compojure.core-test] :exclude-linters [:unlimited-use]}
+    == Eastwood 0.2.0 Clojure 1.5.1 JVM 1.7.0_45
+    == Linting compojure.handler ==
+    Entering directory `/Users/andy/clj/compojure'
+    src/compojure/handler.clj:48:8: deprecations: Var '#'compojure.handler/api' is deprecated.
+    == Linting compojure.core-test ==
+    test/compojure/core_test.clj:112:21: suspicious-test: 'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test
+    test/compojure/core_test.clj:117:21: suspicious-test: 'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test
+    test/compojure/core_test.clj:109:1: constant-test: Test expression is always logical true or always logical false: false
+    test/compojure/core_test.clj:109:1: constant-test: Test expression is always logical true or always logical false: true
+    test/compojure/core_test.clj:114:1: constant-test: Test expression is always logical true or always logical false: false
+    test/compojure/core_test.clj:114:1: constant-test: Test expression is always logical true or always logical false: true
+    == Warnings: 7 (not including reflection warnings)  Exceptions thrown: 0
+    Subprocess failed
 
-    == Linting clojure.java.io ==
-    {:linter :deprecations,
-     :msg
-     "Instance method 'public java.net.URL java.io.File.toURL() throws java.net.MalformedURLException' is deprecated.",
-     :line 50}
+Adding `:out "warn.txt"` to the options map will cause all of the
+Eastwood warning lines and 'Entering directory' lines, but no others,
+to be written to the file `warn.txt`.  This file is useful for
+stepping through warnings as described in the [Editor
+Support](https://github.com/jonase/eastwood#editor-support) section.
 
 Available options for specifying namespaces and paths are:
 
@@ -327,6 +374,66 @@ that you have used with Eastwood and component or a similar tool,
 please file a GitHub issue so they can be included here.
 
 
+### Editor Support
+
+As of Eastwood version 0.2.0, the new default warning message format
+is no longer a Clojure map, but lines of the form:
+
+    <file>:<line>:<col>: <linter> <msg>
+
+You can still get the older map format by setting the option
+`:warning-format` to `:map-v2` (`:map-v1` is the style used in
+Eastwood 0.1.4 and earlier).  The new default format can be specified
+explicitly by setting `:warning-format` to `:location-list-v1`.
+
+You can put only the warning lines into a file using the option `:out`
+followed by a file name in a double-quoted string, or when running
+Eastwood from the REPL, anything convertible to a writer via
+`clojure.java.io/writer`.
+
+Note: If you try to mix reflection warnings from the Clojure compiler
+in such a file, those messages contain relative path names from a
+directory on your classpath, whereas Eastwood warnings contain
+relative path names from the current directory.  For example, if the
+directory `src` is on your classpath, as it is by default in Leiningen
+projects, then Eastwood warnings will contain file names like
+`src/your/ns/core.clj`, whereas reflection warnings will not have the
+`src/` at the beginning.  If someone knows a good way to mingle
+Eastwood and Clojure messages in the same file, please open a GitHub
+issue for Eastwood.
+
+
+#### Emacs
+
+If you open a file with the warnings in their default format in Emacs,
+then do the command `M-x compilation-mode`, you can use `next-error`
+and `previous-error` commands to step through the warnings, and the
+other buffer will jump to the specified file, line, and column.
+Adding lines like the following to your Emacs init file
+(`~/.emacs.d/init.el` with recent versions of Emacs) is one way to
+create convenient function key bindings for `next-error` and
+`previous-error`.  Use `C-h f next-error RET` to see the current key
+bindings for `next-error`, since you may not mind the defaults.
+
+    (global-set-key [f9]  'previous-error)
+    (global-set-key [f10] 'next-error)
+
+
+#### Vim
+
+A file containing default-format Eastwood warnings can be opened in
+vim 'quickfix' mode with the command:
+
+    vim -q filename
+
+The warnings tend to be longer than one screen width.  You can use
+`:copen 3` to increase the size of the window displaying locations to
+3 lines, for example.  `:cn` jumps to the next warning, `:cp` to the
+previous.  See the Vim documentation for more details,
+e.g. [here](http://vimdoc.sourceforge.net/htmldoc/quickfix.html).
+
+
+
 ## Known issues
 
 
@@ -448,6 +555,49 @@ and the namespace names in the `ns` forms, an error message will be
 printed and no linting will be done at all.  This helps avoid some
 cases of printing error messages that make it difficult to determine
 what went wrong.  Fix the problems indicated and try again.
+
+
+### `:non-clojure-file`
+
+#### Files that will not be linted because they are not Clojure source files
+
+New in Eastwood version 0.2.0
+
+This linter is disabled by default, because it warns even about
+ClojureScript and Java source files it finds, and these are relatively
+common in projects with Clojure/Java source files.  You must
+explicitly enable it if you wish to see these warnings.
+
+If you specify `:source-paths` or `:test-paths`, or use the default
+Eastwood options from the command line that cause it to scan these
+paths for Clojure source files, then with this linter enabled it will
+warn about each file found that is not a Clojure/Java source file,
+i.e. if its file name does not end with '.clj'.
+
+
+### `:no-ns-form-found`
+
+#### Warn about Clojure files where no `ns` form could be found
+
+New in Eastwood version 0.2.0
+
+If you explicitly specify `:source-paths` or `:test-paths`, or use the
+default Eastwood options from the command line that cause it to scan
+these paths for Clojure source files, with this linter enabled (the
+default), it will warn about each file where it could not find an `ns`
+form.
+
+Eastwood uses library `tools.namespace` to scan for Clojure source
+files, and in each one it reads it looking for a top-level `ns` form.
+It need not be the first form, but it will not find it if it is not at
+the top level, e.g. if it is inside of a `let`, `if`, `compile-if`,
+etc.
+
+It is somewhat unusual to have a file with no `ns` form at all, not
+even inside of a `let`, `compile-if`, etc.  However, there are valid
+reasons to have them, e.g. you have some code that you want to use in
+common between Clojure/Java and ClojureScript, and you use `load` to
+include it from two or more other source files.
 
 
 ### `:misplaced-docstrings`
@@ -801,6 +951,170 @@ test.
 
 TBD.  Explain and give a few examples.
 
+This linter was updated in Eastwood version 0.2.0 so that it always
+examines forms after macroexpansion.  Eastwood 0.1.5 and earlier had a
+mix of some cases caught by examining code after macroexpansion, but
+some before.
+
+The cases checked for before macroexpansion could produce false
+positives, e.g. it could warn about the `(= 1)` part of `(-> 1 (=
+1))`, even though that clearly expands to `(= 1 1)`, which should not
+be warned about.
+
+The good news is that with Eastwood version 0.2.0, those incorrect
+warnings are gone.
+
+The bad news is that with some libraries, there can be many incorrect
+warnings from this linter, because it is macroexpanding before
+checking.  In particular, if you use the `core.match` library, you may
+find warnings from this linter that have nothing obvious to do with
+your code.  They are due to the way that macros in `core.match` expand
+into code that contains suspicious expressions.  Eastwood issue
+[#108](https://github.com/jonase/eastwood/issues/108) has been created
+to track this.
+
+
+### `:constant-test`
+
+#### A test expression always evaluates as true, or always false
+
+New in Eastwood version 0.2.0
+
+Warn if you have a test expression in `if`, `cond`, `if-let`,
+`when-let`, etc. that is obviously a constant, or it is a literal
+collection like a map, vector, or set that always evaluates as true.
+
+For example:
+
+```clojure
+;; These all cause :constant-test warnings, because the test condition
+;; is a compile-time constant.
+(if false 1 2)
+(if-not [nil] 1 2)
+(when-first [x [1 2]] (println "Goodbye"))
+
+;; Even though Eastwood knows that the test condition is not a compile
+;; time constant here, it is a map, which always evaluate to logical
+;; true in a test condition.
+(defn foo [x]
+  (if {:a (inc x)} 1 2))
+```
+
+Like most Eastwood linters, these checks are performed after
+macroexpansion, so at times the code that causes the warning may not
+be in your source file.  Users of the `core.match` library may see
+many such warnings that are not directly in their code, but in the way
+`core.match` macros expand.  You may wish to disable this linter,
+either from the command line or REPL using the `:exclude-linters`
+option, or from Leiningen you can merge the following into your
+`project.clj` or `~/.lein/profiles.clj` file:
+
+```clojure
+:eastwood {:exclude-linters [:constant-test]}
+```
+
+It is common across Clojure projects tested to use `:else` as the last
+'always do this case` at the end of a `cond` form.  It is also fairly
+common to use `true` or `:default` for this purpose, and Eastwood will
+not warn about these.  If you use some other constant in that
+position, Eastwood will warn.
+
+It is somewhat common to use `(assert false "msg")` to throw
+exceptions in Clojure code.  This linter has a special check never to
+warn about such forms.
+
+This linter does not yet examine tests in `if-some` or `when-some`
+forms.  It is also not able to determine that expressions like `(/ 84
+2)` are constant.
+
+
+### `:unused-meta-on-macro`
+
+#### Metadata on a macro invocation is ignored by Clojure
+
+New in Eastwood version 0.2.0
+
+When you invoke a macro and annotate it with metadata, in most cases
+that metadata will be discarded when the macro is expanded, unless the
+macro has been written explicitly to use that metadata.
+
+As a simple example, the trivial macro `my-macro` below will have all
+metadata discarded any time it is invoked:
+
+```clojure
+(require 'clojure.java.io)
+(import '(java.io Writer StringWriter))
+
+(defmacro my-macro [x]
+  `(clojure.java.io/writer ~x))
+
+;; No metadata here, so nothing to lose, and no Eastwood warning
+(def ok1 (my-macro (StringWriter.)))
+
+;; All metadata is discarded, including type tags like ^Writer, which
+;; is just a shorthand for ^{:tag Writer}
+(def meta-discarded-1 ^Writer (my-macro (StringWriter.)))
+```
+
+If your purpose for annotating a macro invocation with metadata is to
+type hint it, to avoid reflection in a Java interop call, you can work
+around this behavior by binding the macro invocation return value to a
+symbol with `let`, and type hint that symbol.  For example:
+
+```clojure
+;; Reflection warning for the .close call here, because type tag
+;; ^Writer is discarded for the form (my-macro (StringWriter.))
+(def reflection-and-lint-warn (.close ^Writer (my-macro (StringWriter.))))
+
+;; No reflection warning from Clojure, and no warning from Eastwood,
+;; for this.
+(let [^Writer w (my-macro (StringWriter.))]
+  (.close w))
+```
+
+A Clojure ticket has been filed for this behavior:
+[CLJ-865](http://dev.clojure.org/jira/browse/CLJ-865).  However, most
+ways of changing it would change the behavior of at least some
+existing Clojure code, so it seems unlikely to change.  Hence, this
+Eastwood linter to alert people unaware of the behavior.
+
+Most Java interop forms are macro invocations, expand like them, and
+thus lose any metadata annotating their invocations.  However, there
+are special cases in the Clojure compiler where such Java interop
+forms will have `:tag` type hint metadata preserved for them.
+Eastwood will warn if you try to use metadata on such a Java interop
+form that is discarded by the compiler.
+
+Java interop forms that remove _all_ metadata on them, even type
+hints:
+
+* constructor calls - `(ClassName. args)`
+
+Java interop forms that remove all metadata, except they explicitly
+preserve type hints:
+
+* class method calls - `(ClassName/staticMethod args)`
+* class field access - `(ClassName/staticField)`
+* instance method calls - `(.instanceMethod obj args)`
+* instance field access - `(.instanceField obj)`
+
+Java interop forms that are not macroexpanded, and thus do not lose
+any metadata annotating them:
+
+* constructor calls beginning with `new` - `(new ClassName args)`
+* calls beginning with a `.` (not `.close`, but just a `.` by itself) - `(. x close)`
+
+Clojure's `clojure.core/fn` macro uses the hidden `&form` argument to
+all Clojure macros to explicitly preserve the metadata on any `(fn
+...)` forms.  Eastwood has a special case not to warn about those
+cases.
+
+The macro `schema.core/fn` in Prismatic's
+[Schema](https://github.com/Prismatic/schema) library also has special
+handling similar to `clojure.core/fn`, but at least as of Eastwood
+0.2.0 there is no special handling of this case, so it will warn if
+metadata annotates an invocation of this macro.
+
 
 ### `:unused-ret-vals`
 
@@ -1133,6 +1447,61 @@ consider prepending an underscore to their names to silence the
 warnings.
 
 
+### `:unused-locals`
+
+#### Symbols bound with `let` or `loop` that are never used
+
+New in Eastwood version 0.2.0
+
+This linter is disabled by default, because it often produces a large
+number of warnings, and even the ones that are correct can be
+annoying, and usually just vestigial code that isn't really a bug (it
+might hurt your performance).
+
+Also, there are currently many warnings of this kind produced for
+`core.async`, `core.match`, and Prismatic Schema code, and probably
+also code that uses those libraries (judging from a small sample set
+which in some case only includes test code for the library).  Perhaps
+in the future Eastwood will be improved, but it is not there as of
+version 0.2.0.
+
+However, for many projects tested, the warnings are correct.  If you
+wish to eliminate such symbols from your code using these warnings,
+you must explicitly enable it.  You can specify it in `:add-linters`
+on the command line or when invoked from a REPL.  To avoid specifying
+it each time when using Leiningen, you can merge a line like the
+following into your `project.clj` file or user-wide
+`~/.lein/profiles.clj` file.
+
+```clojure
+:eastwood {:add-linters [:unused-locals]}
+```
+
+If you bind a value to a symbol in a `let` or `loop` binding, but then
+never use that symbol, this linter will issue a warning for it.  You
+can disable individual warnings by prepending the symbol name with a
+`_` character, as for the `:unused-fn-args` linter.
+
+The warning occurs even if the `let` or `loop` is the result of
+expanding a macro, so sometimes the source of the warning is not
+obvious.  If the symbol name looks like `somename__5103`, it is most
+likely from a `let` introduced during macroexpansion.  Such warnings
+may be split into a separate disabled-by-default linter in a future
+version of Eastwood.
+
+Destructuring forms like `[x & xs]` and `{:keys [keyname1 keyname2
+...] :as mymap}` are macroexpanded into `let` forms, even when used as
+function arguments, and can thus cause these warnings.  You can
+disable individual ones by prepending their names with a `_`
+character.
+
+It may seem a little odd to disable such destructuring warnings for
+keys in a map, since it changes the name of the keyword in the
+macroexpansion, and thus it will not be bound to the same value.  But
+hey, the value wasn't being used anyway, right?  Consider removing it
+from the list of keywords completely.
+
+
 ### `:unused-namespaces`
 
 #### A namespace you use/require could be removed
@@ -1143,6 +1512,47 @@ You must explicitly enable it if you wish to see these warnings.
 Warn if a namespace is given in an `ns` form after `:use` or
 `:require`, but no Vars within the namespace are ever mentioned within
 the namespace.  Thus the namespace could be eliminated.
+
+
+### `:unused-private-vars`
+
+#### A Var declared to be private is not used in the namespace where it is def'd
+
+Updated in Eastwood version 0.2.0
+
+This linter is disabled by default, but at least with a collection of
+projects on which Eastwood is frequently tested, it is an uncommon
+warning for most of them (Seesaw is an exception where it is common).
+You must explicitly enable it if you wish to see these warnings.
+
+If a Var is defined to be private using `^:private`, `^{:private
+true}`, `defn-`, etc., but is not used elsewhere in the same
+namespace, it is likely to be dead code.  It is still possible to
+refer to the Var in another namespace using syntax like
+`#'name.space/private-var-name`, but this is not checked for by this
+linter.
+
+This linter never warns for private Vars that also have `^:const` or
+`^{:const true}` metadata.  This is due to some uncertainty whether
+uses of such Vars can be reliably detected in the `tools.analyzer`
+ASTs.
+
+It will cause undesirable warnings in case like this, which have been
+seen in some namespaces:
+
+```clojure
+(defn- private-fn [x]
+  (inc x))
+
+(defmacro public-macro [y]
+  `(#'my.ns/private-fn ~y))
+```
+
+It is not straightforward for Eastwood to determine from the ASTs that
+private-fn is used elsewhere in the namespace, since syntax quoting
+with the backquote character causes the resulting code to not refer to
+the Var directly, but to create a function that _only when evaluated_
+contains `(var my.ns/private-fn)`.
 
 
 ### `:unlimited-use`
