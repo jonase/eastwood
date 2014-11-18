@@ -24,7 +24,7 @@ versions 2.4.x and 2.5.x.  Merge the following into your
 `~/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.1.5"]] }}
+{:user {:plugins [[jonase/eastwood "0.2.0"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -40,7 +40,7 @@ Eastwood is _no less dangerous_ than loading your code, and should be
 no more dangerous.  To confine linting to files in your
 `:source-paths`, use this command instead:
 
-    $ lein eastwood '{:namespaces [:source-paths]}'
+    $ lein eastwood "{:namespaces [:source-paths]}"
 
 If it is not obvious what a warning message means, _please_ check the
 next section, which has a `[more]` link for each type of warning.
@@ -87,6 +87,33 @@ Eastwood.
 Eastwood warns when it finds the following kinds of things.  Each
 keyword below is the name of the "linter".  That name can be used on
 the command line to enable or disable the linter.
+
+| Linter name | Enabled by default? | Description | Link to more docs |
+| ----------- | ------------------- | ----------- | ----------------- |
+
+| no name | cannot be disabled | Inconsistencies between file names and the namespaces declared within them (new in version 0.1.1) | [[more]](https://github.com/jonase/eastwood#check-consistency-of-namespace-and-file-names) |
+`:bad-arglists` | yes | Function/macro `:arglists` metadata that does not match the number of args it is defined with (new in version 0.1.1). | [[more]](https://github.com/jonase/eastwood#bad-arglists) |
+| `:constant-test` | yes | A test expression always evaluates as true, or always false (new in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#constant-test) |
+| `:def-in-def` | yes | def's nested inside other def's. | [[more]](https://github.com/jonase/eastwood#def-in-def) |
+| `:deprecations` | yes | Deprecated Clojure Vars, and deprecated Java constructors, methods, and fields. | [[more]](https://github.com/jonase/eastwood#deprecations) |
+| `:keyword-typos` | no | Keyword names that may be typos because they occur only once in the source code and are slight variations on other keywords. | [[more]](https://github.com/jonase/eastwood#keyword-typos) |
+| `:local-shadows-var` | yes | A local name, e.g. a function arg or let binding, has the same name as a global Var, and is called as a function (new in version 0.1.5). | [[more]](https://github.com/jonase/eastwood#local-shadows-var) |
+| `:misplaced-docstrings` | yes | Function or macro doc strings placed after the argument vector, instead of before the argument vector where they belong. | [[more]](https://github.com/jonase/eastwood#misplaced-docstrings) |
+
+| `:no-ns-form-found` | yes | Warn about Clojure files where no `ns` form could be found (new in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#no-ns-form-found) |
+| `:non-clojure-file` | no | Warn about files that will not be linted because they are not Clojure source files, i.e. their name does not end with '.clj' (new in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#non-clojure-file) |
+| `:redefd-vars` | yes | Redefinitions of the same name in the same namespace. | [[more]](https://github.com/jonase/eastwood#redefd-vars) |
+| `:suspicious-expression` | yes | Suspicious expressions that appear incorrect, because they always return trivial values. | [[more]](https://github.com/jonase/eastwood#suspicious-expression) |
+| `:suspicious-test` | yes | Tests using `clojure.test` that may be written incorrectly. | [[more]](https://github.com/jonase/eastwood#suspicious-test) |
+| `:unlimited-use` | yes | Unlimited `(:use ...)` without `:refer` or `:only` to limit the symbols referred by it. | [[more]](https://github.com/jonase/eastwood#unlimited-use) |
+| `:unused-fn-args` | no | Unused function arguments. | [[more]](https://github.com/jonase/eastwood#unused-fn-args) |
+| `:unused-locals` | no | Symbols bound with `let` or `loop` that are never used (new in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#unused-locals) |
+| `:unused-meta-on-macro` | yes | Metadata on a macro invocation is ignored by Clojure (new in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#unused-meta-on-macro) |
+| `:unused-namespaces` | no | Warn if a namespace is given in an `ns` form after `:use` or `:require`, but no Vars within the namespace are ever mentioned. | [[more]](https://github.com/jonase/eastwood#unused-namespaces) |
+| `:unused-private-vars` | no | Unused private vars (updated in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#unused-private-vars) |
+| `:unused-ret-vals` and `:unused-ret-vals-in-try` | yes | Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value. | [[more]](https://github.com/jonase/eastwood#unused-ret-vals) |
+| `:wrong-arity` | yes | Function calls that seem to have the wrong number of arguments. | [[more]](https://github.com/jonase/eastwood#wrong-arity) |
+| `:wrong-tag` | yes | An incorrect type tag for which the Clojure compiler does not give an error (new in version 0.1.5). | [[more]](https://github.com/jonase/eastwood#wrong-tag) |
 
 - Inconsistencies between file names and the namespaces declared
   within them (new in version 0.1.1) (has no name, and cannot be
@@ -172,7 +199,7 @@ of those in your `:source-paths` and `:test-paths` directories and
 their subdirectories.  You can also lint individual namespaces in your
 project, or your project's dependencies:
 
-    $ lein eastwood {:namespaces [compojure.handler compojure.core-test] :exclude-linters [:unlimited-use]}
+    $ lein eastwood "{:namespaces [compojure.handler compojure.core-test] :exclude-linters [:unlimited-use]}"
     == Eastwood 0.2.0 Clojure 1.5.1 JVM 1.7.0_45
     == Linting compojure.handler ==
     Entering directory `/Users/andy/clj/compojure'
@@ -192,6 +219,15 @@ Eastwood warning lines and 'Entering directory' lines, but no others,
 to be written to the file `warn.txt`.  This file is useful for
 stepping through warnings as described in the [Editor
 Support](https://github.com/jonase/eastwood#editor-support) section.
+
+    # This works on bash shell in Linux and Mac OS X, and also in
+    # Windows cmd shell
+    $ lein eastwood "{:out \"warn.txt\"}"
+
+    # This saves a little typing in bash shell, but does not work in
+    # Windows cmd shell.  For all example command lines, you can use
+    # single quotes in bash if you prefer.
+    $ lein eastwood '{:out "warn.txt"}'
 
 Available options for specifying namespaces and paths are:
 
@@ -267,7 +303,7 @@ messages during linting.  These are only intended for tracking down
 the cause of errors in Eastwood.  You specify the key `:debug` with a
 value that is a set of keywords, e.g.
 
-    lein eastwood '{:exclude-linters [:wrong-arity] :debug #{:eval :ns}}'
+    lein eastwood "{:exclude-linters [:wrong-arity] :debug #{:eval :ns}}"
 
 * `:all` - enable all debug messages.  This also enables showing the
   list of namespaces near the beginning of the output, before linting
@@ -314,7 +350,7 @@ in a production JVM process.
 Merge this into your project's `project.clj` file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.1.5" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.2.0" :exclusions [org.clojure/clojure]]]}}
 ```
 
 Note: This should work even if you do not use Leiningen for your
@@ -1661,7 +1697,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein install
 
-Then add `[jonase/eastwood "0.2.0-SNAPSHOT"]` (or whatever is the
+Then add `[jonase/eastwood "0.2.1-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `~/.lein/profiles.clj` file.
