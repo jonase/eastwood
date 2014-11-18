@@ -2,8 +2,6 @@
 
 ## Changes planned for near future
 
-* Bump up to very latest versions of tools.analyzer(.jvm) and retest.
-
 * Implement a way to enable/disable linters on individual Clojure
   expressions.  Issue
   [#21](https://github.com/jonase/eastwood/issues/21).
@@ -19,12 +17,11 @@ latest master version only.
 
 * The new default lint warning format is no longer a map, but lines of
   the form "FILE:LINE:COL: LINTER MSG".  You can put only the warnings
-  lines into a file using the option `:warning-output-file` followed
-  by a file name in a double-quoted string (or from the REPL, anything
-  convertible to a writer via `clojure.java.io/writer`).  Support
-  already exists in Emacs, Vim, and probably several other editors for
+  lines into a file using the new option `:warning-output-file`.
+  Support already exists in Emacs, Vim, and probably other editors for
   stepping through the warnings, with another buffer/window jumping to
   the location of the warning for you.  See docs for more details.
+  Issue [#104](https://github.com/jonase/eastwood/issues/104).
 
 * Enhanced `:suspicious-expression` linter so it always uses
   macroexpanded forms, not original source forms.  Thus it no longer
@@ -32,37 +29,30 @@ latest master version only.
   `(-> 1 (= 1))`, as it used to.  Issue
   [#93](https://github.com/jonase/eastwood/issues/93).
 
-* New linter `:non-clojure-file` that warns about each non-Clojure
-  file found in your `:source-paths` or `:test-paths`, if you specify
-  those in the list of namespaces to lint, or leave them there as the
-  default.  Issue
-  [#102](https://github.com/jonase/eastwood/issues/102).
-
-* New linter `:no-ns-form-found` that warns about each Clojure file
-  found where Eastwood could not find an `ns` form.  Most likely that
-  is because there is none, but more unusually there could be an `ns`
-  form that is nested inside of another top level form like `let` or
-  `if` that Eastwood does not detect.  Warns only about files in
-  `:source-paths` or `:test-paths`, as for the `:non-clojure-file`
-  linter described above.
+* New linter `:constant-test` that warns when a test expression in an
+  `if`, `cond`, `if-let`, etc. is obviously a constant, or a literal
+  collection that will always evaluate as true.  Issue
+  [#77](https://github.com/jonase/eastwood/issues/77).
 
 * New linter `:unused-meta-on-macro` that warns when metadata is used
   to annotate a macro invocation, but the Clojure compiler will ignore
   it because it is discarded during macro expansion.  Issue
   [#97](https://github.com/jonase/eastwood/issues/97).
 
-* New linter `:constant-test` that warns when a test expression in an
-  `if`, `cond`, `if-let`, etc. is obviously a constant, or a literal
-  collection that will always evaluate as true.  Issue
-  [#77](https://github.com/jonase/eastwood/issues/77).
-
 * New linter `:unused-locals` that warns when a `let` binds values to
   symbols, but those symbols are never used.  Disabled by default.
   Issue [#106](https://github.com/jonase/eastwood/issues/106).
 
-* New option `:warning-output-file` to specify a file name where
-  warnings are written instead of to the standard output.  Issue
-  [#104](https://github.com/jonase/eastwood/issues/104).
+* New linter `:no-ns-form-found` that warns about each Clojure file
+  found where Eastwood could not find an `ns` form.  Most likely that
+  is because there is none, but more unusually there could be an `ns`
+  form that is nested inside of another top level form.
+
+* New linter `:non-clojure-file` that warns about each non-Clojure
+  file found in your `:source-paths` or `:test-paths`, if you specify
+  those in the list of namespaces to lint, or leave them there as the
+  default.  Issue
+  [#102](https://github.com/jonase/eastwood/issues/102).
 
 * Corrections to the `:wrong-tag` linter where it was throwing
   exceptions while linting some projects -- ones that had not been
