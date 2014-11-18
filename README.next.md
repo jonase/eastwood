@@ -173,7 +173,7 @@ project, or your project's dependencies:
     $ lein eastwood {:namespaces [compojure.handler compojure.core-test] :exclude-linters [:unlimited-use]}
     == Eastwood 0.2.0 Clojure 1.5.1 JVM 1.7.0_45
     == Linting compojure.handler ==
-    Entering directory `/Users/jafinger/clj/andy-forks/eastwood/crucible/repos/compojure-2014-10-24'
+    Entering directory `/Users/andy/clj/compojure'
     src/compojure/handler.clj:48:8: deprecations: Var '#'compojure.handler/api' is deprecated.
     == Linting compojure.core-test ==
     test/compojure/core_test.clj:112:21: suspicious-test: 'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test
