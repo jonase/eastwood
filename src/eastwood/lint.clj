@@ -191,52 +191,68 @@ return value followed by the time it took to evaluate in millisec."
 ;; separate function to call on each namespace.  They are done very
 ;; early, and are not specific to a namespace.
 
-(def ^:private available-linters
-  {:no-ns-form-found nil
-   :non-clojure-file nil
-   :misplaced-docstrings misc/misplaced-docstrings
-   :deprecations deprecated/deprecations
-   :redefd-vars misc/redefd-vars
-   :def-in-def misc/def-in-def
-   :wrong-arity misc/wrong-arity
-   :bad-arglists misc/bad-arglists
-   :local-shadows-var misc/local-shadows-var
-   :suspicious-test typos/suspicious-test
-   :suspicious-expression typos/suspicious-expression
-   :constant-test typos/constant-test
-   :unused-ret-vals unused/unused-ret-vals
-   :unused-ret-vals-in-try unused/unused-ret-vals-in-try
-   :unused-private-vars unused/unused-private-vars
-   :unused-fn-args unused/unused-fn-args
-   :unused-locals unused/unused-locals
-   :unused-namespaces unused/unused-namespaces
-   :unused-meta-on-macro unused/unused-meta-on-macro
-   :unlimited-use misc/unlimited-use
-   :wrong-tag typetags/wrong-tag
-   :keyword-typos typos/keyword-typos
-   :non-dynamic-earmuffs misc/non-dynamic-earmuffs})
+(def linter-info
+  [
+   {:name :no-ns-form-found,          :enabled-by-default true,
+    :fn nil}
+   {:name :non-clojure-file,          :enabled-by-default true,
+    :fn nil}
+   {:name :misplaced-docstrings,      :enabled-by-default true,
+    :fn misc/misplaced-docstrings}
+   {:name :deprecations,              :enabled-by-default true,
+    :fn deprecated/deprecations}
+   {:name :redefd-vars,               :enabled-by-default true,
+    :fn misc/redefd-vars}
+   {:name :def-in-def,                :enabled-by-default true,
+    :fn misc/def-in-def}
+   {:name :wrong-arity,               :enabled-by-default true,
+    :fn misc/wrong-arity}
+   {:name :bad-arglists,              :enabled-by-default true,
+    :fn misc/bad-arglists}
+   {:name :local-shadows-var,         :enabled-by-default true,
+    :fn misc/local-shadows-var}
+   {:name :suspicious-test,           :enabled-by-default true,
+    :fn typos/suspicious-test}
+   {:name :suspicious-expression,     :enabled-by-default true,
+    :fn typos/suspicious-expression}
+   {:name :constant-test,             :enabled-by-default true,
+    :fn typos/constant-test}
+   {:name :unused-ret-vals,           :enabled-by-default true,
+    :fn unused/unused-ret-vals}
+   {:name :unused-ret-vals-in-try,    :enabled-by-default true,
+    :fn unused/unused-ret-vals-in-try}
+   {:name :unused-private-vars,       :enabled-by-default false,
+    :fn unused/unused-private-vars}
+   {:name :unused-fn-args,            :enabled-by-default false,
+    :fn unused/unused-fn-args}
+   {:name :unused-locals,             :enabled-by-default false,
+    :fn unused/unused-locals}
+   {:name :unused-namespaces,         :enabled-by-default false,
+    :fn unused/unused-namespaces}
+   {:name :unused-meta-on-macro,      :enabled-by-default true,
+    :fn unused/unused-meta-on-macro}
+   {:name :unlimited-use,             :enabled-by-default true,
+    :fn misc/unlimited-use}
+   {:name :wrong-tag,                 :enabled-by-default true,
+    :fn typetags/wrong-tag}
+   {:name :keyword-typos,             :enabled-by-default false,
+    :fn typos/keyword-typos}
+   {:name :non-dynamic-earmuffs,      :enabled-by-default false,
+    :fn misc/non-dynamic-earmuffs}
+   ])
 
-(def ^:private default-linters
-  #{:no-ns-form-found
-    :non-clojure-file
-    :misplaced-docstrings
-    :deprecations
-    :redefd-vars
-    :def-in-def
-    :wrong-arity
-    :bad-arglists
-    :local-shadows-var
-    :suspicious-test
-    :suspicious-expression
-    :constant-test
-    :unused-ret-vals
-    :unused-ret-vals-in-try
-    :unused-meta-on-macro
-    :unlimited-use
-    :wrong-tag})
+
+(def linter-name->fn (into {} (for [{:keys [name fn]} linter-info]
+                                [name fn])))
+
+(def default-linters
+  (->> linter-info
+       (filter :enabled-by-default)
+       (map :name)))
+
 
 (defn- lint [exprs kw]
-  (if-let [lint-fn (available-linters kw)]
+  (if-let [lint-fn (linter-name->fn kw)]
     (try
       (doall (lint-fn exprs))
       (catch Throwable e
@@ -829,14 +845,14 @@ file and namespace to avoid name collisions."))))
                                (if tp-included? (:non-clojure-files tp)))}))))))
 
 
-(defn opts->linters [opts available-linters default-linters]
+(defn opts->linters [opts linter-name->fn default-linters]
   (let [linters (set (or (:linters opts)
                          default-linters))
         excluded-linters (set (:exclude-linters opts))
         add-linters (set (:add-linters opts))
         linters-requested (-> (set/difference linters excluded-linters)
                               (set/union add-linters))
-        known-linters (set (keys available-linters))
+        known-linters (set (keys linter-name->fn))
         unknown-linters (set/difference (set/union linters-requested
                                                    excluded-linters)
                                         known-linters)
@@ -918,7 +934,7 @@ Return value:
   (let [warning-count (atom 0)
         exception-count (atom 0)
         cb (:callback opts)
-        {:keys [linters] :as m1} (opts->linters opts available-linters
+        {:keys [linters] :as m1} (opts->linters opts linter-name->fn
                                                 default-linters)
         opts (assoc opts :enabled-linters linters)
 
