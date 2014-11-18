@@ -80,13 +80,10 @@ latest master version only.
 * Improved line/column location info for a few `:unused-ret-val`
   warnings.
 
-* Update `tools.analyzer` to version tbd, and `tools.analyzer.jvm` to
-  version tbd.  Issues:
-  [#100](https://github.com/jonase/eastwood/issues/100).
-
 * Updated versions of several libraries used: `tools.analyzer` 0.6.3 +
   a few commits, `tools.analyzer.jvm` 0.6.4 + a few commits,
-  `core.memoize` 0.5.6 + a few commits, `core.cache` 0.6.4
+  `core.memoize` 0.5.6 + a few commits, `core.cache` 0.6.4.  Issues:
+  [#100](https://github.com/jonase/eastwood/issues/100).
 
 * Added several projects to the 'crucible' set of projects on which
   Eastwood is regularly tested: Instaparse, Schema, Plumbing, Carmine,
