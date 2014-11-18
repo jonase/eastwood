@@ -40,7 +40,7 @@ Eastwood is _no less dangerous_ than loading your code, and should be
 no more dangerous.  To confine linting to files in your
 `:source-paths`, use this command instead:
 
-    $ lein eastwood '{:namespaces [:source-paths]}'
+    $ lein eastwood "{:namespaces [:source-paths]}"
 
 If it is not obvious what a warning message means, _please_ check the
 next section, which has a `[more]` link for each type of warning.
@@ -172,7 +172,7 @@ of those in your `:source-paths` and `:test-paths` directories and
 their subdirectories.  You can also lint individual namespaces in your
 project, or your project's dependencies:
 
-    $ lein eastwood {:namespaces [compojure.handler compojure.core-test] :exclude-linters [:unlimited-use]}
+    $ lein eastwood "{:namespaces [compojure.handler compojure.core-test] :exclude-linters [:unlimited-use]}"
     == Eastwood 0.2.0 Clojure 1.5.1 JVM 1.7.0_45
     == Linting compojure.handler ==
     Entering directory `/Users/andy/clj/compojure'
@@ -192,6 +192,15 @@ Eastwood warning lines and 'Entering directory' lines, but no others,
 to be written to the file `warn.txt`.  This file is useful for
 stepping through warnings as described in the [Editor
 Support](https://github.com/jonase/eastwood#editor-support) section.
+
+    # This works on bash shell in Linux and Mac OS X, and also in
+    # Windows cmd shell
+    $ lein eastwood "{:out \"warn.txt\"}"
+
+    # This saves a little typing in bash shell, but does not work in
+    # Windows cmd shell.  For all example command lines, you can use
+    # single quotes in bash if you prefer.
+    $ lein eastwood '{:out "warn.txt"}'
 
 Available options for specifying namespaces and paths are:
 
@@ -267,7 +276,7 @@ messages during linting.  These are only intended for tracking down
 the cause of errors in Eastwood.  You specify the key `:debug` with a
 value that is a set of keywords, e.g.
 
-    lein eastwood '{:exclude-linters [:wrong-arity] :debug #{:eval :ns}}'
+    lein eastwood "{:exclude-linters [:wrong-arity] :debug #{:eval :ns}}"
 
 * `:all` - enable all debug messages.  This also enables showing the
   list of namespaces near the beginning of the output, before linting
