@@ -90,7 +90,6 @@ the command line to enable or disable the linter.
 
 | Linter name | Enabled by default? | Description | Link to more docs |
 | ----------- | ------------------- | ----------- | ----------------- |
-
 | no name | cannot be disabled | Inconsistencies between file names and the namespaces declared within them (new in version 0.1.1) | [[more]](https://github.com/jonase/eastwood#check-consistency-of-namespace-and-file-names) |
 `:bad-arglists` | yes | Function/macro `:arglists` metadata that does not match the number of args it is defined with (new in version 0.1.1). | [[more]](https://github.com/jonase/eastwood#bad-arglists) |
 | `:constant-test` | yes | A test expression always evaluates as true, or always false (new in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#constant-test) |
@@ -99,7 +98,6 @@ the command line to enable or disable the linter.
 | `:keyword-typos` | no | Keyword names that may be typos because they occur only once in the source code and are slight variations on other keywords. | [[more]](https://github.com/jonase/eastwood#keyword-typos) |
 | `:local-shadows-var` | yes | A local name, e.g. a function arg or let binding, has the same name as a global Var, and is called as a function (new in version 0.1.5). | [[more]](https://github.com/jonase/eastwood#local-shadows-var) |
 | `:misplaced-docstrings` | yes | Function or macro doc strings placed after the argument vector, instead of before the argument vector where they belong. | [[more]](https://github.com/jonase/eastwood#misplaced-docstrings) |
-
 | `:no-ns-form-found` | yes | Warn about Clojure files where no `ns` form could be found (new in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#no-ns-form-found) |
 | `:non-clojure-file` | no | Warn about files that will not be linted because they are not Clojure source files, i.e. their name does not end with '.clj' (new in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#non-clojure-file) |
 | `:redefd-vars` | yes | Redefinitions of the same name in the same namespace. | [[more]](https://github.com/jonase/eastwood#redefd-vars) |
