@@ -4,8 +4,8 @@
   ;; This project.clj file has the same dependencies as Eastwood's project.clj file used to, before I copied in the source of many of those dependencies.
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/tools.analyzer "0.6.2"]
-                 [org.clojure/tools.analyzer.jvm "0.6.3"]
+                 [org.clojure/tools.analyzer "0.6.3"]
+                 [org.clojure/tools.analyzer.jvm "0.6.4"]
                  [org.clojure/tools.namespace "0.2.7"]
                  [org.clojure/tools.reader "0.8.10"]
                  [leinjacker "0.4.1"]
