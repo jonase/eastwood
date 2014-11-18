@@ -186,9 +186,9 @@ project, or your project's dependencies:
     Subprocess failed
 
 Adding `:out "warn.txt"` to the options map will cause all of the
-Eastwood warning lines, and no other output, to be written to the file
-`warn.txt`.  This file is useful for stepping through warnings as
-described in the [Editor
+Eastwood warning lines and 'Entering directory' lines, but no others,
+to be written to the file `warn.txt`.  This file is useful for
+stepping through warnings as described in the [Editor
 Support](https://github.com/jonase/eastwood#editor-support) section.
 
 Available options for specifying namespaces and paths are:
