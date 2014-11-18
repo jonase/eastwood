@@ -24,7 +24,7 @@ versions 2.4.x and 2.5.x.  Merge the following into your
 `~/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.1.5"]] }}
+{:user {:plugins [[jonase/eastwood "0.2.0"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -1661,7 +1661,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein install
 
-Then add `[jonase/eastwood "0.2.0-SNAPSHOT"]` (or whatever is the
+Then add `[jonase/eastwood "0.2.1-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `~/.lein/profiles.clj` file.
