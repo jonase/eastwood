@@ -144,7 +144,9 @@ the command line to enable or disable the linter.
   after `:use` or `:require`, but no Vars within the namespace are
   ever mentioned (disabled by default).
   [[more]](https://github.com/jonase/eastwood#unused-namespaces)
-- `:unused-private-vars` - Unused private vars (needs updating).
+- `:unused-private-vars` - Unused private vars (updated in version
+  0.2.0, disabled by default).
+  [[more]](https://github.com/jonase/eastwood#unused-private-vars)
 - `:unused-ret-vals` and `:unused-ret-vals-in-try` - Unused values,
   including unused return values of pure functions, and some others
   functions where it rarely makes sense to discard its return
@@ -1510,6 +1512,47 @@ You must explicitly enable it if you wish to see these warnings.
 Warn if a namespace is given in an `ns` form after `:use` or
 `:require`, but no Vars within the namespace are ever mentioned within
 the namespace.  Thus the namespace could be eliminated.
+
+
+### `:unused-private-vars`
+
+#### A Var declared to be private is not used in the namespace where it is def'd
+
+Updated in Eastwood version 0.2.0
+
+This linter is disabled by default, but at least with a collection of
+projects on which Eastwood is frequently tested, it is an uncommon
+warning for most of them (Seesaw is an exception where it is common).
+You must explicitly enable it if you wish to see these warnings.
+
+If a Var is defined to be private using `^:private`, `^{:private
+true}`, `defn-`, etc., but is not used elsewhere in the same
+namespace, it is likely to be dead code.  It is still possible to
+refer to the Var in another namespace using syntax like
+`#'name.space/private-var-name`, but this is not checked for by this
+linter.
+
+This linter never warns for private Vars that also have `^:const` or
+`^{:const true}` metadata.  This is due to some uncertainty whether
+uses of such Vars can be reliably detected in the `tools.analyzer`
+ASTs.
+
+It will cause undesirable warnings in case like this, which have been
+seen in some namespaces:
+
+```clojure
+(defn- private-fn [x]
+  (inc x))
+
+(defmacro public-macro [y]
+  `(#'my.ns/private-fn ~y))
+```
+
+It is not straightforward for Eastwood to determine from the ASTs that
+private-fn is used elsewhere in the namespace, since syntax quoting
+with the backquote character causes the resulting code to not refer to
+the Var directly, but to create a function that _only when evaluated_
+contains `(var my.ns/private-fn)`.
 
 
 ### `:unlimited-use`

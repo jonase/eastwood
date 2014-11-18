@@ -1235,7 +1235,7 @@ the next."
     })
   (lint-test
    'testcases.unusedlocals
-   [:unused-locals]
+   [:unused-locals :unused-private-vars]
    {}
    {
     {:linter :unused-locals,
@@ -1277,6 +1277,21 @@ the next."
      :msg "let bound symbol 'unused3' never used"
      :file (fname-from-parts "testcases" "unusedlocals.clj"),
      :line 113, :column 40}
+    1,
+    {:linter :unused-private-vars,
+     :msg "Private var 'upper-limit3' is never used"
+     :file (fname-from-parts "testcases" "unusedlocals.clj"),
+     :line 139, :column 1}
+    1,
+    {:linter :unused-private-vars,
+     :msg "Private var 'lower-limit3' is never used"
+     :file (fname-from-parts "testcases" "unusedlocals.clj"),
+     :line 140, :column 1}
+    1,
+    {:linter :unused-private-vars,
+     :msg "Private var 'foo10' is never used"
+     :file (fname-from-parts "testcases" "unusedlocals.clj"),
+     :line 164, :column 1}
     1,
     })
   ;; I would prefer if this threw an exception, but I think it does

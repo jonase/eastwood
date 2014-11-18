@@ -10,28 +10,38 @@
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]))
 
 ;; Unused private vars
-(defn- private-defs [exprs]
-  (->> (mapcat ast/nodes exprs)
-       (filter #(and (= :def (:op %))
-                     (-> % :var meta :private)
-                     (-> % :var meta :macro not))) ;; skip private macros
+(defn- private-non-const-defs [asts]
+  (->> asts
+       (mapcat ast/nodes)
+       (filter (fn [ast]
+                 (and (= :def (:op ast))
+                      (-> ast :var meta :private)
+                      ;; Do not warn about private :const's, since I
+                      ;; am not sure I know a good way to track where
+                      ;; they are used in asts.
+                      (not (-> ast :var meta :const))
+                      ;; TBD: Is this good to have?  skip private macros
+                      ;;(-> ast :var meta :macro not)
+                      )))
        (map :var)))
 
-(defn- var-freq [exprs]
-  (->> (mapcat ast/nodes exprs)
-       (filter #(contains? #{:var :the-var} (:op %)))
+(defn- vars-used [asts]
+  (->> asts
+       (mapcat ast/nodes)
+       (filter #(#{:var :the-var} (:op %)))
        (map :var)
-       frequencies))
+       set))
 
 (defn unused-private-vars [{:keys [asts]}]
-  (let [pdefs (private-defs asts)
-        vfreq (var-freq asts)]
+  (let [pdefs (private-non-const-defs asts)
+        vars-used-set (vars-used asts)]
     (for [pvar pdefs
-          :when (nil? (vfreq pvar))
-          :let [loc (:env pvar)]]
+          :when (not (vars-used-set pvar))
+          :let [loc (meta pvar)]]
       (util/add-loc-info loc
        {:linter :unused-private-vars
-        :msg (format "Private var %s is never used" pvar)}))))
+        :msg (format "Private var '%s' is never used"
+                     (-> pvar util/var-to-fqsym name))}))))
 
 ;; Unused fn args
 
@@ -210,10 +220,23 @@ Example: (all-suffixes [1 2 3])
        (remove keyword?)
        (into #{})))
 
+;; TBD: (-> asts first ...) below is written with the assumption that
+;; the ns form must be first in a file.  It usually is, but
+;; tools.namespace has been generalized to allow it to be later in the
+;; file, so this should, too.  It could instead search for asts with
+;; :raw-forms containing 'ns' or 'clojure.core/ns' as the first
+;; symbol, perhaps.
+
+;; The unused-namespaces linter doesn't even try to have line:col
+;; info.  We should usually, if not always, be able to get some from
+;; the namespace where it was read.  At worst, it should get the
+;; beginning of the ns form it is in.
+
 (defn unused-namespaces [{:keys [asts]}]
   (let [curr-ns (-> asts first :statements first :args first :expr :form)
         required (required-namespaces asts)
-        used (set (map #(-> ^clojure.lang.Var % .ns .getName) (keys (var-freq asts))))]
+        used (set (map #(-> ^clojure.lang.Var % .ns .getName)
+                       (vars-used asts)))]
     (for [ns (set/difference required used)]
       {:linter :unused-namespaces
        :msg (format "Namespace %s is never used in %s" ns curr-ns)})))

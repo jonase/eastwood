@@ -112,3 +112,57 @@
   (let [{:keys [foo bar baz guh]} x]
     (let [unused1 1, unused2 2, wee 3, unused3 4]
       [bar wee])))
+
+
+;; unused-private-vars tests
+
+;; I saw examples like these in tools.reader.  They were used later in
+;; the file, but tools.analyzer had :op :const ast nodes where they
+;; were used, with a :form equal to 'upper-limit and 'lower-limit.
+;; However, the asts where they were used seemed to have no reference
+;; to the vars at all.  I am not sure how much I can trust that there
+;; are not corner cases if I tried to use the :form values of those
+;; :const nodes to treat them as uses of these private const vars, and
+;; not something else that might have the same symbol to refer to
+;; them.
+
+(def ^:private ^:const upper-limit (int \uD7ff))
+(def ^:private ^:const lower-limit (int \uE000))
+
+(defn foo8 [x]
+  (and (> x upper-limit)
+       (< x lower-limit)))
+
+(def ^:private upper-limit2 (int \uD7ff))
+(def ^:private lower-limit2 (int \uE000))
+
+(def ^:private upper-limit3 (int \uD7ff))
+(def ^:private lower-limit3 (int \uE000))
+
+(defn foo9 [x]
+  (and (> x upper-limit2)
+       (< x lower-limit2)))
+
+;; TBD: I found a case like foo10 and foo11 below in project automat,
+;; where foo10 was warned about.  Ideally we should not warn about
+;; this, since it is used in foo11's macroexpansion, but I guess if
+;; there is no actual expansion of foo11 in the namespace, how would
+;; one know?
+
+;; If foo11 were expanded, it would probably become obvious that there
+;; was a use of foo10, but if not, it seems tricky.
+
+;; Cases like this found:
+
+;; automat var #'automat.core/input-range
+;; compojure var #'compojure.core/if-context
+;; hiccup var #'hiccup.def/update-arglists
+
+;; Besides these undesired warnings, there are many more correct
+;; warnings about unused private vars.
+
+(defn- foo10 [x]
+  (inc x))
+
+(defmacro foo11 [y]
+  `(#'testcases.unusedlocals/foo10 ~y))

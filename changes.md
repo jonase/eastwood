@@ -58,6 +58,9 @@ latest master version only.
   exceptions while linting some projects -- ones that had not been
   tested before Eastwood 0.1.5 release.
 
+* Updated the `:unused-private-vars` linter so that it should be
+  correct in more cases, and have better line number info.
+
 * Corrected a case where `:unlimited-use` warnings were still being
   issued for the namespace `clojure.test`, which was `(:use [clojure
   test])`.  Issue [#95](https://github.com/jonase/eastwood/issues/95).
