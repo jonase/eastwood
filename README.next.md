@@ -566,11 +566,11 @@ ClojureScript and Java source files it finds, and these are relatively
 common in projects with Clojure/Java source files.  You must
 explicitly enable it if you wish to see these warnings.
 
-If you explicitly specify `:source-paths` or `:test-paths`, or use the
-default Eastwood options from the command line that cause it to scan
-these paths for Clojure source files, with this linter enabled (the
-default), it will warn about each file found that is not a
-Clojure/Java source file, i.e. its file name does not end with '.clj'.
+If you specify `:source-paths` or `:test-paths`, or use the default
+Eastwood options from the command line that cause it to scan these
+paths for Clojure source files, then with this linter enabled it will
+warn about each file found that is not a Clojure/Java source file,
+i.e. if its file name does not end with '.clj'.
 
 
 ### `:no-ns-form-found`
