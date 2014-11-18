@@ -195,7 +195,7 @@ return value followed by the time it took to evaluate in millisec."
   [
    {:name :no-ns-form-found,          :enabled-by-default true,
     :fn nil}
-   {:name :non-clojure-file,          :enabled-by-default true,
+   {:name :non-clojure-file,          :enabled-by-default false,
     :fn nil}
    {:name :misplaced-docstrings,      :enabled-by-default true,
     :fn misc/misplaced-docstrings}

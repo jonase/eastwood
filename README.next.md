@@ -120,7 +120,7 @@ the command line to enable or disable the linter.
   [[more]](https://github.com/jonase/eastwood#no-ns-form-found)
 - `:non-clojure-file` - Warn about files that will not be linted
   because they are not Clojure source files, i.e. their name does not
-  end with '.clj' (new in version 0.2.0).
+  end with '.clj' (disabled by default, new in version 0.2.0).
   [[more]](https://github.com/jonase/eastwood#non-clojure-file)
 - `:redefd-vars` - Redefinitions of the same name in the same
   namespace. [[more]](https://github.com/jonase/eastwood#redefd-vars)
@@ -561,19 +561,16 @@ what went wrong.  Fix the problems indicated and try again.
 
 New in Eastwood version 0.2.0
 
+This linter is disabled by default, because it warns even about
+ClojureScript and Java source files it finds, and these are relatively
+common in projects with Clojure/Java source files.  You must
+explicitly enable it if you wish to see these warnings.
+
 If you explicitly specify `:source-paths` or `:test-paths`, or use the
 default Eastwood options from the command line that cause it to scan
 these paths for Clojure source files, with this linter enabled (the
 default), it will warn about each file found that is not a
 Clojure/Java source file, i.e. its file name does not end with '.clj'.
-
-You may wish to disable it in projects that intentionally have such
-files, e.g. by adding a line like this to your Leiningen `project.clj`
-file:
-
-```clojure
-:eastwood {:exclude-linters [:non-clojure-file]}
-```
 
 
 ### `:no-ns-form-found`
