@@ -88,8 +88,8 @@ Eastwood warns when it finds the following kinds of things.  Each
 keyword below is the name of the "linter".  That name can be used on
 the command line to enable or disable the linter.
 
-| Linter name | Enabled? | Description | Link to more docs |
-| ----------- | ------------------- | ----------- | ----------------- |
+| Linter name | Enabled? | Description | Docs |
+| ----------- | -------- | ----------- | ---- |
 | no name | yes* | Inconsistencies between file names and the namespaces declared within them.  * Cannot be disabled. (new in version 0.1.1) | [[more]](https://github.com/jonase/eastwood#check-consistency-of-namespace-and-file-names) |
 `:bad-arglists` | yes | Function/macro `:arglists` metadata that does not match the number of args it is defined with (new in version 0.1.1). | [[more]](https://github.com/jonase/eastwood#bad-arglists) |
 | `:constant-test` | yes | A test expression always evaluates as true, or always false (new in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#constant-test) |
