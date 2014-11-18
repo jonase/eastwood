@@ -1020,8 +1020,8 @@ Return value:
 (defn make-default-cb [opts]
   (let [;;wrtr (io/writer "east-out.txt")   ; see comment above
         wrtr (java.io.PrintWriter. *out* true)
-        warn-wrtr (if (contains? opts :warning-output-file)
-                    (io/writer (:warning-output-file opts))
+        warn-wrtr (if (contains? opts :out)
+                    (io/writer (:out opts))
                     wrtr)
         default-msg-cb (make-default-msg-cb wrtr)
         default-dirs-scanned-cb (make-default-dirs-scanned-cb wrtr)

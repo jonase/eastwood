@@ -17,11 +17,11 @@ latest master version only.
 
 * The new default lint warning format is no longer a map, but lines of
   the form "FILE:LINE:COL: LINTER MSG".  You can put only the warnings
-  lines into a file using the new option `:warning-output-file`.
-  Support already exists in Emacs, Vim, and probably other editors for
-  stepping through the warnings, with another buffer/window jumping to
-  the location of the warning for you.  See docs for more details.
-  Issue [#104](https://github.com/jonase/eastwood/issues/104).
+  lines into a file using the new option `:out`.  Support already
+  exists in Emacs, Vim, and probably other editors for stepping
+  through the warnings, with another buffer/window jumping to the
+  location of the warning for you.  See docs for more details.  Issue
+  [#104](https://github.com/jonase/eastwood/issues/104).
 
 * Enhanced `:suspicious-expression` linter so it always uses
   macroexpanded forms, not original source forms.  Thus it no longer

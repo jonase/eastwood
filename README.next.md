@@ -89,7 +89,7 @@ keyword below is the name of the "linter".  That name can be used on
 the command line to enable or disable the linter.
 
 - Inconsistencies between file names and the namespaces declared
-  within them (new in version 0.1.1) (not a linter, and cannot be
+  within them (new in version 0.1.1) (has no name, and cannot be
   disabled).
   [[more]](https://github.com/jonase/eastwood#check-consistency-of-namespace-and-file-names)
 - `:bad-arglists` - Function/macro `:arglists` metadata that does not
@@ -167,19 +167,29 @@ Running
 
 in the root of your project will lint your project's namespaces -- all
 of those in your `:source-paths` and `:test-paths` directories and
-their subdirectories.  You can also lint your project's dependencies:
+their subdirectories.  You can also lint individual namespaces in your
+project, or your project's dependencies:
 
-    $ lein eastwood '{:namespaces [clojure.set clojure.java.io] :exclude-linters [:unused-fn-args]}'
-    == Linting clojure.set ==
-    {:linter :misplaced-docstrings,
-     :msg "Possibly misplaced docstring, #'clojure.set/bubble-max-key",
-     :line 13}
+    $ lein eastwood {:namespaces [compojure.handler compojure.core-test] :exclude-linters [:unlimited-use]}
+    == Eastwood 0.2.0 Clojure 1.5.1 JVM 1.7.0_45
+    == Linting compojure.handler ==
+    Entering directory `/Users/jafinger/clj/andy-forks/eastwood/crucible/repos/compojure-2014-10-24'
+    src/compojure/handler.clj:48:8: deprecations: Var '#'compojure.handler/api' is deprecated.
+    == Linting compojure.core-test ==
+    test/compojure/core_test.clj:112:21: suspicious-test: 'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test
+    test/compojure/core_test.clj:117:21: suspicious-test: 'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test
+    test/compojure/core_test.clj:109:1: constant-test: Test expression is always logical true or always logical false: false
+    test/compojure/core_test.clj:109:1: constant-test: Test expression is always logical true or always logical false: true
+    test/compojure/core_test.clj:114:1: constant-test: Test expression is always logical true or always logical false: false
+    test/compojure/core_test.clj:114:1: constant-test: Test expression is always logical true or always logical false: true
+    == Warnings: 7 (not including reflection warnings)  Exceptions thrown: 0
+    Subprocess failed
 
-    == Linting clojure.java.io ==
-    {:linter :deprecations,
-     :msg
-     "Instance method 'public java.net.URL java.io.File.toURL() throws java.net.MalformedURLException' is deprecated.",
-     :line 50}
+Adding `:out "warn.txt"` to the options map will cause all of the
+Eastwood warning lines, and no other output, to be written to the file
+`warn.txt`.  This file is useful for stepping through warnings as
+described in the [Editor
+Support](https://github.com/jonase/eastwood#editor-support) section.
 
 Available options for specifying namespaces and paths are:
 
@@ -374,10 +384,10 @@ You can still get the older map format by setting the option
 Eastwood 0.1.4 and earlier).  The new default format can be specified
 explicitly by setting `:warning-format` to `:location-list-v1`.
 
-You can put only the warning lines into a file using the option
-`:warning-output-file` followed by a file name in a double-quoted
-string, or when running Eastwood from the REPL, anything convertible
-to a writer via `clojure.java.io/writer`.
+You can put only the warning lines into a file using the option `:out`
+followed by a file name in a double-quoted string, or when running
+Eastwood from the REPL, anything convertible to a writer via
+`clojure.java.io/writer`.
 
 Note: If you try to mix reflection warnings from the Clojure compiler
 in such a file, those messages contain relative path names from a
