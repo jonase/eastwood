@@ -44,13 +44,25 @@
   (toString [_] (str cache)))
 
 
+(defn ^:private d-lay [fun]
+  (let [memory (atom {})]
+    (reify
+      clojure.lang.IDeref
+      (deref [this]
+        (if-let [e (find @memory fun)]
+          (val e)
+          (let [ret (fun)]
+            (swap! memory assoc fun ret)
+            ret))))))
+
+
 ;; # Auxilliary functions
 
 (defn through* [cache f item]
   "The basic hit/miss logic for the cache system based on `core.cache/through`.
   Clojure delays are used to hold the cache value."
   (eastwood.copieddeps.dep4.clojure.core.cache/through
-    #(delay (%1 %2))
+    (fn [f a] (d-lay #(f a)))
     #(clojure.core/apply f %)
     cache
     item))

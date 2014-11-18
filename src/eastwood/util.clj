@@ -602,7 +602,7 @@ StringWriter."
 (def fn4 (:init (nth a 4)))
 (def locs4 (->> fn4 util/ast-nodes (filter (util/op= :local))))
 
-(require '[clojure.tools.analyzer.jvm :as aj])
+(require '[eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as aj])
 (def form (read-string "
 (defn fn-with-unused-args3 [x y z]
   (let [foo (fn [y z]

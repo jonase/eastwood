@@ -199,6 +199,18 @@
   [m & mms]
   (persistent! (reduce conj! (transient (or m {})) mms)))
 
+(defn mapv'
+  "Like mapv, but short-circuits on reduced"
+  [f v]
+  (let [c (count v)]
+    (loop [ret (transient []) i 0]
+      (if (> c i)
+        (let [val (f (nth v i))]
+          (if (reduced? val)
+            (reduced (persistent! (reduce conj! (conj! ret @val) (subvec v (inc i)))))
+            (recur (conj! ret val) (inc i))))
+        (persistent! ret)))))
+
 (defn source-info
   "Returns the available source-info keys from a map"
   [m]

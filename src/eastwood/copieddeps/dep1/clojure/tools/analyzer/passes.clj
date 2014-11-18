@@ -41,20 +41,23 @@
   (if (m k)
     m
     (reduce (fn [m dep]
-              (let [m (if (m dep)
-                        m
-                        (calc-deps m dep (get-in passes [dep :depends]) passes))])
-              (update-in m [k] into (conj (or (m dep) #{}) dep)))
+              (let [m (calc-deps m dep (get-in passes [dep :depends]) passes)]
+                (update-in m [k] into (conj (or (m dep) #{}) dep))))
             (assoc m k deps) deps)))
+
+(defn desugar-deps [passes]
+  (reduce-kv (fn [m name {:keys [after affects before]}]
+               (reduce (fn [m p] (update-in m [p :depends] (fnil conj #{}) name))
+                       (update-in m [name :depends] (fnil into #{}) (into affects (filter passes after)))
+                       before)) passes passes))
 
 (defn calculate-deps
   "Takes a map of pass-name -> pass-info and adds to each pass-info :dependencies and
    :dependants info, which also contain the transitive dependencies"
   [passes]
-  (let [dependencies (reduce-kv (fn [deps pname {:keys [depends after affects]}]
-                                  (calc-deps deps pname
-                                             (into depends (concat (filter passes (into after affects))
-                                                                   (mapv key (filter #(get (-> % val :before) pname) passes)))) passes))
+  (let [passes (desugar-deps passes)
+        dependencies (reduce-kv (fn [deps pname {:keys [depends]}]
+                                  (calc-deps deps pname depends passes))
                                 {} passes)
         dependants   (reduce-kv (fn [m k v] (reduce (fn [m v] (update-in m [v] (fnil conj #{}) k))
                                                    (update-in m [k] (fnil into #{}) nil) v))
