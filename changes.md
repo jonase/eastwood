@@ -9,9 +9,6 @@
 
 ## Changes from version 0.1.5 to 0.2.0
 
-Version 0.2.0 is not released yet.  These changes are available in
-latest master version only.
-
 * Eastwood version 0.2.0 requires Clojure 1.5.0 or later.  Clojure
   1.4.0 is no longer supported.
 
