@@ -113,3 +113,42 @@
 
 (def ^LinkedList avlf15 (fn [coll] (java.util.LinkedList. coll)))
 (defn ^LinkedList avlf16 [coll] (java.util.LinkedList. coll))
+
+;; This is probably a reduced test case from some project I was
+;; examining a problem in a while back, but I don't recall now which.
+;; The type tag ^Set on b should give a :wrong-tag warning, unless
+;; java.util.Set is imported in the namespace, or it is fully
+;; qualified where it is used.
+
+(defn foo [x]
+  (let [a 5
+        ^Set b (set [1 2 3])
+        c (count b)]
+    (+ x c)))
+
+;; Copied and adapted from Seesaw namespace seesaw.widgets.log-window
+
+;; Formerly caused tools.analyzer to throw an exception, now Eastwood
+;; handles the wrong-tag callback to avoid the exception.  Filed
+;; ticket TANAL-31 for this issue.
+
+(defn- log-window-proxy [state]
+  (proxy [javax.swing.JTextArea clojure.lang.IDeref] []
+    ; Implement IDeref
+    (deref [] state)
+
+    ; this is how you disable auto-scrolling :(
+    (scrollRectToVisible [rect]
+                         (if @(:auto-scroll? state)
+                           (proxy-super scrollRectToVisible rect)))))
+
+(defprotocol LogWindow
+  (log   [this message])
+  (clear [this]))
+
+(extend-type (class (log-window-proxy nil))
+  LogWindow
+  (log [this message]
+    (println "message" message))
+  (clear [this]
+    nil))

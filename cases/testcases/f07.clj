@@ -141,3 +141,18 @@
     (some? a)
     (false? a))
   (true? a))
+
+;; comment is a normal macro, not built-in to the Clojure compiler in
+;; any more special way than that.  It expands to nil.  Eastwood has a
+;; special case for this in its :unused-ret-vals linter that should
+;; prevent warnings for the comment forms below.
+
+(let [x 5]
+  ;; nil by itself here causes an :unused-ret-vals warning, but not if
+  ;; it is wrapped in a comment.
+  (comment nil)
+  (defn bar2 [y]
+    (comment 1)
+    (- 5 y))
+  (comment "flamtacious")
+  7)

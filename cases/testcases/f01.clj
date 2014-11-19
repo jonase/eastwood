@@ -92,3 +92,14 @@
 
 (defn call-with-wrong-num-of-args-2 [x]
   (assoc))
+
+
+(defn catch
+  "The Clojure compiler allows catch to be defined as a function and
+called, as long as you do it from outside of a try form.  Test case
+for tools.analyzer, which at one time did not permit this.  Zach
+Tellman is to be credited/blamed for this test case."
+  ([x y]
+     (catch x Throwable y))
+  ([x y z]
+     [x y z]))

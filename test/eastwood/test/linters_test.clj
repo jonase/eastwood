@@ -948,6 +948,21 @@ the next."
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 88, :column 25}
     1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: Set on form: b",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 125, :column 14}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: (class (log-window-proxy nil)) on form: this",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 151, :column 9}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: (class (log-window-proxy nil)) on form: this",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 153, :column 11}
+    1,
     }
         clojure-1-6-or-earlier-expected-warnings
         common-expected-warnings

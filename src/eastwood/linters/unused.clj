@@ -273,13 +273,11 @@ Example: (all-suffixes [1 2 3])
 
 (def warning-if-invoke-ret-val-unused-delayed
   (delay
-   ;;(println "Reading var-info.edn for :unused-ret-vals linter")
    (make-invoke-val-unused-action-map "var-info.edn")))
 
 
 (def warning-if-static-ret-val-unused-delayed
   (delay
-   ;;(println "Reading jvm-method-info.edn for :unused-ret-vals linter")
    (make-static-method-val-unused-action-map "jvm-method-info.edn")))
 
 
