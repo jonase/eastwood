@@ -39,11 +39,40 @@ describing the error."
   :err)
 
 
+(declare file-warn-info)
+
+(defn replace-path-in-compiler-error
+  [msg opt]
+  (let [[match pre _ path
+         line-col post] (re-matches #"((Reflection|Boxed math) warning), (.*?)(:\d+:\d+)(.*)"
+                                    msg)
+        url (and match (io/resource path))
+        inf (and url (file-warn-info url (:cwd opt)))]
+    (if inf
+      ;; The filename:line:col should be first in the output
+      (str (:uri-or-file-name inf) line-col ": " pre post)
+      msg)))
+
+
 (defn make-default-msg-cb [wrtr]
   (fn default-msg-cb [info]
     (binding [*out* wrtr]
       (println (:msg info))
       (flush))))
+
+
+(defn make-default-eval-msg-cb
+  ([wrtr]
+     (make-default-eval-msg-cb wrtr {}))
+  ([wrtr opt]
+     (fn default-msg-cb [info]
+       (let [orig-msg (:msg info)
+             msg (if (= :eval-err (:kind info))
+                   (replace-path-in-compiler-error orig-msg opt)
+                   orig-msg)]
+         (binding [*out* wrtr]
+           (println msg)
+           (flush))))))
 
 
 (defn make-default-dirs-scanned-cb [wrtr]
@@ -528,7 +557,7 @@ curious." eastwood-url))
         (if (nil? file-or-nil)
           uri
           (let [file-str (str file-or-nil)
-                cwd-str (str cwd-file File/separator)]
+                cwd-str (if cwd-file (str cwd-file File/separator) "")]
             (if (.startsWith file-str cwd-str)
               (subs file-str (count cwd-str))
               file-str)))]
@@ -1025,6 +1054,7 @@ Return value:
                     (io/writer (:out opts))
                     wrtr)
         default-msg-cb (make-default-msg-cb wrtr)
+        eval-out-err-msg-cb (make-default-eval-msg-cb wrtr opts)
         default-dirs-scanned-cb (make-default-dirs-scanned-cb wrtr)
         default-lint-warning-cb (make-default-lint-warning-cb warn-wrtr)
         default-debug-ast-cb (make-default-debug-ast-cb wrtr)
@@ -1038,8 +1068,8 @@ Return value:
                        :dirs-scanned default-dirs-scanned-cb
                        :lint-warning default-lint-warning-cb
                        :note default-msg-cb
-                       :eval-out default-msg-cb
-                       :eval-err default-msg-cb
+                       :eval-out eval-out-err-msg-cb
+                       :eval-err eval-out-err-msg-cb
                        :debug default-msg-cb
                        :debug-ast default-debug-ast-cb
                        :debug-form-read form-read-cb
