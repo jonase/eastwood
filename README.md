@@ -1529,6 +1529,24 @@ Warn if a namespace is given in an `ns` form after `:use` or
 `:require`, but no Vars within the namespace are ever mentioned within
 the namespace.  Thus the namespace could be eliminated.
 
+Currently this linter also warns if the only place a namespace is used
+is inside of syntax-quoted expressions, as shown in the example below.
+Eastwood will unfortunately warn about `clojure.repl` being unused,
+even though it clearly is.  Issue
+[#113](https://github.com/jonase/eastwood/issues/113) has been created
+to track this.
+
+```clojure
+(ns my.name.space
+  (:require [clojure.repl :as repl]))
+
+(defmacro cdoc [name]
+  `(do
+     (repl/doc ~name)
+     ;; other stuff here
+     ))
+```
+
 
 ### `:unused-private-vars`
 
