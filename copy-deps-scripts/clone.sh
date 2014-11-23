@@ -14,9 +14,7 @@ cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
-#git checkout tools.analyzer.jvm-0.6.4
-# Several commits after 0.6.4, up through Nov 15 2014
-git checkout 304b4726f4d80ba32705e0335d156b1dc5bdcbb8
+git checkout tools.analyzer.jvm-0.6.5
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git
