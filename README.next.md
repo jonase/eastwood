@@ -7,7 +7,7 @@ and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.  It has
 been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 alpha versions.  As
-of Eastwood version 0.2.0, it no longer suports Clojure 1.4.0 or
+of Eastwood version 0.2.0, it no longer supports Clojure 1.4.0 or
 earlier versions.
 
 It supports only Clojure on Java, not ClojureScript or Clojure/CLR.
@@ -1003,22 +1003,33 @@ When you invoke a macro and annotate it with metadata, in most cases
 that metadata will be discarded when the macro is expanded, unless the
 macro has been written explicitly to use that metadata.
 
-As a simple example, the trivial macro `my-macro` below will have all
-metadata discarded any time it is invoked:
+As a simple example, the macro `my-macro` below will have all metadata
+discarded any time it is invoked:
 
 ```clojure
 (require 'clojure.java.io)
 (import '(java.io Writer StringWriter))
 
-(defmacro my-macro [x]
-  `(clojure.java.io/writer ~x))
+(defn my-fn [x]
+  (clojure.java.io/writer x))
 
-;; No metadata here, so nothing to lose, and no Eastwood warning
-(def ok1 (my-macro (StringWriter.)))
+;; Example behavior below is for Clojure 1.5.0 through 1.7.0 alphas,
+;; at least.
+(defmacro my-macro [x]
+  (if (>= (compare ((juxt :major :minor) *clojure-version*) [1 5])
+          0)
+    `(my-fn ~x)
+    'something-else))
+
+;; No metadata here, so nothing to lose, and no Eastwood warning.
+;; .close call will give reflection warning, though.
+(.close (my-macro (StringWriter.)))
 
 ;; All metadata is discarded, including type tags like ^Writer, which
-;; is just a shorthand for ^{:tag Writer}
-(def meta-discarded-1 ^Writer (my-macro (StringWriter.)))
+;; is just a shorthand for ^{:tag Writer}.  Clojure will give a
+;; reflection warning, which is mightily confusing if you are not
+;; aware of this issue.  Eastwood will warn about it.
+(.close ^Writer (my-macro (StringWriter.)))
 ```
 
 If your purpose for annotating a macro invocation with metadata is to
@@ -1027,10 +1038,6 @@ around this behavior by binding the macro invocation return value to a
 symbol with `let`, and type hint that symbol.  For example:
 
 ```clojure
-;; Reflection warning for the .close call here, because type tag
-;; ^Writer is discarded for the form (my-macro (StringWriter.))
-(def reflection-and-lint-warn (.close ^Writer (my-macro (StringWriter.))))
-
 ;; No reflection warning from Clojure, and no warning from Eastwood,
 ;; for this.
 (let [^Writer w (my-macro (StringWriter.))]
@@ -1477,6 +1484,24 @@ You must explicitly enable it if you wish to see these warnings.
 Warn if a namespace is given in an `ns` form after `:use` or
 `:require`, but no Vars within the namespace are ever mentioned within
 the namespace.  Thus the namespace could be eliminated.
+
+Currently this linter also warns if the only place a namespace is used
+is inside of syntax-quoted expressions, as shown in the example below.
+Eastwood will unfortunately warn about `clojure.repl` being unused,
+even though it clearly is.  Issue
+[#113](https://github.com/jonase/eastwood/issues/113) has been created
+to track this.
+
+```clojure
+(ns my.name.space
+  (:require [clojure.repl :as repl]))
+
+(defmacro cdoc [name]
+  `(do
+     (repl/doc ~name)
+     ;; other stuff here
+     ))
+```
 
 
 ### `:unused-private-vars`
