@@ -121,6 +121,65 @@
   [rdr & _]
   (skip-line rdr))
 
+(def debug-comments false)
+
+(def saved-comments-atom (atom [[]]))
+
+(defn get-saved-comments-stack []
+  @saved-comments-atom)
+
+(defn push-saved-comments-stack []
+  (when debug-comments
+    (println (format "scs: push []")))
+  (swap! saved-comments-atom conj [])
+  @saved-comments-atom)
+
+(defn pop-saved-comments-stack []
+  (let [old-stack @saved-comments-atom
+        top (peek old-stack)]
+    (when debug-comments
+      (println (format "scs: pop top=%s" top)))
+    (swap! saved-comments-atom pop)
+    old-stack))
+
+(defn top-saved-comments []
+  (let [c (peek @saved-comments-atom)
+        c (if (= c []) nil c)]
+    (when debug-comments
+      (println (format "scs: top-saved-comments returned %d comments"
+                       (count c))))
+    c))
+
+(defn clear-top-saved-comments []
+  (let [c (top-saved-comments)]
+    (swap! saved-comments-atom
+           (fn [stack-of-vecs & args]
+             (conj (pop stack-of-vecs) [])))
+    (when debug-comments
+      (println (format "scs: clear-top-saved-comments returned %d comments"
+                       (count c))))
+    c))
+
+(defn read-comment-remembering-contents
+  "Patterned after function read-string*.  Like read-comment and
+skip-line, returns the reader."
+  [reader & _]
+  (loop [sb (StringBuilder.)
+         ch (read-char reader)]
+    (if (newline? ch)
+      (do
+        (when debug-comments
+          (println (format "jafinger-dbg: Remember comment '%s'"
+                           (str sb))))
+        ;;(swap! saved-comments-atom conj (str sb))
+        (swap! saved-comments-atom
+               (fn [stack-of-vecs & args]
+                 (conj (pop stack-of-vecs)
+                       (apply conj (peek stack-of-vecs) args)))
+               (str sb)))
+      (recur (.append sb ch) (read-char reader))))
+  reader)
+
 (defn throwing-reader
   [msg]
   (fn [rdr & _]

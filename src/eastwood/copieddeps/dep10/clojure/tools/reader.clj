@@ -50,7 +50,27 @@
 
 (declare read-tagged)
 
-(defn- read-dispatch
+(def ^:private comment-info-atom (atom []))
+
+(defn comment-info []
+  (let [c @comment-info-atom]
+    (reset! comment-info-atom [])
+    c))
+
+(defn update-comment-info
+  [comment-info-map]
+  (swap! comment-info-atom conj comment-info-map))
+
+(defn save-comment-info [comment-info form]
+  (when comment-info
+    (swap! comment-info-atom conj
+           (merge
+            (meta form)
+            {:comments comment-info
+             :form form})))
+  form)
+
+(defn- read-dispatch-internal
   [rdr _]
   (if-let [ch (read-char rdr)]
     (if-let [dm (dispatch-macros ch)]
@@ -59,6 +79,26 @@
         obj
         (reader-error rdr "No dispatch macro for " ch)))
     (reader-error rdr "EOF while reading character")))
+
+(defn- read-dispatch
+  [rdr initch]
+  (let [[start-line start-column] (when (indexing-reader? rdr)
+                                    [(get-line-number rdr) (int (dec (get-column-number rdr)))])
+        _ (push-saved-comments-stack)
+        obj (read-dispatch-internal rdr initch)
+        _ (pop-saved-comments-stack)
+        comment-info (if-not (identical? obj rdr)
+                       (clear-top-saved-comments))
+        [end-line end-column] (when (indexing-reader? rdr)
+                                [(get-line-number rdr) (int (get-column-number rdr))])]
+    (when comment-info
+      (update-comment-info {:comments comment-info
+                            :form obj
+                            :line start-line
+                            :column start-column
+                            :end-line end-line
+                            :end-column end-column}))
+    obj))
 
 (defn- read-unmatched-delimiter
   [rdr ch]
@@ -104,7 +144,7 @@
 (def ^:private ^:const upper-limit (int \uD7ff))
 (def ^:private ^:const lower-limit (int \uE000))
 
-(defn- read-char*
+(defn- read-char-internal*
   [rdr backslash]
   (let [ch (read-char rdr)]
     (if-not (nil? ch)
@@ -147,17 +187,60 @@
          :else (reader-error rdr "Unsupported character: \\" token)))
       (reader-error rdr "EOF while reading character"))))
 
-(defn- ^PersistentVector read-delimited
+(defn- read-char*
+  [rdr initch]
+  (let [[start-line start-column] (when (indexing-reader? rdr)
+                                    [(get-line-number rdr) (int (dec (get-column-number rdr)))])
+        _ (push-saved-comments-stack)
+        obj (read-char-internal* rdr initch)
+        _ (pop-saved-comments-stack)
+        comment-info (if-not (identical? obj rdr)
+                       (clear-top-saved-comments))
+        [end-line end-column] (when (indexing-reader? rdr)
+                                [(get-line-number rdr) (int (get-column-number rdr))])]
+    (when comment-info
+      (update-comment-info {:comments comment-info
+                            :form obj
+                            :line start-line
+                            :column start-column
+                            :end-line end-line
+                            :end-column end-column}))
+    obj))
+
+(defn- read-delimited
   [delim rdr recursive?]
+  (let [new-stack (push-saved-comments-stack)]
+    (when debug-comments
+      (println (format "read-delim %s BEGIN push new-depth=%d new-stack=%s"
+                       (str (char delim))
+                       (count new-stack)
+                       new-stack))))
   (let [first-line (when (indexing-reader? rdr)
                      (get-line-number rdr))
         delim (char delim)]
     (loop [a (transient [])]
       (if-let [ch (read-past whitespace? rdr)]
         (if (identical? delim (char ch))
-          (persistent! a)
+          (let [old-stack (pop-saved-comments-stack)
+                comment-info (clear-top-saved-comments)
+                form-vec (persistent! a)]
+            (when debug-comments
+              (println (format "read-delim %s END   pop old-depth=%d old-stack=%s"
+                               (str (char delim))
+                               (count old-stack)
+                               old-stack))
+              (when comment-info
+                (println (format "delimited-dbg: Associating comments: %s"
+                                 comment-info))
+                (println (format "             with form-vec: %s"
+                                 form-vec))))
+            {:comments comment-info :form-vec form-vec})
           (if-let [macrofn (macros ch)]
-            (let [mret (log-source-unread rdr
+            (let [mret (log-source-unread rdr :del get-saved-comments-stack
+                                          (fn [ret]
+                                            (if-not (identical? ret rdr)
+                                              (clear-top-saved-comments)))
+                                          update-comment-info
                          (macrofn rdr ch))]
               (recur (if-not (identical? mret rdr) (conj! a mret) a)))
             (let [o (read (doto rdr (unread ch)) true nil recursive?)]
@@ -170,60 +253,66 @@
   [rdr _]
   (let [[start-line start-column] (when (indexing-reader? rdr)
                                     [(get-line-number rdr) (int (dec (get-column-number rdr)))])
-        the-list (read-delimited \) rdr true)
+        {:keys [comments form-vec]} (read-delimited \) rdr true)
+        ^PersistentVector the-list form-vec
         [end-line end-column] (when (indexing-reader? rdr)
                                 [(get-line-number rdr) (int (get-column-number rdr))])]
-    (with-meta (if (empty? the-list)
-                 '()
-                 (clojure.lang.PersistentList/create the-list))
-      (when start-line
-        (merge
-         (when-let [file (get-file-name rdr)]
-           {:file file})
-         {:line start-line
-          :column start-column
-          :end-line end-line
-          :end-column end-column})))))
+    (save-comment-info comments
+     (with-meta (if (empty? the-list)
+                  '()
+                  (clojure.lang.PersistentList/create the-list))
+       (when start-line
+         (merge
+          (when-let [file (get-file-name rdr)]
+            {:file file})
+          {:line start-line
+           :column start-column
+           :end-line end-line
+           :end-column end-column}))))))
 
 (defn- read-vector
   [rdr _]
   (let [[start-line start-column] (when (indexing-reader? rdr)
                                     [(get-line-number rdr) (int (dec (get-column-number rdr)))])
-        the-vector (read-delimited \] rdr true)
+        {:keys [comments form-vec]} (read-delimited \] rdr true)
+        ^PersistentVector the-vector form-vec
         [end-line end-column] (when (indexing-reader? rdr)
                                 [(get-line-number rdr) (int (get-column-number rdr))])]
-    (with-meta the-vector
-      (when start-line
-        (merge
-         (when-let [file (get-file-name rdr)]
-           {:file file})
-         {:line start-line
-          :column start-column
-          :end-line end-line
-          :end-column end-column})))))
+    (save-comment-info comments
+     (with-meta the-vector
+       (when start-line
+         (merge
+          (when-let [file (get-file-name rdr)]
+            {:file file})
+          {:line start-line
+           :column start-column
+           :end-line end-line
+           :end-column end-column}))))))
 
 (defn- read-map
   [rdr _]
   (let [[start-line start-column] (when (indexing-reader? rdr)
                                     [(get-line-number rdr) (int (dec (get-column-number rdr)))])
-        the-map (read-delimited \} rdr true)
+        {:keys [comments form-vec]} (read-delimited \} rdr true)
+        ^PersistentVector the-map form-vec
         map-count (count the-map)
         [end-line end-column] (when (indexing-reader? rdr)
                                 [(get-line-number rdr) (int (get-column-number rdr))])]
     (when (odd? map-count)
       (reader-error rdr "Map literal must contain an even number of forms"))
-    (with-meta
-      (if (zero? map-count)
-        {}
-        (RT/map (to-array the-map)))
-      (when start-line
-        (merge
-         (when-let [file (get-file-name rdr)]
-           {:file file})
-         {:line start-line
-          :column start-column
-          :end-line end-line
-          :end-column end-column})))))
+    (save-comment-info comments
+     (with-meta
+       (if (zero? map-count)
+         {}
+         (RT/map (to-array the-map)))
+       (when start-line
+         (merge
+          (when-let [file (get-file-name rdr)]
+            {:file file})
+          {:line start-line
+           :column start-column
+           :end-line end-line
+           :end-column end-column}))))))
 
 (defn- read-number
   [reader initch]
@@ -261,7 +350,7 @@
             ch))
         (reader-error rdr "Unsupported escape character: \\" ch)))))
 
-(defn- read-string*
+(defn- read-string-internal*
   [reader _]
   (loop [sb (StringBuilder.)
          ch (read-char reader)]
@@ -271,6 +360,26 @@
                 (read-char reader))
       \" (str sb)
       (recur (doto sb (.append ch)) (read-char reader)))))
+
+(defn- read-string*
+  [rdr initch]
+  (let [[start-line start-column] (when (indexing-reader? rdr)
+                                    [(get-line-number rdr) (int (dec (get-column-number rdr)))])
+        _ (push-saved-comments-stack)
+        obj (read-string-internal* rdr initch)
+        _ (pop-saved-comments-stack)
+        comment-info (if-not (identical? obj rdr)
+                       (clear-top-saved-comments))
+        [end-line end-column] (when (indexing-reader? rdr)
+                                [(get-line-number rdr) (int (get-column-number rdr))])]
+    (when comment-info
+      (update-comment-info {:comments comment-info
+                            :form obj
+                            :line start-line
+                            :column start-column
+                            :end-line end-line
+                            :end-column end-column}))
+    obj))
 
 (defn- read-symbol
   [rdr initch]
@@ -312,7 +421,7 @@
            (ns-aliases *ns*)) sym)
       (find-ns sym)))
 
-(defn- read-keyword
+(defn- read-keyword-internal
   [reader initch]
   (let [ch (read-char reader)]
     (if-not (whitespace? ch)
@@ -332,6 +441,26 @@
           (reader-error reader "Invalid token: :" token)))
       (reader-error reader "Invalid token: :"))))
 
+(defn- read-keyword
+  [rdr initch]
+  (let [[start-line start-column] (when (indexing-reader? rdr)
+                                    [(get-line-number rdr) (int (dec (get-column-number rdr)))])
+        _ (push-saved-comments-stack)
+        obj (read-keyword-internal rdr initch)
+        _ (pop-saved-comments-stack)
+        comment-info (if-not (identical? obj rdr)
+                       (clear-top-saved-comments))
+        [end-line end-column] (when (indexing-reader? rdr)
+                                [(get-line-number rdr) (int (get-column-number rdr))])]
+    (when comment-info
+      (update-comment-info {:comments comment-info
+                            :form obj
+                            :line start-line
+                            :column start-column
+                            :end-line end-line
+                            :end-column end-column}))
+    obj))
+
 (defn- wrapping-reader
   [sym]
   (fn [rdr _]
@@ -339,7 +468,9 @@
 
 (defn- read-meta
   [rdr _]
-  (log-source rdr
+  (log-source rdr :meta get-saved-comments-stack
+              (fn [ret] (clear-top-saved-comments))
+              update-comment-info
     (let [[line column] (when (indexing-reader? rdr)
                           [(get-line-number rdr) (int (dec (get-column-number rdr)))])
           m (desugar-meta (read rdr true nil true))]
@@ -359,18 +490,20 @@
   [rdr _]
   (let [[start-line start-column] (when (indexing-reader? rdr)
                                     [(get-line-number rdr) (int (dec (get-column-number rdr)))])
-        the-set (PersistentHashSet/createWithCheck (read-delimited \} rdr true))
+        {:keys [comments ^PersistentVector form-vec]} (read-delimited \} rdr true)
+        the-set (PersistentHashSet/createWithCheck form-vec)
         [end-line end-column] (when (indexing-reader? rdr)
                                 [(get-line-number rdr) (int (get-column-number rdr))])]
-    (with-meta the-set
-      (when start-line
-        (merge
-         (when-let [file (get-file-name rdr)]
-           {:file file})
-         {:line start-line
-          :column start-column
-          :end-line end-line
-          :end-column end-column})))))
+    (save-comment-info comments
+     (with-meta the-set
+       (when start-line
+         (merge
+          (when-let [file (get-file-name rdr)]
+            {:file file})
+          {:line start-line
+           :column start-column
+           :end-line end-line
+           :end-column end-column}))))))
 
 (defn- read-discard
   [rdr _]
@@ -593,7 +726,7 @@
   (case ch
     \" read-string*
     \: read-keyword
-    \; read-comment
+    \; read-comment-remembering-contents
     \' (wrapping-reader 'quote)
     \@ (wrapping-reader 'clojure.core/deref)
     \^ read-meta
@@ -619,7 +752,7 @@
     \{ read-set
     \< (throwing-reader "Unreadable form")
     \" read-regex
-    \! read-comment
+    \! read-comment-remembering-contents
     \_ read-discard
     nil))
 
@@ -636,7 +769,9 @@
                              \[ [\] :short]
                              \{ [\} :extended]
                              nil)]
-      (let [entries (to-array (read-delimited end-ch rdr true))
+      (let [{:keys [comments form-vec]} (read-delimited end-ch rdr true)
+            ;; TBD: What to do with comments here?
+            entries (to-array ^PersistentVector form-vec)
             numargs (count entries)
             all-ctors (.getConstructors class)
             ctors-num (count all-ctors)]
@@ -736,13 +871,15 @@
        (reader-error "Reading disallowed - *read-eval* bound to :unknown"))
      (try
        (loop []
-         (log-source reader
+         (log-source reader :read get-saved-comments-stack
+                     (fn [ret] (clear-top-saved-comments))
+                     update-comment-info
            (let [ch (read-char reader)]
              (cond
               (whitespace? ch) (recur)
               (nil? ch) (if eof-error? (reader-error reader "EOF") sentinel)
               (number-literal? reader ch) (read-number reader ch)
-              (comment-prefix? ch) (do (read-comment reader) (recur))
+;;              (comment-prefix? ch) (do (read-comment-remembering-contents reader) (recur))
               :else (let [f (macros ch)]
                       (if f
                         (let [res (f reader ch)]

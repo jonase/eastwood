@@ -155,6 +155,60 @@ twice."
   (into (empty m)
         (filter (fn [[_ v]] (f v)) m)))
 
+(defn get'
+  "Like get but works for sequential things as well, using nth, thus
+linear time in the key value.  Returns nil or not-found rather than
+throwing exception if the collection is sequential and the key is out
+of the range [0,length-1], or not an integer."
+  ([coll key]
+     (if (associative? coll)
+       (get coll key)
+       (if (integer? key)
+         (try
+           (nth coll key)
+           (catch IndexOutOfBoundsException e
+             nil)))))
+  ([coll key not-found]
+     (if (associative? coll)
+       (get coll key not-found)
+       (if (integer? key)
+         (try
+           (nth coll key)
+           (catch IndexOutOfBoundsException e
+             not-found))
+         not-found))))
+
+(def ^:private get-in'-sentinel (Object.))
+
+(defn get-in'
+  "Like get-in but works for sequential things as well, using nth,
+thus linear time in the key value.  See get' for conditions when it
+will return nil for sequential collections."
+  ([coll ks]
+     (reduce get' coll ks))
+  ([coll ks not-found]
+     (loop [coll coll
+            ks (seq ks)]
+       (if ks
+         (let [coll (get' coll (first ks) get-in'-sentinel)]
+           (if (identical? get-in'-sentinel coll)
+             not-found
+             (recur coll (next ks))))
+         coll))))
+
+(defn assoc-in-sequential [sequence n new-val]
+  (concat (take n sequence) [new-val] (drop (inc n) sequence)))
+
+(defn update-in'
+  [m [k & ks] f & args]
+  (if (associative? m)
+    (if ks
+      (assoc m k (apply update-in' (get m k) ks f args))
+      (assoc m k (apply f (get m k) args)))
+    (if ks
+      (assoc-in-sequential m k (apply update-in' (nth m k) ks f args))
+      (assoc-in-sequential m k (apply f (nth m k) args)))))
+
 (defn nth-last
   "Return the nth-last element of a vector v, where n=1 means the last
 element, n=2 is the second-to-last, etc.  Returns nil if there are

@@ -231,13 +231,56 @@ logging frames. Called when pushing a character back."
   (get-column-number [reader] (int column))
   (get-file-name [reader] file-name))
 
+(def debug-comments2 false)
+(def log-source-depth (atom 0))
+
 (defn log-source*
-  [reader f unread?]
+  [reader dbg-dat get-stack use-comment-fn
+   associate-comments-to-form f unread?]
   (let [frame (.source_log_frames ^SourceLoggingPushbackReader reader)
         ^StringBuilder buffer (:buffer @frame)
-        new-frame (assoc-in @frame [:offset] (+ (.length buffer) (if unread? -1 0)))]
+        new-frame (assoc-in @frame [:offset] (+ (.length buffer) (if unread? -1 0)))
+        comment-stack (get-stack)
+        [start-line start-column] [(get-line-number reader)
+                                   (get-column-number reader)]]
+    (when debug-comments2
+      (swap! log-source-depth inc)
+      (println (format "log-source begin %s depth %d stack=%s"
+                       dbg-dat @log-source-depth comment-stack)))
     (with-bindings {frame new-frame}
       (let [ret (f)]
+        (let [stack-before (get-stack)
+              use-comment-info (use-comment-fn ret)]
+          (when debug-comments2
+            (println (format "log-source mid   %s use-comment-info=%s  stack before=%s after=%s ret=%s"
+                             dbg-dat
+                             use-comment-info
+                             stack-before
+                             (get-stack)
+                             ret)))
+          (when use-comment-info
+            (let [[end-line end-column] [(get-line-number reader)
+                                         (get-column-number reader)]
+                  file (get-file-name reader)]
+              (associate-comments-to-form {:comments use-comment-info
+                                           :form ret
+                                           :file file
+                                           :line start-line
+                                           :column start-column
+                                           :end-line end-line
+                                           :end-column end-column}))
+            (when debug-comments2
+              (println (format "log-source mid2  %s  Associating comments: %s"
+                               dbg-dat
+                               use-comment-info))
+              (println (format "                     with form: %s"
+                               ret)))))
+        (when debug-comments2
+          (println (format "log-source end   %s depth %d stack=%s   stack-WAS=%s"
+                           dbg-dat @log-source-depth
+                           (get-stack)
+                           comment-stack))
+          (swap! log-source-depth dec))
         (if (instance? clojure.lang.IMeta ret)
           (merge-meta ret {:source (peek-source-log frame)})
           ret)))))
@@ -343,17 +386,17 @@ logging frames. Called when pushing a character back."
 (defmacro log-source
   "If reader implements SourceLoggingReader, execute body in a source
   logging context. Otherwise, execute body, returning the result."
-  [reader & body]
+  [reader dbg-dat get-stack use-comment-fn assoc-fn & body]
   `(if (and (source-logging-reader? ~reader)
             (not (whitespace? (peek-char ~reader))))
-     (log-source* ~reader (^{:once true} fn* [] ~@body) false)
+     (log-source* ~reader ~dbg-dat ~get-stack ~use-comment-fn ~assoc-fn (^{:once true} fn* [] ~@body) false)
      (do ~@body)))
 
 (defmacro log-source-unread
   "If reader implements SourceLoggingReader, execute body in a source
   logging context. Otherwise, execute body, returning the result."
-  [reader & body]
+  [reader dbg-dat get-stack use-comment-fn assoc-fn & body]
   `(if (and (source-logging-reader? ~reader)
             (not (whitespace? (peek-char ~reader))))
-     (log-source* ~reader (^{:once true} fn* [] ~@body) true)
+     (log-source* ~reader ~dbg-dat ~get-stack ~use-comment-fn ~assoc-fn (^{:once true} fn* [] ~@body) true)
      (do ~@body)))
