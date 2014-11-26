@@ -571,6 +571,24 @@ StringWriter."
               ~@body)]
      {:val x# :out (str s#) :err (str s2#)}))
 
+
+(defn print-enclosing-macros
+  [ast]
+  (println "----------")
+  (doseq [[i a] (map-indexed
+                 vector
+                 (concat (-> ast :eastwood/ancestors) [ast]))]
+    (println (format "level %d:" i))
+    (doseq [[j f] (map-indexed vector (:eastwood/partly-resolved-forms a))]
+      (println (format "  raw-form %2d first=%s"
+                       j (try
+                           (first f)
+                           (catch Exception e
+                             (str f " (actual :raw-forms element, not its first)"))))))
+    (println (format "  form=%s" (:form a)))
+    (println (format "  op=%s" (:op a)))))
+
+
 (comment
 
 ;; Some code useful for copying and pasting into a REPL for debugging
