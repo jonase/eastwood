@@ -572,6 +572,12 @@ StringWriter."
      {:val x# :out (str s#) :err (str s2#)}))
 
 
+;; TBD: There are some cases I have seen of calling this for every ast
+;; warned about in the :constant-test linter, where the 'leaf' AST
+;; seemed to be shown, but none of its ancestor ASTs.  This was the
+;; case for the last form in constanttestexpr.clj, for example.  It
+;; would be good to make that case work, too.
+
 (defn print-enclosing-macros
   [ast]
   (println "----------")
@@ -587,6 +593,34 @@ StringWriter."
                              (str f " (actual :raw-forms element, not its first)"))))))
     (println (format "  form=%s" (:form a)))
     (println (format "  op=%s" (:op a)))))
+
+
+(def empty-enclosing-macro-map
+  (ordering-map [
+                 :depth
+                 :index
+                 :final
+                 :op
+                 :macro
+                 :form
+                 :first-only
+                 :ast
+                 ]))
+
+(defn enclosing-macros
+  [ast]
+  (apply concat
+    (for [[i a] (map-indexed vector
+                             (cons ast
+                                   (nil-safe-rseq (-> ast :eastwood/ancestors))))]
+      (for [[j f] (map-indexed vector (:eastwood/partly-resolved-forms a))]
+        (into empty-enclosing-macro-map
+          (merge
+            {:depth i, :index j, :op (:op a), :ast a}
+            (try
+              {:macro (first f), :form f, :first-only true}
+              (catch Exception e
+                {:macro f, :form f, :first-only false}))))))))
 
 
 (comment
