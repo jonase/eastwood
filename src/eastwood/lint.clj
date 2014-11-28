@@ -280,10 +280,10 @@ return value followed by the time it took to evaluate in millisec."
        (map :name)))
 
 
-(defn- lint [exprs kw]
+(defn- lint [exprs kw opt]
   (if-let [lint-fn (linter-name->fn kw)]
     (try
-      (doall (lint-fn exprs))
+      (doall (lint-fn exprs opt))
       (catch Throwable e
         [e]))))
 
@@ -585,7 +585,7 @@ curious." eastwood-url))
       (when print-time?
         (note-cb (format "Analysis took %.1f millisec" analyze-time-msec)))
       (doseq [linter linters]
-        (let [[results time-msec] (timeit (lint analyze-results linter))]
+        (let [[results time-msec] (timeit (lint analyze-results linter opts))]
           (doseq [result results]
             (if (instance? Throwable result)
               (do

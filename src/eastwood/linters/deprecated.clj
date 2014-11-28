@@ -92,7 +92,7 @@
 (defmethod msg :static-field [expr]
   (format "Static field '%s' is deprecated." (:reflected-field expr)))
 
-(defn deprecations [{:keys [asts]}]
+(defn deprecations [{:keys [asts]} opt]
   (for [ast (map #(ast/postwalk % pass/reflect-validated) asts)
         dexpr (filter deprecated (ast/nodes ast))
         :let [loc (pass/code-loc (pass/nearest-ast-with-loc dexpr))]]

@@ -62,7 +62,7 @@
     (second x)
     x))
 
-(defn unlimited-use [{:keys [asts]}]
+(defn unlimited-use [{:keys [asts]} opt]
   (for [ast (mapcat ast/nodes asts)
         :when (use? ast)
         :let [use-args (map remove-quote-wrapper (rest (-> ast :form)))
@@ -100,7 +100,7 @@
                 :let [first-expr (-> body :statements first)]]
             (string? (-> first-expr :form))))))
 
-(defn misplaced-docstrings [{:keys [asts]}]
+(defn misplaced-docstrings [{:keys [asts]} opt]
   (for [ast (mapcat ast/nodes asts)
         :when (and (= (:op ast) :def)
                    (misplaced-docstring? ast))
@@ -117,7 +117,7 @@
          (.startsWith s "*")
          (.endsWith s "*"))))
 
-(defn non-dynamic-earmuffs [{:keys [asts]}]
+(defn non-dynamic-earmuffs [{:keys [asts]} opt]
   (for [expr (mapcat ast/nodes asts)
         :when (= (:op expr) :def)
         :let [^clojure.lang.Var v (:var expr)
@@ -314,7 +314,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
            "")
          (:line loc) ":" (:column loc))))
 
-(defn redefd-vars [{:keys [asts]}]
+(defn redefd-vars [{:keys [asts]} opt]
   (let [defd-var-asts (defd-vars asts)
         defd-var-groups (group-by #(-> % :form second) defd-var-asts)]
     (for [[_defd-var-ast ast-list] defd-var-groups
@@ -342,7 +342,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
   (:nested-defs (def-walker exprs)))
 
 
-(defn def-in-def [{:keys [asts]}]
+(defn def-in-def [{:keys [asts]} opt]
   (let [nested-vars (def-in-def-vars asts)]
     (for [nested-var-ast nested-vars
           :let [loc (-> nested-var-ast var-of-ast meta)]]
@@ -357,7 +357,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
 
 ;; Wrong arity
 
-(defn wrong-arity [{:keys [asts]}]
+(defn wrong-arity [{:keys [asts]} opt]
   (let [exprs (->> asts
                    (mapcat ast/nodes)
                    (filter :maybe-arity-mismatch))]
@@ -432,7 +432,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
 ;; (def fun3 (fn [y] (inc y)))
 ;; (defn ^Class fun4 "docstring" {:seesaw {:class `Integer}} [x & y] ...)
 
-(defn bad-arglists [{:keys [asts]}]
+(defn bad-arglists [{:keys [asts]} opt]
   (let [def-fn-asts (->> asts
                          (mapcat ast/nodes)
                          (filter (fn [a]
@@ -473,7 +473,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
 ;; TBD: Consider also looking for local symbols in positions of forms
 ;; where they appeared to be used as functions, e.g. as the second arg
 ;; to map, apply, etc.
-(defn local-shadows-var [{:keys [asts]}]
+(defn local-shadows-var [{:keys [asts]} opt]
   (for [{:keys [op fn env]} (mapcat ast/nodes asts)
         :when (and (= op :invoke)
                    ;; In the examples I have looked at, (:o-tag fn) is

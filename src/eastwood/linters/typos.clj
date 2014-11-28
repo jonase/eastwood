@@ -60,7 +60,7 @@
 ;; on the linter argument, in a way that will not attach this :line
 ;; :column etc. metadata, implemented in string->forms.
 
-(defn keyword-typos [{:keys [asts source]}]
+(defn keyword-typos [{:keys [asts source]} opt]
   ;; Hack alert: Assumes that the first form in the file is an ns
   ;; form, and that the namespace remains the same throughout the
   ;; source file.
@@ -251,7 +251,7 @@ generate varying strings while the test is running."
 ;; one is that the 'nil' argument causes warnings about a non-string
 ;; second argument to be issued, if we check it.
 
-(defn suspicious-test [{:keys [asts]}]
+(defn suspicious-test [{:keys [asts]} opt]
   (let [frms (fn [ast] (remove #(symbol? (second %))
                                (map list
                                     (:eastwood/partly-resolved-forms ast)
@@ -380,7 +380,7 @@ generate varying strings while the test is running."
           (-> ast :eastwood/partly-resolved-forms first first)))))
 
 
-(defn suspicious-macro-invocations [{:keys [asts]}]
+(defn suspicious-macro-invocations [{:keys [asts]} opt]
   (let [selected-macro-invoke-asts
         (->> asts
              (mapcat ast/nodes)
@@ -475,7 +475,7 @@ generate varying strings while the test is running."
    ;; Note: (- x) and (/ x) do something useful
    })
 
-(defn suspicious-fn-calls [{:keys [asts]}]
+(defn suspicious-fn-calls [{:keys [asts]} opt]
   (let [fn-sym-set (set (keys core-fns-that-do-little))
         invoke-asts (->> asts
                          (mapcat ast/nodes)
@@ -514,7 +514,7 @@ generate varying strings while the test is running."
 ;; expression like a macro invocation, which already seems to be
 ;; handled well by suspicious-macro-invocations.
 
-(defn suspicious-is-try-expr [{:keys [asts]}]
+(defn suspicious-is-try-expr [{:keys [asts]} opt]
   (let [try-expr-asts
         (->> asts
              (mapcat ast/nodes)
@@ -696,7 +696,7 @@ warning, that contains the constant value."
           (-> ast :eastwood/partly-resolved-forms first first))))
 
 
-(defn constant-test [{:keys [asts]}]
+(defn constant-test [{:keys [asts]} opt]
   (let [const-tests (->> asts
                          (mapcat ast/nodes)
                          (keep #(if (default-case-at-end-of-cond? %)

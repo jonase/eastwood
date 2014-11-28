@@ -34,7 +34,7 @@ significance needed by the user."
   (some #(contains? ast %) keys-indicating-wrong-tag))
 
 
-(defn wrong-tag-from-analyzer [{:keys [asts]}]
+(defn wrong-tag-from-analyzer [{:keys [asts]} opt]
   (for [{:keys [op name form env] :as ast} (->> (mapcat ast/nodes asts)
                                                 (filter has-wrong-tag?))
         :let [wrong-tag-keys (util/keys-in-map keys-indicating-wrong-tag ast)
@@ -154,7 +154,7 @@ significance needed by the user."
     (catch ClassNotFoundException e
       nil)))
 
-(defn wrong-tag-clj-1232 [{:keys [asts]}]
+(defn wrong-tag-clj-1232 [{:keys [asts]} opt]
   (for [{:keys [op form] :as ast} (mapcat ast/nodes asts)
         :when (= op :fn-method)
         :let [tag (-> form first meta :tag)

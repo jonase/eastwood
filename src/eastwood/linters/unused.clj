@@ -32,7 +32,7 @@
        (map :var)
        set))
 
-(defn unused-private-vars [{:keys [asts]}]
+(defn unused-private-vars [{:keys [asts]} opt]
   (let [pdefs (private-non-const-defs asts)
         vars-used-set (vars-used asts)]
     (for [pvar pdefs
@@ -72,7 +72,7 @@ selectively disable such warnings if they wish."
             (let [args (params method)]
               (set/difference args (used-locals (ast/nodes (:body method))))))))
 
-(defn unused-fn-args [{:keys [asts]}]
+(defn unused-fn-args [{:keys [asts]} opt]
   (let [fn-exprs (->> asts
                       (map util/enhance-extend-invocations)
                       (mapcat ast/nodes)
@@ -172,7 +172,7 @@ Example: (all-suffixes [1 2 3])
           (-> ast :eastwood/partly-resolved-forms first first))))
 
 
-(defn unused-locals [{:keys [asts]}]
+(defn unused-locals [{:keys [asts]} opt]
   (let [exprs (->> asts
                    (mapcat ast/nodes)
                    (filter (fn [ast]
@@ -232,7 +232,7 @@ Example: (all-suffixes [1 2 3])
 ;; the namespace where it was read.  At worst, it should get the
 ;; beginning of the ns form it is in.
 
-(defn unused-namespaces [{:keys [asts]}]
+(defn unused-namespaces [{:keys [asts]} opt]
   (let [curr-ns (-> asts first :statements first :args first :expr :form)
         required (required-namespaces asts)
         used (set (map #(-> ^clojure.lang.Var % .ns .getName)
@@ -421,7 +421,7 @@ discarded inside null: null'."
         (if (= stmt-desc-str "static method call")
           (debug-unknown-fn-methods fn-or-method stmt-desc-str stmt))))))
 
-(defn unused-ret-vals-2 [location {:keys [asts]}]
+(defn unused-ret-vals-2 [location {:keys [asts]} opt]
   (let [warning-if-invoke-ret-val-unused @warning-if-invoke-ret-val-unused-delayed
         warning-if-static-ret-val-unused @warning-if-static-ret-val-unused-delayed
         unused-ret-val-exprs (->> asts
@@ -551,7 +551,7 @@ discarded inside null: null'."
 ;; Unused metadata on macro invocations (depends upon macro
 ;; definition, but most macros ignore it)
 
-(defn unused-meta-on-macro [{:keys [asts]}]
+(defn unused-meta-on-macro [{:keys [asts]} opt]
   (let [macro-invokes (->> asts
                            (mapcat ast/nodes)
                            (filter #(and (:raw-forms %)
