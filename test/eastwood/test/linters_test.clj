@@ -3,7 +3,8 @@
   (:use [eastwood.lint])
   (:require [clojure.data :as data]
             [clojure.string :as str]
-            [eastwood.test.cc-compare :as ccmp])
+            [clojure.pprint :as pp]
+            [eastwood.util :as util])
   (:import (java.io File)))
 
 ;; TBD: It would be cleaner to make Eastwood's error reporting code
@@ -21,17 +22,19 @@
                [1 7])
       0))
 
-(defn to-sorted-map [c]
-  (if (map? c)
-    (into (sorted-map-by ccmp/cc-cmp) c)
-    c))
+(def lint-warning-map-keys-for-testing-in-order
+  [:linter
+   :msg
+   :file
+   :line
+   :column])
 
-(defn make-sorted [c]
-  (clojure.walk/postwalk to-sorted-map c))
+(def empty-ordered-lint-warning-map-for-testing
+  (util/ordering-map lint-warning-map-keys-for-testing-in-order))
 
-(defn select-tested-keys [lint-warning]
-  (select-keys lint-warning
-               [:linter :msg :file :line :column]))
+(defn normalize-warning [lint-warning]
+  (into empty-ordered-lint-warning-map-for-testing
+        (select-keys lint-warning lint-warning-map-keys-for-testing-in-order)))
 
 (defn msg-replace-auto-numbered-symbol-names
   "In warning messages, replace symbols like p__7346 containing
@@ -45,14 +48,28 @@ the next."
 (defn warning-replace-auto-numbered-symbol-names [warn]
   (update-in warn [:msg] msg-replace-auto-numbered-symbol-names))
 
+(def empty-sorted-lint-warning-frequencies-map
+  (sorted-map-by (fn [w1 w2]
+                   (compare ((juxt :line :column :linter :msg) w1)
+                            ((juxt :line :column :linter :msg) w2)))))
+
 (defmacro lint-test [ns-sym linters opts expected-lint-result]
-  `(is (= (make-sorted (take 2 (data/diff
-                                (->> (lint-ns-noprint ~ns-sym ~linters ~opts)
-                                     (map select-tested-keys)
-                                     (map warning-replace-auto-numbered-symbol-names)
-                                     frequencies)
-                                ~expected-lint-result)))
-          (make-sorted [nil nil]))))
+  `(let [lint-result# (lint-ns-noprint ~ns-sym ~linters ~opts)
+         lint-result2# (->> lint-result#
+                            (map normalize-warning)
+                            (map warning-replace-auto-numbered-symbol-names)
+                            frequencies)
+         diffs# (->> (data/diff lint-result2# ~expected-lint-result)
+                     (take 2)
+                     (mapv (fn [m#]
+                             (if (nil? m#)
+                               nil
+                               (into empty-sorted-lint-warning-frequencies-map
+                                     m#)))))]
+     (when (not= diffs# [nil nil])
+       (println "Pretty-printed diffs between actual and expected lint results:")
+       (pp/pprint diffs#))
+     (is (= diffs# [nil nil]))))
 
 (defn fname-from-parts [& parts]
   (str/join File/separator parts))
