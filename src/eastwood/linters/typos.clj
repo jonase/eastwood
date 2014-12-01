@@ -301,29 +301,141 @@ generate varying strings while the test is running."
             (predicate-forms pr-deftest-subexprs 'deftest)
             (predicate-forms pr-testing-subexprs 'testing))))
 
-;; Suspicious macro invocations
+;; Suspicious macro invocations.  Any macros in clojure.core that can
+;; have 'trivial' expansions are included here, if it can be
+;; determined solely by the number of arguments to the macro.
 
 (def core-macros-that-do-little
   '{
-    clojure.core/lazy-cat {0 {:args [] :ret-val ()}}  ; macro where (lazy-cat) expands to (concat).  TBD: add concat to this list?
-    ;; Note: (->> x) throws arity exception, so no lint warning for it.
-    clojure.core/->       {1 {:args [x] :ret-val x}}  ; macro where (-> x) expands to x
-    ;; Note: (if x) is a compiler error, as is (if a b c d) or more args
-    clojure.core/cond     {0 {:args [] :ret-val nil}}  ; macro where (cond) -> nil
-    clojure.core/case     {2 {:args [x y] :ret-val y}}  ; macro (case 5 2) -> (let* [x 5] 2)
-    clojure.core/condp    {3 {:args [pred test-expr expr] :ret-val expr}}  ;; macro (condp = 5 2) -> (let* [pred = expr 5] 2)
-    clojure.core/when     {1 {:args [test] :ret-val nil}} ; macro (when 5) -> (if 5 (do))
-    clojure.core/when-not {1 {:args [test] :ret-val nil}} ; macro (when-not 5) -> (if 5 nil (do))
-    clojure.core/when-let {1 {:args [[x y]] :ret-val nil}} ; macro (when-let [x 5]) -> (let* [temp 5] (when temp (let [x temp])))
-    clojure.core/doseq    {1 {:args [[x coll]] :ret-val nil}} ; macro (doseq [x [1 2 3]]) has big expansion
-    clojure.core/dotimes  {1 {:args [[i n]] :ret-val nil}} ; macro (dotimes [i 10]) has medium-sized expansion using loop
+    ;; (-> x) expands to x
+    clojure.core/->       {1 {:args [x] :ret-val x}}
+
+    ;; (->> x) threw an arity exception for some version of Clojure
+    ;; before 1.6.0, but it expands to x in Clojure 1.6.0.
+    clojure.core/->>      {1 {:args [x] :ret-val x}}
+
+    ;; (and) -> true
+    ;; (and 5) -> 5
+    clojure.core/and      {0 {:args []  :ret-val true},
+                           1 {:args [x] :ret-val x}}
+
+    ;; (as-> val x) expands to (let [x val] x)
+    clojure.core/as->     {2 {:args [expr name] :ret-val expr}}
+
+    ;; (case 5 2) -> (let* [x 5] 2)
+    clojure.core/case     {2 {:args [x y] :ret-val y}}
+
+    ;; (cond) -> nil
+    clojure.core/cond     {0 {:args [] :ret-val nil}}
+
+    ;; (cond-> x) -> (let [temp x] temp)
+    clojure.core/cond->   {1 {:args [x] :ret-val x}}
+
+    ;; (cond->> x) -> (let [temp x] temp)
+    clojure.core/cond->>  {1 {:args [x] :ret-val x}}
+
+    ;; (condp = 5 2) -> (let* [pred = expr 5] 2)
+    clojure.core/condp    {3 {:args [pred test-expr expr] :ret-val expr}}
+
+    ;; (declare) -> (do)
+    clojure.core/declare  {0 {:args [] :ret-val nil}}
+
+    ;; (delay) -> (delay nil)
+    clojure.core/delay    {0 {:args [] :ret-val (delay nil)}}
+
+    ;; (doseq [x [1 2 3]]) has big expansion, but doesn't do anything
+    ;; useful.
+    clojure.core/doseq    {1 {:args [[x coll]] :ret-val nil}}
+
+    ;; (dotimes [i 10]) has medium-sized expansion using loop, but
+    ;; doesn't do anything useful.
+    clojure.core/dotimes  {1 {:args [[i n]] :ret-val nil}}
+
+    ;; (doto x) -> (let* [temp x] temp)
+    clojure.core/doto     {1 {:args [x] :ret-val x}}
+
+    ;; (if x) is a compiler error, as is (if a b c d) or more args.
+    ;; Similarly for if-let, if-not, if-some
+
+    ;; (import) -> (do)
+    clojure.core/import   {0 {:args [] :ret-val nil}}
+
+    ;; (lazy-cat) expands to (concat).  TBD: add concat to this list?
+    clojure.core/lazy-cat {0 {:args [] :ret-val ()}}
+
+    ;; (let [x val]) always returns nil
+    clojure.core/let      {1 {:args [bindings] :ret-val nil}}
+
+    ;; letfn with empty body is similar to let with empty body
+    clojure.core/letfn    {1 {:args [bindings] :ret-val nil}}
+
+    ;; locking with empty body is similar to let with empty body
+    clojure.core/locking  {1 {:args [x] :ret-val nil}}
+
+    ;; loop with empty body is similar to let with empty body
+    clojure.core/loop     {1 {:args [bindings] :ret-val nil}}
+
+    ;; (or) -> nil
+    ;; (or 5) -> 5
+    clojure.core/or       {0 {:args []  :ret-val nil},
+                           1 {:args [x] :ret-val x}}
+
+    ;; (pvalues) -> (pcalls)
+    clojure.core/pvalues  {0 {:args [] :ret-val ()}}
+
+    ;; (some-> 5) -> (let* [temp 5] temp)
+    clojure.core/some->   {1 {:args [expr] :ret-val expr}}
+
+    ;; (some->> 5) -> (let* [temp 5] temp)
+    clojure.core/some->>  {1 {:args [expr] :ret-val expr}}
+
+    ;; (when 5) -> (if 5 (do))
+    clojure.core/when     {1 {:args [test] :ret-val nil}}
+
+    ;; (when-first [x 5]) has medium-sized expansion, but returns nil
+    ;; regardless of value in binding.
+    clojure.core/when-first {1 {:args [[x y]] :ret-val nil}}
+
+    ;; (when-let [x 5]) -> (let* [temp 5] (when temp (let [x temp]))),
+    ;; returning nil regardless of whether temp is logical true or
+    ;; false.
+    clojure.core/when-let {1 {:args [[x y]] :ret-val nil}}
+
+    ;; (when-not 5) -> (if 5 nil (do))
+    clojure.core/when-not {1 {:args [test] :ret-val nil}}
+
+    ;; (when-some [x 5]) has medium-sized expansion, but returns nil
+    ;; regardless of value in binding.
+    clojure.core/when-some {1 {:args [[x y]] :ret-val nil}}
+
+    ;; (with-bindings map) has medium-sized expansion, but always
+    ;; returns nil.
+    clojure.core/with-bindings {1 {:args [map] :ret-val nil}}
+
+    ;; (with-in-str "foo") has medium-sized expansion, but always
+    ;; returns nil.
+    clojure.core/with-in-str {1 {:args [s] :ret-val nil}}
+
+    ;; (with-local-vars [x val]) has medium-sized expansion, but
+    ;; always returns nil.
+    clojure.core/with-local-vars {1 {:args [bindings] :ret-val nil}}
+
+    ;; (with-open [x expr]) has medium-sized expansion, but always
+    ;; returns nil, unless expr throws an exception, but that would be
+    ;; a strange use of with-open to do nothing but that.
+    clojure.core/with-open {1 {:args [bindings] :ret-val nil}}
+
+    ;; (with-out-str) has medium-sized expansion, but always returns
+    ;; "".
     clojure.core/with-out-str {0 {:args [] :ret-val ""}}
-    clojure.core/and      {0 {:args []  :ret-val true},  ; macro (and) -> true
-                           1 {:args [x] :ret-val x}}     ; macro (and 5) -> 5
-    clojure.core/or       {0 {:args []  :ret-val nil},   ; macro (or) -> nil
-                           1 {:args [x] :ret-val x}}     ; macro (or 5) -> 5
-    clojure.core/doto     {1 {:args [x] :ret-val x}}     ; macro (doto x) -> (let* [temp x] temp)
-    clojure.core/declare  {0 {:args []  :ret-val nil}}   ; macro (declare) -> (do)
+
+    ;; (with-precision precision) has medium-sized expansion, but
+    ;; always returns nil.
+    clojure.core/with-precision {1 {:args [precision] :ret-val nil}}
+
+    ;; (with-redefs [var expr]) has medium-sized expansion, but always
+    ;; returns nil.
+    clojure.core/with-redefs {1 {:args [bindings] :ret-val nil}}
     })
 
 ;; suspicious-macro-invocations was formerly called
@@ -390,19 +502,19 @@ generate varying strings while the test is running."
     (for [ast selected-macro-invoke-asts
           pr-form (filter #(pr-form-of-interest? % core-macros-that-do-little)
                           (:eastwood/partly-resolved-forms ast))
-          :let [fn-sym (first pr-form)
+          :let [macro-sym (first pr-form)
                 loc (or (pass/has-code-loc? (-> ast :raw-forms first meta))
                         (pass/code-loc (pass/nearest-ast-with-loc ast)))
                 num-args (dec (count pr-form))
-                suspicious-args (get core-macros-that-do-little fn-sym)
+                suspicious-args (get core-macros-that-do-little macro-sym)
                 info (get suspicious-args num-args)]
           :when (and (contains? suspicious-args num-args)
                      ;; Avoid warning in some special cases of macros
                      ;; that contain suspicious-looking macros in
                      ;; their expansions.
-                     (not (and (#{'clojure.core/and 'clojure.core/or} fn-sym)
+                     (not (and (#{'clojure.core/and 'clojure.core/or} macro-sym)
                                (and-or-self-expansion? ast)))
-                     (not (and (#{'clojure.core/cond} fn-sym)
+                     (not (and (#{'clojure.core/cond} macro-sym)
                                (cond-self-expansion? ast)))
                      (not (util/inside-fieldless-defrecord ast)))]
       ;; Debugging code useful to enable when getting warnings
@@ -417,35 +529,52 @@ generate varying strings while the test is running."
 ;;                         ))
 ;;;;        (println "  parent ast=")
 ;;;;        (util/pprint-ast-node (util/nth-last (-> ast :eastwood/ancestors) 1))
+;      (do
+;        (println)
+;        (println :suspicious-expression (select-keys loc [:line :column]))
+;        (binding [pp/*print-right-margin* 100]
+;          (pp/pprint (->> (util/enclosing-macros ast)
+;                          (map #(dissoc % :ast :index)))))
       (util/add-loc-info
        loc
        {:linter :suspicious-expression
         :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
-                     (name fn-sym) num-args (name fn-sym)
+                     (name macro-sym) num-args (name macro-sym)
                      (if (> num-args 0)
                        (str " " (str/join " " (:args info)))
                        "")
                      (if (= "" (:ret-val info))
                        "\"\""
                        (print-str (:ret-val info))))}))))
+;  )
 
 
 ;; Note: Looking for asts that contain :invoke nodes for the function
 ;; 'clojure.core/= will not find expressions like (clojure.test/is (=
 ;; (+ 1 1))), because the is macro changes that to an apply on
-;; function = with one arg, which is a sequence of expressions.
-;; Finding one-arg = can probably only be done at the source form
-;; level.
+;; function = with one arg, which is a sequence of expressions.  Such
+;; expressions are looked for by the function suspicious-is-try-expr.
 
 (def core-fns-that-do-little
   {
-   'clojure.core/=        '{1 {:args [x] :ret-val true}}
-   'clojure.core/==       '{1 {:args [x] :ret-val true}}
-   'clojure.core/not=     '{1 {:args [x] :ret-val false}}
+   'clojure.core/*        '{0 {:args []  :ret-val 1},   ; inline
+                            1 {:args [x] :ret-val x}}
+   'clojure.core/*'       '{0 {:args []  :ret-val 1},   ; inline
+                            1 {:args [x] :ret-val x}}
+   'clojure.core/+        '{0 {:args []  :ret-val 0},   ; inline
+                            1 {:args [x] :ret-val x}}
+   'clojure.core/+'       '{0 {:args []  :ret-val 0},   ; inline
+                            1 {:args [x] :ret-val x}}
+   ;; (- x) (-' x) and (/ x) do something useful
    'clojure.core/<        '{1 {:args [x] :ret-val true}}
    'clojure.core/<=       '{1 {:args [x] :ret-val true}}
+   'clojure.core/=        '{1 {:args [x] :ret-val true}}
+   'clojure.core/==       '{1 {:args [x] :ret-val true}}
    'clojure.core/>        '{1 {:args [x] :ret-val true}}
    'clojure.core/>=       '{1 {:args [x] :ret-val true}}
+   'clojure.core/await    '{0 {:args [] :ret-val nil}}
+
+   'clojure.core/not=     '{1 {:args [x] :ret-val false}}
    'clojure.core/min      '{1 {:args [x] :ret-val x}}
    'clojure.core/max      '{1 {:args [x] :ret-val x}}
    'clojure.core/min-key  '{2 {:args [f x] :ret-val x}}
@@ -464,15 +593,6 @@ generate varying strings while the test is running."
    
    'clojure.core/comp     '{0 {:args [] :ret-val identity}}
    'clojure.core/partial  '{1 {:args [f] :ret-val f}}
-   'clojure.core/+        '{0 {:args []  :ret-val 0},   ; inline
-                            1 {:args [x] :ret-val x}}
-   'clojure.core/+'       '{0 {:args []  :ret-val 0},   ; inline
-                            1 {:args [x] :ret-val x}}
-   'clojure.core/*        '{0 {:args []  :ret-val 1},   ; inline
-                            1 {:args [x] :ret-val x}}
-   'clojure.core/*'       '{0 {:args []  :ret-val 1},   ; inline
-                            1 {:args [x] :ret-val x}}
-   ;; Note: (- x) and (/ x) do something useful
    })
 
 (defn suspicious-fn-calls [{:keys [asts]} opt]
