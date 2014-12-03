@@ -836,8 +836,23 @@ warning, that contains the constant value."
           :let [form (-> ast :form)
                 form-to-print (if (nil? form) "nil" form)
                 loc (or (pass/has-code-loc? (-> ast :form meta))
-                        (pass/code-loc (pass/nearest-ast-with-loc ast)))]]
-      (util/add-loc-info loc
-       {:linter :constant-test
-        :msg (format "Test expression is always logical true or always logical false: %s"
-                     form-to-print)}))))
+                        (pass/code-loc (pass/nearest-ast-with-loc ast)))
+                w (util/add-loc-info
+                   loc
+                   {:linter :constant-test
+                    :constant-test {:kind :the-only-kind
+                                    :ast ast}
+                    :msg (format "Test expression is always logical true or always logical false: %s"
+                                 form-to-print)})
+                allow? (util/allow-warning w opt)]
+          :when allow?]
+      (do
+        (when (:debug-warning opt)
+          ((util/make-msg-cb :debug opt)
+           (with-out-str
+             (println "This warning:")
+             (pp/pprint (dissoc w :constant-test))
+             (println "was generated from code with the following enclosing macro expansions:")
+             (pp/pprint (->> (util/enclosing-macros ast)
+                             (map #(dissoc % :ast :index)))))))
+        w))))

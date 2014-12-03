@@ -54,6 +54,15 @@
   :within-depth 7
   :reason "Many clojure.core.match/match macro expansions contain expressions of the form (and expr).  This is normal, and probably simplifies the definition of match."})
 
+(disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'clojure.core.match/match}
+  ;; suppress :constant-test warnings even if arbitrarily deep inside
+  ;; a macroexpansion of the match macro.  I have seen one 22 deep in
+  ;; the list, and several 7 or 10 deep.
+  :within-depth nil
+  :reason "Many clojure.core.match/match macro expansions contain test expressions that are always true or always false.  This is normal, and probably simplifies the definition of match."})
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Notes for warnings to disable in library Carmine, version 2.7.1
@@ -74,6 +83,12 @@
   :if-inside-macroexpansion-of #{'taoensso.carmine.commands/enqueue-request}
   :within-depth 3
   :reason "Remove this disable-warning after updating to latest version of Carmine, which has a fix for a bug in a Carmine macro that causes these warnings."})
+
+(disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'taoensso.carmine.commands/defcommand}
+  :within-depth 4
+  :reason "Carmine's defcommand macro commonly expands to contain an if-not with a condition that is a constant."})
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

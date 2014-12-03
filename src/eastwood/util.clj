@@ -665,7 +665,10 @@ StringWriter."
             (case (:linter m)
               :suspicious-expression
               (update-in configs [:suspicious-expression (:for-macro m)]
-                         conj (dissoc m :linter :for-macro))))
+                         conj (dissoc m :linter :for-macro))
+              :constant-test
+              (update-in configs [:constant-test]
+                         conj (dissoc m :linter))))
           {} warning-enable-config))
 
 
@@ -702,43 +705,52 @@ StringWriter."
           enclosing-macros)))
 
 
+(defn allow-warning-based-on-enclosing-macros [w linter suppress-desc
+                                               suppress-conditions opt]
+  (let [ast (-> w linter :ast)
+        ;; Don't bother calculating enclosing-macros if there are
+        ;; no suppress-conditions to check, to save time.
+        encl-macros (if (seq suppress-conditions)
+                      (enclosing-macros ast))
+        match (some #(meets-suppress-condition ast encl-macros %)
+                    suppress-conditions)]
+    (if (and match (:debug-suppression opt))
+      ((make-msg-cb :debug opt)
+       (with-out-str
+         (let [c (:matching-condition match)
+               depth (:within-depth c)]
+           (println (format "Suppressed %s warning%s" suppress-desc))
+           (println (format "because it is within%s an expansion of macro"
+                            (if (number? depth)
+                              (format " %d steps of" depth)
+                              "")))
+           (println (format "'%s'" (:matching-macro match)))
+           (println "Reason suppression rule was created:" (:reason c))
+           (pp/pprint (map #(dissoc % :ast :index)
+                           (if depth
+                             (take depth encl-macros)
+                             encl-macros)))))))
+    ;; allow the warning if there was no match
+    (not match)))
+
+
 (defn allow-warning [w opt]
-  (case (:linter w)
-    :suspicious-expression
-    (case (-> w :suspicious-expression :kind)
-      :macro-invocation
-      (let [macro-symbol (-> w :suspicious-expression :macro-symbol)
-            suppress-conditions (get-in opt [:warning-enable-config
-                                             :suspicious-expression
-                                             macro-symbol])
-            ast (-> w :suspicious-expression :ast)
-            ;; Don't bother calculating enclosing-macros if there are
-            ;; no suppress-conditions to check, to save time.
-            encl-macros (if (seq suppress-conditions)
-                          (enclosing-macros ast))
-            match (some #(meets-suppress-condition ast encl-macros %)
-                        suppress-conditions)]
-        (if (and match (:debug-suppression opt))
-          ((make-msg-cb :debug opt)
-           (with-out-str
-             (let [c (:matching-condition match)
-                   depth (:within-depth c)]
-               (println (format "Suppressed :suspicious-expression warning for invocation of macro"))
-               (println (format "'%s' because it is within%s an expansion of macro"
-                                macro-symbol
-                                (if (number? depth)
-                                  (format " %d steps of" depth)
-                                  "")))
-               (println (format "'%s'"
-                                (:matching-macro match)))
-               (println "Reason suppression rule was created:" (:reason c))
-               (pp/pprint (map #(dissoc % :ast :index)
-                               (if depth
-                                 (take depth encl-macros)
-                                 encl-macros)))))))
-        ;; allow the warning if there was no match
-        (not match))
-      )))
+  (let [linter (:linter w)]
+    (case linter
+      :suspicious-expression
+      (case (-> w linter :kind)
+        :macro-invocation
+        (let [macro-symbol (-> w linter :macro-symbol)
+              suppress-conditions (get-in opt [:warning-enable-config
+                                               linter macro-symbol])]
+          (allow-warning-based-on-enclosing-macros
+           w linter (format " for invocation of macro '%s'" macro-symbol)
+           suppress-conditions opt)))
+
+      :constant-test
+      (let [suppress-conditions (get-in opt [:warning-enable-config linter])]
+        (allow-warning-based-on-enclosing-macros
+         w linter "" suppress-conditions opt)))))
 
 
 (comment
