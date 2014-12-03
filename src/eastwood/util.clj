@@ -7,8 +7,38 @@
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as trdr]
+            [clojure.java.io :as io]
             [clojure.pprint :as pp]
+            [clojure.repl :as repl]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rdr-types]))
+
+
+;; Copied from clojure.repl/pst then modified to 'print' using a
+;; callback function, and to use depth nil to print all stack frames.
+
+(defn pst
+  "'Prints' a stack trace of the exception,  to the depth requested (the
+entire stack trace if depth is nil).  Does not print ex-data.
+
+No actual printing is done in this function.  The callback function
+print-cb is called once for each line of output."
+  [^Throwable e depth print-cb]
+  (print-cb (str (-> e class .getSimpleName) " "
+                 (.getMessage e)))
+  (let [st (.getStackTrace e)
+        cause (.getCause e)]
+    (doseq [el (remove #(#{"clojure.lang.RestFn" "clojure.lang.AFn"}
+                         (.getClassName ^StackTraceElement %))
+                       st)]
+      (print-cb (str \tab (repl/stack-element-str el))))
+    (when cause
+      (print-cb "Caused by:")
+      (pst cause (if depth
+                   (min depth
+                        (+ 2 (- (count (.getStackTrace cause))
+                                (count st)))))
+           print-cb))))
+
 
 (defn uri? [obj]
   (instance? java.net.URI obj))
@@ -621,6 +651,94 @@ StringWriter."
               {:macro (first f), :form f, :first-only true}
               (catch Exception e
                 {:macro f, :form f, :first-only false}))))))))
+
+
+(def ^:private warning-enable-config-atom (atom []))
+
+
+(defn disable-warning [m]
+  (swap! warning-enable-config-atom conj m))
+
+
+(defn process-configs [warning-enable-config]
+  (reduce (fn [configs m]
+            (case (:linter m)
+              :suspicious-expression
+              (update-in configs [:suspicious-expression (:for-macro m)]
+                         conj (dissoc m :linter :for-macro))))
+          {} warning-enable-config))
+
+
+(defn init-warning-enable-config [opt]
+  (let [read-default-config? (get opt :read-default-config true)
+        other-config-files (get opt :config-files [])
+        config-files (concat (if read-default-config?
+                               [(io/resource "config.clj")]
+                               [])
+                             other-config-files)
+        error-cb (make-msg-cb :error opt)
+        debug-cb (make-msg-cb :debug opt)]
+    (doseq [config-file config-files]
+      ;;(debug-cb (format "Loading config file: %s" config-file))
+      (try
+        (binding [*ns* (the-ns 'eastwood.util)]
+          (load-reader (io/reader config-file)))
+        (catch Exception e
+          (error-cb (format "Exception while attempting to load config file: %s" config-file))
+          (pst e nil error-cb))))
+    (process-configs @warning-enable-config-atom)))
+
+
+(defn meets-suppress-condition [ast enclosing-macros condition]
+  (let [macro-set (:if-inside-macroexpansion-of condition)
+        depth (:within-depth condition)
+        enclosing-macros (if (number? depth)
+                           (take depth enclosing-macros)
+                           enclosing-macros)]
+    (some (fn [m]
+            (if (macro-set (:macro m))
+              {:matching-condition condition
+               :matching-macro (:macro m)}))
+          enclosing-macros)))
+
+
+(defn allow-warning [w opt]
+  (case (:linter w)
+    :suspicious-expression
+    (case (-> w :suspicious-expression :kind)
+      :macro-invocation
+      (let [macro-symbol (-> w :suspicious-expression :macro-symbol)
+            suppress-conditions (get-in opt [:warning-enable-config
+                                             :suspicious-expression
+                                             macro-symbol])
+            ast (-> w :suspicious-expression :ast)
+            ;; Don't bother calculating enclosing-macros if there are
+            ;; no suppress-conditions to check, to save time.
+            encl-macros (if (seq suppress-conditions)
+                          (enclosing-macros ast))
+            match (some #(meets-suppress-condition ast encl-macros %)
+                        suppress-conditions)]
+        (if (and match (:debug-suppression opt))
+          ((make-msg-cb :debug opt)
+           (with-out-str
+             (let [c (:matching-condition match)
+                   depth (:within-depth c)]
+               (println (format "Suppressed :suspicious-expression warning for invocation of macro"))
+               (println (format "'%s' because it is within%s an expansion of macro"
+                                macro-symbol
+                                (if (number? depth)
+                                  (format " %d steps of" depth)
+                                  "")))
+               (println (format "'%s'"
+                                (:matching-macro match)))
+               (println "Reason suppression rule was created:" (:reason c))
+               (pp/pprint (map #(dissoc % :ast :index)
+                               (if depth
+                                 (take depth encl-macros)
+                                 encl-macros)))))))
+        ;; allow the warning if there was no match
+        (not match))
+      )))
 
 
 (comment

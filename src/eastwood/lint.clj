@@ -5,7 +5,6 @@
             [clojure.set :as set]
             [clojure.string :as str]
             [clojure.pprint :as pp]
-            [clojure.repl :as repl]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
@@ -287,32 +286,6 @@ return value followed by the time it took to evaluate in millisec."
       (catch Throwable e
         [e]))))
 
-;; Copied from clojure.repl/pst then modified to 'print' using a
-;; callback function, and to use depth nil to print all stack frames.
-
-(defn pst
-  "'Prints' a stack trace of the exception,  to the depth requested (the
-entire stack trace if depth is nil).  Does not print ex-data.
-
-No actual printing is done in this function.  The callback function
-print-cb is called once for each line of output."
-  [^Throwable e depth print-cb]
-  (print-cb (str (-> e class .getSimpleName) " "
-                 (.getMessage e)))
-  (let [st (.getStackTrace e)
-        cause (.getCause e)]
-    (doseq [el (remove #(#{"clojure.lang.RestFn" "clojure.lang.AFn"}
-                         (.getClassName ^StackTraceElement %))
-                       st)]
-      (print-cb (str \tab (repl/stack-element-str el))))
-    (when cause
-      (print-cb "Caused by:")
-      (pst cause (if depth
-                   (min depth
-                        (+ 2 (- (count (.getStackTrace cause))
-                                (count st)))))
-           print-cb))))
-
 (defn maybe-unqualified-java-class-name? [x]
   (if-not (or (symbol? x) (string? x))
     false
@@ -354,7 +327,7 @@ print-cb is called once for each line of output."
     (when (contains? dat :form)
       (error-cb (format "    (:form dat)="))
       (error-cb (with-out-str (util/pprint-form (:form dat)))))
-    (pst exc nil error-cb)))
+    (util/pst exc nil error-cb)))
 
 (defn handle-bad-dot-form [ns-sym opts ^Throwable exc]
   (let [error-cb (util/make-msg-cb :error opts)
@@ -533,7 +506,7 @@ curious." eastwood-url))
   (if (ex-data e)
     (handle-ex-data ns-sym opts e)
     (do
-      (pst e nil (util/make-msg-cb :error opts))
+      (util/pst e nil (util/make-msg-cb :error opts))
       :show-more-details)))
 
 
@@ -967,6 +940,8 @@ Return value:
         {:keys [linters] :as m1} (opts->linters opts linter-name->fn
                                                 default-linters)
         opts (assoc opts :enabled-linters linters)
+        opts (assoc opts :warning-enable-config
+                    (util/init-warning-enable-config opts))
 
         {:keys [namespaces dirs no-ns-form-found-files
                 non-clojure-files] :as m2}
@@ -1022,7 +997,7 @@ Return value:
                                 warning-count exception-count)
                        (catch RuntimeException e
                          (error-cb "Linting failed:")
-                         (pst e nil error-cb)
+                         (util/pst e nil error-cb)
                          e))]
                (if (or continue-on-exception?
                        (not (instance? Throwable e)))

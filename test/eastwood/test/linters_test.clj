@@ -53,6 +53,14 @@ the next."
                    (compare ((juxt :line :column :linter :msg) w1)
                             ((juxt :line :column :linter :msg) w2)))))
 
+(def default-opts
+  {:warning-enable-config
+   (util/init-warning-enable-config
+    {:callback (fn cb [info]
+                 (case (:kind info)
+                   :debug (println (:msg info))))})})
+
+
 (defmacro lint-test [ns-sym linters opts expected-lint-result]
   `(let [lint-result# (lint-ns-noprint ~ns-sym ~linters ~opts)
          lint-result2# (->> lint-result#
@@ -80,7 +88,7 @@ the next."
    'testcases.f01
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {
     {:linter :redefd-vars,
      :msg
@@ -138,7 +146,7 @@ the next."
    'testcases.f02
    [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity
     :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {
     {:linter :redefd-vars,
      :msg (str "Var i-am-defonced-and-defmultid def'd 2 times at line:col locations: "
@@ -167,13 +175,13 @@ the next."
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try :wrong-arity
     :wrong-tag]
-   {}
+   default-opts
    {})
   (lint-test
    'testcases.f04
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {
     {:linter :local-shadows-var,
      :msg "local: replace invoked as function shadows var: #'clojure.core/replace",
@@ -200,13 +208,13 @@ the next."
      'testcases.f05
      [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
       :wrong-arity :local-shadows-var :wrong-tag]
-     {}
+     default-opts
      {}))
   (lint-test
    'testcases.f06
    [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {
     {:linter :unused-fn-args,
      :msg "Function arg y never used",
@@ -427,14 +435,14 @@ the next."
      'testcases.f07
      [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
       :local-shadows-var :wrong-tag]
-     {}
+     default-opts
      (if clojure-1-6-or-later
        clojure-1-6-or-later-expected-warnings
        clojure-1-5-expected-warnings)))
   (lint-test
    'testcases.deprecated
    [:deprecations :wrong-arity :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {
     {:linter :deprecations,
      :msg
@@ -466,20 +474,20 @@ the next."
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
     :local-shadows-var :wrong-tag]
 ;;   [:misplaced-docstrings]
-   {}  ;{:debug #{:all}}
+   default-opts  ;(merge default-opts {:debug #{:all}})
    {})
   (lint-test
    'testcases.tanal-27
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
     :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {})
   (lint-test
    'testcases.keyword-typos
    [:keyword-typos :unused-ret-vals :unused-ret-vals-in-try
     :deprecations :wrong-arity :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {
     {:linter :keyword-typos,
      :msg "Possible keyword typo: :occuption instead of :occupation ?"}
@@ -488,13 +496,13 @@ the next."
   (lint-test
    'testcases.isformsok
    [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {})
   (lint-test
    'testcases.testtest
    [:keyword-typos :suspicious-test :suspicious-expression
     :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {
     {:linter :suspicious-test,
      :msg "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test",
@@ -845,7 +853,7 @@ the next."
   (lint-test
    'testcases.suspicious
    [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {
     {:linter :suspicious-expression,
      :msg "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?",
@@ -1087,7 +1095,7 @@ the next."
   (lint-test
    'testcases.unlimiteduse
    [:unlimited-use :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {
     {:linter :unlimited-use,
      :msg "Unlimited use of ([clojure.reflect] [clojure inspector] [clojure [set]] [clojure.java.io :as io]) in testcases.unlimiteduse",
@@ -1103,7 +1111,7 @@ the next."
   (lint-test
    'testcases.in-ns-switching
    [:unlimited-use :local-shadows-var :wrong-tag]
-   {}
+   default-opts
    {
     {:linter :unlimited-use,
      :msg "Unlimited use of (clojure.set [testcases.f01 :as t1]) in testcases.in-ns-switching",
@@ -1222,7 +1230,7 @@ the next."
     (lint-test
      'testcases.wrongtag
      @#'eastwood.lint/default-linters
-     {}
+     default-opts
      (if clojure-1-7-or-later
        ;; This is actually the expected result only for 1.7.0-alpha2
        ;; or later, because the behavior changed with the fix for
@@ -1234,7 +1242,7 @@ the next."
   (lint-test
    'testcases.macrometa
    [:unlimited-use :local-shadows-var :wrong-tag :unused-meta-on-macro]
-   {}
+   default-opts
    {
     {:linter :unused-meta-on-macro,
      :msg "Java constructor call 'StringWriter.' has metadata with keys (:foo).  All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure.",
@@ -1305,7 +1313,7 @@ the next."
   (lint-test
    'testcases.constanttestexpr
    [:constant-test]
-   {}
+   default-opts
    {
     {:linter :constant-test,
      :msg "Test expression is always logical true or always logical false: false",
@@ -1496,7 +1504,7 @@ the next."
   (lint-test
    'testcases.unusedlocals
    [:unused-locals :unused-private-vars]
-   {}
+   default-opts
    {
     {:linter :unused-locals,
      :msg "let bound symbol 'unused-first-should-warn' never used",
@@ -1564,6 +1572,6 @@ the next."
 ;;  (lint-test
 ;;   'testcases.topleveldo
 ;;   [:redefd-vars :unlimited-use]
-;;   {}
+;;   default-opts
 ;;   {})
   )
