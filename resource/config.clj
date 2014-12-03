@@ -72,7 +72,8 @@
   ;; specifically, those detected in function suspicious-macro-invocations
   :for-macro 'clojure.core/let
   :if-inside-macroexpansion-of #{'taoensso.carmine.commands/enqueue-request}
-  :within-depth 3})
+  :within-depth 3
+  :reason "Remove this disable-warning after updating to latest version of Carmine, which has a fix for a bug in a Carmine macro that causes these warnings."})
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
