@@ -18,23 +18,26 @@
 (disable-warning
  {:linter :suspicious-expression
   ;; specifically, those detected in function suspicious-macro-invocations
-  :for-macros #{'clojure.core/let}
+  :for-macro 'clojure.core/let
   :if-inside-macroexpansion-of #{'clojure.core/when-first}
-  :within-depth 4})
+  :within-depth 4
+  :reason "when-first with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
 
 (disable-warning
  {:linter :suspicious-expression
   ;; specifically, those detected in function suspicious-macro-invocations
-  :for-macros #{'clojure.core/let}
+  :for-macro 'clojure.core/let
   :if-inside-macroexpansion-of #{'clojure.core/when-let}
-  :within-depth 3})
+  :within-depth 3
+  :reason "when-let with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
 
 (disable-warning
  {:linter :suspicious-expression
   ;; specifically, those detected in function suspicious-macro-invocations
-  :for-macros #{'clojure.core/let}
+  :for-macro 'clojure.core/let
   :if-inside-macroexpansion-of #{'clojure.core/when-some}
-  :within-depth 2})
+  :within-depth 2
+  :reason "when-some with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Notes for warnings to disable in library core.match, version 0.2.1
@@ -46,9 +49,10 @@
 (disable-warning
  {:linter :suspicious-expression
   ;; specifically, those detected in function suspicious-macro-invocations
-  :for-macros #{'clojure.core/and}
+  :for-macro 'clojure.core/and
   :if-inside-macroexpansion-of #{'clojure.core.match/match}
-  :within-depth 7})
+  :within-depth 7
+  :reason "Many clojure.core.match/match macro expansions contain expressions of the form (and expr).  This is normal, and probably simplifies the definition of match."})
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -66,7 +70,7 @@
 (disable-warning
  {:linter :suspicious-expression
   ;; specifically, those detected in function suspicious-macro-invocations
-  :for-macros #{'clojure.core/let}
+  :for-macro 'clojure.core/let
   :if-inside-macroexpansion-of #{'taoensso.carmine.commands/enqueue-request}
   :within-depth 3})
 
@@ -100,13 +104,14 @@
 (disable-warning
  {:linter :suspicious-expression
   ;; specifically, those detected in function suspicious-macro-invocations
-  :for-macros #{'clojure.core/->}
+  :for-macro 'clojure.core/->
   :if-inside-macroexpansion-of #{'korma.core/select 'korma.core/update
                                  'korma.core/delete 'korma.core/insert
                                  'korma.core/union 'korma.core/union-all
                                  'korma.core/intersect
                                  'korma.core/defentity}
-  :within-depth 2})
+  :within-depth 2
+  :reason "Many korma.core macros such as defentity, select, update, etc. macro expand to contain expressions of the form (-> expr), which is normal and thus preferable not to be warned about."})
 
 ;; Korma macros with and with-batch are similar in having a -> in
 ;; their macro expansions that are warned about if the body is empty.
@@ -114,6 +119,7 @@
 (disable-warning
  {:linter :suspicious-expression
   ;; specifically, those detected in function suspicious-macro-invocations
-  :for-macros #{'clojure.core/->}
+  :for-macro 'clojure.core/->
   :if-inside-macroexpansion-of #{'korma.core/with 'korma.core/with-batch}
-  :within-depth 4})
+  :within-depth 4
+  :reason "korma.core/with and with-batch macros expand to contain expressions of the form (-> expr), which is normal and thus preferable not to be warned about."})
