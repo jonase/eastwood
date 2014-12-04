@@ -14,6 +14,8 @@
                  [org.clojure/tools.macro "0.1.2"]
                  ;[com.datomic/datomic-free "0.8.4270" :scope "provided"]
                  ]
+  :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
 
   :plugins [[lein-cljsbuild "1.0.4-SNAPSHOT"]
             [cider/cider-nrepl "0.7.0-SNAPSHOT"]]
