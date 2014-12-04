@@ -51,7 +51,7 @@
   ;; specifically, those detected in function suspicious-macro-invocations
   :for-macro 'clojure.core/and
   :if-inside-macroexpansion-of #{'clojure.core.match/match}
-  :within-depth 7
+  :within-depth 13
   :reason "Many clojure.core.match/match macro expansions contain expressions of the form (and expr).  This is normal, and probably simplifies the definition of match."})
 
 (disable-warning
@@ -90,6 +90,17 @@
   :within-depth 4
   :reason "Carmine's defcommand macro commonly expands to contain an if-not with a condition that is a constant."})
 
+(disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'taoensso.encore/defalias}
+  :within-depth 4
+  :reason "Encore's defalias macro commonly expands to contain a when-let with a symbol bound to nil, if no (optional) doc string is given to defalias."})
+
+(disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'taoensso.timbre/logf 'taoensso.timbre/log}
+  :within-depth 10
+  :reason "Timbre's logf and log macros commonly expand to contain a when with condition of (not= file \"NO_SOURCE_PATH\"), which is constant if file is a compile-time constant."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Notes for warnings to disable in Korma library, version 0.4.0
@@ -139,3 +150,13 @@
   :if-inside-macroexpansion-of #{'korma.core/with 'korma.core/with-batch}
   :within-depth 4
   :reason "korma.core/with and with-batch macros expand to contain expressions of the form (-> expr), which is normal and thus preferable not to be warned about."})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Notes for warnings to disable in hiccup library, version 0.4.0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'hiccup.core/html}
+  :within-depth 2
+  :reason "hiccup.core/html macro expansions often contain test expressions that are always true or always false."})

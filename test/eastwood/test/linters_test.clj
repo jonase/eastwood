@@ -1316,189 +1316,189 @@ the next."
    default-opts
    {
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: false",
+     :msg "Test expression is always logical true or always logical false: (if false 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 13, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [nil]",
+     :msg "Test expression is always logical true or always logical false: (if [nil] 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 14, :column 5}
+     :line 14, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: #{}",
+     :msg "Test expression is always logical true or always logical false: (if #{} 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 15, :column 6}
+     :line 15, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: {:a 1}",
+     :msg "Test expression is always logical true or always logical false: (if {:a 1} 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 16, :column 5}
+     :line 16, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (quote ())",
+     :msg "Test expression is always logical true or always logical false: (if (quote ()) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 17, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (quote (\"string\"))",
+     :msg "Test expression is always logical true or always logical false: (if (quote (\"string\")) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 18, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [(inc 41)]",
+     :msg "Test expression is always logical true or always logical false: (if [(inc 41)] 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 19, :column 5}
+     :line 19, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: #{(dec 43)}",
+     :msg "Test expression is always logical true or always logical false: (if #{(dec 43)} 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 20, :column 6}
+     :line 20, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: {:a (/ 84 2)}",
+     :msg "Test expression is always logical true or always logical false: (if {:a (/ 84 2)} 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 21, :column 5}
+     :line 21, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (seq {:a 1})",
+     :msg "Test expression is always logical true or always logical false: (if (seq {:a 1}) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 22, :column 5}
+     :line 22, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote x))",
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/not (quote x)) \"y\" \"z\")",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 24, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not false)",
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/not false) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 25, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not [nil])",
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/not [nil]) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 26, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not #{})",
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/not #{}) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 27, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not {:a 1})",
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/not {:a 1}) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 28, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote ()))",
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/not (quote ())) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 29, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote (\"string\")))",
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/not (quote (\"string\"))) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 30, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [(inc 41)]",
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/not [(inc 41)]) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 31, :column 9}
+     :line 31, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: #{(dec 43)}",
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/not #{(dec 43)}) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 32, :column 10}
+     :line 32, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: {:a (/ 84 2)}",
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/not {:a (/ 84 2)}) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 33, :column 9}
+     :line 33, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not (seq {:a 1}))",
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/not (seq {:a 1})) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 34, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: nil",
+     :msg "Test expression is always logical true or always logical false: (if nil (do (quote tom) :cat))",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 36, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [nil]",
+     :msg "Test expression is always logical true or always logical false: (if [nil] nil (do 1))",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 37, :column 11},
+     :line 37, :column 1},
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: :x",
+     :msg "Test expression is always logical true or always logical false: (if :x 8 (clojure.core/cond :else 9))",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 50, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: false",
+     :msg "Test expression is always logical true or always logical false: (if false (assert false \"This won't be reached, but shouldn't warn about it whether it can be reached or not.\"))",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 64, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [false]",
+     :msg "Test expression is always logical true or always logical false: (if temp__<num>__auto__ (clojure.core/let [x temp__<num>__auto__] \"w\") \"v\")",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 67, :column 12}
+     :line 67, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: #{7 5}",
+     :msg "Test expression is always logical true or always logical false: (if temp__<num>__auto__ (do (clojure.core/let [x temp__<num>__auto__] (println \"Hello\"))))",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 68, :column 15}
+     :line 68, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/seq [1 2])",
+     :msg "Test expression is always logical true or always logical false: (if temp__<num>__auto__ (do (clojure.core/let [xs__<num>__auto__ temp__<num>__auto__] (clojure.core/let [x (clojure.core/first xs__<num>__auto__)] (println \"Goodbye\")))))",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 69, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: 7",
+     :msg "Test expression is always logical true or always logical false: (if and__<num>__auto__ (clojure.core/and (inc 2)) and__<num>__auto__)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 71, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: false",
+     :msg "Test expression is always logical true or always logical false: (if or__<num>__auto__ or__<num>__auto__ (clojure.core/or 2))",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 72, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: true",
+     :msg "Test expression is always logical true or always logical false: (if true nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" \"string\" \"\\n\" (clojure.core/pr-str (quote true)))))))",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 84, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [false]",
+     :msg "Test expression is always logical true or always logical false: (if [false] nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote [false])))))))",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 85, :column 9}
+     :line 85, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: 0",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 111, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: 32",
+     :msg "Test expression is always logical true or always logical false: (if 0 nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote 0)))))))",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 111, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/string? format-in__<num>__auto__)",
+     :msg "Test expression is always logical true or always logical false: (if 32 nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote 32)))))))",
+     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+     :line 111, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: (if (clojure.core/string? format-in__<num>__auto__) ((var clojure.pprint/cached-compile) format-in__<num>__auto__) format-in__<num>__auto__)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 122, :column 4}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (map? (list [:p \"a\"] [:p \"b\"]))",
+     :msg "Test expression is always logical true or always logical false: (if (map? (list [:p \"a\"] [:p \"b\"])) 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 127, :column 5}
+     :line 127, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (map? (list [:p \"a\"] [:p \"b\"]))"
+     :msg "Test expression is always logical true or always logical false: (if x 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 130, :column 9}
+     :line 131, :column 3}
     1,
     })
   (lint-test

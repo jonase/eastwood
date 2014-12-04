@@ -719,7 +719,7 @@ StringWriter."
        (with-out-str
          (let [c (:matching-condition match)
                depth (:within-depth c)]
-           (println (format "Suppressed %s warning%s" suppress-desc))
+           (println (format "Suppressed %s warning%s" linter suppress-desc))
            (println (format "because it is within%s an expansion of macro"
                             (if (number? depth)
                               (format " %d steps of" depth)
@@ -729,7 +729,10 @@ StringWriter."
            (pp/pprint (map #(dissoc % :ast :index)
                            (if depth
                              (take depth encl-macros)
-                             encl-macros)))))))
+                             encl-macros)))
+;;           (println "Debug AST contents:")
+;;           (pprint-ast-node ast)
+           ))))
     ;; allow the warning if there was no match
     (not match)))
 

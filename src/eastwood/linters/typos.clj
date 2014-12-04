@@ -829,9 +829,9 @@ warning, that contains the constant value."
 (defn constant-test [{:keys [asts]} opt]
   (let [const-tests (->> asts
                          (mapcat ast/nodes)
-                         (keep #(if (default-case-at-end-of-cond? %)
-                                  nil
-                                  (if-with-predictable-test %))))]
+                         (filter #(if (default-case-at-end-of-cond? %)
+                                    nil
+                                    (if-with-predictable-test %))))]
     (for [ast const-tests
           :let [form (-> ast :form)
                 form-to-print (if (nil? form) "nil" form)
