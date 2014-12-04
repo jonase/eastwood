@@ -661,14 +661,17 @@ StringWriter."
 
 
 (defn process-configs [warning-enable-config]
-  (reduce (fn [configs m]
-            (case (:linter m)
+  (reduce (fn [configs {:keys [linter] :as m}]
+            (case linter
               :suspicious-expression
-              (update-in configs [:suspicious-expression (:for-macro m)]
+              (update-in configs [linter (:for-macro m)]
                          conj (dissoc m :linter :for-macro))
               :constant-test
-              (update-in configs [:constant-test]
-                         conj (dissoc m :linter))))
+              (update-in configs [linter]
+                         conj (dissoc m :linter))
+              :wrong-arity
+              (assoc-in configs [linter (:function-symbol m)]
+                         (dissoc m :linter :function-symbol))))
           {} warning-enable-config))
 
 

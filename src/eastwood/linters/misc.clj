@@ -355,22 +355,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
                          var-of-ast))}))))
 
 
-;; Wrong arity
-
-(defn wrong-arity [{:keys [asts]} opt]
-  (let [exprs (->> asts
-                   (mapcat ast/nodes)
-                   (filter :maybe-arity-mismatch))]
-    (for [expr exprs
-          :let [loc (-> expr :fn :form meta)]]
-      (util/add-loc-info loc
-       {:linter :wrong-arity
-        :msg (format "Function on var %s called with %s args, but it is only known to take one of the following args: %s"
-                     (-> expr :fn :var)
-                     (count (-> expr :args))
-                     (string/join "  " (-> expr :fn :arglists)))}))))
-
-;; Bad :arglists
+;; Helpers for wrong arity and bad :arglists
 
 (defn argvec-kind [argvec]
   (let [n (count argvec)
@@ -398,6 +383,69 @@ significantly faster than the otherwise equivalent (= (count s) n)"
                    [(second kind) :or-more]
                    [(first kind)])))
        vec))
+
+
+(defn arg-count-compatible-with-arglists [arg-count arglists]
+  (let [argvec-kinds (map argvec-kind arglists)]
+    (some (fn [ak]
+            (if (= '>= (first ak))
+              (>= arg-count (second ak))
+              (= arg-count (first ak))))
+          argvec-kinds)))
+
+
+;; Wrong arity
+
+(defn wrong-arity [{:keys [asts]} opt]
+  (let [asts (->> asts
+                  (mapcat ast/nodes)
+                  (filter :maybe-arity-mismatch))]
+    (for [ast asts
+          :let [loc (-> ast :fn :form meta)
+                fn-var (-> ast :fn :var)
+                fn-sym (util/var-to-fqsym fn-var)
+                call-args (-> ast :args)
+                num-args-in-call (count call-args)
+                fn-arglists (-> fn-var meta :arglists)
+                w (util/add-loc-info
+                   loc
+                   {:linter :wrong-arity
+                    :wrong-arity {:kind :the-only-kind
+                                  :fn-var fn-var
+                                  :call-args call-args}
+                    :msg (format "Function on var %s called with %s args, but it is only known to take one of the following args: %s"
+                                 fn-var
+                                 num-args-in-call
+                                 (string/join "  " (-> ast :fn :arglists)))})
+                override-arglists (-> opt :warning-enable-config :wrong-arity
+                                      fn-sym)
+                arglists-for-linting (or (-> override-arglists
+                                             :arglists-for-linting)
+                                         fn-arglists)
+                good-num-args? (arg-count-compatible-with-arglists
+                                num-args-in-call arglists-for-linting)
+                allow? (not good-num-args?)]
+          :when allow?]
+      (do
+        (when (:debug-warning opt)
+          ((util/make-msg-cb :debug opt)
+           (with-out-str
+             (println "This warning:")
+             (pp/pprint (dissoc w :wrong-arity))
+             (println (format "was generated because of a function call on '%s' with %d args"
+                              fn-sym num-args-in-call))
+             (println "arglists from metadata on function var:")
+             (pp/pprint fn-arglists)
+;;             (println (format "  argvec-kinds="))
+;;             (pp/pprint (map argvec-kind fn-arglists))
+             (when override-arglists
+               (println "arglists overridden by Eastwood config to the following:")
+               (pp/pprint arglists-for-linting)
+               (println "Reason:" (-> override-arglists :reason))))))
+        w))))
+
+
+;; Bad :arglists
 
 ;; TBD: Try to make this *not* warn for macros with custom :arglists,
 ;; but only for non-macro functions.  Perhaps even better, separate

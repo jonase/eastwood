@@ -52,6 +52,19 @@ Clojure example, where the comment line is intended to disable
     (- bar b)))
 ```
 
+Such specially-formatted comments could in principle be completely
+invisible to any Clojure tools that ignore comments, as any based on
+the 'normal' readers do, e.g. clojure.core/read and
+clojure.tools.reader/read
+
+In order to make it possible to _use_ such annotations, even for
+expressions that cannot have metadata applied to them, it would be
+necessary to somehow read the source code, analyze it, and then add
+the annotation info to the appropriate nodes in the ast.  That sounds
+like it needs a custom reader that has inside knowledge of the ast
+data structures.  It sounds useful, but also not straightforward to
+implement.
+
 
 ### Metadata
 
@@ -187,7 +200,7 @@ annotate collections such as lists (especially parenthesized code
 forms), vectors, and maps.
 
 
-## Comparison of annotation methods
+## Questions to ask when comparing annotation methods
 
 Metadata can only be applied to some types of expressions.  Only
 objects that implement the Java interface `IMeta` can have metadata.
@@ -198,6 +211,117 @@ strings, or keywords.
 Seq, LazySeq, Delay, SubVector, Ref, Atom, Agent.)
 
 TBD: 
+
+
+### Does it affect the code produced by the Clojure compiler?
+
+For example, using metadata will cause the Clojure compiler to include
+the metadata in the object code.
+
+TBD: Provide evidence to back up that assertion, if it is true.
+
+Specially formatted comments would not, as long as the Clojure
+compiler continue to ignore the contents of comments.
+
+TBD whether the marker macro idea would affect the Clojure compiler
+result or not.
+
+
+### How do multiple annotations compose, if on the same code?
+
+Perhaps this only matters if some annotation is given outside of a
+macro invocation, and we want to combine it with some other annotation
+given inside of a macro invocation.  That raises questions of how
+annotations should even behave across such a boundary, which I'm not
+sure I know how to answer yet.
+
+
+Metadata composes by doing a map merge, after reversing the order of
+all metadata maps as they appear in the source file.
+
+```clojure
+;; this looks desirable
+user=> (m ^{:lint/disable [:foo]} ^{:lint/enable [:baz]} [1 2])
+[{:lint/enable [:baz], :lint/disable [:foo]} [1 2]]
+
+;; but this looks like it would cause annotations to be lost
+user=> (m ^{:lint/disable [:foo]} ^{:lint/disable [:bar :baz]} [1 2])
+[{:lint/disable [:foo]} [1 2]]
+
+;; the previous example's issue could be avoided if we use a different
+;; keyword for each thing to enable/disable:
+user=> (m ^{:lint/foo :enable} ^{:lint/bar :disable :lint/baz :enable :lint/foo :disable} [1 2])
+[{:lint/bar :disable, :lint/baz :enable, :lint/foo :enable} [1 2]]
+```
+
+With marker macros, it should be possible to make the data compose
+however we wish, by implementing the desired composing behavior in the
+marker macro itself.
+
+
+### How does it interact with syntax-quote?
+
+Syntax-quote is an odd beast when it comes to analyzing asts, too.  It
+is often used in the body of macro definitions, or in functions called
+from within macro definitions.
+
+```clojure
+user=> (require '[eastwood.util :as u])
+nil
+
+;; This looks normal enough
+user=> `(1 2 3)
+(1 2 3)
+
+;; but it is because it was being eval'd before being printed in the REPL
+user=> (read-string "`(1 2 3)")
+(clojure.core/seq (clojure.core/concat (clojure.core/list 1) (clojure.core/list 2) (clojure.core/list 3)))
+
+user=> (u/pprint-form (read-string "`(1 2 3)"))
+(clojure.core/seq
+ (clojure.core/concat
+  (clojure.core/list 1)
+  (clojure.core/list 2)
+  (clojure.core/list 3)))
+nil
+
+user=> `(1 2 ^{:lint/foo :enable} (inc x))
+(1 2 (clojure.core/inc user/x))
+
+user=> (read-string "`(1 2 ^{:lint/foo :enable} (inc x))")
+(clojure.core/seq (clojure.core/concat (clojure.core/list 1) (clojure.core/list 2) (clojure.core/list (clojure.core/with-meta (clojure.core/seq (clojure.core/concat (clojure.core/list (quote clojure.core/inc)) (clojure.core/list (quote user/x)))) (clojure.core/apply clojure.core/hash-map (clojure.core/seq (clojure.core/concat (clojure.core/list :lint/foo) (clojure.core/list :enable))))))))
+
+user=> (u/pprint-form (read-string "`(1 2 ^{:lint/foo :enable} (inc x))"))
+(clojure.core/seq
+ (clojure.core/concat
+  (clojure.core/list 1)
+  (clojure.core/list 2)
+  (clojure.core/list
+   (clojure.core/with-meta
+    (clojure.core/seq
+     (clojure.core/concat
+      (clojure.core/list 'clojure.core/inc)
+      (clojure.core/list 'user/x)))
+    (clojure.core/apply
+     clojure.core/hash-map
+     (clojure.core/seq
+      (clojure.core/concat
+       (clojure.core/list :lint/foo)
+       (clojure.core/list :enable))))))))
+
+ser=> (u/pprint-form (eval (read-string "`(1 2 ^{:lint/foo :enable} (inc x))")))
+(1 2 ^{:lint/foo :enable} (clojure.core/inc user/x))
+nil
+
+user=> (u/pprint-form `(1 2 ^{:lint/foo :enable} (inc x)))
+(1 2 ^{:line 1, :lint/foo :enable} (clojure.core/inc user/x))
+nil
+
+```
+
+
+
+### 
 
 
 ## References

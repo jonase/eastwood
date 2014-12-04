@@ -4,6 +4,9 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :aot [eastwood.copieddeps.dep10.clojure.tools.reader.impl.ExceptionInfo]
+  :global-vars {*warn-on-reflection* true
+                ;;*unchecked-math* :warn-on-boxed
+               }
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
                  [org.ow2.asm/asm-all "4.2"]]
