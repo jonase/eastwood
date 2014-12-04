@@ -402,21 +402,31 @@ significantly faster than the otherwise equivalent (= (count s) n)"
                   (filter :maybe-arity-mismatch))]
     (for [ast asts
           :let [loc (-> ast :fn :form meta)
-                fn-var (-> ast :fn :var)
-                fn-sym (util/var-to-fqsym fn-var)
                 call-args (-> ast :args)
                 num-args-in-call (count call-args)
-                fn-arglists (-> fn-var meta :arglists)
+                fn-kind (-> ast :fn :op)
+
+                [fn-var fn-sym]
+                (case fn-kind
+                  :var [(-> ast :fn :var)
+                        (util/var-to-fqsym (-> ast :fn :var))]
+                  :local [nil
+                          (-> ast :fn :form)])
+
+                fn-arglists (-> ast :fn :arglists)
                 w (util/add-loc-info
                    loc
                    {:linter :wrong-arity
                     :wrong-arity {:kind :the-only-kind
                                   :fn-var fn-var
                                   :call-args call-args}
-                    :msg (format "Function on var %s called with %s args, but it is only known to take one of the following args: %s"
-                                 fn-var
+                    :msg (format "Function on %s %s called with %s args, but it is only known to take one of the following args: %s"
+                                 (name fn-kind)
+                                 (case fn-kind
+                                   :var fn-var
+                                   :local fn-sym)
                                  num-args-in-call
-                                 (string/join "  " (-> ast :fn :arglists)))})
+                                 (string/join "  " fn-arglists))})
                 override-arglists (-> opt :warning-enable-config :wrong-arity
                                       fn-sym)
                 arglists-for-linting (or (-> override-arglists
