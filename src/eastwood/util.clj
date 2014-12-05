@@ -643,7 +643,8 @@ StringWriter."
     (for [[i a] (map-indexed vector
                              (cons ast
                                    (nil-safe-rseq (-> ast :eastwood/ancestors))))]
-      (for [[j f] (map-indexed vector (:eastwood/partly-resolved-forms a))]
+      (for [[j f] (map-indexed vector
+                               (reverse (:eastwood/partly-resolved-forms a)))]
         (into empty-enclosing-macro-map
           (merge
             {:depth i, :index j, :op (:op a), :ast a}

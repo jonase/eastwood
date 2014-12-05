@@ -34,7 +34,7 @@
   ;; specifically, those detected in function suspicious-macro-invocations
   :for-macro 'clojure.core/let
   :if-inside-macroexpansion-of #{'clojure.core/when-first}
-  :within-depth 4
+  :within-depth 6
   :reason "when-first with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
 
 (disable-warning
@@ -42,7 +42,7 @@
   ;; specifically, those detected in function suspicious-macro-invocations
   :for-macro 'clojure.core/let
   :if-inside-macroexpansion-of #{'clojure.core/when-let}
-  :within-depth 3
+  :within-depth 4
   :reason "when-let with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
 
 (disable-warning
@@ -50,7 +50,7 @@
   ;; specifically, those detected in function suspicious-macro-invocations
   :for-macro 'clojure.core/let
   :if-inside-macroexpansion-of #{'clojure.core/when-some}
-  :within-depth 2
+  :within-depth 3
   :reason "when-some with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -95,25 +95,25 @@
   ;; specifically, those detected in function suspicious-macro-invocations
   :for-macro 'clojure.core/let
   :if-inside-macroexpansion-of #{'taoensso.carmine.commands/enqueue-request}
-  :within-depth 3
+  :within-depth 4
   :reason "Remove this disable-warning after updating to latest version of Carmine, which has a fix for a bug in a Carmine macro that causes these warnings."})
 
 (disable-warning
  {:linter :constant-test
   :if-inside-macroexpansion-of #{'taoensso.carmine.commands/defcommand}
-  :within-depth 4
+  :within-depth 5
   :reason "Carmine's defcommand macro commonly expands to contain an if-not with a condition that is a constant."})
 
 (disable-warning
  {:linter :constant-test
   :if-inside-macroexpansion-of #{'taoensso.encore/defalias}
-  :within-depth 4
+  :within-depth 5
   :reason "Encore's defalias macro commonly expands to contain a when-let with a symbol bound to nil, if no (optional) doc string is given to defalias."})
 
 (disable-warning
  {:linter :constant-test
   :if-inside-macroexpansion-of #{'taoensso.timbre/logf 'taoensso.timbre/log}
-  :within-depth 10
+  :within-depth 11
   :reason "Timbre's logf and log macros commonly expand to contain a when with condition of (not= file \"NO_SOURCE_PATH\"), which is constant if file is a compile-time constant."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -172,7 +172,7 @@
 (disable-warning
  {:linter :constant-test
   :if-inside-macroexpansion-of #{'hiccup.core/html}
-  :within-depth 2
+  :within-depth 4
   :reason "hiccup.core/html macro expansions often contain test expressions that are always true or always false."})
 
 (doseq [[fns arglist] '([[hiccup.form/hidden-field
