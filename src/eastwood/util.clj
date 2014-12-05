@@ -672,7 +672,10 @@ StringWriter."
                          conj (dissoc m :linter))
               :wrong-arity
               (assoc-in configs [linter (:function-symbol m)]
-                         (dissoc m :linter :function-symbol))))
+                         (dissoc m :linter :function-symbol))
+              (:unused-ret-vals :unused-ret-vals-in-try)
+              (update-in configs [linter]
+                         conj (dissoc m :linter))))
           {} warning-enable-config))
 
 
@@ -755,6 +758,11 @@ StringWriter."
            suppress-conditions opt)))
 
       :constant-test
+      (let [suppress-conditions (get-in opt [:warning-enable-config linter])]
+        (allow-warning-based-on-enclosing-macros
+         w linter "" suppress-conditions opt))
+
+      (:unused-ret-vals :unused-ret-vals-in-try)
       (let [suppress-conditions (get-in opt [:warning-enable-config linter])]
         (allow-warning-based-on-enclosing-macros
          w linter "" suppress-conditions opt)))))

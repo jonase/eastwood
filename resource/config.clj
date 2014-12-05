@@ -278,3 +278,16 @@
   :arglists-for-linting
   '([db table & options])
   :reason "clojure.java.jdbc/insert! uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Notes for warnings to disable in instaparse library, version 1.3.4
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(disable-warning
+ {:linter :unused-ret-vals
+  :for-value nil
+  :if-inside-macroexpansion-of #{'instaparse.gll/dprintln
+                                 'instaparse.gll/debug
+                                 'instaparse.gll/dpprint}
+  :within-depth 1
+  :reason "Instaparse macros debug, dprintln, and dpprint macroexpand to nil if debugging/printing are disabled."})

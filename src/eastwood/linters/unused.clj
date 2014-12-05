@@ -379,7 +379,10 @@ discarded inside null: null'."
                  (if (pass/void-method? (pass/get-method stmt))
                    :side-effect
                    :warn-if-ret-val-unused)
-                 action)]
+                 action)
+        linter (case location
+                 :outside-try :unused-ret-vals
+                 :inside-try :unused-ret-vals-in-try)]
     (if (or (and stmt-in-try-body?
                  (= location :inside-try))
             (and (not stmt-in-try-body?)
@@ -392,9 +395,8 @@ discarded inside null: null'."
 
         (:lazy-fn :pure-fn :pure-fn-if-fn-args-pure :warn-if-ret-val-unused)
         (util/add-loc-info loc
-         {:linter (case location
-                    :outside-try :unused-ret-vals
-                    :inside-try :unused-ret-vals-in-try)
+         {:linter linter
+          linter {:kind (:op stmt), :action action, :ast stmt}
           :msg
           (case action
             :lazy-fn
@@ -487,6 +489,7 @@ discarded inside null: null'."
                        (pass/code-loc (pass/nearest-ast-with-loc stmt))))]
             (util/add-loc-info loc
              {:linter :unused-ret-vals
+              :unused-ret-vals {:kind (:op stmt), :ast stmt}
               :msg (format "%s value is discarded%s: %s"
                            (op-desc (:op stmt))
                            (if name-found?
@@ -519,11 +522,32 @@ discarded inside null: null'."
           (unused-ret-val-lint-result stmt "function call"
                                       action v location)))))))
 
+
+(defn unused-ret-vals* [location {:keys [asts] :as m} opt]
+  (let [warnings (unused-ret-vals-2 location m opt)]
+    (for [w warnings
+          :let [linter (:linter w)
+                info (get w linter)
+                ast (:ast info)
+                allow? (util/allow-warning w opt)]
+          :when allow?]
+      (do
+        (when (:debug-warning opt)
+          ((util/make-msg-cb :debug opt)
+           (with-out-str
+             (println "This warning:")
+             (pp/pprint (dissoc w (:linter w)))
+             (println "was generated from code with the following enclosing macro expansions:")
+             (pp/pprint (->> (util/enclosing-macros ast)
+                             (map #(dissoc % :ast :index)))))))
+        w))))
+
+
 (defn unused-ret-vals [& args]
-  (apply unused-ret-vals-2 :outside-try args))
+  (apply unused-ret-vals* :outside-try args))
 
 (defn unused-ret-vals-in-try [& args]
-  (apply unused-ret-vals-2 :inside-try args))
+  (apply unused-ret-vals* :inside-try args))
 
 
 ;; Unused metadata on macro invocations (depends upon macro
