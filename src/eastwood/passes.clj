@@ -1,5 +1,6 @@
 (ns eastwood.passes
   (:refer-clojure :exclude [get-method])
+  (:import [java.lang.reflect Method])
   (:require [clojure.string :as str]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children postwalk walk]]
             [eastwood.util :as util]
@@ -59,6 +60,12 @@
           (catch NoSuchMethodException e
             {:class cls, :method-name method-name,
              :arg-types arg-type-vec}))))))
+
+
+(defn void-method? [^Method m]
+  (let [ret-val (.getGenericReturnType m)]
+    (= ret-val Void/TYPE)))
+
 
 (defmethod reflect-validated :default [ast] ast)
 
