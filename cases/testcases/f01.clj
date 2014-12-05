@@ -93,6 +93,10 @@
 (defn call-with-wrong-num-of-args-2 [x]
   (assoc))
 
+(defn call-local-fn-with-wrong-arity []
+  (let [f1 (fn [x] (inc x))]
+    (f1)))
+
 
 (defn catch
   "The Clojure compiler allows catch to be defined as a function and
