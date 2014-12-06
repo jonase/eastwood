@@ -151,7 +151,7 @@
                                  'korma.core/union 'korma.core/union-all
                                  'korma.core/intersect
                                  'korma.core/defentity}
-  :within-depth 2
+  :within-depth 3
   :reason "Many korma.core macros such as defentity, select, update, etc. macro expand to contain expressions of the form (-> expr), which is normal and thus preferable not to be warned about."})
 
 ;; Korma macros with and with-batch are similar in having a -> in
