@@ -97,6 +97,10 @@
   (let [f1 (fn [x] (inc x))]
     (f1)))
 
+(defn call-local-fn-with-wrong-arity2 []
+  (let [f1 #(inc %2)]
+    (f1)))
+
 
 (defn catch
   "The Clojure compiler allows catch to be defined as a function and

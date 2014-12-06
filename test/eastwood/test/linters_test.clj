@@ -143,6 +143,11 @@ the next."
      :file "testcases/f01.clj",
      :line 98, :column 6}
     1,
+    {:linter :wrong-arity,
+     :msg "Function on local f1 called with 0 args, but it is only known to take one of the following args: [p1__<num># p2__<num>#]",
+     :file "testcases/f01.clj",
+     :line 102, :column 6}
+    1,
     })
 
   ;; TBD: I do not know why the i-am-inner-defonce-sym warning appears
