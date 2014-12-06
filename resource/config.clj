@@ -26,7 +26,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Notes for warnings to disable in clojure.core, Clojure 1.6.0
+;; Configs to disable warnings in clojure.core, version 1.6.0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (disable-warning
@@ -54,7 +54,7 @@
   :reason "when-some with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Notes for warnings to disable in library core.match, version 0.2.1
+;; Configs to disable warnings in core.match, version 0.2.1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; This is probably a sloppy way to disable some
@@ -79,7 +79,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Notes for warnings to disable in library Carmine, version 2.7.1
+;; Configs to disable warnings in Carmine, version 2.7.1
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; Without a change in Carmine's source code, there is a warning about
@@ -117,7 +117,7 @@
   :reason "Timbre's logf and log macros commonly expand to contain a when with condition of (not= file \"NO_SOURCE_PATH\"), which is constant if file is a compile-time constant."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Notes for warnings to disable in Korma library, version 0.4.0
+;; Configs to disable warnings in Korma, version 0.4.0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; The definition of macro make-query-then-exec is:
@@ -166,7 +166,7 @@
   :reason "korma.core/with and with-batch macros expand to contain expressions of the form (-> expr), which is normal and thus preferable not to be warned about."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Notes for warnings to disable in hiccup library, version 1.0.5
+;; Configs to disable warnings in hiccup, version 1.0.5
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (disable-warning
@@ -252,7 +252,7 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Notes for warnings to disable in java.jdbc library, version 0.3.3
+;; Configs to disable warnings in java.jdbc, version 0.3.3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (disable-warning
@@ -280,7 +280,7 @@
   :reason "clojure.java.jdbc/insert! uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; Notes for warnings to disable in instaparse library, version 1.3.4
+;; Configs to disable warnings in instaparse, version 1.3.4
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (disable-warning
@@ -291,3 +291,49 @@
                                  'instaparse.gll/dpprint}
   :within-depth 1
   :reason "Instaparse macros debug, dprintln, and dpprint macroexpand to nil if debugging/printing are disabled."})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Configs to disable warnings in core.typed , version
+;; core.typed-pom-0.2.72 plus commits up to Dec 1 2014
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(doseq [macro '(clojure.core/case clojure.core/condp clojure.core/and)]
+  (disable-warning
+   {:linter :suspicious-expression
+    :for-macro macro
+    :if-inside-macroexpansion-of #{'clojure.core.typed.utils/def-object
+                                   'clojure.core.typed.utils/def-type
+                                   'clojure.core.typed.utils/def-filter}
+    :within-depth nil
+    :reason "def-object and def-type macro expansions contain several suspicious-looking macros, including case, condp, and."}))
+
+(disable-warning
+ {:linter :unused-ret-vals
+  :for-value nil
+  :if-inside-macroexpansion-of #{'clojure.core.typed.frees/add-frees-method
+                                 'clojure.core.typed.check/add-check-method
+                                 'clojure.core.typed.check/add-invoke-special-method
+                                 'clojure.core.typed.check/add-invoke-apply-method
+                                 'clojure.core.typed.check-cljs/add-check-method
+                                 'clojure.core.typed.collect-cljs/add-collect-method}
+  :within-depth 4
+  :reason "core.typed macro add-{frees,check}-method contain an unused nil in their macroexpansion when there are no pre/post conditions, which is the common case."})
+
+(disable-warning
+ {:linter :unused-ret-vals
+  :if-inside-macroexpansion-of #{'clojure.core.typed/ann-form}
+  :within-depth 1
+  :reason "core.typed macro ann-form can expand to its first argument, and is often used in places where its return value is unused.  This seems to be expected normal usage."})
+
+(disable-warning
+ {:linter :unused-ret-vals
+  :if-inside-macroexpansion-of #{'clojure.core.typed/letfn>}
+  :within-depth 2
+  :reason "core.typed macro letfn> expands to a letfn with a map as a first body expression, followed by more things in the body.  Not sure why."})
+
+(disable-warning
+ {:linter :unused-ret-vals
+  :for-value nil
+  :if-inside-macroexpansion-of #{'clojure.core.typed.collect-phase/add-collect-method}
+  :within-depth 4
+  :reason "core.typed macro add-collect-method expands to a fn that often has nil as first expression in body, probably a place-holder for pre/post-conditions.  Not sure why."})
