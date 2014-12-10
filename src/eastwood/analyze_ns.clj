@@ -164,9 +164,10 @@ the value of File/separator for the platform."
 ;; eastwood-ast-additions are defined so that they can be added to
 ;; eastwood-passes above instead.
 
-(defn eastwood-ast-additions [ast]
+(defn eastwood-ast-additions [ast ast-idx]
   (-> ast
       pass/add-partly-resolved-forms
+      (pass/add-path [ast-idx])
       pass/add-ancestors))
 
 (defn wrapped-exception? [result]
@@ -295,7 +296,8 @@ recursing into ASTs with :op equal to :do"
                       (post-analyze-debug asts form ast *ns* opt)
                       (recur (conj forms form)
                              (conj asts
-                                   (eastwood-ast-additions ast))))))))))))))
+                                   (eastwood-ast-additions
+                                    ast (count asts)))))))))))))))
 
 
 (defn analyze-ns

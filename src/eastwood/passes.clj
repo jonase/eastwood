@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [get-method])
   (:import [java.lang.reflect Method])
   (:require [clojure.string :as str]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [update-children postwalk walk]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [children* update-children prewalk postwalk walk]]
             [eastwood.util :as util]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
@@ -164,3 +164,26 @@ add-ancestors."
 (defn all-asts-with-locs [ast]
   (let [places (concat [ast] (util/nil-safe-rseq (:eastwood/ancestors ast)))]
     (filter code-loc places)))
+
+
+(defn add-path-pre* [path i ast]
+  (assoc ast :eastwood/path (conj path i)))
+
+(defn add-path-pre [ast]
+  (let [path (:eastwood/path ast)]
+    (reduce (fn [m [k v]]
+              (if (vector? v)
+                (assoc m k
+                       (vec (map-indexed (partial add-path-pre* (conj path k))
+                                         v)))
+                (assoc m k (add-path-pre* path k v))))
+            ast (children* ast))))
+
+;; clojure.tools.analyzer.jvm> (-> (prewalk (analyze '(do 1 (do (identity 2) 3) 4)) add-path) :statements second :statements first :fn :eastwood/path)
+;; [:statements 1 :statements 0 :fn]
+
+(defn add-path
+  ([ast]
+     (add-path ast []))
+  ([ast root-path]
+     (prewalk (assoc ast :eastwood/path root-path) add-path-pre)))

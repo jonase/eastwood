@@ -129,9 +129,11 @@
      {:linter :non-dynamic-earmuffs
       :msg (format "%s should be marked dynamic" v)})))
 
+
+
 ;; redef'd vars
 
-;; Attempt to detect any var that is def's multiple times in the same
+;; Attempt to detect any var that is def'd multiple times in the same
 ;; namespace.  This should even catch cases like the following, where
 ;; a def is inside of a let, do, etc.
 
@@ -148,54 +150,7 @@
 
 ;; TBD: Uses of defprotocol seem to create multiple :def's for the
 ;; protocol name.  See if I can figure out how to recognize this
-;; situation and not warn about them.  Also, why don't the :def's have
-;; line numbers?
-
-
-(defn count-at-most-n+1
-  "Return (count s) if it is at most n+1, otherwise return n+1.  Do
-this without counting past n+1 elements in s.  Significantly faster
-than (count s) if all you care about is whether it has exactly n
-items."
-  [s n]
-  (let [limit (inc n)]
-    (loop [c 0
-           s (seq s)]
-      (if s
-        (if (== c limit)
-          c
-          (recur (inc c) (next s)))
-        c))))
-
-
-(defn count-equals?
-  "Verify that a sequential s has exactly n elements, without counting
-past n+1 elements in the sequence.  If s is long, this can be
-significantly faster than the otherwise equivalent (= (count s) n)"
-  [s n]
-  (= n (count-at-most-n+1 s n)))
-
-
-(defn hasroot-expr?
-  [form]
-  (and (sequential? form)
-       (count-equals? form 2)
-       (= '.hasRoot (nth form 0))
-       [(nth form 1)]))
-
-(defn contains-hasroot-expr?
-  [form]
-  (or (hasroot-expr? form)
-      (and (sequential? form)
-           (some contains-hasroot-expr? form))))
-
-
-(defn def-expr-with-value?
-  [form]
-  (and (sequential? form)
-       (count-equals? form 3)
-       (= 'def (nth form 0))
-       [(nth form 1) (nth form 2)]))
+;; situation and not warn about them.
 
 
 
@@ -213,16 +168,11 @@ significantly faster than the otherwise equivalent (= (count s) n)"
 (defn def-walker-pre1 [ast]
   (let [{:keys [ancestor-op-vec ancestor-op-set
                 ancestor-op-set-stack top-level-defs
-                ancestor-defs-vec
-                nested-defs defonce-or-defmulti-match-stack]} *def-walker-data*
-        defonce-or-defmulti-expr? (some '#{clojure.core/defmulti clojure.core/defonce}
-                                        (map #(and (seq? %) (first %)) (:eastwood/partly-resolved-forms ast)))
+                ancestor-defs-vec nested-defs]} *def-walker-data*
         def? (= :def (:op ast))
         declare? (and def? (-> ast :name meta :declared true?))
         nested-def? (and def?
-                         (contains? ancestor-op-set :def))
-        inside-defonce-or-defmulti-expr? (some identity
-                                               defonce-or-defmulti-match-stack)]
+                         (contains? ancestor-op-set :def))]
     (set! *def-walker-data*
           (assoc *def-walker-data*
             :ancestor-op-vec (conj ancestor-op-vec (:op ast))
@@ -231,36 +181,22 @@ significantly faster than the otherwise equivalent (= (count s) n)"
             :ancestor-defs-vec (if def?
                                  (conj ancestor-defs-vec ast)
                                  ancestor-defs-vec)
-            ;; We want to remember that a var def'd inside of a
-            ;; defonce or defmulti was def'd, but only once, not
-            ;; multiple times.  Fortunately all macroexpansions of
-            ;; defonce and defmulti in Clojure 1.5.1 have exactly one
-            ;; (def foo) and one (def foo val) expression.  Pick the
-            ;; second one to remember.
             :top-level-defs
-            (let [remember-def? (if (and def? (not declare?) (not nested-def?))
-                                  (if inside-defonce-or-defmulti-expr?
-                                    (def-expr-with-value? (:form ast))
-                                    true)
-                                  false)]
-              (if remember-def?
-                (conj top-level-defs ast)
-                top-level-defs))
+            (if (and def? (not declare?) (not nested-def?))
+              (conj top-level-defs ast)
+              top-level-defs)
             :nested-defs (if nested-def?
                            (conj nested-defs (assoc ast
                                                :eastwood/enclosing-def-ast
                                                (peek ancestor-defs-vec)))
-                           nested-defs)
-            :defonce-or-defmulti-match-stack (conj defonce-or-defmulti-match-stack
-                                                   defonce-or-defmulti-expr?))))
+                           nested-defs))))
   ast)
 
 
 (defn def-walker-post1 [ast]
   (let [{:keys [ancestor-op-vec
                 ancestor-op-set-stack
-                ancestor-defs-vec
-                defonce-or-defmulti-match-stack]} *def-walker-data*]
+                ancestor-defs-vec]} *def-walker-data*]
     (set! *def-walker-data*
           (assoc *def-walker-data*
             :ancestor-op-vec (pop ancestor-op-vec)
@@ -268,8 +204,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
             :ancestor-op-set (peek ancestor-op-set-stack)
             :ancestor-defs-vec (if (= :def (peek ancestor-op-vec))
                                  (pop ancestor-defs-vec)
-                                 ancestor-defs-vec)
-            :defonce-or-defmulti-match-stack (pop defonce-or-defmulti-match-stack))))
+                                 ancestor-defs-vec))))
   ast)
 
 
@@ -278,8 +213,7 @@ significantly faster than the otherwise equivalent (= (count s) n)"
                                :ancestor-op-set #{}
                                :ancestor-op-set-stack []
                                :top-level-defs []
-                               :nested-defs []
-                               :defonce-or-defmulti-match-stack []}]
+                               :nested-defs []}]
     (doseq [ast ast-seq]
       (ast/walk ast def-walker-pre1 def-walker-post1)
 ;;      (println (format "dbg *def-walker-data* %s"
@@ -290,13 +224,78 @@ significantly faster than the otherwise equivalent (= (count s) n)"
       (assert (empty? (:ancestor-op-vec *def-walker-data*)))
       (assert (empty? (:ancestor-op-set *def-walker-data*)))
       (assert (empty? (:ancestor-op-set-stack *def-walker-data*)))
-      (assert (empty? (:ancestor-defs-vec *def-walker-data*)))
-      (assert (empty? (:defonce-or-defmulti-match-stack *def-walker-data*))))
+      (assert (empty? (:ancestor-defs-vec *def-walker-data*))))
     (select-keys *def-walker-data* [:top-level-defs :nested-defs])))
 
 
 (defn- defd-vars [exprs]
   (:top-level-defs (def-walker exprs)))
+
+
+(defn allow-both-defs? [def-ast1 def-ast2 defd-var all-asts opt]
+  (let [lca-path (util/longest-common-prefix
+                  (:eastwood/path def-ast1)
+                  (:eastwood/path def-ast2))]
+;;    (println (format "dbg allow-both-defs:"))
+;;    (println (format "  path1=%s" (:eastwood/path def-ast1)))
+;;    (println (format "  path2=%s" (:eastwood/path def-ast2)))
+;;    (println (format "  lca-path=%s" lca-path))
+    (if (empty? lca-path)
+      true
+      (let [suppress-conditions (get-in opt [:warning-enable-config
+                                             :redefd-vars])
+            ;; Don't bother calculating enclosing-macros if there are
+            ;; no suppress-conditions to check, to save time.
+            [lca-path lca-ast]
+            (if (seq suppress-conditions)
+              (let [a (get-in all-asts lca-path)]
+                ;; If the lowest common ancestor is a vector, back up
+                ;; one step to the parent, which should be an AST.
+                (if (vector? a)
+                  [(pop lca-path) (get-in all-asts (pop lca-path))]
+                  [lca-path a])))
+            encl-macros (if (seq suppress-conditions)
+                          (util/enclosing-macros lca-ast))
+;;            _ (do
+;;                (println (format "dbg (count suppress-conditions)=%d"
+;;                                 (count suppress-conditions)))
+;;                (println (format "  :op=%s" (:op lca-ast)))
+;;                (println (format "  :form=%s" (:form lca-ast)))
+;;                )
+            match (some #(util/meets-suppress-condition lca-ast encl-macros %)
+                        suppress-conditions)]
+        (if (and match (:debug-suppression opt))
+          ((util/make-msg-cb :debug opt)
+           (with-out-str
+             (let [c (:matching-condition match)
+                   depth (:within-depth c)]
+               (println (format "Ignoring def of Var %s while checking for :redefd-vars warning" defd-var))
+               (println (format "because it is within%s an expansion of macro"
+                                (if (number? depth)
+                                  (format " %d steps of" depth)
+                                  "")))
+               (println (format "'%s'" (:matching-macro match)))
+               (println "Reason suppression rule was created:" (:reason c))
+               (pp/pprint (map #(dissoc % :ast :index)
+                               (if depth
+                                 (take depth encl-macros)
+                                 encl-macros)))
+               ))))
+        (not match)))))
+
+
+(defn remove-dup-defs [defd-var asts all-asts opt]
+  (loop [ret []
+         asts asts]
+    (if (seq asts)
+      (let [ast (first asts)
+            keep-new-ast? (every? #(allow-both-defs? % ast defd-var
+                                                     all-asts opt)
+                                  ret)]
+        (recur (if keep-new-ast? (conj ret ast) ret)
+               (next asts)))
+      ret)))
+
 
 (defn redefd-var-loc [ast]
   ;; For some macro expansions, their expansions do not have :line and
@@ -316,19 +315,50 @@ significantly faster than the otherwise equivalent (= (count s) n)"
 
 (defn redefd-vars [{:keys [asts]} opt]
   (let [defd-var-asts (defd-vars asts)
-        defd-var-groups (group-by #(-> % :form second) defd-var-asts)]
-    (for [[_defd-var-ast ast-list] defd-var-groups
+        defd-var-groups (group-by #(-> % :form second) defd-var-asts)
+        ;; Remove any def's for Vars that are inside the same macro
+        ;; expansion (from Eastwood configuration) as another def for
+        ;; the same Var.
+        defd-var-groups (into {}
+                              (map (fn [[defd-var def-asts]]
+                                     [defd-var
+                                      (remove-dup-defs defd-var def-asts asts opt)])
+                                   defd-var-groups))]
+    (for [[_defd-var ast-list] defd-var-groups
           :when (> (count ast-list) 1)
           :let [ast2 (second ast-list)
-                loc2 (redefd-var-loc ast2)]]
-      (util/add-loc-info loc2
-       {:linter :redefd-vars
-        :msg (format "Var %s def'd %d times at line:col locations: %s"
-                     (var-of-ast ast2)
-                     (count ast-list)
-                     (string/join
-                      " "
-                      (map redefd-var-loc-desc ast-list)))}))))
+                loc2 (redefd-var-loc ast2)
+                redefd-var (var-of-ast ast2)
+                num-defs (count ast-list)
+                w (util/add-loc-info loc2
+                   {:linter :redefd-vars
+                    :msg (format "Var %s def'd %d times at line:col locations: %s"
+                                 redefd-var num-defs
+                                 (string/join
+                                  " "
+                                  (map redefd-var-loc-desc ast-list)))})
+                ;; TBD: true is placeholder for some configurable
+                ;; method of disabling redefd-var warnings
+                allow? true]
+          :when allow?]
+      (do
+        (when (:debug-warning opt)
+          ((util/make-msg-cb :debug opt)
+           (with-out-str
+             (println "This warning:")
+             (pp/pprint (dissoc w :redefd-vars))
+             (println (format "was generated because of the following %d defs"
+                              num-defs))
+             (println (format "paths to ASTs of %d defs for Var %s"
+                              num-defs redefd-var))
+             (doseq [[i ast] (map-indexed vector ast-list)]
+               (println (format "#%d: %s" (inc i) (:eastwood/path ast))))
+             (doseq [[i ast] (map-indexed vector ast-list)]
+               (println (format "enclosing macros for def #%d of %d for Var %s"
+                                (inc i) num-defs redefd-var))
+               (pp/pprint (->> (util/enclosing-macros ast)
+                               (map #(dissoc % :ast :index))))))))
+        w))))
 
 
 ;; Def-in-def

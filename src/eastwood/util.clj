@@ -71,6 +71,7 @@ more interesting keys earlier."
   (let [empty (ordering-map [:op
                              :children
                              :top-level
+                             :eastwood/path
                              :tag
                              :form
                              :var
@@ -184,6 +185,15 @@ twice."
 (defn filter-vals [f m]
   (into (empty m)
         (filter (fn [[_ v]] (f v)) m)))
+
+(defn longest-common-prefix [s1 s2]
+  (loop [ret (transient [])
+         s1 (seq s1)
+         s2 (seq s2)]
+    (if (and (seq s1) (seq s2) (= (first s1) (first s2)))
+      (recur (conj! ret (first s1)) (next s1) (next s2))
+      (persistent! ret))))
+
 
 (defn nth-last
   "Return the nth-last element of a vector v, where n=1 means the last
@@ -632,6 +642,7 @@ StringWriter."
                  :final
                  :op
                  :macro
+                 :eastwood/path
                  :form
                  :first-only
                  :ast
@@ -647,11 +658,13 @@ StringWriter."
                                (reverse (:eastwood/partly-resolved-forms a)))]
         (into empty-enclosing-macro-map
           (merge
-            {:depth i, :index j, :op (:op a), :ast a}
+            {:depth i, :index j, :op (:op a), :ast a,
+             :eastwood/path (:eastwood/path a),
+             :form f, :resolved-form-meta (meta (:form a))}
             (try
-              {:macro (first f), :form f, :first-only true}
+              {:macro (first f), :first-only true}
               (catch Exception e
-                {:macro f, :form f, :first-only false}))))))))
+                {:macro f, :first-only false}))))))))
 
 
 (def ^:private warning-enable-config-atom (atom []))
@@ -664,18 +677,17 @@ StringWriter."
 (defn process-configs [warning-enable-config]
   (reduce (fn [configs {:keys [linter] :as m}]
             (case linter
+              (:constant-test :redefd-vars :unused-ret-vals
+                              :unused-ret-vals-in-try)
+              (update-in configs [linter]
+                         conj (dissoc m :linter))
               :suspicious-expression
               (update-in configs [linter (:for-macro m)]
                          conj (dissoc m :linter :for-macro))
-              :constant-test
-              (update-in configs [linter]
-                         conj (dissoc m :linter))
               :wrong-arity
               (assoc-in configs [linter (:function-symbol m)]
                          (dissoc m :linter :function-symbol))
-              (:unused-ret-vals :unused-ret-vals-in-try)
-              (update-in configs [linter]
-                         conj (dissoc m :linter))))
+              ))
           {} warning-enable-config))
 
 

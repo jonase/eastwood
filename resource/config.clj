@@ -30,6 +30,12 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (disable-warning
+ {:linter :redefd-vars
+  :if-inside-macroexpansion-of #{'clojure.core/defonce 'clojure.core/defmulti}
+  :within-depth 2
+  :reason "defonce, defmulti expand to code with multiple def's for the same Var."})
+
+(disable-warning
  {:linter :suspicious-expression
   ;; specifically, those detected in function suspicious-macro-invocations
   :for-macro 'clojure.core/let
@@ -52,6 +58,17 @@
   :if-inside-macroexpansion-of #{'clojure.core/when-some}
   :within-depth 3
   :reason "when-some with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Configs to disable warnings in core.contracts, version 0.0.5
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(disable-warning
+ {:linter :redefd-vars
+  :if-inside-macroexpansion-of
+  #{'clojure.core.contracts.constraints/defconstrainedrecord}
+  :within-depth 2
+  :reason "defconstrainedrecord expand to code with multiple def's for the same Var."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Configs to disable warnings in core.match, version 0.2.1
@@ -337,3 +354,23 @@
   :if-inside-macroexpansion-of #{'clojure.core.typed.collect-phase/add-collect-method}
   :within-depth 4
   :reason "core.typed macro add-collect-method expands to a fn that often has nil as first expression in body, probably a place-holder for pre/post-conditions.  Not sure why."})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Configs to disable warnings in potemkin 0.3.11
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(disable-warning
+ {:linter :redefd-vars
+  :if-inside-macroexpansion-of #{'potemkin/def-derived-map}
+  :within-depth 2
+  :reason "potemkin/def-derived-map expands to code with multiple def's for the same Var."})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Configs to disable warnings in Schema 0.3.3
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(disable-warning
+ {:linter :redefd-vars
+  :if-inside-macroexpansion-of #{'schema.core/defrecord}
+  :within-depth 2
+  :reason "schema.core/defrecord expands to code with multiple def's for the same Var."})
