@@ -329,6 +329,14 @@ return value followed by the time it took to evaluate in millisec."
       (error-cb (with-out-str (util/pprint-form (:form dat)))))
     (util/pst exc nil error-cb)))
 
+(defn handle-values-of-env [ns-sym opts ^Throwable exc]
+  (let [error-cb (util/make-msg-cb :error opts)
+        dat (ex-data exc)
+        {:keys [form]} dat]
+    (error-cb (format "Eastwood cannot analyze code that uses the values of &env in a macro expansion."))
+    (error-cb (format "See https://github.com/jonase/eastwood#explicit-use-of-clojure-environment-env"))
+    :show-more-details))
+
 (defn handle-bad-dot-form [ns-sym opts ^Throwable exc]
   (let [error-cb (util/make-msg-cb :error opts)
         dat (ex-data exc)
@@ -486,10 +494,13 @@ curious." eastwood-url))
        (print-ex-data-details ns-sym opts exc)
        :show-more-details))))
 
-(defn handle-ex-data [ns-sym opts ^Throwable exc]
+(defn show-exception [ns-sym opts ^Throwable exc]
   (let [dat (ex-data exc)
         msg (.getMessage exc)]
     (cond
+     (re-find #" cannot be cast to clojure\.lang\.Compiler\$LocalBinding" msg)
+     (handle-values-of-env ns-sym opts exc)
+
      (and (re-find #"method name must be a symbol, had:" msg)
           (contains? dat :form))
      (handle-bad-dot-form ns-sym opts exc)
@@ -499,15 +510,10 @@ curious." eastwood-url))
 
      :else
      (do
-       (print-ex-data-details ns-sym opts exc)
+       (if dat
+         (print-ex-data-details ns-sym opts exc)
+         (util/pst exc nil (util/make-msg-cb :error opts)))
        :show-more-details))))
-
-(defn show-exception [ns-sym opts e]
-  (if (ex-data e)
-    (handle-ex-data ns-sym opts e)
-    (do
-      (util/pst e nil (util/make-msg-cb :error opts))
-      :show-more-details)))
 
 
 (defn ^java.net.URI to-uri [x]
