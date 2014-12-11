@@ -374,3 +374,11 @@
   :if-inside-macroexpansion-of #{'schema.core/defrecord}
   :within-depth 2
   :reason "schema.core/defrecord expands to code with multiple def's for the same Var."})
+
+(disable-warning
+ {:linter :suspicious-expression
+  ;; specifically, those detected in function suspicious-macro-invocations
+  :for-macro 'clojure.core/loop
+  :if-inside-macroexpansion-of #{'schema.core/fn}
+  :within-depth 7
+  :reason "schema.core/fn macro expansions sometimes contain a loop with an empty body."})
