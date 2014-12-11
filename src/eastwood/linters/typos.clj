@@ -548,14 +548,7 @@ generate varying strings while the test is running."
                 allow? (util/allow-warning w opt)]
           :when allow?]
       (do
-        (when (:debug-warning opt)
-          ((util/make-msg-cb :debug opt)
-           (with-out-str
-             (println "This warning:")
-             (pp/pprint (dissoc w :suspicious-expression))
-             (println "was generated from code with the following enclosing macro expansions:")
-             (pp/pprint (->> (util/enclosing-macros ast)
-                             (map #(dissoc % :ast :index)))))))
+        (util/debug-warning w ast opt #{:enclosing-macros})
         w))))
 
 
@@ -829,11 +822,14 @@ warning, that contains the constant value."
 (defn constant-test [{:keys [asts]} opt]
   (let [const-tests (->> asts
                          (mapcat ast/nodes)
-                         (filter #(if (default-case-at-end-of-cond? %)
-                                    nil
-                                    (if-with-predictable-test %))))]
-    (for [ast const-tests
-          :let [form (-> ast :form)
+                         (keep #(if (default-case-at-end-of-cond? %)
+                                  nil
+                                  (if-let [x (if-with-predictable-test %)]
+                                    [% x]))))]
+    (for [[ast constant-test-ast] const-tests
+          :let [test-form (-> constant-test-ast :form)
+                test-form-to-print (if (nil? test-form) "nil" test-form)
+                form (-> ast :form)
                 form-to-print (if (nil? form) "nil" form)
                 loc (or (pass/has-code-loc? (-> ast :form meta))
                         (pass/code-loc (pass/nearest-ast-with-loc ast)))
@@ -842,17 +838,10 @@ warning, that contains the constant value."
                    {:linter :constant-test
                     :constant-test {:kind :the-only-kind
                                     :ast ast}
-                    :msg (format "Test expression is always logical true or always logical false: %s"
-                                 form-to-print)})
+                    :msg (format "Test expression is always logical true or always logical false: %s in form %s"
+                                 test-form-to-print form-to-print)})
                 allow? (util/allow-warning w opt)]
           :when allow?]
       (do
-        (when (:debug-warning opt)
-          ((util/make-msg-cb :debug opt)
-           (with-out-str
-             (println "This warning:")
-             (pp/pprint (dissoc w :constant-test))
-             (println "was generated from code with the following enclosing macro expansions:")
-             (pp/pprint (->> (util/enclosing-macros ast)
-                             (map #(dissoc % :ast :index)))))))
+        (util/debug-warning w ast opt #{:enclosing-macros})
         w))))

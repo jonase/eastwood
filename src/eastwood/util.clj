@@ -667,6 +667,31 @@ StringWriter."
                 {:macro f, :first-only false}))))))))
 
 
+(defn debug-warning
+  ([w ast opt extra-flags]
+   (debug-warning w ast opt extra-flags nil))
+  ([w ast opt extra-flags f]
+   (let [d (cond
+            (not (:debug-warning opt)) false
+            (true? (:debug-warning opt)) #{}
+            :else (set (:debug-warning opt)))]
+     (when d
+       ((make-msg-cb :debug opt)
+        (with-out-str
+          (println "This warning:")
+          (pp/pprint (dissoc w (:linter w)))
+          (when (extra-flags :enclosing-macros)
+            (println "was generated from code with the following enclosing macro expansions:")
+            (pp/pprint (->> (enclosing-macros ast)
+                            (map #(dissoc % :ast :index)))))
+          (when f (f))
+          (when (d :ast)
+            (println "The code has this AST:")
+            (if ast
+              (pprint-ast-node ast)
+              (println "(none specified to debug-warning fn)")))))))))
+
+
 (def ^:private warning-enable-config-atom (atom []))
 
 

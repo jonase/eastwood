@@ -342,22 +342,19 @@
                 allow? true]
           :when allow?]
       (do
-        (when (:debug-warning opt)
-          ((util/make-msg-cb :debug opt)
-           (with-out-str
-             (println "This warning:")
-             (pp/pprint (dissoc w :redefd-vars))
-             (println (format "was generated because of the following %d defs"
-                              num-defs))
-             (println (format "paths to ASTs of %d defs for Var %s"
-                              num-defs redefd-var))
-             (doseq [[i ast] (map-indexed vector ast-list)]
-               (println (format "#%d: %s" (inc i) (:eastwood/path ast))))
-             (doseq [[i ast] (map-indexed vector ast-list)]
-               (println (format "enclosing macros for def #%d of %d for Var %s"
-                                (inc i) num-defs redefd-var))
-               (pp/pprint (->> (util/enclosing-macros ast)
-                               (map #(dissoc % :ast :index))))))))
+        (util/debug-warning w nil opt #{}
+         (fn []
+           (println (format "was generated because of the following %d defs"
+                            num-defs))
+           (println (format "paths to ASTs of %d defs for Var %s"
+                            num-defs redefd-var))
+           (doseq [[i ast] (map-indexed vector ast-list)]
+             (println (format "#%d: %s" (inc i) (:eastwood/path ast))))
+           (doseq [[i ast] (map-indexed vector ast-list)]
+             (println (format "enclosing macros for def #%d of %d for Var %s"
+                              (inc i) num-defs redefd-var))
+             (pp/pprint (->> (util/enclosing-macros ast)
+                             (map #(dissoc % :ast :index)))))))
         w))))
 
 
@@ -467,21 +464,18 @@
                 allow? (not good-num-args?)]
           :when allow?]
       (do
-        (when (:debug-warning opt)
-          ((util/make-msg-cb :debug opt)
-           (with-out-str
-             (println "This warning:")
-             (pp/pprint (dissoc w :wrong-arity))
-             (println (format "was generated because of a function call on '%s' with %d args"
-                              fn-sym num-args-in-call))
-             (println "arglists from metadata on function var:")
-             (pp/pprint fn-arglists)
-;;             (println (format "  argvec-kinds="))
-;;             (pp/pprint (map argvec-kind fn-arglists))
-             (when override-arglists
-               (println "arglists overridden by Eastwood config to the following:")
-               (pp/pprint arglists-for-linting)
-               (println "Reason:" (-> override-arglists :reason))))))
+        (util/debug-warning w ast opt #{}
+         (fn []
+           (println (format "was generated because of a function call on '%s' with %d args"
+                            fn-sym num-args-in-call))
+           (println "arglists from metadata on function var:")
+           (pp/pprint fn-arglists)
+;;           (println (format "  argvec-kinds="))
+;;           (pp/pprint (map argvec-kind fn-arglists))
+           (when override-arglists
+             (println "arglists overridden by Eastwood config to the following:")
+             (pp/pprint arglists-for-linting)
+             (println "Reason:" (-> override-arglists :reason)))))
         w))))
 
 

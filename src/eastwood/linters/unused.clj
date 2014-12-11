@@ -532,14 +532,7 @@ discarded inside null: null'."
                 allow? (util/allow-warning w opt)]
           :when allow?]
       (do
-        (when (:debug-warning opt)
-          ((util/make-msg-cb :debug opt)
-           (with-out-str
-             (println "This warning:")
-             (pp/pprint (dissoc w (:linter w)))
-             (println "was generated from code with the following enclosing macro expansions:")
-             (pp/pprint (->> (util/enclosing-macros ast)
-                             (map #(dissoc % :ast :index)))))))
+        (util/debug-warning w ast opt #{:enclosing-macros})
         w))))
 
 
