@@ -376,6 +376,13 @@
   :reason "schema.core/defrecord expands to code with multiple def's for the same Var."})
 
 (disable-warning
+ {:linter :unused-ret-vals
+  :for-value nil
+  :if-inside-macroexpansion-of #{'schema.core/defrecord}
+  :within-depth 2
+  :reason "schema.core/defrecord often macro expands to code containing an unused nil value."})
+
+(disable-warning
  {:linter :suspicious-expression
   ;; specifically, those detected in function suspicious-macro-invocations
   :for-macro 'clojure.core/loop
