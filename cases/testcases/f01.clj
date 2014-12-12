@@ -111,3 +111,37 @@ Tellman is to be credited/blamed for this test case."
      (catch x Throwable y))
   ([x y z]
      [x y z]))
+
+
+(defn fn-with-arglists-meta
+  {:arglists '([x y])}
+  [x y z]
+  (+ x y z))
+
+
+;; Eastwood can now detect the call to fn-with-arglists-meta below as
+;; having the wrong number of arguments, if you add appropriate
+;; configuration to override the :arglists metadata given above, which
+;; makes it appear that it is called with the correct number of args
+;; below.
+
+;; This is a toy test example that I don't think anyone would create
+;; in real development.  It is only intended to verify that Eastwood
+;; is actually using the configuration correctly.
+
+(defn wrong-args1 [x]
+  (fn-with-arglists-meta x (* 2 x)))
+
+
+(defn wrong-args-threw-exception-before-bugfix1 [x]
+  ((if x
+     (fn [coll x] (conj coll x))
+     (fn [coll x] (disj coll x)))
+   #{:a :b} :c :d))
+
+
+(defn wrong-args-threw-exception-before-bugfix2 [x]
+  ((do
+     (println "foo")
+     (fn [coll x] (disj coll x)))
+   #{:a :b} :c :d))

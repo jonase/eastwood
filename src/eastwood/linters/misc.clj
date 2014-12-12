@@ -2,7 +2,7 @@
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [resolve-var]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [resolve-var arglist-for-arity]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as j]
             [eastwood.util :as util]))
@@ -424,57 +424,62 @@
 ;; Wrong arity
 
 (defn wrong-arity [{:keys [asts]} opt]
-  (let [asts (->> asts
-                  (mapcat ast/nodes)
-                  (filter :maybe-arity-mismatch))]
-    (for [ast asts
-          :let [loc (-> ast :fn :form meta)
-                call-args (-> ast :args)
-                num-args-in-call (count call-args)
-                fn-kind (-> ast :fn :op)
-
+  (let [invoke-asts (->> asts
+                         (mapcat ast/nodes)
+                         (filter #(and (= :invoke (:op %))
+                                       (-> % :fn :arglists))))]
+    (for [ast invoke-asts
+          :let [args (:args ast)
+                func (:fn ast)
+                fn-kind (-> func :op)
                 [fn-var fn-sym]
-                (case fn-kind
-                  :var [(-> ast :fn :var)
-                        (util/var-to-fqsym (-> ast :fn :var))]
-                  :local [nil
-                          (-> ast :fn :form)])
-
-                fn-arglists (-> ast :fn :arglists)
-                w (util/add-loc-info
+                 (case fn-kind
+                   :var [(-> func :var)
+                         (util/var-to-fqsym (-> func :var))]
+                   :local [nil (-> func :form)]
+                   [nil 'no-name])
+                arglists (:arglists func)
+                override-arglists (-> opt :warning-enable-config
+                                      :wrong-arity fn-sym)
+                lint-arglists (or (-> override-arglists
+                                      :arglists-for-linting)
+                                  arglists)
+                loc (-> func :form meta)
+;;                _ (println (format "fn=%s (count args)=%d lint-arglists=%s ok=%s arglist-for-arity=%s loc=%s"
+;;                                   fn-sym (count args)
+;;                                   (seq lint-arglists)
+;;                                   (arg-count-compatible-with-arglists
+;;                                    (count args) lint-arglists)
+;;                                   (arglist-for-arity
+;;                                    {:arglists lint-arglists} (count args))
+;;                                   (select-keys loc #{:file :line :column})
+;;                                   ))
+                ]
+          :when (not (arg-count-compatible-with-arglists (count args)
+                                                         lint-arglists))
+          :let [w (util/add-loc-info
                    loc
                    {:linter :wrong-arity
                     :wrong-arity {:kind :the-only-kind
                                   :fn-var fn-var
-                                  :call-args call-args}
+                                  :call-args args}
                     :msg (format "Function on %s %s called with %s args, but it is only known to take one of the following args: %s"
                                  (name fn-kind)
-                                 (case fn-kind
-                                   :var fn-var
-                                   :local fn-sym)
-                                 num-args-in-call
-                                 (string/join "  " fn-arglists))})
-                override-arglists (-> opt :warning-enable-config :wrong-arity
-                                      fn-sym)
-                arglists-for-linting (or (-> override-arglists
-                                             :arglists-for-linting)
-                                         fn-arglists)
-                good-num-args? (arg-count-compatible-with-arglists
-                                num-args-in-call arglists-for-linting)
-                allow? (not good-num-args?)]
-          :when allow?]
+                                 (if (= :var fn-kind) fn-var fn-sym)
+                                 (count args)
+                                 (string/join "  " lint-arglists))})]]
       (do
-        (util/debug-warning w ast opt #{}
+        (util/debug-warning w ast opt #{:enclosing-macros}
          (fn []
            (println (format "was generated because of a function call on '%s' with %d args"
-                            fn-sym num-args-in-call))
+                            fn-sym (count args)))
            (println "arglists from metadata on function var:")
-           (pp/pprint fn-arglists)
+           (pp/pprint arglists)
 ;;           (println (format "  argvec-kinds="))
-;;           (pp/pprint (map argvec-kind fn-arglists))
+;;           (pp/pprint (map argvec-kind arglists))
            (when override-arglists
              (println "arglists overridden by Eastwood config to the following:")
-             (pp/pprint arglists-for-linting)
+             (pp/pprint lint-arglists)
              (println "Reason:" (-> override-arglists :reason)))))
         w))))
 

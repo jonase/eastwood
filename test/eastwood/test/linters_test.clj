@@ -140,13 +140,28 @@ the next."
     1,
     {:linter :wrong-arity,
      :msg "Function on local f1 called with 0 args, but it is only known to take one of the following args: [x]",
-     :file "testcases/f01.clj",
+     :file (fname-from-parts "testcases" "f01.clj"),
      :line 98, :column 6}
     1,
     {:linter :wrong-arity,
      :msg "Function on local f1 called with 0 args, but it is only known to take one of the following args: [p1__<num># p2__<num>#]",
-     :file "testcases/f01.clj",
+     :file (fname-from-parts "testcases" "f01.clj"),
      :line 102, :column 6}
+    1,
+    {:linter :wrong-arity,
+     :msg "Function on var #'testcases.f01/fn-with-arglists-meta called with 2 args, but it is only known to take one of the following args: [x y z]",
+     :file (fname-from-parts "testcases" "f01.clj"),
+     :line 133, :column 4}
+    1,
+    {:linter :wrong-arity,
+     :msg "Function on if no-name called with 3 args, but it is only known to take one of the following args: [coll x]",
+     :file (fname-from-parts "testcases" "f01.clj"),
+     :line 137, :column 4}
+    1,
+    {:linter :wrong-arity,
+     :msg "Function on do no-name called with 3 args, but it is only known to take one of the following args: [coll x]",
+     :file (fname-from-parts "testcases" "f01.clj"),
+     :line 144, :column 4}
     1,
     })
 
@@ -873,229 +888,229 @@ the next."
     {:linter :suspicious-expression,
      :msg
      "-> called with 1 args.  (-> x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 25, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "->> called with 1 args.  (->> x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 26, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "and called with 0 args.  (and) always returns true.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 27, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "and called with 1 args.  (and x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 28, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "as-> called with 2 args.  (as-> expr name) always returns expr.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 29, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
    "case called with 2 args.  (case x y) always returns y.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 30, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
    "cond called with 0 args.  (cond) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 31, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "cond-> called with 1 args.  (cond-> x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 32, :column 12}
     1,
     {:linter :suspicious-expression,
      :msg
      "cond->> called with 1 args.  (cond->> x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 33, :column 12}
     1,
     {:linter :suspicious-expression,
      :msg
      "condp called with 3 args.  (condp pred test-expr expr) always returns expr.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 34, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 35, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "delay called with 0 args.  (delay) always returns (delay nil).  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 36, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "doseq called with 1 args.  (doseq [x coll]) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 37, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "dotimes called with 1 args.  (dotimes [i n]) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 38, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 39, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "import called with 0 args.  (import) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 40, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "lazy-cat called with 0 args.  (lazy-cat) always returns ().  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 41, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "let called with 1 args.  (let bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 42, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "letfn called with 1 args.  (letfn bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 43, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "locking called with 1 args.  (locking x) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 44, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "loop called with 1 args.  (loop bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 45, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "or called with 0 args.  (or) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 46, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "or called with 1 args.  (or x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 47, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "pvalues called with 0 args.  (pvalues) always returns ().  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 48, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "some-> called with 1 args.  (some-> expr) always returns expr.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 49, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "some->> called with 1 args.  (some->> expr) always returns expr.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 50, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "when called with 1 args.  (when test) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 51, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "when-first called with 1 args.  (when-first [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 52, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "when-let called with 1 args.  (when-let [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 53, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "when-not called with 1 args.  (when-not test) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 54, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "when-some called with 1 args.  (when-some [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 55, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "with-bindings called with 1 args.  (with-bindings map) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 56, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "with-in-str called with 1 args.  (with-in-str s) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 57, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "with-local-vars called with 1 args.  (with-local-vars bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 58, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "with-open called with 1 args.  (with-open bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 59, :column 1}
     2,
     {:linter :suspicious-expression,
      :msg
      "with-out-str called with 0 args.  (with-out-str) always returns \"\".  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 60, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "with-precision called with 1 args.  (with-precision precision) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 61, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
      "with-redefs called with 1 args.  (with-redefs bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file "testcases/suspicious.clj",
+     :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 62, :column 1}
     1,
     })

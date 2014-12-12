@@ -389,3 +389,40 @@
   :if-inside-macroexpansion-of #{'schema.core/fn}
   :within-depth 7
   :reason "schema.core/fn macro expansions sometimes contain a loop with an empty body."})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Just for Eastwood testing
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(disable-warning
+ {:linter :wrong-arity
+  :function-symbol 'testcases.f01/fn-with-arglists-meta
+  :arglists-for-linting
+  '([x y z])
+  :reason "Only for Eastwood testing"})
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Configs to disable warnings in Midje, version 3.0-alpha4
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(disable-warning
+ {:linter :wrong-arity
+  :function-symbol 'midje.sweet/has-suffix
+  :arglists-for-linting
+  '([expected-suffix]
+    [expected-suffix looseness?])
+  :reason "midje.sweet/has-suffix takes an optional extra argument which is implied by ? after looseness, but its :arglists metadta does not have a 1-arg arity, which this config adds."})
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Configs to disable warnings in congomongo, version 0.4.1
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(disable-warning
+ {:linter :wrong-arity
+  :function-symbol 'somnium.congomongo/insert!
+  :arglists-for-linting
+  '([coll obj & {:keys [from to many write-concern]
+                 :or {from :clojure to :clojure many false}}])
+  :reason "somnium.congomongo/insert!  uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
