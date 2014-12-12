@@ -107,6 +107,8 @@ do_eastwood()
 set -e   # Fail if any of the directories do not exist, so this script can be fixed
 cd repos
 
+date
+
 echo 
 echo "Linting crucible projects, which includes most Clojure contrib"
 echo "libraries, and several 3rd party libraries."
@@ -168,3 +170,5 @@ cd ..
 #cd clojure
 #do_eastwood clojure clojure-special
 #cd ..
+
+date
