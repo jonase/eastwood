@@ -223,12 +223,10 @@ Example: (all-suffixes [1 2 3])
        set))
 
 
-;; TBD: (-> asts first ...) below is written with the assumption that
-;; the ns form must be first in a file.  It usually is, but
-;; tools.namespace has been generalized to allow it to be later in the
-;; file, so this should, too.  It could instead search for asts with
-;; :raw-forms containing 'ns' or 'clojure.core/ns' as the first
-;; symbol, perhaps.
+;; (first ns-asts) below will likely find the *only* ns form in the
+;; entire file, but it is written to use the first one in case there
+;; are more than one.  See :wrong-ns-form linter for more checks on ns
+;; forms.
 
 ;; The unused-namespaces linter doesn't even try to have line:col
 ;; info.  We should usually, if not always, be able to get some from
@@ -236,8 +234,7 @@ Example: (all-suffixes [1 2 3])
 ;; beginning of the ns form it is in.
 
 (defn unused-namespaces [{:keys [asts]} opt]
-  (let [;curr-ns (-> asts first :statements first :args first :expr :form)
-        ns-asts (ns-form-asts asts)
+  (let [ns-asts (ns-form-asts asts)
         loc (pass/code-loc (first ns-asts))
         curr-ns (-> ns-asts first :form second second second)
         required (required-namespaces ns-asts)
