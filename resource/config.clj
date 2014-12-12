@@ -390,6 +390,14 @@
   :within-depth 7
   :reason "schema.core/fn macro expansions sometimes contain a loop with an empty body."})
 
+(disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'schema.core/defn
+                                 'schema.core/fn
+                                 'schema.core/defmethod}
+  :within-depth 9
+  :reason "schema.core/defn, fn, and defmethod always give a constant-test warning for a test 'true' in macro expansions, if it has metadata ^:always-validate.  This config will disable such warnings regardless of the presence of ^:always-validate"})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Just for Eastwood testing
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
