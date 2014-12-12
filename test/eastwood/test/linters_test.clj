@@ -1572,6 +1572,22 @@ the next."
      :line 164, :column 1}
     1,
     })
+  (lint-test
+   'testcases.unusednss
+   [:unused-namespaces]
+   default-opts
+   {
+    {:linter :unused-namespaces,
+     :msg "Namespace clojure.data is never used in testcases.unusednss",
+     :file (fname-from-parts "testcases" "unusednss.clj"),
+     :line 1, :column 1}
+    1,
+    {:linter :unused-namespaces,
+     :msg "Namespace clojure.string is never used in testcases.unusednss",
+     :file (fname-from-parts "testcases" "unusednss.clj"),
+     :line 1, :column 1}
+    1,
+    })
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace
   ;; before lint-test does, and thus the namespace is already there

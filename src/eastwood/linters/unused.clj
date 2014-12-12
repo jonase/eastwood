@@ -3,6 +3,7 @@
             [clojure.string :as str]
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
+            [eastwood.copieddeps.dep9.clojure.tools.namespace.parse :as parse]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
             [eastwood.passes :as pass]
@@ -29,6 +30,14 @@
        (mapcat ast/nodes)
        (filter #(#{:var :the-var} (:op %)))
        (map :var)
+       set))
+
+(defn macros-invoked [asts]
+  (->> asts
+       (mapcat ast/nodes)
+       (mapcat :eastwood/partly-resolved-forms)
+       (map util/safe-first)
+       (remove nil?)
        set))
 
 (defn unused-private-vars [{:keys [asts]} opt]
@@ -199,25 +208,20 @@ Example: (all-suffixes [1 2 3])
 
 ;; Unused namespaces
 
-;; If require is called outside of an ns form, on an argument that is
-;; not a constant, the #(-> % :expr :form) step below can introduce
-;; nil values into the sequence.  For now, just filter those out to
-;; avoid warnings about namespace 'null' not being used.  Think about
-;; if there is a better way to handle such expressions.  Examples are
-;; in core namespace clojure.main, and contrib library namespaces
-;; clojure.tools.namespace.reload and clojure.test.generative.runner.
-(defn required-namespaces [exprs]
-  (->> (mapcat ast/nodes exprs)
-       (filter #(and (= (:op %) :invoke)
-                     (let [v (-> % :fn :var)]
-                       (#{'clojure.core/require 'clojure.core/use}
-                        (util/var-to-fqsym v)))))
-       (mapcat :args)
-       (map #(-> % :expr :form))
-       (remove nil?)
-       (map #(if (coll? %) (first %) %))
-       (remove keyword?)
-       (into #{})))
+(defn ns-form-asts [asts]
+  (->> (mapcat ast/nodes asts)
+       (filter #(= 'clojure.core/ns
+                   (util/safe-first
+                    (first (:eastwood/partly-resolved-forms %)))))))
+
+(defn required-namespaces [ns-asts]
+  (->> ns-asts
+       (mapcat #(nnext (first (:eastwood/partly-resolved-forms %))))
+       (filter (fn [f] (#{:require :use} (first f))))
+       (mapcat rest)
+       (mapcat #(#'parse/deps-from-libspec nil %))
+       set))
+
 
 ;; TBD: (-> asts first ...) below is written with the assumption that
 ;; the ns form must be first in a file.  It usually is, but
@@ -232,13 +236,29 @@ Example: (all-suffixes [1 2 3])
 ;; beginning of the ns form it is in.
 
 (defn unused-namespaces [{:keys [asts]} opt]
-  (let [curr-ns (-> asts first :statements first :args first :expr :form)
-        required (required-namespaces asts)
-        used (set (map #(-> ^clojure.lang.Var % .ns .getName)
-                       (vars-used asts)))]
-    (for [ns (set/difference required used)]
-      {:linter :unused-namespaces
-       :msg (format "Namespace %s is never used in %s" ns curr-ns)})))
+  (let [;curr-ns (-> asts first :statements first :args first :expr :form)
+        ns-asts (ns-form-asts asts)
+        loc (pass/code-loc (first ns-asts))
+        curr-ns (-> ns-asts first :form second second second)
+        required (required-namespaces ns-asts)
+        used-vars (vars-used asts)
+        used-macros (macros-invoked asts)
+;;        _ (do
+;;            (println "dbg: required namespaces:")
+;;            (pp/pprint required)
+;;            (println "dbg: vars used:")
+;;            (pp/pprint (map (juxt #(.getName (.ns %)) #(.sym %)) used-vars))
+;;            (println "dbg: macros used:")
+;;            (pp/pprint used-macros))
+        used-namespaces (set
+                         (concat (map #(-> ^clojure.lang.Var % .ns .getName)
+                                      used-vars)
+                                 (keep #(if-let [n (namespace %)] (symbol n))
+                                       used-macros)))]
+    (for [ns (set/difference required used-namespaces)]
+      (util/add-loc-info loc
+       {:linter :unused-namespaces
+        :msg (format "Namespace %s is never used in %s" ns curr-ns)}))))
 
 
 ;; Unused return values
