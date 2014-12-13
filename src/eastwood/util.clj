@@ -583,6 +583,12 @@ of these kind."
   (some deftype-for-fieldless-defrecord
         (nil-safe-rseq (-> ast :eastwood/ancestors))))
 
+(defn ns-form-asts [asts]
+  (->> (mapcat ast/nodes asts)
+       (filter #(= 'clojure.core/ns
+                   (safe-first
+                    (first (:eastwood/partly-resolved-forms %)))))))
+
 (defn debug? [debug-options opt]
   (assert (set? debug-options))
   (assert (map? opt))

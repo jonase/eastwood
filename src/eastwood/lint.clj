@@ -261,6 +261,8 @@ return value followed by the time it took to evaluate in millisec."
     :fn unused/unused-meta-on-macro}
    {:name :unlimited-use,             :enabled-by-default true,
     :fn misc/unlimited-use}
+   {:name :wrong-ns-form,             :enabled-by-default true,
+    :fn misc/wrong-ns-form}
    {:name :wrong-tag,                 :enabled-by-default true,
     :fn typetags/wrong-tag}
    {:name :keyword-typos,             :enabled-by-default false,

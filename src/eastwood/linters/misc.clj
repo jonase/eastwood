@@ -573,3 +573,51 @@
     (util/add-loc-info env
      {:linter :local-shadows-var
       :msg (str "local: " (:form fn) " invoked as function shadows var: " v)})))
+
+
+;; Wrong ns form
+
+(def allowed-ns-reference-keywords
+  #{:refer-clojure
+    :require :use :import
+    :load :gen-class})
+
+
+(defn warnings-for-one-ns-form [ns-ast]
+  (let [loc (:env ns-ast)
+        references (-> ns-ast :eastwood/partly-resolved-forms first nnext)
+        [docstring references] (if (string? (first references))
+                                 [(first references) (next references)]
+                                 [nil references])
+        [attr-map references] (if (map? (first references))
+                                [(first references) (next references)]
+                                [nil references])
+        non-lists (remove list? references)
+        references (filter list? references)
+        good-kw? #(allowed-ns-reference-keywords (first %))
+        wrong-kws (remove good-kw? references)
+        references (filter good-kw? references)]
+    (concat
+     (for [non-list non-lists]
+       (util/add-loc-info loc
+        {:linter :wrong-ns-form
+         :msg (format "ns references should be lists.  This is not: %s"
+                      non-list)}))
+     (for [wrong-kw wrong-kws]
+       (util/add-loc-info loc
+        {:linter :wrong-ns-form
+         :msg (format "ns reference starts with %s - should be one one of the keywords: %s"
+                      (first wrong-kw)
+                      (string/join " " (sort allowed-ns-reference-keywords)))}))
+     )))
+
+
+(defn wrong-ns-form [{:keys [asts]} opt]
+  (let [ns-asts (util/ns-form-asts asts)
+        warnings (mapcat warnings-for-one-ns-form ns-asts)]
+    (if (> (count ns-asts) 1)
+      (cons (util/add-loc-info (-> ns-asts second :env)
+             {:linter :wrong-ns-form
+              :msg "More than one ns form found in same file"})
+            warnings)
+      warnings)))

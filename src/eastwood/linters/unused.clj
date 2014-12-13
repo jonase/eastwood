@@ -208,12 +208,6 @@ Example: (all-suffixes [1 2 3])
 
 ;; Unused namespaces
 
-(defn ns-form-asts [asts]
-  (->> (mapcat ast/nodes asts)
-       (filter #(= 'clojure.core/ns
-                   (util/safe-first
-                    (first (:eastwood/partly-resolved-forms %)))))))
-
 (defn required-namespaces [ns-asts]
   (->> ns-asts
        (mapcat #(nnext (first (:eastwood/partly-resolved-forms %))))
@@ -234,7 +228,7 @@ Example: (all-suffixes [1 2 3])
 ;; beginning of the ns form it is in.
 
 (defn unused-namespaces [{:keys [asts]} opt]
-  (let [ns-asts (ns-form-asts asts)
+  (let [ns-asts (util/ns-form-asts asts)
         loc (pass/code-loc (first ns-asts))
         curr-ns (-> ns-asts first :form second second second)
         required (required-namespaces ns-asts)

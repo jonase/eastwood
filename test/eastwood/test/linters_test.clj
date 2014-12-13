@@ -1603,6 +1603,47 @@ the next."
      :line 1, :column 1}
     1,
     })
+  (lint-test
+   'testcases.wrongnsform
+   [:wrong-ns-form]
+   default-opts
+   {
+    {:linter :wrong-ns-form,
+     :msg "ns reference starts with :println - should be one one of the keywords: :gen-class :import :load :refer-clojure :require :use",
+     :file (fname-from-parts "testcases" "wrongnsform.clj"),
+     :line 1, :column 1}
+    1,
+    {:linter :wrong-ns-form,
+     :msg "ns references should be lists.  This is not: [:use clojure.test]",
+     :file (fname-from-parts "testcases" "wrongnsform.clj"),
+     :line 1, :column 1}
+    1,
+    {:linter :wrong-ns-form,
+     :msg "More than one ns form found in same file",
+     :file (fname-from-parts "testcases" "wrongnsform.clj"),
+     :line 19, :column 1}
+    1,
+    {:linter :wrong-ns-form,
+     :msg "ns references should be lists.  This is not: [:use clojure.test]",
+     :file (fname-from-parts "testcases" "wrongnsform.clj"),
+     :line 19, :column 1}
+    1,
+    {:linter :wrong-ns-form,
+     :msg "ns references should be lists.  This is not: [:use clojure.test]",
+     :file (fname-from-parts "testcases" "wrongnsform.clj"),
+     :line 23, :column 1}
+    1,
+    {:linter :wrong-ns-form,
+     :msg "ns references should be lists.  This is not: [:use clojure.test]",
+     :file (fname-from-parts "testcases" "wrongnsform.clj"),
+     :line 29, :column 1}
+    1,
+    {:linter :wrong-ns-form,
+     :msg "ns references should be lists.  This is not: [:use clojure.test]",
+     :file (fname-from-parts "testcases" "wrongnsform.clj"),
+     :line 36, :column 1}
+    1,
+    })
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace
   ;; before lint-test does, and thus the namespace is already there
