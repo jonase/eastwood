@@ -521,6 +521,23 @@ printed and no linting will be done at all.  This helps avoid some
 cases of printing error messages that make it difficult to determine
 what went wrong.  Fix the problems indicated and try again.
 
+Leiningen's `lein check` and `lein test` commands do not perform as
+complete a check as Eastwood does here.
+
+If a file on the `:source-path` contains a non-matching namespace
+name, but that namespace name exists in another file in your project,
+`lein check` will compile the file containing that namespace again,
+never compiling the file containing the wrong namespace name.
+
+If a file on the `:test-path` contains a non-matching namespace name,
+but that namespace name exists in another file, `lein test` will not
+run the tests in that file at all, and will only run the tests in the
+wrongly-given namespace once, not multiple times.  In both cases, such
+a wrong namespace is easy to create by copying a Clojure file and
+editing it, forgetting to edit the namespace.
+
+(This behavior was verified as of Leiningen version 2.5.0)
+
 
 ### `:non-clojure-file`
 
