@@ -1,6 +1,7 @@
 (ns eastwood.linters.misc
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
+            [clojure.set :as set]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [resolve-var arglist-for-arity]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
@@ -583,6 +584,175 @@
     :load :gen-class})
 
 
+;; Nearly identical to clojure.core/libspec?
+
+(defn libspec? [x]
+  (or (symbol? x)
+      (and (vector? x)
+           (or (<= (count x) 1)
+               (keyword? (second x))))))
+
+
+(defn symbol-list? [x]
+  (and (or (list? x)
+           (vector? x))
+       (every? symbol? x)))
+
+
+(defn map-from-symbol-to-symbol? [x]
+  (and (map? x)
+       (every? symbol? (keys x))
+       (every? symbol? (vals x))))
+
+
+;; kw :require can have options:
+;; :as symbol
+;; :refer symbol-list
+
+;; kw :use can have the above options plus:
+;; :exclude symbol-list
+;; :only symbol-list
+;; :rename map-of-fromsymbol-tosymbol
+
+(defn warnings-for-libspec [libspec kw loc]
+  (cond
+   (symbol? libspec)
+   ;; Clojure 1.6.0 and probably earlier throws an exception for this
+   ;; case during eval of require, so having a check for it in Eastwood
+   ;; is redundant.  Even Eastwood never shows the warning because the
+   ;; eval of the form throws an exception, before linting begins.
+;;   (if-not (nil? (namespace arg))
+;;     [(util/add-loc-info
+;;       loc
+;;       {:linter :wrong-ns-form
+;;        :msg (format "%s has a symbol libspec with a namespace qualifier: %s"
+;;                     kw arg)})])
+   []
+
+   ;; Clojure 1.6.0 and probably earlier throw an exception during
+   ;; eval for at least some cases of a non-symbol being first in the
+   ;; libspec, so it might not be possible to make a test hitting this
+   ;; case if done after eval.
+   (not (symbol? (first libspec)))
+   [(util/add-loc-info loc
+     {:linter :wrong-ns-form
+      :msg (format "%s has a vector libspec that begins with a non-symbol: %s"
+                   kw (first libspec))})]
+
+   ;; See above for checking for namespace-qualified symbols naming
+   ;; namespaces.
+;;   (not (nil? (namespace (first libspec))))
+;;   [(util/add-loc-info loc
+;;     {:linter :wrong-ns-form
+;;      :msg (format "%s has a vector libspec beginning with a namespace-qualified symbol: %s"
+;;                   kw (first libspec))})]
+
+   ;; Some of these checks are already preconditions to calling this
+   ;; function from warnings-for-libspec-or-prefix-list, but not if it
+   ;; was called to check libspecs in a prefix list.
+   (= 1 (count libspec))
+   []   ; nothing more to check
+
+   (even? (count libspec))
+   [(util/add-loc-info loc
+     {:linter :wrong-ns-form
+      :msg (format "%s has a vector libspec with an even number of items.  It should always be a symbol followed by keyword / value pairs: %s"
+                   kw libspec)})]
+   
+   :else
+   (let [libspec-opts (apply hash-map (rest libspec))
+         options (keys libspec-opts)
+         allowed-options
+         (case kw
+           ;; Note: The documentation for require only mentions :as
+           ;; and :refer as options.  However, Clojure allows and
+           ;; correctly handles :exclude and :rename as options in a
+           ;; :require libspec, and as long as there is a :refer
+           ;; option, they behave correctly as they would for a use
+           ;; with those options.  :only never makes sense for
+           ;; :require, as :refer can be used for that purpose
+           ;; instead.
+           :require (merge
+                     {:as :symbol :refer :symbol-list-or-all}
+                     (if (contains? libspec-opts :refer)
+                       {:exclude :symbol-list,
+                        :rename :map-from-symbol-to-symbol}
+                       {}))
+           :use {:as :symbol :refer :symbol-list-or-all,
+                 :exclude :symbol-list, :rename :map-from-symbol-to-symbol,
+                 :only :symbol-list})
+         bad-option-keys (set/difference (set options)
+                                         (set (keys allowed-options)))
+         libspec-opts (select-keys libspec-opts
+                                   (keys allowed-options))
+         bad-option-val-map
+         (into {}
+               (remove (fn [[option-key option-val]]
+                         (case (allowed-options option-key)
+                           :symbol (symbol? option-val)
+                           :symbol-list (symbol-list? option-val)
+                           :symbol-list-or-all (or (= :all option-val)
+                                                   (symbol-list? option-val))
+                           :map-from-symbol-to-symbol
+                           (map-from-symbol-to-symbol? option-val)))
+                       libspec-opts))]
+     (concat
+      (if (seq bad-option-keys)
+        [(util/add-loc-info loc
+          {:linter :wrong-ns-form
+           :msg (format "%s has a libspec with wrong option keys: %s - option keys for %s should only include the following: %s"
+                        kw (string/join " " (sort bad-option-keys))
+                        kw (string/join " " (sort (keys allowed-options))))})]
+        [])
+      (for [[option-key bad-option-val] bad-option-val-map]
+        (util/add-loc-info loc
+         {:linter :wrong-ns-form
+          :msg (format "%s has a libspec with option key %s that should have a value that is a %s, but instead it is: %s"
+                       kw option-key
+                       (case (allowed-options option-key)
+                         :symbol "symbol"
+                         :symbol-list "list of symbols"
+                         :symbol-list-or-all "list of symbols, or :all"
+                         :map-from-symbol-to-symbol
+                         "map from symbols to symbols")
+                       bad-option-val)}))))))
+
+
+;; Note: The arg named 'arg' can contain a libspec _or_ a prefix list.
+
+(defn warnings-for-libspec-or-prefix-list [arg kw loc]
+ (cond
+  ;; Even though a prefix list is called a list in the Clojure
+  ;; documentation, it seems to be reasonably common that people use
+  ;; vectors for them.  Clojure 1.6.0 itself distinguishes between
+  ;; libspec or prefix list by considering it a libspec if it has at
+  ;; most 1 item, or the second item is a keyword (see
+  ;; clojure.core/libspec?).  Do the same here.
+  (libspec? arg)
+  (warnings-for-libspec arg kw loc)
+  
+  (or (list? arg) (vector? arg))
+  (cond
+   ;; This case can occur, with no exception from Clojure.  There is a
+   ;; test case for it in testcases.wrongnsform
+   (and (list? arg) (= 1 (count arg)))
+   [(util/add-loc-info loc
+     {:linter :wrong-ns-form
+      :msg (format "%s has an arg that is a 1-item list.  Clojure silently does nothing with this.  To %s it as a namespace, it should be a symbol on its own or it should be inside of a vector, not a list.  To use it as the first part of a prefix list, there should be libspecs after it in the list: %s"
+                   kw (name kw) arg)})]
+   
+   :else
+   (mapcat #(warnings-for-libspec % kw loc) (rest arg)))
+  
+  :else
+  ;; Not sure if there is a test for this case, where Clojure 1.6.0
+  ;; will not throw an exception during eval.
+  [(util/add-loc-info loc
+    {:linter :wrong-ns-form
+     :msg (format "%s has an arg that is none of the allowed things of: a keyword, symbol naming a namespace, a libspec (in a vector), a prefix list (in a list or vector): %s"
+                  kw arg)})]))
+
+
 (defn warnings-for-one-ns-form [ns-ast]
   (let [loc (:env ns-ast)
         references (-> ns-ast :eastwood/partly-resolved-forms first nnext)
@@ -606,10 +776,39 @@
      (for [wrong-kw wrong-kws]
        (util/add-loc-info loc
         {:linter :wrong-ns-form
-         :msg (format "ns reference starts with %s - should be one one of the keywords: %s"
+         :msg (format "ns reference starts with '%s' - should be one one of the keywords: %s"
                       (first wrong-kw)
                       (string/join " " (sort allowed-ns-reference-keywords)))}))
-     )))
+     (apply concat
+      (for [reference references
+            :let [[kw & reference-args] reference]]
+        (case kw
+          (:require :use)
+          (let [flags (set (filter keyword? reference-args))
+                valid-flags #{:reload :reload-all :verbose}
+                invalid-flags (set/difference flags valid-flags)
+                valid-but-unusual-flags (set/intersection flags valid-flags)
+                libspecs-or-prefix-lists (remove keyword? reference-args)]
+            (concat
+             (if (seq invalid-flags)
+               [(util/add-loc-info loc
+                 {:linter :wrong-ns-form
+                  :msg (format "%s contains unknown flags: %s - flags should only be the following: %s"
+                               kw (string/join " " (sort invalid-flags))
+                               (string/join " " (sort valid-flags)))})])
+             (if (seq valid-but-unusual-flags)
+               [(util/add-loc-info loc
+                 {:linter :wrong-ns-form
+                  :msg (format "%s contains the following valid flags, but it is most common to use them interactively, not in ns forms: %s"
+                               kw (string/join
+                                   " " (sort valid-but-unusual-flags)))})])
+             (mapcat #(warnings-for-libspec-or-prefix-list % kw loc)
+                     libspecs-or-prefix-lists)))
+          :import [] ; tbd: no checking yet
+          :refer-clojure [] ; tbd: no checking yet
+          :gen-class [] ; tbd: no checking yet
+          :load []) ; tbd: no checking yet
+        )))))
 
 
 (defn wrong-ns-form [{:keys [asts]} opt]

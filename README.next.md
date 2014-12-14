@@ -112,6 +112,7 @@ enabled by default unless they have '(disabled)' after their name.
 | `:unused-private-vars` (disabled) | Unused private vars (updated in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#unused-private-vars) |
 | `:unused-ret-vals` and `:unused-ret-vals-in-try` | Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value. | [[more]](https://github.com/jonase/eastwood#unused-ret-vals) |
 | `:wrong-arity` | Function calls that seem to have the wrong number of arguments. | [[more]](https://github.com/jonase/eastwood#wrong-arity) |
+| `:wrong-ns-form` | ns forms containing incorrect syntax or options | [[more]](https://github.com/jonase/eastwood#wrong-ns-form) |
 | `:wrong-tag` | An incorrect type tag for which the Clojure compiler does not give an error (added 0.1.5). | [[more]](https://github.com/jonase/eastwood#wrong-tag) |
 
 
@@ -848,6 +849,56 @@ It would be nice if Eastwood (in particular its :wrong-arity
 linter) and other Clojure development tools could rely upon
 :arglists matching the actual arities of the function or macro that
 have been defined.
+
+
+### `:wrong-ns-form`
+
+#### ns forms containing incorrect syntax or options
+
+Clojure will accept and correctly execute `ns` forms with references
+in vectors, as shown in this example:
+
+```clojure
+(ns clojure.tools.test-trace
+  [:use [clojure.test]
+        [clojure.tools.trace]]
+  [:require [clojure.string :as s]])
+```
+
+However, Clojure does this despite the documentation of the `ns` macro
+showing only parentheses around references.  The `tools.namespace`
+library ignores references unless the are enclosed in parentheses,
+thus leading Eastwood and any other software using `tools.namespace`
+to detect incomplete dependencies between namespaces if they are
+enclosed in square brackets.  Thus Eastwood warns about all such
+references.
+
+Eastwood also warns about ns forms:
+
+* if more than one `ns` form is found in a file
+* if a reference begins with anything except one of the accepted
+  keywords `:require`, `:use`, etc.
+* if a reference contains flag keywords that are not one of the
+  documented flags `:reload`, `:reload-all`, or `:verbose`
+* if a reference contains a valid flag keyword, because typically
+  those are only used during interactive use of `require` and `use`
+* if a `:require` or `:use` is followed by a list with only 1 item in
+  it, e.g. `(:require (eastwood.util))`.  This is a prefix list with
+  only a prefix, and no libspecs, so it does not do anything.
+* if a `:require` libspec has any of the option keys other than the
+  documented ones of `:as` and `:refer`.  Even though it is not
+  documented, Clojure's implementation of `require` correctly handles
+  options `:exclude` and `:rename`, if `:refer` is also used, so
+  Eastwood will not warn about these.
+* if a `:use` libspec has any option keys other than `:as` `:refer`
+  `:exclude` `:rename` `:only`.
+* if any of the libspec option keys are followed by a value of the
+  wrong type, e.g. if `:refer` is followed by anything other than a
+  list of symbols or `:all`.
+
+No warning is given if a prefix list is contained within a vector.
+Clojure permits such prefix lists, and it is somewhat common in
+Clojure code to put prefix lists in vectors.
 
 
 ### `:suspicious-test`

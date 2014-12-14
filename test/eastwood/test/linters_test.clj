@@ -1609,7 +1609,7 @@ the next."
    default-opts
    {
     {:linter :wrong-ns-form,
-     :msg "ns reference starts with :println - should be one one of the keywords: :gen-class :import :load :refer-clojure :require :use",
+     :msg "ns reference starts with ':println' - should be one one of the keywords: :gen-class :import :load :refer-clojure :require :use",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 1, :column 1}
     1,
@@ -1642,6 +1642,21 @@ the next."
      :msg "ns references should be lists.  This is not: [:use clojure.test]",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 36, :column 1}
+    1,
+    {:linter :wrong-ns-form,
+     :msg ":require has an arg that is a 1-item list.  Clojure silently does nothing with this.  To require it as a namespace, it should be a symbol on its own or it should be inside of a vector, not a list.  To use it as the first part of a prefix list, there should be libspecs after it in the list: (eastwood.foo)",
+     :file (fname-from-parts "testcases" "wrongnsform.clj"),
+     :line 59, :column 1}
+    1,
+    {:linter :wrong-ns-form,
+     :msg ":require contains the following valid flags, but it is most common to use them interactively, not in ns forms: :reload",
+     :file (fname-from-parts "testcases" "wrongnsform.clj"),
+     :line 113, :column 1}
+    1,
+    {:linter :wrong-ns-form,
+     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :refer",
+     :file (fname-from-parts "testcases" "wrongnsform.clj"),
+     :line 149, :column 1}
     1,
     })
   ;; I would prefer if this threw an exception, but I think it does
