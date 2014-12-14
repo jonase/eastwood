@@ -174,3 +174,9 @@
              :as ana
              :refer [analyze analyze-in-env wrapping-meta analyze-fn-method]
              :rename {analyze -analyze}]))
+
+
+;; This should warn about :only, even though :refer is present
+
+(ns testcases.nsform18
+  (:require [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :refer :all :only [box]]))

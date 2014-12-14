@@ -605,6 +605,12 @@
        (every? symbol? (vals x))))
 
 
+(defn most-specific-loc [loc form]
+  (if (contains? (meta form) :line)
+    (meta form)
+    loc))
+
+
 ;; kw :require can have options:
 ;; :as symbol
 ;; :refer symbol-list
@@ -673,7 +679,7 @@
            ;; :require, as :refer can be used for that purpose
            ;; instead.
            :require (merge
-                     {:as :symbol :refer :symbol-list-or-all}
+                     {:as :symbol, :refer :symbol-list-or-all}
                      (if (contains? libspec-opts :refer)
                        {:exclude :symbol-list,
                         :rename :map-from-symbol-to-symbol}
@@ -721,36 +727,37 @@
 ;; Note: The arg named 'arg' can contain a libspec _or_ a prefix list.
 
 (defn warnings-for-libspec-or-prefix-list [arg kw loc]
- (cond
-  ;; Even though a prefix list is called a list in the Clojure
-  ;; documentation, it seems to be reasonably common that people use
-  ;; vectors for them.  Clojure 1.6.0 itself distinguishes between
-  ;; libspec or prefix list by considering it a libspec if it has at
-  ;; most 1 item, or the second item is a keyword (see
-  ;; clojure.core/libspec?).  Do the same here.
-  (libspec? arg)
-  (warnings-for-libspec arg kw loc)
-  
-  (or (list? arg) (vector? arg))
-  (cond
-   ;; This case can occur, with no exception from Clojure.  There is a
-   ;; test case for it in testcases.wrongnsform
-   (and (list? arg) (= 1 (count arg)))
-   [(util/add-loc-info loc
-     {:linter :wrong-ns-form
-      :msg (format "%s has an arg that is a 1-item list.  Clojure silently does nothing with this.  To %s it as a namespace, it should be a symbol on its own or it should be inside of a vector, not a list.  To use it as the first part of a prefix list, there should be libspecs after it in the list: %s"
-                   kw (name kw) arg)})]
-   
-   :else
-   (mapcat #(warnings-for-libspec % kw loc) (rest arg)))
-  
-  :else
-  ;; Not sure if there is a test for this case, where Clojure 1.6.0
-  ;; will not throw an exception during eval.
-  [(util/add-loc-info loc
-    {:linter :wrong-ns-form
-     :msg (format "%s has an arg that is none of the allowed things of: a keyword, symbol naming a namespace, a libspec (in a vector), a prefix list (in a list or vector): %s"
-                  kw arg)})]))
+  (let [loc (most-specific-loc loc arg)]
+    (cond
+     ;; Even though a prefix list is called a list in the Clojure
+     ;; documentation, it seems to be reasonably common that people
+     ;; use vectors for them.  Clojure 1.6.0 itself distinguishes
+     ;; between libspec or prefix list by considering it a libspec if
+     ;; it has at most 1 item, or the second item is a keyword (see
+     ;; clojure.core/libspec?).  Do the same here.
+     (libspec? arg)
+     (warnings-for-libspec arg kw loc)
+     
+     (or (list? arg) (vector? arg))
+     (cond
+      ;; This case can occur, with no exception from Clojure.  There is a
+      ;; test case for it in testcases.wrongnsform
+      (and (list? arg) (= 1 (count arg)))
+      [(util/add-loc-info loc
+        {:linter :wrong-ns-form
+         :msg (format "%s has an arg that is a 1-item list.  Clojure silently does nothing with this.  To %s it as a namespace, it should be a symbol on its own or it should be inside of a vector, not a list.  To use it as the first part of a prefix list, there should be libspecs after it in the list: %s"
+                      kw (name kw) arg)})]
+      
+      :else
+      (mapcat #(warnings-for-libspec % kw loc) (rest arg)))
+     
+     :else
+     ;; Not sure if there is a test for this case, where Clojure 1.6.0
+     ;; will not throw an exception during eval.
+     [(util/add-loc-info loc
+       {:linter :wrong-ns-form
+        :msg (format "%s has an arg that is none of the allowed things of: a keyword, symbol naming a namespace, a libspec (in a vector), a prefix list (in a list or vector): %s"
+                     kw arg)})])))
 
 
 (defn warnings-for-one-ns-form [ns-ast]
@@ -769,12 +776,12 @@
         references (filter good-kw? references)]
     (concat
      (for [non-list non-lists]
-       (util/add-loc-info loc
+       (util/add-loc-info (most-specific-loc loc non-list)
         {:linter :wrong-ns-form
          :msg (format "ns references should be lists.  This is not: %s"
                       non-list)}))
      (for [wrong-kw wrong-kws]
-       (util/add-loc-info loc
+       (util/add-loc-info (most-specific-loc loc wrong-kw)
         {:linter :wrong-ns-form
          :msg (format "ns reference starts with '%s' - should be one one of the keywords: %s"
                       (first wrong-kw)
@@ -791,13 +798,13 @@
                 libspecs-or-prefix-lists (remove keyword? reference-args)]
             (concat
              (if (seq invalid-flags)
-               [(util/add-loc-info loc
+               [(util/add-loc-info (most-specific-loc loc reference)
                  {:linter :wrong-ns-form
                   :msg (format "%s contains unknown flags: %s - flags should only be the following: %s"
                                kw (string/join " " (sort invalid-flags))
                                (string/join " " (sort valid-flags)))})])
              (if (seq valid-but-unusual-flags)
-               [(util/add-loc-info loc
+               [(util/add-loc-info (most-specific-loc loc reference)
                  {:linter :wrong-ns-form
                   :msg (format "%s contains the following valid flags, but it is most common to use them interactively, not in ns forms: %s"
                                kw (string/join
