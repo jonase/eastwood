@@ -867,7 +867,7 @@ in vectors, as shown in this example:
 
 However, Clojure does this despite the documentation of the `ns` macro
 showing only parentheses around references.  The `tools.namespace`
-library ignores references unless the are enclosed in parentheses,
+library ignores references unless they are enclosed in parentheses,
 thus leading Eastwood and any other software using `tools.namespace`
 to detect incomplete dependencies between namespaces if they are
 enclosed in square brackets.  Thus Eastwood warns about all such
@@ -876,8 +876,9 @@ references.
 Eastwood also warns about ns forms:
 
 * if more than one `ns` form is found in a file
-* if a reference begins with anything except one of the accepted
-  keywords `:require`, `:use`, etc.
+* if a reference begins with anything except one of the documented
+  keywords `:require`, `:use`, `:import`, `:refer-clojure`, `:load`,
+  `:gen-class`
 * if a reference contains flag keywords that are not one of the
   documented flags `:reload`, `:reload-all`, or `:verbose`
 * if a reference contains a valid flag keyword, because typically
@@ -889,16 +890,17 @@ Eastwood also warns about ns forms:
   documented ones of `:as` and `:refer`.  Even though it is not
   documented, Clojure's implementation of `require` correctly handles
   options `:exclude` and `:rename`, if `:refer` is also used, so
-  Eastwood will not warn about these.
-* if a `:use` libspec has any option keys other than `:as` `:refer`
-  `:exclude` `:rename` `:only`.
+  Eastwood will not warn about these if `:refer` is present.
+* if a `:use` libspec has any option keys other than the documented
+  ones `:as` `:refer` `:exclude` `:rename` `:only`.
 * if any of the libspec option keys are followed by a value of the
   wrong type, e.g. if `:refer` is followed by anything other than a
   list of symbols or `:all`.
 
 No warning is given if a prefix list is contained within a vector.
-Clojure permits such prefix lists, and it is somewhat common in
-Clojure code to put prefix lists in vectors.
+Clojure processes prefix lists in vectors, and `tools.namespace`
+recognizes them as dependencies as Clojure does.  It is also somewhat
+common in the many Clojure projects on which Eastwood is tested.
 
 
 ### `:suspicious-test`
