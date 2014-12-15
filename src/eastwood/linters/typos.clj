@@ -120,29 +120,64 @@
   (or (constant-expr-logical-false? expr)
       (constant-expr-logical-true? expr)))
 
-(defn fn-call-returns-string?
-  "sym is a symbol such as 'str or 'foo that appears at the beginning
-of a parenthesized list, in a place where (is ...) expects a string
-message to be printed if the test fails.  Return true if this symbol
-names a function or macro commonly used to produce and return a
-string, since this is sometimes used in clojure.test is expressions to
-generate varying strings while the test is running."
-  [sym]
-  (contains? '#{str format pr-str prn-str print-str println-str with-out-str}
-             sym))
 
-(defn suspicious-is-forms [is-forms]
+;; This is an alternate way to find the AST of the :message key for
+;; the call to clojure.test/do-report than what is used below for
+;; calculating message-ast, but it seems much more fragile to possible
+;; future changes to tools.analyzer(.jvm) libraries.
+
+;;           (if (or thrown? thrown-with-msg?)
+;;             (util/get-in-ast ast ; ast is a :try node if it expanded from clojure.test/is
+;;                              [[[:body] :do]
+;;                               [[:ret] :try]
+;;                               [[:body] :do]
+;;                               [[:ret] :invoke] ; of clojure.test/do-report
+;;                               [[:args 0] :map]])
+;;             (util/get-in-ast ast
+;;                              [[[:body] :do]
+;;                               [[:ret]  :let]
+;;                               [[:body] :do]
+;;                               [[:statements 0] :if]
+;;                               [[:then] :invoke]  ; of clojure.test/do-report
+;;                               [[:args 0] :map]]))
+
+(defn suspicious-is-forms [is-formasts]
   (apply
    concat
-   (for [isf is-forms]
+   (for [{isf :raw-form, ast :ast} is-formasts]
      (let [is-args (next isf)
            n (count is-args)
            is-arg1 (first is-args)
            thrown? (and (sequential? is-arg1)
                         (= 'thrown? (first is-arg1)))
+           thrown-with-msg? (and (sequential? is-arg1)
+                                 (= 'thrown-with-msg? (first is-arg1)))
            thrown-args (and thrown? (rest is-arg1))
            thrown-arg2 (and thrown? (nth is-arg1 2))
-           is-loc (-> isf first meta)]
+           is-loc (-> isf first meta)
+           first-invoke-do-report-ast (->>
+                                       (ast/nodes ast)
+                                       (filter #(and
+                                                 (= :invoke (:op %))
+                                                 (= 'clojure.test/do-report
+                                                    (-> % :fn :var
+                                                        util/var-to-fqsym))))
+                                       first)
+           const-or-map-ast (get-in first-invoke-do-report-ast [:args 0])
+           message-val-or-ast (case (:op const-or-map-ast)
+                                :const (-> const-or-map-ast :val :message)
+                                :map (util/get-val-in-map-ast
+                                      (get-in first-invoke-do-report-ast [:args 0])
+                                      :message))
+           message-tag (if message-val-or-ast
+                         (case (:op const-or-map-ast)
+                           :const (class message-val-or-ast)
+                           :map (:tag message-val-or-ast)))
+;;           _ (println (format "dbg line %d msg-tag=%s (%s) string?=%s msg-form=%s"
+;;                              (:line is-loc) message-tag (class message-tag)
+;;                              (= message-tag java.lang.String)
+;;                              isf))
+           ]
 ;;       (when thrown?
 ;;         (println (format "Found (is (thrown? ...)) with thrown-arg2=%s: %s" thrown-arg2 isf)))
        (cond
@@ -158,13 +193,11 @@ generate varying strings while the test is running."
            :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test")})]
         
         (and (= n 2)
-             (let [arg2 (second is-args)]
-               (not (or (string? arg2)
-                        (and (sequential? arg2)
-                             (fn-call-returns-string? (first arg2)))))))
+             (not= message-tag java.lang.String))
         [(util/add-loc-info is-loc
           {:linter :suspicious-test,
-           :msg (format "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.")})]
+           :msg (format "'is' form has non-string as second arg (inferred type is %s).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning."
+                        message-tag)})]
         
         (and thrown? (util/regex? thrown-arg2))
         [(util/add-loc-info is-loc
@@ -295,9 +328,8 @@ generate varying strings while the test is running."
                        (for [subexpr (nthnext (:pr-form formast) 2)]
                          (assoc formast :subexpr subexpr)))))
 
-        pr-is-formasts pr-first-is-formasts
-        pr-is-forms (map :raw-form pr-is-formasts)]
-    (concat (suspicious-is-forms pr-is-forms)
+        pr-is-formasts pr-first-is-formasts]
+    (concat (suspicious-is-forms pr-is-formasts)
             (predicate-forms pr-deftest-subexprs 'deftest)
             (predicate-forms pr-testing-subexprs 'testing))))
 

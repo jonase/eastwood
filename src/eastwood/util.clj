@@ -605,6 +605,33 @@ of these kind."
                    (safe-first
                     (first (:eastwood/partly-resolved-forms %)))))))
 
+(defn get-in-ast [ast kvec-op-pairs]
+  (let [sentinel (Object.)]
+    (loop [ast ast
+           pairs kvec-op-pairs]
+      (if-let [[ks expected-op] (first pairs)]
+        (let [ast2 (get-in ast ks sentinel)]
+          (if (identical? ast2 sentinel)
+            {:stop-reason :next-ks-not-found, :unused-ks pairs, :ast ast}
+            (if (and (map? ast2)
+                     (= expected-op (:op ast2)))
+              (recur ast2 (rest pairs))
+              {:stop-reason :next-step-not-ast, :unused-ks pairs, :ast ast})))
+        {:stop-reason nil, :unused-ks nil, :ast ast}))))
+
+(defn get-val-in-map-ast
+  ([map-ast k]
+     (get-val-in-map-ast map-ast k nil))
+  ([map-ast k not-found]
+     {:pre [(map? map-ast)
+            (= :map (:op map-ast))
+            (vector? (:keys map-ast))
+            (vector? (:vals map-ast))]}
+     (if-let [idx (some #(if (= k (:form (second %))) (first %))
+                        (map-indexed vector (:keys map-ast)))]
+       ((:vals map-ast) idx)
+       not-found)))
+
 (defn debug? [debug-options opt]
   (assert (set? debug-options))
   (assert (map? opt))

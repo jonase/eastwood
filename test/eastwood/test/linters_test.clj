@@ -585,7 +585,7 @@ the next."
      :line 80, :column 4}
     1,
     {:linter :suspicious-test,
-     :msg "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.",
+     :msg "'is' form has non-string as second arg (inferred type is class java.lang.Long).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 82, :column 4}
     1,
@@ -595,7 +595,7 @@ the next."
      :line 82, :column 7}
     1,
     {:linter :suspicious-test,
-     :msg "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.",
+     :msg "'is' form has non-string as second arg (inferred type is class java.lang.Long).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning.",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 83, :column 4}
     1,
@@ -862,7 +862,7 @@ the next."
     {:line 146, :column 4,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-test,
-     :msg "'is' form has non-string as second arg.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning."}
+     :msg "'is' form has non-string as second arg (inferred type is class java.lang.Long).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning."}
     1,
     {:line 146, :column 7,
      :file (fname-from-parts "testcases" "testtest.clj"),

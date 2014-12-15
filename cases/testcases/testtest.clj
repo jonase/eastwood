@@ -156,6 +156,29 @@
   (is (-> 1 (=)))   ; do warn for this, but should be for 1-arg = call, not 0-arg
   )
 
+(deftest better-detect-string-is-arg
+  (let [msg1 (str 2 4 6)
+        msg2 (format "foo")
+        msg3 (pr-str 1 2 3)
+        msg4 (prn-str 1 2 3)
+        msg5 (print-str 1 2 3)
+        msg6 (println-str 1 2 3)
+        msg7 (with-out-str (print "Hello"))
+        msg8 (subs "howdy" 1 3)]
+    (is (= 6 (+ 2 4)))
+    (is (= 6 (+ 2 4)) "constant string")
+    (is (= 6 (+ 2 4)) (str "2+4" "is" "6"))
+    (is (= 6 (+ 2 4)) msg1)
+    (is (thrown? Exception (/ 1 0)) msg1)
+    (is (thrown-with-msg? Exception #"bad" (/ 1 0)) msg1)
+    (is (= 6 (+ 2 4)) msg2)
+    (is (= 6 (+ 2 4)) msg3)
+    (is (= 6 (+ 2 4)) msg4)
+    (is (= 6 (+ 2 4)) msg5)
+    (is (= 6 (+ 2 4)) msg6)
+    (is (= 6 (+ 2 4)) msg7)
+    (is (= 6 (+ 2 4)) msg8)))
+
 (comment
   ;; Best not to warn for things inside of (comment ...)
   (= 5)
