@@ -291,7 +291,9 @@ recursing into ASTs with :op equal to :do"
                      :asts asts,
                      :exception (wrapped-exception? (:result first-exc-ast)),
                      :exception-phase :eval,
-                     :exception-form (:form first-exc-ast)}
+                     :exception-form (if-let [f (first (:raw-forms first-exc-ast))]
+                                       f
+                                       (:form first-exc-ast))}
                     (do
                       (post-analyze-debug asts form ast *ns* opt)
                       (recur (conj forms form)
