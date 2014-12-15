@@ -4,6 +4,48 @@
 Intended for Eastwood developers to track down when they have time and
 interest.
 
+## Changes from version 0.2.0 to pre-0.2.1 version as of Dec 15 2014
+
+### Difference between Eastwood with Clojure 1.6.0 vs 1.7.0-alpha4
+
+This is *not* a difference in behavior between Eastwood 0.2.0 and
+later, since it exists with 0.2.0 as well.
+
+When run with Clojure 1.6.0:
+
+    lein with-profile +1.6 eastwood '{:namespaces [clojure.reflect]}'
+
+there is no warning with either Eastwood 0.2.0 or pre-0.2.1.
+When run with Clojure 1.7.0-alpha4:
+
+    lein with-profile +1.7 eastwood '{:namespaces [clojure.reflect]}'
+
+both versions of Eastwood throw this exception:
+
+    == Linting clojure.reflect ==
+    Exception thrown during phase :analyze+eval of linting namespace clojure.reflect
+    IllegalArgumentException No implementation of method: :do-reflect of protocol: #'clojure.reflect/Reflector found for class: clojure.reflect.JavaReflector
+    	clojure.core/-cache-protocol-fn (core_deftype.clj:555)
+    	clojure.reflect/eval6478/fn--6479/G--6462--6482 (form-init8277208956703103263.clj:1)
+    	clojure.core/partial/fn--4490 (core.clj:2489)
+    	clojure.reflect/type-reflect (reflect.clj:100)
+    	clojure.core/apply (core.clj:632)
+    	eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils/type-reflect (utils.clj:24)
+    
+    [ ... rest of long stacktrace deleted ... ]
+    
+    The following form was being processed during the exception:
+    (defprotocol
+     TypeReference
+     "A TypeReference can be unambiguously converted to a type name on\n   the host platform.\n\n   All typerefs are normalized into symbols. If you need to\n   normalize a typeref yourself, call typesym."
+     (typename
+      [o]
+      "Returns Java name as returned by ASM getClassName, e.g. byte[], java.lang.String[]"))
+
+Not sure yet what causes this difference, and which part it might be a
+bug in.
+
+
 ## Changes from version 0.1.5 to 0.2.0-alpha1 plus a few commits on Nov 14 2014
 
 ### Notes about behavior of new :unused-locals linter
