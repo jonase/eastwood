@@ -79,30 +79,39 @@ more interesting keys earlier."
                              :eastwood/partly-resolved-forms
                              :eastwood/ancestors
                              :env
-
                              ;; Some keywords I have seen in :children
                              ;; vectors, given in the same relative
                              ;; order as I saw them.
-                             :catches
-                             :finally
                              :statements
-                             :ret
+                             :ret     ; after :statements
                              :test
-                             :then
-                             :else
+                             :then    ; after :test
+                             :else    ; after :else
+                             :tests   ; after :test
+                             :thens   ; after :tests
+                             :default ; after :thens
+                             :fields
+                             :class
+                             :local    ; after :class
+                             :methods  ; after :local :fields
+                             :protocol-fn
+                             :keyword
+                             :target   ; after :keyword :protocol-fn
+                             :val      ; after :target
                              :fn
                              :instance
-                             :args
-                             :params
+                             :args     ; after :fn :instance :class :target
+                             :this
+                             :params   ; after :this
                              :bindings
-                             :body
-                             :expr
+                             :body     ; after :params :bindings :local
+                             :catches  ; after :body
+                             :finally  ; after :catches
                              :meta
-                             :init
-                             :local
-                             :methods
+                             :expr     ; after :meta
+                             :init     ; after :meta
                              :keys
-                             :vals
+                             :vals     ; after :keys
                              ])]
     (ast/postwalk ast (fn [ast]
                         (if (every? keyword? (keys ast))
@@ -112,6 +121,13 @@ more interesting keys earlier."
                           ;; that would risk having key lookups throw
                           ;; exceptions due to incomparable keys.
                           ast)))))
+
+
+(defn all-children-vectors [asts]
+  (->> asts
+       (mapcat ast/nodes)
+       (keep :children)
+       frequencies))
 
 
 (defn has-keys? [m key-seq]
@@ -820,19 +836,6 @@ StringWriter."
 
 (comment
 
-;; Some code useful for copying and pasting into a REPL for debugging
-;; AST contents with clojure.inspector.
-
-(require '[clojure.inspector :as insp])
-(require '[eastwood.analyze-ns :as ana] :reload)
-(require '[eastwood.util :as util] :reload)
-(require '[eastwood.linters.unused :as un] :reload)
-
-(def nssym 'testcases.f06)
-(def a (ana/analyze-ns nssym :opt {:callback (fn [_])}))
-(def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv util/clean-ast ast))))
-(insp/inspect-tree a2)
-
 ;; This version tends to be much slower due to the size of the :env
 ;; data, and converting it all to strings.
 (def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv #(util/clean-ast % :with-env) ast))))
@@ -865,5 +868,20 @@ StringWriter."
 ;;=> (x__#0 y__#0 z__#0)
 (map :name ret-expr-args)
 ;;=> (x__#0 y__#-1)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Some code useful for copying and pasting into a REPL for debugging
+;; AST contents with clojure.inspector.
+
+(require '[clojure.inspector :as insp])
+(require '[eastwood.analyze-ns :as ana] :reload)
+(require '[eastwood.util :as util] :reload)
+(require '[eastwood.linters.unused :as un] :reload)
+
+(def nssym 'testcases.f06)
+(def a (ana/analyze-ns nssym :opt {:callback (fn [_])}))
+(def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv util/clean-ast ast))))
+(insp/inspect-tree a2)
 
 )
