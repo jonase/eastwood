@@ -4,16 +4,18 @@
 
 (def eastwood-version-string "0.2.1-SNAPSHOT")
 
-(defn help []
-  "Lint your Clojure code.")
+;; 'lein help' prints only the first line of the string returned by
+;; help.  'lein help eastwood' prints all of it, plus the arg vectors
+;; taken by the eastwood function below.
 
-(defn eastwood-help []
-  (println "lein eastwood: Lint your Clojure code.")
-  (println (format "== Eastwood %s Clojure %s JVM %s"
-                   eastwood-version-string
-                   (clojure-version)
-                   (get (System/getProperties) "java.version")))
-  (println "
+(defn help []
+  (with-out-str
+    (println "Lint your Clojure code.")
+    (println (format "== Eastwood %s Clojure %s JVM %s"
+                     eastwood-version-string
+                     (clojure-version)
+                     (get (System/getProperties) "java.version")))
+    (println "
 Usage: To lint all Clojure files in your :source-paths and :test-paths:
 
     lein eastwood
@@ -28,15 +30,14 @@ your :source-paths, use this command:
 
 For other options, see the full documentation on-line here:
 
-    https://github.com/jonase/eastwood
-")
-  (flush))
+    https://github.com/jonase/eastwood")))
+
 
 (defn eastwood
   ([project] (eastwood project "{}"))
   ([project opts]
      (if (= opts "help")
-       (eastwood-help)
+       (println (help))
        (let [opts (read-string opts)
              opts (assoc opts :source-paths (or (:source-paths opts)
                                                 (:source-paths project)
