@@ -341,6 +341,18 @@ please file a GitHub issue so they can be included here.
 
 ### Editor Support
 
+See the section for the development environment you use for specific
+instructions:
+
+* [Emacs+Cider](https://github.com/jonase/eastwood#emacs--cider)
+* [Emacs](https://github.com/jonase/eastwood#emacs)
+* [Vim](https://github.com/jonase/eastwood#vim)
+* [Eclipse+Counterclockwise](https://github.com/jonase/eastwood#eclipse--counterclockwise)
+
+Below are instructions to create a text file of warnings that can be
+useful for at least the Emacs and Vim cases, but are not needed for
+the others.
+
 As of Eastwood version 0.2.0, the new default warning message format
 is no longer a Clojure map, but lines of the form:
 
@@ -408,6 +420,13 @@ The warnings tend to be longer than one screen width.  You can use
 previous.  See the Vim documentation for more details,
 e.g. [here](http://vimdoc.sourceforge.net/htmldoc/quickfix.html).
 
+
+### Eclipse + Counterclockwise
+
+As of Dec 2014 this [Eastwood
+plugin](https://github.com/laurentpetit/ccw-plugin-eastwood) for
+[Eclipse+Counterclockwise](https://github.com/laurentpetit/ccw) was
+still in early development, but may be usable for you.
 
 
 ## Known issues
