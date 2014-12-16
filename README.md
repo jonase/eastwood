@@ -368,7 +368,18 @@ Eastwood and Clojure messages in the same file, please open a GitHub
 issue for Eastwood.
 
 
+#### Emacs + Cider
+
+If you use Emacs+Cider, take a look at the
+[`squiggly-clojure`](https://github.com/pnf/squiggly-clojure) project,
+which can run Eastwood and `core.typed` in the background on your
+project using Emacs Flycheck, and displays the warnings as annotations
+in your source code.
+
+
 #### Emacs
+
+(without Cider)
 
 If you open a file with the warnings in their default format in Emacs,
 then do the command `M-x compilation-mode`, you can use `next-error`
