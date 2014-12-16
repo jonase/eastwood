@@ -50,8 +50,8 @@ do about it.
 
 See [Editor
 Support](https://github.com/jonase/eastwood#editor-support) below for
-instructions on using a text editor to quickly take you to the file,
-line, and column of each warning message.
+instructions on using a text editor or IDE to quickly take you to the
+file, line, and column of each warning message.
 
 See the [Usage](https://github.com/jonase/eastwood#usage) section
 below for more notes on side effects in test code, and instructions on
@@ -342,6 +342,18 @@ please file a GitHub issue so they can be included here.
 
 ### Editor Support
 
+See the section for the development environment you use for specific
+instructions:
+
+* [Eclipse+Counterclockwise](https://github.com/jonase/eastwood#eclipse--counterclockwise)
+* [Emacs+Cider](https://github.com/jonase/eastwood#emacs--cider)
+* [Emacs](https://github.com/jonase/eastwood#emacs)
+* [Vim](https://github.com/jonase/eastwood#vim)
+
+Below are instructions to create a text file of warnings that can be
+useful for at least the Emacs and Vim cases, but are not needed for
+the others.
+
 As of Eastwood version 0.2.0, the new default warning message format
 is no longer a Clojure map, but lines of the form:
 
@@ -369,7 +381,26 @@ Eastwood and Clojure messages in the same file, please open a GitHub
 issue for Eastwood.
 
 
+### Eclipse + Counterclockwise
+
+As of Dec 2014 this [Eastwood
+plugin](https://github.com/laurentpetit/ccw-plugin-eastwood) for
+[Eclipse+Counterclockwise](https://github.com/laurentpetit/ccw) was
+still in early development, but may be usable for you.
+
+
+#### Emacs + Cider
+
+If you use Emacs+Cider, take a look at the
+[`squiggly-clojure`](https://github.com/pnf/squiggly-clojure) project,
+which can run Eastwood and `core.typed` in the background on your
+project using Emacs Flycheck, and displays the warnings as annotations
+in your source code.
+
+
 #### Emacs
+
+(without Cider)
 
 If you open a file with the warnings in their default format in Emacs,
 then do the command `M-x compilation-mode`, you can use `next-error`
