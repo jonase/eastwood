@@ -1,5 +1,6 @@
 (ns leiningen.eastwood
-  (:require [eastwood.copieddeps.dep6.leinjacker.eval :as leval]
+  (:require [clojure.pprint :as pp]
+            [eastwood.copieddeps.dep6.leinjacker.eval :as leval]
             [eastwood.copieddeps.dep6.leinjacker.deps :refer [add-if-missing]]))
 
 (def eastwood-version-string "0.2.1-SNAPSHOT")
@@ -36,20 +37,26 @@ For other options, see the full documentation on-line here:
 (defn eastwood
   ([project] (eastwood project "{}"))
   ([project opts]
-     (if (= opts "help")
-       (println (help))
-       (let [opts (read-string opts)
-             opts (assoc opts :source-paths (or (:source-paths opts)
-                                                (:source-paths project)
-                                                [(:source-path project)]))
-             opts (assoc opts :test-paths (or (:test-paths opts)
-                                              (:test-paths project)
-                                              [(:test-path project)]))
-             opts (assoc opts :java-source-paths (or (:java-source-paths opts)
-                                                     (:java-source-paths project)
-                                                     [(:java-source-path project)]))
-             global-opts (:eastwood project)
-             opts (merge global-opts opts)]
-         (leval/eval-in-project (add-if-missing project ['jonase/eastwood eastwood-version-string])
-                                `(eastwood.versioncheck/run-eastwood '~opts)
-                                '(require 'eastwood.versioncheck))))))
+     (cond
+      (= opts "help") (println (help))
+      (= opts "lein-project")
+      (do
+        (pp/pprint (into (sorted-map) project))
+        (println "\nValue of :eastwood key in project map:")
+        (pp/pprint (into (sorted-map) (:eastwood project))))
+      :else
+      (let [opts (read-string opts)
+            opts (assoc opts :source-paths (or (:source-paths opts)
+                                               (:source-paths project)
+                                               [(:source-path project)]))
+            opts (assoc opts :test-paths (or (:test-paths opts)
+                                             (:test-paths project)
+                                             [(:test-path project)]))
+            opts (assoc opts :java-source-paths (or (:java-source-paths opts)
+                                                    (:java-source-paths project)
+                                                    [(:java-source-path project)]))
+            global-opts (:eastwood project)
+            opts (merge global-opts opts)]
+        (leval/eval-in-project (add-if-missing project ['jonase/eastwood eastwood-version-string])
+                               `(eastwood.versioncheck/run-eastwood '~opts)
+                               '(require 'eastwood.versioncheck))))))
