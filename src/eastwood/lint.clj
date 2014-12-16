@@ -646,7 +646,7 @@ exception."))
 
 (defn filename-to-ns [fname]
   (-> fname
-      (str/replace-first #".clj$" "")
+      (str/replace-first #"\.clj$" "")
       (str/replace "_" "-")
       (str/replace File/separator ".")
       symbol))
