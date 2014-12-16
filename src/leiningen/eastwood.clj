@@ -39,24 +39,30 @@ For other options, see the full documentation on-line here:
   ([project opts]
      (cond
       (= opts "help") (println (help))
+
       (= opts "lein-project")
       (do
         (pp/pprint (into (sorted-map) project))
         (println "\nValue of :eastwood key in project map:")
         (pp/pprint (into (sorted-map) (:eastwood project))))
+
       :else
-      (let [opts (read-string opts)
-            opts (assoc opts :source-paths (or (:source-paths opts)
-                                               (:source-paths project)
-                                               [(:source-path project)]))
-            opts (assoc opts :test-paths (or (:test-paths opts)
-                                             (:test-paths project)
-                                             [(:test-path project)]))
-            opts (assoc opts :java-source-paths (or (:java-source-paths opts)
-                                                    (:java-source-paths project)
-                                                    [(:java-source-path project)]))
-            global-opts (:eastwood project)
-            opts (merge global-opts opts)]
-        (leval/eval-in-project (add-if-missing project ['jonase/eastwood eastwood-version-string])
-                               `(eastwood.versioncheck/run-eastwood '~opts)
-                               '(require 'eastwood.versioncheck))))))
+      (let [leiningen-paths (select-keys project [:source-paths
+                                                  :test-paths])
+            leiningen-opts (:eastwood project)
+            cmdline-opts (read-string opts)
+            opts (merge leiningen-paths leiningen-opts cmdline-opts)]
+        (when (contains? (:debug opts) :options)
+          (println "\nLeiningen paths:")
+          (pp/pprint (into (sorted-map) leiningen-paths))
+          (println "\nLeiningen options map:")
+          (pp/pprint (into (sorted-map) leiningen-opts))
+          (println "\nCommand line options map:")
+          (pp/pprint (into (sorted-map) cmdline-opts))
+          (println "\nMerged options map:")
+          (pp/pprint (into (sorted-map) opts))
+          (println))
+        (leval/eval-in-project
+         (add-if-missing project ['jonase/eastwood eastwood-version-string])
+         `(eastwood.versioncheck/run-eastwood '~opts)
+         '(require 'eastwood.versioncheck))))))

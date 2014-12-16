@@ -399,6 +399,145 @@ previous.  See the Vim documentation for more details,
 e.g. [here](http://vimdoc.sourceforge.net/htmldoc/quickfix.html).
 
 
+### How the Eastwood options map is determined
+
+If you start Eastwood from a REPL using the function
+`eastwood.lint/eastwood`, then the options map you supply is modified
+only slightly before use.  Skip down to the section "Last options map
+adjustments".
+
+If you start Eastwood from a Leiningen command line, there are two
+main steps in the creation of the Eastwood options map before those
+last adjustments.  First is what Leiningen itself does before Eastwood
+starts, followed by some adjustments made by Eastwood.
+
+
+#### Options map calculation before Eastwood starts
+
+Leiningen creates a value for the `:eastwood` key in the effective
+project map using its normal rules for combining profiles from
+multiple possible files.  In case those are unfamiliar to you, here is
+a quick summary that should be correct, but leaves out some cases that
+are recommended against in the Leiningen documentation, e.g.
+including a `:user` profile in your project's `project.clj` file.
+
+From lowest priority to highest, the sources are the value of an
+`:eastwood` key in:
+
+* the top level of the `defproject` in your `project.clj` file
+* the `:system` profile of a system-wide `/etc/leiningen/profiles.clj`
+  file.
+* the `:user` profile of a user-wide `$HOME/.lein/profiles.clj`, or
+  the top level of a `$HOME/.lein/profiles.d/user.clj` file.
+* the `:dev` profile of your project's `project.clj` file.
+* the `:dev` profile of your project's `profiles.clj` file
+  (recommended only for temporary overrides of your `project.clj`
+  file, not to be checked in to revision control).
+
+The value associated with the `:eastwood` key in any of these
+locations should be maps.  If there is more than one, they are merged
+similarly to how `clojure.core/merge` does, where later values for the
+same key replace earlier values.  However, if the values in this map
+are collections, then they are combined.  Vectors and lists are
+concatenated, sets are combined with `clojure.set/union`, and sub-maps
+are merged, recursing down to apply the same rules to their nested
+values.  See the section on
+[Merging](https://github.com/technomancy/leiningen/blob/stable/doc/PROFILES.md#merging)
+in the Leiningen documentation for more details and for metadata that
+can be used to modify this merging behavior.
+
+For example, if your user-wide `profiles.clj` file contains this:
+
+```clojure
+{:user {:plugins [[jonase/eastwood "0.2.0"]]
+        :eastwood {:exclude-linters [:unlimited-use]
+                   :debug #{:time}}
+        }}
+```
+
+and your `project.clj` file's `defproject` contains this:
+
+```clojure
+  :profiles {:dev {:eastwood {:exclude-linters [:wrong-arity :bad-arglists]
+                              :debug #{:progress}
+                              :warning-format :map-v2
+                              }}}
+```
+
+then Leiningen will merge them to produce the following combined value
+for the `:eastwood` key:
+
+```clojure
+  {:exclude-linters (:unlimited-use :wrong-arity :bad-arglists)
+   :debug #{:time :progress}
+   :warning-format :map-v2
+   }
+```
+
+We will call this value the Leiningen option map.
+
+Independently of this Leiningen option map that is a combination of
+the values of the `:eastwood` key in various Leiningen files,
+Leiningen also calculates values for the `:source-paths` and
+`:test-paths` keys (and all other keys, but only these 3 are ever used
+later to calculate Eastwood options).
+
+
+### Options map adjustments made by Eastwood when invoked from command line
+
+After the Leiningen option map is calculated, Eastwood starts making
+new modified versions.
+
+Starting with Eastwood version 0.2.1, it 'normal merges' the three
+maps below, in the order given.  Thus values for the same key in later
+maps override earlier ones, with no special Leiningen merging behavior
+for collections:
+
+1. Leiningen paths - a map containing only the keys `:source-paths`
+   and `:test-paths`, and the Leiningen-calculated values for them.
+   The value of `:source-paths` defaults to `["src"]` even if you
+   never specify one.  Similarly `:test-paths` defaults to `["test"]`.
+2. Leiningen options map - the map for the `:eastwood` key.  Note that
+   this may contain values for `:source-paths` and/or `:test-paths`
+   that override the ones above.
+3. command line option map
+
+
+With Eastwood version 0.2.0 and most earlier versions, it was similar,
+except the order of items 1 and 2 were swapped.  Since Leiningen
+always has values for `:source-paths` and `:test-paths`, this meant
+that the values for these keys in the Leiningen option map were always
+ignored.
+
+Eastwood version 0.2.0 and earlier also had special handling to
+recognize the older `:source-path` key (note singular, not pluarl)
+from Leiningen projects, and use it, but only if no `:source-paths`
+keys were given in any Leiningen profiles, nor on the Eastwood command
+line.  Similarly for the old `:test-path` key.
+
+
+#### Last options map adjustments
+
+If you start Eastwood from a REPL, these are the only changes made to
+the options map specified as an argument.
+
+* If you do not specify a `:callback` key, a default message callback
+  function is created for you.  This default callback simply formats
+  all callback data as strings and prints it to `*out*`, or the writer
+  specified by the value of the `:out` key in the options map (e.g. if
+  it is a string, the file named by that string will be written).
+* A key `:cwd` is added if you do not supply one.  It is simply the
+  full path name to the current working directory at the time the
+  function is called.  This is used only to make file names reported
+  in warnings relative to this directory, and thus shorter, if they
+  are beneath it.
+
+TBD: Document any other special treatment of options in Eastwood, and
+try to make it more uniform to fit into this merging behavior as
+documented here.  For example, can I simply make the calculation of
+`:namespaces` behaviorally the same as it is now if I merge it in at
+the same time as `:callback` and `:cwd` are?
+
 
 ## Known issues
 
