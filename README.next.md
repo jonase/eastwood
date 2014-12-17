@@ -254,12 +254,13 @@ value that is a list or vector of keywords, e.g.
 * `:compare-forms` - print all forms as read to a file
   `forms-read.txt`, and all forms after being read, analyzed into an
   AST, and converted back into a form from the AST, to a file
-  `forms-emitted.txt`.  X * `:ns` - print the initial set of
-  namespaces loaded into the Clojure run-time at the beginning of each
-  file being linted.  (TBD: it used to do the following, but this
-  needs to be reimplemented if it is desired: "and then after each top
-  level form print any changes to that list of loaded namespaces
-  (typically as the result of evaluating a `require` or `use` form).")
+  `forms-emitted.txt`.
+* `:ns` - print the initial set of namespaces loaded into the Clojure
+  run-time at the beginning of each file being linted.  (TBD: it used
+  to do the following, but this needs to be reimplemented if it is
+  desired: "and then after each top level form print any changes to
+  that list of loaded namespaces (typically as the result of
+  evaluating a `require` or `use` form).")
 
 
 
