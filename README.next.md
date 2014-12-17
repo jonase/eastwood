@@ -92,7 +92,7 @@ enabled by default unless they have '(disabled)' after their name.
 | Linter name | Description | Docs |
 | ----------- | ----------- | ---- |
 | no name* | Inconsistencies between file names and the namespaces declared within them.  * Cannot be disabled. (added 0.1.1) | [[more]](https://github.com/jonase/eastwood#check-consistency-of-namespace-and-file-names) |
-`:bad-arglists` | Function/macro `:arglists` metadata that does not match the number of args it is defined with (added 0.1.1). | [[more]](https://github.com/jonase/eastwood#bad-arglists) |
+| `:bad-arglists` | Function/macro `:arglists` metadata that does not match the number of args it is defined with (added 0.1.1). | [[more]](https://github.com/jonase/eastwood#bad-arglists) |
 | `:constant-test` | A test expression always evaluates as true, or always false (added 0.2.0). | [[more]](https://github.com/jonase/eastwood#constant-test) |
 | `:def-in-def` | def's nested inside other def's. | [[more]](https://github.com/jonase/eastwood#def-in-def) |
 | `:deprecations` | Deprecated Clojure Vars, and deprecated Java constructors, methods, and fields. | [[more]](https://github.com/jonase/eastwood#deprecations) |
@@ -114,6 +114,46 @@ enabled by default unless they have '(disabled)' after their name.
 | `:wrong-arity` | Function calls that seem to have the wrong number of arguments. | [[more]](https://github.com/jonase/eastwood#wrong-arity) |
 | `:wrong-ns-form` | ns forms containing incorrect syntax or options | [[more]](https://github.com/jonase/eastwood#wrong-ns-form) |
 | `:wrong-tag` | An incorrect type tag for which the Clojure compiler does not give an error (added 0.1.5). | [[more]](https://github.com/jonase/eastwood#wrong-tag) |
+
+The following table gives some additional detail about each linter.
+
+The 'debug' column indicates whether extra debug messages about a
+linter's warnings can be enabled via the `:debug-warning` option.
+This option can be given a value of `true` to enable all such
+warnings, or it can be a set of keywords that also enables additional
+details to be printed.  The only keyword currently supported in this
+set is `:ast`, which prints AST contents related to issued warnings
+for most linters that implement `:debug-warning`.
+
+The 'suppress' column indicates whether warnings produced by the
+linter can be selectively disabled via Eastwood config files.  TBD:
+pointer to more details.
+
+| Linter name | debug | suppress |
+| ----------- | ----- | -------- |
+| no name*                 |  |  |
+| `:bad-arglists`          |  |  |
+| `:constant-test`         | yes | yes |
+| `:def-in-def`            |  |  |
+| `:deprecations`          |  |  |
+| `:keyword-typos`         |  |  |
+| `:local-shadows-var`     |  |  |
+| `:misplaced-docstrings`  |  |  |
+| `:no-ns-form-found`      |  |  |
+| `:non-clojure-file`      |  |  |
+| `:redefd-vars`           | yes | yes |
+| `:suspicious-expression` | yes, for those involving macros | yes |
+| `:suspicious-test`       |  |  |
+| `:unlimited-use`         |  |  |
+| `:unused-fn-args`        |  |  |
+| `:unused-locals`         |  |  |
+| `:unused-meta-on-macro`  |  |  |
+| `:unused-namespaces`     |  |  |
+| `:unused-private-vars`   |  |  |
+| `:unused-ret-vals` and `:unused-ret-vals-in-try` | yes | yes |
+| `:wrong-arity`           | yes | yes |
+| `:wrong-ns-form`         |  |  |
+| `:wrong-tag`             |  |  |
 
 
 ## Usage
