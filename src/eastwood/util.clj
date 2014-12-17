@@ -775,17 +775,21 @@ StringWriter."
           {} warning-enable-config))
 
 
+(defn builtin-config-to-resource [name]
+  (io/resource (str "eastwood/config/" name)))
+
+
 (defn init-warning-enable-config [opt]
-  (let [read-default-config? (get opt :read-default-config true)
+  (let [builtin-config-files (:builtin-config-files opt)
         other-config-files (get opt :config-files [])
-        config-files (concat (if read-default-config?
-                               [(io/resource "config.clj")]
-                               [])
+        config-files (concat (map builtin-config-to-resource
+                                  builtin-config-files)
                              other-config-files)
         error-cb (make-msg-cb :error opt)
         debug-cb (make-msg-cb :debug opt)]
     (doseq [config-file config-files]
-      ;;(debug-cb (format "Loading config file: %s" config-file))
+      (when (debug? :config opt)
+        (debug-cb (format "Loading config file: %s" config-file)))
       (try
         (binding [*ns* (the-ns 'eastwood.util)]
           (load-reader (io/reader config-file)))

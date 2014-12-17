@@ -53,12 +53,7 @@ the next."
                    (compare ((juxt :line :column :linter :msg) w1)
                             ((juxt :line :column :linter :msg) w2)))))
 
-(def default-opts
-  {:warning-enable-config
-   (util/init-warning-enable-config
-    {:callback (fn cb [info]
-                 (case (:kind info)
-                   :debug (println (:msg info))))})})
+(def default-opts {})
 
 
 (defmacro lint-test [ns-sym linters opts expected-lint-result]
@@ -88,7 +83,10 @@ the next."
    'testcases.f01
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var :wrong-tag]
-   default-opts
+   (assoc default-opts
+     ;;:debug [:ns :config]
+     :config-files
+     [(fname-from-parts "cases" "testcases" "eastwood-testing-config.clj")])
    {
     {:linter :redefd-vars,
      :msg

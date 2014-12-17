@@ -612,14 +612,16 @@ exception."))
   (let [lint-warnings (atom [])
         warning-count (atom 0)
         exception-count (atom 0)
+        opts (assoc opts :linters linters)
+        opts (last-options-map-adjustments opts)
         cb (fn cb [info]
              (case (:kind info)
                :lint-warning (swap! lint-warnings conj (:warn-data info))
                (:eval-out :eval-err) (println (:msg info))
-               :default))
-        opts (assoc opts :callback cb
-                    :linters linters)
-        opts (last-options-map-adjustments opts)
+               :default-do-nothing
+               ;;((:callback opts) info)
+               ))
+        opts (assoc opts :callback cb)
         exception (lint-ns ns-sym linters opts warning-count exception-count)]
     (if exception
       (throw exception)
@@ -953,8 +955,6 @@ Return value:
         {:keys [linters] :as m1} (opts->linters opts linter-name->fn
                                                 default-linters)
         opts (assoc opts :enabled-linters linters)
-        opts (assoc opts :warning-enable-config
-                    (util/init-warning-enable-config opts))
 
         {:keys [namespaces dirs no-ns-form-found-files
                 non-clojure-files] :as m2}
@@ -1064,11 +1064,18 @@ Return value:
                        :debug-form-emitted form-emitted-cb})))
 
 
+(def default-builtin-config-files
+  ["clojure.clj"
+   "clojure-contrib.clj"
+   "third-party-libs.clj"])
+
+
 (defn last-options-map-adjustments [opts]
   (let [opts (update-in opts [:debug] set)
         opts (merge {:cwd (.getCanonicalFile (io/file "."))
                      :linters default-linters
-                     :namespaces [:source-paths :test-paths]}
+                     :namespaces [:source-paths :test-paths]
+                     :builtin-config-files default-builtin-config-files}
                     opts)
         ;; special case 'merge': If _neither_ of :source-paths or
         ;; :test-paths were specified in the options map, then set
@@ -1086,7 +1093,12 @@ Return value:
         ;; opts), but it does not calculate the value unless needed.
         opts (if (contains? opts :callback)
                opts
-               (assoc opts :callback (make-default-cb opts)))]
+               (assoc opts :callback (make-default-cb opts)))
+
+        ;; Changes below override anything in the caller-provided
+        ;; options map.
+        opts (assoc opts :warning-enable-config
+                    (util/init-warning-enable-config opts))]
     opts))
 
 
