@@ -231,16 +231,18 @@ specifying which linters are enabled or disabled are:
   specified by `:linters`, taking away all in `:excluded-linters`,
   then adding all in `:add-linters`.
 
-Note that you can add e.g., `{:eastwood {:exclude-linters
-[:unlimited-use]}}` to `.lein/profiles.clj` to disable linters you
-don't like, or add the key `:eastwood` with options to your project's
-`project.clj` file.
+Note that you can add Eastwood options to a user-wide Leiningen
+`profiles.clj` file or to your project's `project.clj` file if you
+wish.  See [How the Eastwood options map is
+determiend](#how-the-eastwood-options-map-is-determined) for more
+details.
 
-As mentioned in the "Installation & Quick usage" section above, using
-Eastwood causes any and all side effects that loading the file would
-cause (e.g. by doing `use` or `require` on the file's namespace).
-Eastwood is able to find potential problems in test code, too.  If you
-wish to use Eastwood on test files without such side effects, consider
+As mentioned in the [Installation & Quick
+usage](#installation--quick-usage) section above, using Eastwood
+causes any and all side effects that loading the file would cause
+(e.g. by doing `use` or `require` on the file's namespace).  Eastwood
+is able to find potential problems in test code, too.  If you wish to
+use Eastwood on test files without such side effects, consider
 modifying your tests so that merely performing `require`/`use` on the
 files does not cause the side effects.  If you can arrange things so
 that running your tests requires loading the files and then calling
@@ -273,7 +275,7 @@ messages during linting.  These are only intended for tracking down
 the cause of errors in Eastwood.  You specify the key `:debug` with a
 value that is a list or vector of keywords, e.g.
 
-    lein eastwood "{:exclude-linters [:wrong-arity] :debug [:eval :ns]}"
+    lein eastwood "{:exclude-linters [:unlimited-use] :debug [:options :ns]}"
 
 * `:all` - enable all debug messages.  This also enables showing the
   list of namespaces near the beginning of the output, before linting
