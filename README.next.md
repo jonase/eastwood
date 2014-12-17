@@ -549,25 +549,29 @@ line.  Similarly for the old `:test-path` key.
 
 #### Last options map adjustments
 
-If you start Eastwood from a REPL, these are the only changes made to
-the options map specified as an argument.
+If you start Eastwood from a REPL, the only changes made to the
+options map specified as an argument are to fill in default values for
+some keys if you do not supply them, i.e. to merge a map like the
+following _before_ the supplied options map.  See
+`eastwood.lint/last-options-map-adjustments` for details.
 
-* If you do not specify a `:callback` key, a default message callback
-  function is created for you.  This default callback simply formats
-  all callback data as strings and prints it to `*out*`, or the writer
-  specified by the value of the `:out` key in the options map (e.g. if
-  it is a string, the file named by that string will be written).
-* A key `:cwd` is added if you do not supply one.  It is simply the
-  full path name to the current working directory at the time the
-  function is called.  This is used only to make file names reported
-  in warnings relative to this directory, and thus shorter, if they
-  are beneath it.
-
-TBD: Document any other special treatment of options in Eastwood, and
-try to make it more uniform to fit into this merging behavior as
-documented here.  For example, can I simply make the calculation of
-`:namespaces` behaviorally the same as it is now if I merge it in at
-the same time as `:callback` and `:cwd` are?
+* `:cwd` - the full path name to the current working directory at the
+  time the function is called.  This is used to cause file names
+  reported in warnings to be relative to this directory, and thus
+  shorter, if they are beneath it.
+* `:linters` - default value of all linters documented to be enabled
+  by default.
+* `:namespaces` - default value of `[:source-paths :test-paths]`
+* `:source-paths` - a list of all directories on the Java classpath.
+  This is a special case that cannot be implemented with `merge`,
+  because it is only used if neither of the keys `:source-paths` nor
+  `:test-paths` are present in the supplies options map, as a
+  convenience for use in the REPL.
+* `:callback` - a default message callback function, which simply
+  formats all callback data as strings and prints it to `*out*`, or
+  the writer specified by the value of the `:out` key in the options
+  map (e.g. if it is a string, the file named by that string will be
+  written).
 
 
 ## Known issues

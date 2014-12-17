@@ -721,14 +721,17 @@ user=> (ns/canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
 
 
 (defn nss-in-dirs [dir-name-strs opt warning-count]
-  (let [dir-name-strs (or (seq dir-name-strs)
-                          (#'eastwood.copieddeps.dep9.clojure.tools.namespace.dir/dirs-on-classpath))
-        dir-name-strs (map canonical-filename dir-name-strs)
+  (let [dir-name-strs (map canonical-filename dir-name-strs)
         mismatches (filename-namespace-mismatches dir-name-strs)]
     (if (seq mismatches)
       {:err :namespace-filename-mismatch
        :err-data {:mismatches mismatches}}
-      (let [tracker (apply dir/scan-all (track/tracker) dir-name-strs)
+      (let [tracker (if (seq dir-name-strs)
+                      (apply dir/scan-all (track/tracker) dir-name-strs)
+                      ;; Use empty tracker if dir-name-strs is empty.
+                      ;; Calling dir/scan-all will use complete Java
+                      ;; classpath if called with an empty sequence.
+                      (track/tracker))
             files-no-ns-form-found
             (when (some #{:no-ns-form-found} (:enabled-linters opt))
               (let [tfiles (-> tracker
@@ -805,8 +808,7 @@ file and namespace to avoid name collisions."))))
 ;; is given that cannot be found.
 
 (defn opts->namespaces [opts warning-count]
-  (let [namespaces1 (distinct (or (:namespaces opts)
-                                  [:source-paths :test-paths]))
+  (let [namespaces1 (distinct (:namespaces opts))
         sp-included? (some #{:source-paths} namespaces1)
         tp-included? (some #{:test-paths} namespaces1)
         excluded-namespaces (set (:exclude-namespaces opts))]
@@ -856,8 +858,7 @@ file and namespace to avoid name collisions."))))
 
 
 (defn opts->linters [opts linter-name->fn default-linters]
-  (let [linters (set (or (:linters opts)
-                         default-linters))
+  (let [linters (set (:linters opts))
         excluded-linters (set (:exclude-linters opts))
         add-linters (set (:add-linters opts))
         linters-requested (-> (set/difference linters excluded-linters)
@@ -1059,12 +1060,38 @@ Return value:
                        :debug-form-emitted form-emitted-cb})))
 
 
-(defn eastwood [opts]
-  ;; Use caller-provided :cwd and :callback values if provided
-  (let [opts (merge {:cwd (.getCanonicalFile (io/file "."))} opts)
+(defn last-options-map-adjustments [opts]
+  (let [opts (update-in opts [:debug] set)
+        opts (merge {:cwd (.getCanonicalFile (io/file "."))
+                     :linters default-linters
+                     :namespaces [:source-paths :test-paths]}
+                    opts)
+        ;; special case 'merge': If _neither_ of :source-paths or
+        ;; :test-paths were specified in the options map, then set
+        ;; _one_ of them to a list of all the directories on the
+        ;; classpath.  If either is present, leave them both as is.
+        ;; Both of these should always have a value if invoked from
+        ;; Leiningen command line, so this is only for when invoked
+        ;; directly, e.g. from the REPL, intended as a convenience.
+        opts (if (or (contains? opts :source-paths)
+                     (contains? opts :test-paths))
+               opts
+               (assoc opts :source-paths
+                      (#'eastwood.copieddeps.dep9.clojure.tools.namespace.dir/dirs-on-classpath)))
+        ;; The following value is equivalent to (merge {:callback ...}
+        ;; opts), but it does not calculate the value unless needed.
         opts (if (contains? opts :callback)
                opts
-               (assoc opts :callback (make-default-cb opts)))
+               (assoc opts :callback (make-default-cb opts)))]
+    opts))
+
+
+(defn eastwood [opts]
+  ;; Use caller-provided :cwd and :callback values if provided
+  (let [opts (last-options-map-adjustments opts)
+        _ (when (util/debug? #{:options} opts)
+            (println "\nOptions map after filling in defaults:")
+            (pp/pprint (into (sorted-map) opts)))
         error-cb (util/make-msg-cb :error opts)
         note-cb (util/make-msg-cb :note opts)
         debug-cb (util/make-msg-cb :debug opts)

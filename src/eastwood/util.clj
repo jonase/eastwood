@@ -633,8 +633,8 @@ of these kind."
        not-found)))
 
 (defn debug? [debug-options opt]
-  (assert (set? debug-options))
-  (assert (map? opt))
+  {:pre [(set? debug-options)
+         (map? opt)]}
   (let [d (:debug opt)]
     (or (contains? d :all)
         (some debug-options d))))

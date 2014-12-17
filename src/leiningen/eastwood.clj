@@ -52,7 +52,7 @@ For other options, see the full documentation on-line here:
             leiningen-opts (:eastwood project)
             cmdline-opts (read-string opts)
             opts (merge leiningen-paths leiningen-opts cmdline-opts)]
-        (when (contains? (:debug opts) :options)
+        (when (some #{:options} (:debug opts))
           (println "\nLeiningen paths:")
           (pp/pprint (into (sorted-map) leiningen-paths))
           (println "\nLeiningen options map:")
