@@ -633,11 +633,14 @@ of these kind."
        not-found)))
 
 (defn debug? [debug-options opt]
-  {:pre [(set? debug-options)
-         (map? opt)]}
+  {:pre [(or (keyword? debug-options) (set? debug-options))
+         (map? opt)
+         (set? (:debug opt))]}
   (let [d (:debug opt)]
     (or (contains? d :all)
-        (some debug-options d))))
+        (and (set? debug-options)
+             (some debug-options d))
+        (contains? d debug-options))))
 
 
 (defn make-msg-cb

@@ -562,7 +562,7 @@ curious." eastwood-url))
     (let [[{:keys [analyze-results exception exception-phase exception-form]}
            analyze-time-msec]
           (timeit (analyze/analyze-ns ns-sym :opt opts))
-          print-time? (util/debug? #{:time} opts)]
+          print-time? (util/debug? :time opts)]
       (when print-time?
         (note-cb (format "Analysis took %.1f millisec" analyze-time-msec)))
       (doseq [linter linters]
@@ -603,6 +603,8 @@ exception."))
         exception))))
 
 
+(declare last-options-map-adjustments)
+
 ;; If an exception occurs during analyze, re-throw it.  This will
 ;; cause any test written that calls lint-ns-noprint to fail, unless
 ;; it expects the exception.
@@ -615,7 +617,9 @@ exception."))
                :lint-warning (swap! lint-warnings conj (:warn-data info))
                (:eval-out :eval-err) (println (:msg info))
                :default))
-        opts (assoc opts :callback cb)
+        opts (assoc opts :callback cb
+                    :linters linters)
+        opts (last-options-map-adjustments opts)
         exception (lint-ns ns-sym linters opts warning-count exception-count)]
     (if exception
       (throw exception)
@@ -987,7 +991,7 @@ Return value:
            debug-cb (util/make-msg-cb :debug opts)
            continue-on-exception? (:continue-on-exception opts)
            stopped-on-exc (atom false)]
-       (when (util/debug? #{:ns} opts)
+       (when (util/debug? :ns opts)
          (debug-cb (format "Namespaces to be linted:"))
          (doseq [n namespaces]
            (debug-cb (format "    %s" n))))
@@ -1044,7 +1048,7 @@ Return value:
         default-debug-ast-cb (make-default-debug-ast-cb wrtr)
         
         [form-read-cb form-emitted-cb]
-        (if (util/debug? #{:compare-forms} opts)
+        (if (util/debug? :compare-forms opts)
           [ (make-default-form-cb (io/writer "forms-read.txt"))
             (make-default-form-cb (io/writer "forms-emitted.txt")) ]
           [])]
@@ -1089,7 +1093,7 @@ Return value:
 (defn eastwood [opts]
   ;; Use caller-provided :cwd and :callback values if provided
   (let [opts (last-options-map-adjustments opts)
-        _ (when (util/debug? #{:options} opts)
+        _ (when (util/debug? :options opts)
             (println "\nOptions map after filling in defaults:")
             (pp/pprint (into (sorted-map) opts)))
         error-cb (util/make-msg-cb :error opts)
@@ -1100,7 +1104,7 @@ Return value:
                              (eastwood-version)
                              (clojure-version)
                              (get (System/getProperties) "java.version")))
-            (when (util/debug? #{:compare-forms} opts)
+            (when (util/debug? :compare-forms opts)
               (debug-cb "Writing files forms-read.txt and forms-emitted.txt")))
         {:keys [err warning-count exception-count] :as ret}
         (eastwood-core opts)]

@@ -231,9 +231,9 @@ that uses `A/foo` will throw an exception because it is undefined.
 There are also options that enable printing of additional debug
 messages during linting.  These are only intended for tracking down
 the cause of errors in Eastwood.  You specify the key `:debug` with a
-value that is a set of keywords, e.g.
+value that is a list or vector of keywords, e.g.
 
-    lein eastwood "{:exclude-linters [:wrong-arity] :debug #{:eval :ns}}"
+    lein eastwood "{:exclude-linters [:wrong-arity] :debug [:eval :ns]}"
 
 * `:all` - enable all debug messages.  This also enables showing the
   list of namespaces near the beginning of the output, before linting
@@ -482,7 +482,7 @@ For example, if your user-wide `profiles.clj` file contains this:
 ```clojure
 {:user {:plugins [[jonase/eastwood "0.2.0"]]
         :eastwood {:exclude-linters [:unlimited-use]
-                   :debug #{:time}}
+                   :debug [:time]}
         }}
 ```
 
@@ -490,7 +490,7 @@ and your `project.clj` file's `defproject` contains this:
 
 ```clojure
   :profiles {:dev {:eastwood {:exclude-linters [:wrong-arity :bad-arglists]
-                              :debug #{:progress}
+                              :debug [:progress]
                               :warning-format :map-v2
                               }}}
 ```
@@ -500,7 +500,7 @@ for the `:eastwood` key:
 
 ```clojure
   {:exclude-linters (:unlimited-use :wrong-arity :bad-arglists)
-   :debug #{:time :progress}
+   :debug (:time :progress)
    :warning-format :map-v2
    }
 ```

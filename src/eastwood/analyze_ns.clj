@@ -62,8 +62,8 @@ the value of File/separator for the platform."
   (gen-interface-form? form))
 
 (defn pre-analyze-debug [asts form _env ns opt]
-  (let [print-normally? (util/debug? #{:forms} opt)
-        pprint? (util/debug? #{:forms-pprint} opt)
+  (let [print-normally? (util/debug? :forms opt)
+        pprint? (util/debug? :forms-pprint opt)
         debug-cb (util/make-msg-cb :debug opt)]
     (when (or print-normally? pprint?)
       (debug-cb (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
@@ -88,10 +88,10 @@ the value of File/separator for the platform."
       (debug-cb "\n    --------------------"))))
 
 (defn post-analyze-debug [asts form ast ns opt]
-  (let [show-ast? (util/debug? #{:ast} opt)
+  (let [show-ast? (util/debug? :ast opt)
         cb (:callback opt)
         debug-cb (util/make-msg-cb :debug opt)]
-    (when (or show-ast? (util/debug? #{:progress} opt))
+    (when (or show-ast? (util/debug? :progress opt))
       (debug-cb (format "dbg anal'd %d ns=%s%s"
                         (count asts) (str ns)
                         (if show-ast? " ast=" ""))))
@@ -253,7 +253,7 @@ recursing into ASTs with :op equal to :do"
   [source-path & {:keys [reader opt]}]
   (let [debug-cb (util/make-msg-cb :debug opt)
         eof (reify)]
-    (when (util/debug? #{:ns} opt)
+    (when (util/debug? :ns opt)
       (debug-cb (format "all-ns before (analyze-file \"%s\") begins:"
                         source-path))
       (debug-cb (with-out-str (pp/pprint (sort (all-ns-names-set))))))
