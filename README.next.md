@@ -238,20 +238,29 @@ value that is a list or vector of keywords, e.g.
 * `:all` - enable all debug messages.  This also enables showing the
   list of namespaces near the beginning of the output, before linting
   begins.
+* `:options` - print the contents of the options map at several steps
+  during startup.  May be useful to debug where options are coming
+  from.
+* `:config` - print the names of Eastwood config files just before
+  they are read.
 * `:time` - print messages about the elapsed time taken during
   analysis, and for each individual linter.
 * `:forms` - print the forms as read, before they are analyzed
 * `:forms-pprint` - like `:forms` except pretty-print the forms
+* `:ast` - print ASTs as forms are analyzed and `eval`d.  These can be
+  quite long.
 * `:progress` - show a brief debug message after each top-level form
   is read
-* `:eval` - pretty-print each form after it has been read, analyzed
-  into an AST (abstract syntax tree), and converted back into form
-  from the AST, but before that form is evaluated with `eval`.
-* `:ns` - print the initial set of namespaces loaded into the Clojure
-  run-time at the beginning of each file being linted, and then after
-  each top level form print any changes to that list of loaded
-  namespaces (typically as the result of evaluating a `require` or
-  `use` form).
+* `:compare-forms` - print all forms as read to a file
+  `forms-read.txt`, and all forms after being read, analyzed into an
+  AST, and converted back into a form from the AST, to a file
+  `forms-emitted.txt`.  X * `:ns` - print the initial set of
+  namespaces loaded into the Clojure run-time at the beginning of each
+  file being linted.  (TBD: it used to do the following, but this
+  needs to be reimplemented if it is desired: "and then after each top
+  level form print any changes to that list of loaded namespaces
+  (typically as the result of evaluating a `require` or `use` form).")
+
 
 
 ### Running Eastwood in a REPL
