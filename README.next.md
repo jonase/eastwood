@@ -123,8 +123,8 @@ set is `:ast`, which prints AST contents related to issued warnings
 for most linters that implement `:debug-warning`.
 
 The 'suppress' column indicates whether warnings produced by the
-linter can be selectively disabled via Eastwood config files.  TBD:
-pointer to more details.
+linter can be selectively disabled via Eastwood config files.  See
+[Eastwood config files](#eastwood-config-files) for more details.
 
 | Linter name | debug | suppress |
 | ----------- | ----- | -------- |
@@ -301,6 +301,54 @@ value that is a list or vector of keywords, e.g.
   that list of loaded namespaces (typically as the result of
   evaluating a `require` or `use` form).")
 
+
+### Eastwood config files
+
+Starting with version 0.2.1, Eastwood `eval`s several config files in
+its internal resources.  You can see the latest versions
+[here](https://github.com/jonase/eastwood/tree/master/resource/eastwood/config).
+It also support command line options to change which of these files
+are read, or to read user-written config files.
+
+Currently Eastwood supports config files that contain code to
+selectively disable warnings of some linters.  For example, consider
+this expression from config file `clojure.clj`:
+
+```clojure
+(disable-warning
+ {:linter :suspicious-expression
+  ;; specifically, those detected in function suspicious-macro-invocations
+  :for-macro 'clojure.core/let
+  :if-inside-macroexpansion-of #{'clojure.core/when-first}
+  :within-depth 6
+  :reason "when-first with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
+```
+
+Eastwood would normally report a `:suspicious-expression` warning if
+it encounters a form `(let [x y])`, because the `let` has an empty
+body.  It does so even if the `let` is the result of expanding some
+other macro.
+
+However, if such a `let` occurs because of a macro expansion of the
+expression `(when-first [x y])`, the warning for the `let` will be
+suppressed.  Eastwood already warns about the `(when-first [x y])`
+because it has an empty body, so warning about the `let` would be
+redundant.
+
+The exact configurations supported are not documented yet, but will be
+in the documentation for each linter.
+
+You can specify the key `:builtin-config-files` in the options map to
+override the built-in config files read.  It defaults to
+`["clojure.clj" "clojure-contrib.clj" "third-party-libs.clj"]`.  All
+such file names are only looked for in Eastwood's built-in config
+files.
+
+Similarly you can specify `:config-files` in the options map to give
+additional files to read.  These are file names that can be anywhere
+in your file system, specified as strings, or if Eastwood is invoked
+from the REPL, anything that can be passed to
+`clojure.java.io/reader`.
 
 
 ### Running Eastwood in a REPL
