@@ -1,5 +1,7 @@
 # eastwood - a Clojure lint tool
 
+[![Dependencies Status](http://jarkeeper.com/jonase/eastwood/status.svg)](http://jarkeeper.com/jonase/eastwood)
+
 Eastwood is a Clojure
 [lint](http://en.wikipedia.org/wiki/Lint_%28software%29) tool that
 uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
