@@ -565,12 +565,14 @@ discarded inside null: null'."
     (for [ast macro-invokes
           :let [orig-form (-> ast :raw-forms first)
                 loc (-> orig-form meta)
-                ;; TBD: Ask Nicola why the ::resolved-op key shows up
-                ;; so often after my latest t.a(.j) update.
+                ;; The ::resolved-op key was added recently to t.a(.j)
+                ;; libs to record the resolution of Var names in
+                ;; :raw-forms.
                 non-loc-meta-keys (-> (set (keys loc))
                                       (set/difference #{:file :line :column
                                                         :end-line :end-column
-                                                        :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op}))
+                                                        :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op
+                                                        }))
                 resolved-form (-> ast :eastwood/partly-resolved-forms first)
                 resolved-macro-symbol (try
                                         (first resolved-form)

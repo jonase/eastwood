@@ -912,10 +912,34 @@ StringWriter."
 (require '[eastwood.analyze-ns :as ana] :reload)
 (require '[eastwood.util :as util] :reload)
 (require '[eastwood.linters.unused :as un] :reload)
+(require '[eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast])
+
+(defn has-resolved-op? [ast]
+  (contains? (-> ast :raw-forms first meta)
+             :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op))
+
+(defn resolved-op-asts [asts]
+  (->> asts
+       (mapcat ast/nodes)
+       (filter has-resolved-op?)))
+
+(defn resolved-ops [ast]
+  (map (fn [rf]
+         (-> rf meta
+             :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op))
+       (:raw-forms ast)))
+
+(defn add-resolved-ops [ast]
+  (assoc ast
+    :resolved-ops-on-raw-forms
+    (resolved-ops ast)))
 
 (def nssym 'testcases.f06)
 (def a (ana/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}}))
-(def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv util/clean-ast ast))))
+(def a2 (update-in a [:analyze-results :asts]
+                   (fn [asts]
+                     (mapv (fn [ast] (-> ast add-resolved-ops util/clean-ast))
+                           asts))))
 (insp/inspect-tree a2)
 
 )

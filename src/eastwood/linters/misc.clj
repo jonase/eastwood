@@ -762,7 +762,7 @@
 
 (defn warnings-for-one-ns-form [ns-ast]
   (let [loc (:env ns-ast)
-        references (-> ns-ast :eastwood/partly-resolved-forms first nnext)
+        references (-> ns-ast :raw-forms first nnext)
         [docstring references] (if (string? (first references))
                                  [(first references) (next references)]
                                  [nil references])

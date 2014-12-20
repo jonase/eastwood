@@ -16,7 +16,7 @@
 
             [eastwood.copieddeps.dep1.clojure.tools.analyzer
              [utils :refer [ctx resolve-sym -source-info resolve-ns obj? dissoc-env butlast+last mmerge]]
-             [ast :refer [walk prewalk postwalk]]
+             [ast :refer [walk prewalk postwalk] :as ast]
              [env :as env :refer [*env*]]
              [passes :refer [schedule]]]
 
@@ -483,7 +483,10 @@
                                    (let [mform (ana/macroexpand-1 form env)]
                                      (if (= mform form)
                                        [mform (seq raw-forms)]
-                                       (recur mform (conj raw-forms form))))))]
+                                       (recur mform (conj raw-forms
+                                                          (if (and (seq? form) (u/macro? (first form) env))
+                                                            (vary-meta form assoc ::ana/resolved-op (resolve-sym (first form) env))
+                                                            form)))))))]
          (if (and (seq? mform) (= 'do (first mform)) (next mform))
            ;; handle the Gilardi scenario
            (let [[statements ret] (butlast+last (rest mform))
