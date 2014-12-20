@@ -484,8 +484,11 @@
                                      (if (= mform form)
                                        [mform (seq raw-forms)]
                                        (recur mform (conj raw-forms
-                                                          (if (and (seq? form) (u/macro? (first form) env))
-                                                            (vary-meta form assoc ::ana/resolved-op (resolve-sym (first form) env))
+                                                          (if-let [[op & r] (and (seq? form)form )]
+                                                            (if (or (u/macro? op  env)
+                                                                    (u/inline? op r env))
+                                                              (vary-meta form assoc ::ana/resolved-op (resolve-sym op env))
+                                                              form)
                                                             form)))))))]
          (if (and (seq? mform) (= 'do (first mform)) (next mform))
            ;; handle the Gilardi scenario
