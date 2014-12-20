@@ -14,6 +14,7 @@
              [ast :as ast]
              [env :as env]
              [passes :refer [schedule]]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.trim :refer [trim]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
              [warn-on-reflection :refer [warn-on-reflection]]]))
@@ -145,7 +146,7 @@ the value of File/separator for the platform."
   ;; Doing clojure.core/eval in analyze+eval already generates
   ;; reflection warnings from Clojure.  Doing it in tools.analyzer
   ;; also leads to duplicate warnings.
-  (disj ana.jvm/default-passes #'warn-on-reflection))
+  (disj ana.jvm/default-passes #'warn-on-reflection #'trim))
 
 (def scheduled-eastwood-passes
   (schedule eastwood-passes))

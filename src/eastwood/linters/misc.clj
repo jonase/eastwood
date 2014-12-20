@@ -3,7 +3,7 @@
             [clojure.pprint :as pp]
             [clojure.set :as set]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [resolve-var arglist-for-arity]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [resolve-sym arglist-for-arity]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as j]
             [eastwood.util :as util]))
@@ -569,7 +569,7 @@
                    ;; the difference between that and (:tag fn) ?
                    (not= clojure.lang.AFunction (:tag fn))
                    (contains? (:locals env) (:form fn)))
-        :let [v (env/ensure (j/global-env) (resolve-var (:form fn) env))]
+        :let [v (env/ensure (j/global-env) (resolve-sym (:form fn) env))]
         :when v]
     (util/add-loc-info env
      {:linter :local-shadows-var

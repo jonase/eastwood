@@ -7,14 +7,16 @@ cd repos
 
 git clone https://github.com/clojure/tools.analyzer.git
 cd tools.analyzer
-#git checkout tools.analyzer-0.6.3
-# Several commits after 0.6.3, up through Nov 15 2014
-git checkout fd763e6a06319679f933f7fb9bf29910a004b262
+#git checkout tools.analyzer-0.6.4
+# Several commits after 0.6.4, up through Dec 6 2014
+git checkout d64039c947c10952d18799d196c11d842ebe871a
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
-git checkout tools.analyzer.jvm-0.6.5
+#git checkout tools.analyzer.jvm-0.6.5
+# Several commits after 0.6.5, up through Dec 6 2014
+git checkout 4a891f5a1eaef6d360850810d5c7ae616c02b24c
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git
@@ -45,7 +47,7 @@ cd ..
 
 git clone https://github.com/clojure/tools.reader.git
 cd tools.reader
-git checkout tools.reader-0.8.12
+git checkout tools.reader-0.8.13
 cd ..
 
 git clone https://github.com/sattvik/leinjacker.git

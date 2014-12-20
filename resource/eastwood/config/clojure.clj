@@ -21,7 +21,7 @@
   ;; specifically, those detected in function suspicious-macro-invocations
   :for-macro 'clojure.core/let
   :if-inside-macroexpansion-of #{'clojure.core/when-let}
-  :within-depth 4
+  :within-depth 6
   :reason "when-let with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
 
 (disable-warning

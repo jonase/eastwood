@@ -57,11 +57,6 @@
   (when ch
     (Character/isDigit ch)))
 
-(defn comment-prefix?
-  "Checks whether the character begins a comment."
-  [ch]
-  (identical? \;  ch))
-
 (defn newline?
   "Checks whether the character is a newline"
   [c]

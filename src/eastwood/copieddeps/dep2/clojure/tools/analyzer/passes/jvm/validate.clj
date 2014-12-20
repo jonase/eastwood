@@ -11,9 +11,10 @@
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.cleanup :refer [cleanup]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
+             [validate-recur :refer [validate-recur]]
              [infer-tag :refer [infer-tag]]
              [analyze-host-expr :refer [analyze-host-expr]]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [arglist-for-arity source-info resolve-var resolve-ns merge']]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [arglist-for-arity source-info resolve-sym resolve-ns merge']]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.utils :as u :refer [tag-match? try-best-match]])
   (:import (clojure.lang IFn ExceptionInfo)))
 
@@ -157,7 +158,7 @@
   [{:keys [^String class validated? env form] :as ast}]
   (if-not validated?
     (let [class-sym (-> class (subs (inc (.lastIndexOf class "."))) symbol)
-          sym-val (resolve-var class-sym env)]
+          sym-val (resolve-sym class-sym env)]
       (if (and (class? sym-val) (not= (.getName ^Class sym-val) class)) ;; allow deftype redef
         (throw (ex-info (str class-sym " already refers to: " sym-val
                              " in namespace: " (:ns env))
@@ -259,7 +260,7 @@
       AST node which can be either a :maybe-class or a :maybe-host-form,
       those nodes are documented in the tools.analyzer quickref.
       The function must return a valid tools.analyzer.jvm AST node."
-  {:pass-info {:walk :post :depends #{#'infer-tag #'analyze-host-expr}}}
+  {:pass-info {:walk :post :depends #{#'infer-tag #'analyze-host-expr #'validate-recur}}}
   [{:keys [tag form env] :as ast}]
   (let [ast (merge (-validate ast)
                    (when tag

@@ -13,12 +13,7 @@
 
 (defmulti -annotate-tag :op)
 
-(defmethod -annotate-tag :default
-  [ast]
-  (if (= :const (:op ast))
-    (let [t (class (:val ast))]
-      (assoc ast :o-tag t :tag t))
-    ast))
+(defmethod -annotate-tag :default [ast] ast)
 
 (defmethod -annotate-tag :map
   [{:keys [val form] :as ast}]
@@ -35,27 +30,27 @@
   (let [t (class (or val form))]
     (assoc ast :o-tag t :tag t)))
 
-(defmethod -annotate-tag :seq
-  [ast]
-  (assoc ast :o-tag ISeq :tag ISeq))
-
-;; char and numbers are unboxed by default
-(defmethod -annotate-tag :number
-  [ast]
-  (let [t (unbox (class (:val ast)))]
-    (assoc ast :o-tag t :tag t)))
-
-(defmethod -annotate-tag :char
-  [ast]
-  (assoc ast :o-tag Character/TYPE :tag Character/TYPE))
-
 (defmethod -annotate-tag :the-var
   [ast]
   (assoc ast :o-tag Var :tag Var))
 
 (defmethod -annotate-tag :const
   [ast]
-  ((get-method -annotate-tag (:type ast)) ast))
+  (case (:type ast)
+
+    ;; char and numbers are unboxed by default
+    :number
+    (let [t (unbox (class (:val ast)))]
+      (assoc ast :o-tag t :tag t))
+
+    :char
+    (assoc ast :o-tag Character/TYPE :tag Character/TYPE)
+
+    :seq
+    (assoc ast :o-tag ISeq :tag ISeq)
+
+    (let [t (class (:val ast))]
+      (assoc ast :o-tag t :tag t))))
 
 (defmethod -annotate-tag :binding
   [{:keys [form tag atom o-tag init local name variadic?] :as ast}]

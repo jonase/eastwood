@@ -153,15 +153,15 @@
      (boolean (:protocol (or m (meta var)))))) ;; conveniently this is true in both clojure and clojurescript
 
 (defn resolve-ns
-  "Resolves the ns mapped by the given sym in the env"
+  "Resolves the ns mapped by the given sym in the global env"
   [ns-sym {:keys [ns]}]
   (when ns-sym
     (let [namespaces (:namespaces (env/deref-env))]
       (or (get-in namespaces [ns :aliases ns-sym])
           (:ns (namespaces ns-sym))))))
 
-(defn resolve-var
-  "Resolves the var mapped by the given sym in the env"
+(defn resolve-sym
+  "Resolves the value mapped by the given sym in the global env"
   [sym {:keys [ns] :as env}]
   (when (symbol? sym)
     (let [sym-ns (when-let [ns (namespace sym)]

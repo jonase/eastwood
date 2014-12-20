@@ -148,7 +148,8 @@
    A :host-interop node represents either an instance-field or a no-arg instance-method. "
   {:pass-info {:walk :post :depends #{}}}
   [{:keys [op target form tag env class] :as ast}]
-  (if (#{:host-interop :host-call :host-field :maybe-class :var} op)
+  (case op
+    (:host-interop :host-call :host-field)
     (let [target (if-let [the-class (and (= :local (:op target))
                                          (maybe-class-literal (:form target)))]
                    (merge target
@@ -171,25 +172,21 @@
                 (analyze-host-field target-type (:field ast)
                                     target (or class? (:tag target)) env)
 
-                :maybe-class
-                (when-let [the-class (maybe-class-literal class)]
-                  (assoc (ana/analyze-const the-class env :class)
-                    :tag   Class
-                    :o-tag Class
-                    :form  form))
-
-                :var
-                (if-let [the-class (and (not (namespace form))
-                                        (pos? (.indexOf (str form) "."))
-                                        (maybe-class-literal form))]
-                  (assoc (ana/analyze-const the-class env :class)
-                    :tag   Class
-                    :o-tag Class
-                    :form  form)
-                  ast)
-
+                :host-interop
                 (-analyze-host-expr target-type (:m-or-f ast)
                                     target class? env))
               (when tag
                 {:tag tag})))
+    :var
+    (if-let [the-class (and (not (namespace form))
+                            (pos? (.indexOf (str form) "."))
+                            (maybe-class-literal form))]
+      (assoc (ana/analyze-const the-class env :class) :form form)
+      ast)
+
+    :maybe-class
+    (if-let [the-class (maybe-class-literal class)]
+      (assoc (ana/analyze-const the-class env :class) :form form)
+      ast)
+
     ast))

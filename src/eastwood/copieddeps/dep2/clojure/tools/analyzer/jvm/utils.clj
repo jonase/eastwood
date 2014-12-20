@@ -25,13 +25,13 @@
          options))
 
 (defn macro? [sym env]
-  (when-let [v (u/resolve-var sym env)]
+  (when-let [v (u/resolve-sym sym env)]
     (and (not (-> env :locals (get sym)))
          (u/macro? v)
          v)))
 
 (defn inline? [sym args env]
-  (when-let [v (u/resolve-var sym env)]
+  (when-let [v (u/resolve-sym sym env)]
     (let [inline-arities-f (:inline-arities (meta v))]
       (and (not (-> env :locals (get sym)))
            (or (not inline-arities-f)
@@ -79,15 +79,14 @@
 
 (def maybe-class-from-string
   (lru (fn maybe-class-from-string [^String s]
-         (if (or (pos? (.indexOf s "."))
-                 (= \[ (first s)))
-           (try (RT/classForName s)
-                (catch ClassNotFoundException _))
-           (when-let [maybe-class (if env/*env*
-                                    (u/resolve-var (symbol s) {:ns (ns-name *ns*)})
-                                    ((ns-map *ns*) (symbol s)))]
-             (when (class? maybe-class)
-               maybe-class))))))
+         (or (when-let [maybe-class (and (neg? (.indexOf s "."))
+                                         (not= \[ (first s))
+                                         (if env/*env*
+                                           (u/resolve-sym (symbol s) {:ns (ns-name *ns*)})
+                                           ((ns-map *ns*) (symbol s))))]
+               (when (class? maybe-class) maybe-class))
+             (try (RT/classForName s)
+                  (catch ClassNotFoundException _))))))
 
 (defmethod maybe-class :default [_] nil)
 (defmethod maybe-class Class [c] c)

@@ -60,7 +60,7 @@ available:
 
 ### Current dependencies of project deps
 
-As of October 30 2014:
+As of December 18 2014:
 
     % lein deps :tree
     warn
@@ -72,28 +72,28 @@ As of October 30 2014:
          [org.clojure/core.unify "0.5.3"]
      [org.clojars.brenton/google-diff-match-patch "0.1"]
      [org.clojure/clojure "1.6.0"]
-     [org.clojure/tools.analyzer.jvm "0.6.3"]
+     [org.clojure/tools.analyzer.jvm "0.6.5"]
        [org.clojure/core.memoize "0.5.6"]
          [org.clojure/core.cache "0.6.3"]
            [org.clojure/data.priority-map "0.0.2"]
        [org.ow2.asm/asm-all "4.2"]
-     [org.clojure/tools.analyzer "0.6.2"]
+     [org.clojure/tools.analyzer "0.6.4"]
      [org.clojure/tools.macro "0.1.2" :scope "test"]
      [org.clojure/tools.namespace "0.2.7"]
      [org.clojure/tools.nrepl "0.2.6" :scope "test" :exclusions [[org.clojure/clojure]]]
-     [org.clojure/tools.reader "0.8.10"]
-    
+     [org.clojure/tools.reader "0.8.13"]
+
     % lein ancient
     [leinjacker "0.4.2"] is available but we use "0.4.1"
     [org.clojure/tools.macro "0.1.5"] is available but we use "0.1.2"
-
+    
 Latest versions of some transitive dependencies as of May 29 2014:
 
 core.contracts 0.0.5 > 0.0.1 above, but leave at 0.0.1 since
   leinjacker has been tested with it
 core.unify 0.5.6 > 0.5.3 above, but leave at 0.5.3 since leinjacker
   has been tested with it
-core.memoize 0.5.6 = version above above, but see patch I applied below
+core.memoize 0.5.6 = version above, but see patch I applied below
 core.cache 0.6.3 = version above
 data.priority-map 0.0.5 > 0.0.2 above.  See below.
 tools.namespace 0.2.4 = version above

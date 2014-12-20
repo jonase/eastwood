@@ -101,7 +101,10 @@ significance needed by the user."
                     ;; of the other cases already issues a warning for
                     ;; this.
                     (and (= wrong-tag-keys #{:eastwood/return-tag})
-                         (#{:def :fn} op))
+                         (or (#{:def :fn} op)
+                             (and (= :do op)
+                                  (= [] (:statements ast))
+                                  (= :fn (-> ast :ret :op)))))
                     [nil nil nil]
                     ;;[:var (get ast :return-tag) env]
 
@@ -166,17 +169,20 @@ significance needed by the user."
               ;; metadata on the Var whose value is being made equal
               ;; to the fn being defined.  That is where the {:private
               ;; true} key/value pair should be if the Var is marked
-              ;; private.
-              grandparent-ast (let [ancestors (:eastwood/ancestors ast)
-                                    n (count ancestors)]
-                                (if (>= n 2)
-                                  (ancestors (- n 2))))
-              private-var? (and grandparent-ast
-                                (= :def (:op grandparent-ast))
-                                (-> grandparent-ast :meta :val :private))
+              ;; private.  Recent changes in t.a(.j) libs made it
+              ;; possible it could also be the node one more level up
+              ;; the tree that is the :def node, so check both.
+              gp-and-ggp-asts (let [ancestors (:eastwood/ancestors ast)]
+                                (->> (reverse ancestors)
+                                     (take 3)
+                                     (drop 1)))
+              private-var? (some #(and %
+                                       (= :def (:op %))
+                                       (-> % :meta :val :private))
+                                 gp-and-ggp-asts)
 ;;              _ (when tag
 ;;                  (println (format "jafinger-dbg3: tag=%s op=%s gp-op=%s loc=%s"
-;;                                   tag op (:op grandparent-ast) loc))
+;;                                   tag op (:op (first gp-and-ggp-asts)) loc))
 ;;                  )
               ]
         :when (and tag

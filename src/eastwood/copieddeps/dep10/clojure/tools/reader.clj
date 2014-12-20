@@ -44,7 +44,8 @@
       (if (or (whitespace? ch)
               (macro-terminating? ch)
               (nil? ch))
-        (do (unread rdr ch)
+        (do (when ch
+              (unread rdr ch))
             (str sb))
         (recur (.append sb ch) (read-char rdr))))))
 
@@ -147,10 +148,17 @@
          :else (reader-error rdr "Unsupported character: \\" token)))
       (reader-error rdr "EOF while reading character"))))
 
+(defn ^:private starting-line-col-info [rdr]
+  (when (indexing-reader? rdr)
+    [(get-line-number rdr) (int (dec (get-column-number rdr)))]))
+
+(defn ^:private ending-line-col-info [rdr]
+  (when (indexing-reader? rdr)
+    [(get-line-number rdr) (get-column-number rdr)]))
+
 (defn- ^PersistentVector read-delimited
   [delim rdr recursive?]
-  (let [first-line (when (indexing-reader? rdr)
-                     (get-line-number rdr))
+  (let [[start-line start-column] (starting-line-col-info rdr)
         delim (char delim)]
     (loop [a (transient [])]
       (if-let [ch (read-past whitespace? rdr)]
@@ -163,16 +171,14 @@
             (let [o (read (doto rdr (unread ch)) true nil recursive?)]
               (recur (if-not (identical? o rdr) (conj! a o) a)))))
         (reader-error rdr "EOF while reading"
-                      (when first-line
-                        (str ", starting at line " first-line)))))))
+                      (when start-line
+                        (str ", starting at line " start-line " and column " start-column)))))))
 
 (defn- read-list
   [rdr _]
-  (let [[start-line start-column] (when (indexing-reader? rdr)
-                                    [(get-line-number rdr) (int (dec (get-column-number rdr)))])
+  (let [[start-line start-column] (starting-line-col-info rdr)
         the-list (read-delimited \) rdr true)
-        [end-line end-column] (when (indexing-reader? rdr)
-                                [(get-line-number rdr) (int (get-column-number rdr))])]
+        [end-line end-column] (ending-line-col-info rdr)]
     (with-meta (if (empty? the-list)
                  '()
                  (clojure.lang.PersistentList/create the-list))
@@ -187,11 +193,9 @@
 
 (defn- read-vector
   [rdr _]
-  (let [[start-line start-column] (when (indexing-reader? rdr)
-                                    [(get-line-number rdr) (int (dec (get-column-number rdr)))])
+  (let [[start-line start-column] (starting-line-col-info rdr)
         the-vector (read-delimited \] rdr true)
-        [end-line end-column] (when (indexing-reader? rdr)
-                                [(get-line-number rdr) (int (get-column-number rdr))])]
+        [end-line end-column] (ending-line-col-info rdr)]
     (with-meta the-vector
       (when start-line
         (merge
@@ -204,12 +208,10 @@
 
 (defn- read-map
   [rdr _]
-  (let [[start-line start-column] (when (indexing-reader? rdr)
-                                    [(get-line-number rdr) (int (dec (get-column-number rdr)))])
+  (let [[start-line start-column] (starting-line-col-info rdr)
         the-map (read-delimited \} rdr true)
         map-count (count the-map)
-        [end-line end-column] (when (indexing-reader? rdr)
-                                [(get-line-number rdr) (int (get-column-number rdr))])]
+        [end-line end-column] (ending-line-col-info rdr)]
     (when (odd? map-count)
       (reader-error rdr "Map literal must contain an even number of forms"))
     (with-meta
@@ -274,8 +276,7 @@
 
 (defn- read-symbol
   [rdr initch]
-  (let [[line column] (when (indexing-reader? rdr)
-                        [(get-line-number rdr) (int (dec (get-column-number rdr)))])]
+  (let [[line column] (starting-line-col-info rdr)]
     (when-let [token (read-token rdr initch)]
       (case token
 
@@ -294,10 +295,11 @@
                   (merge
                    (when-let [file (get-file-name rdr)]
                      {:file file})
-                   {:line line
-                    :column column
-                    :end-line (get-line-number rdr)
-                    :end-column (int (inc (get-column-number rdr)))}))))
+                   (let [[end-line end-column] (ending-line-col-info rdr)]
+                     {:line line
+                      :column column
+                      :end-line end-line
+                      :end-column end-column})))))
             (reader-error rdr "Invalid token: " token))))))
 
 (def ^:dynamic *alias-map*
@@ -340,8 +342,7 @@
 (defn- read-meta
   [rdr _]
   (log-source rdr
-    (let [[line column] (when (indexing-reader? rdr)
-                          [(get-line-number rdr) (int (dec (get-column-number rdr)))])
+    (let [[line column] (starting-line-col-info rdr)
           m (desugar-meta (read rdr true nil true))]
       (when-not (map? m)
         (reader-error rdr "Metadata must be Symbol, Keyword, String or Map"))
@@ -357,11 +358,9 @@
 
 (defn- read-set
   [rdr _]
-  (let [[start-line start-column] (when (indexing-reader? rdr)
-                                    [(get-line-number rdr) (int (dec (get-column-number rdr)))])
+  (let [[start-line start-column] (starting-line-col-info rdr)
         the-set (PersistentHashSet/createWithCheck (read-delimited \} rdr true))
-        [end-line end-column] (when (indexing-reader? rdr)
-                                [(get-line-number rdr) (int (get-column-number rdr))])]
+        [end-line end-column] (ending-line-col-info rdr)]
     (with-meta the-set
       (when start-line
         (merge
@@ -514,6 +513,8 @@
     ret))
 
 (defn- syntax-quote-coll [type coll]
+  ;; We use sequence rather than seq here to fix http://dev.clojure.org/jira/browse/CLJ-1444
+  ;; But because of http://dev.clojure.org/jira/browse/CLJ-1586 we still need to call seq on the form
   (let [res (list 'clojure.core/sequence
                   (list 'clojure.core/seq
                         (cons 'clojure.core/concat
@@ -742,7 +743,6 @@
               (whitespace? ch) (recur)
               (nil? ch) (if eof-error? (reader-error reader "EOF") sentinel)
               (number-literal? reader ch) (read-number reader ch)
-              (comment-prefix? ch) (do (read-comment reader) (recur))
               :else (let [f (macros ch)]
                       (if f
                         (let [res (f reader ch)]

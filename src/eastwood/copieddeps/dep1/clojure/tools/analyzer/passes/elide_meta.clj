@@ -62,12 +62,12 @@
         (if (= new-meta (:form meta))
           ast
           (assoc ast :meta (replace-meta meta new-meta)))
-        (let [ret (-> expr
-                    (assoc-in [:env :context] (:context env))
-                    (update-in [:form] with-meta {}))]
-          (if (:raw-forms ast)
-            (update-in ret [:raw-forms] (partial concat (:raw-forms ast)))
-            ast)))
+        (merge (dissoc ast :meta :expr)
+               {:op         :do
+                :body?      true
+                :ret        expr
+                :statements []
+                :children   [:statements :ret]}))
       :def
       (if (not (empty? new-meta))
         (if (= new-meta (:form meta))

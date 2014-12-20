@@ -116,7 +116,7 @@ replaced by one that is resolved, with a namespace."
                              (if (seq? form)
                                (let [[op & args] form
                                      ^clojure.lang.Var var (env/ensure (ana.jvm/global-env)
-                                                                       (utils/resolve-var op env))
+                                                                       (utils/resolve-sym op env))
                                      resolved-var-sym (if (nil? var)
                                                         op
                                                         (symbol (str (.ns var)) (name (.sym var))))]
