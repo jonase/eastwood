@@ -50,15 +50,13 @@ Most types of warning messages have a page or more of text describing
 the warning, why it occurs, and sometimes suggestions on what you can
 do about it.
 
-See [Editor
-Support](https://github.com/jonase/eastwood#editor-support) below for
-instructions on using a text editor or IDE to quickly take you to the
-file, line, and column of each warning message.
+See [Editor Support](#editor-support) below for instructions on using
+a text editor or IDE to quickly take you to the file, line, and column
+of each warning message.
 
-See the [Usage](https://github.com/jonase/eastwood#usage) section
-below for more notes on side effects in test code, and instructions on
-[running Eastwood in a REPL
-session](https://github.com/jonase/eastwood#running-eastwood-in-a-repl).
+See the [Usage](#usage) section below for more notes on side effects
+in test code, and instructions on [running Eastwood in a REPL
+session](#running-eastwood-in-a-repl).
 
 Eastwood can only finish linting a file if Clojure itself can compile
 it (unlike some other lint tools, which try to give meaningful error
@@ -78,9 +76,8 @@ Eastwood quits due to some internal error that throws an exception,
 you will typically see much more voluminous output about what went
 wrong, often including a stack trace.
 
-See section [For Eastwood
-developers](https://github.com/jonase/eastwood#for-eastwood-developers)
-below for instructions on trying out the latest unreleased version of
+See section [For Eastwood developers](#for-eastwood-developers) below
+for instructions on trying out the latest unreleased version of
 Eastwood.
 
 
@@ -93,28 +90,28 @@ enabled by default unless they have '(disabled)' after their name.
 
 | Linter name | Description | Docs |
 | ----------- | ----------- | ---- |
-| no name* | Inconsistencies between file names and the namespaces declared within them.  * Cannot be disabled. (added 0.1.1) | [[more]](https://github.com/jonase/eastwood#check-consistency-of-namespace-and-file-names) |
-`:bad-arglists` | Function/macro `:arglists` metadata that does not match the number of args it is defined with (added 0.1.1). | [[more]](https://github.com/jonase/eastwood#bad-arglists) |
-| `:constant-test` | A test expression always evaluates as true, or always false (added 0.2.0). | [[more]](https://github.com/jonase/eastwood#constant-test) |
-| `:def-in-def` | def's nested inside other def's. | [[more]](https://github.com/jonase/eastwood#def-in-def) |
-| `:deprecations` | Deprecated Clojure Vars, and deprecated Java constructors, methods, and fields. | [[more]](https://github.com/jonase/eastwood#deprecations) |
-| `:keyword-typos` (disabled) | Keyword names that may be typos because they occur only once in the source code and are slight variations on other keywords. | [[more]](https://github.com/jonase/eastwood#keyword-typos) |
-| `:local-shadows-var` | A local name, e.g. a function arg or let binding, has the same name as a global Var, and is called as a function (added 0.1.5). | [[more]](https://github.com/jonase/eastwood#local-shadows-var) |
-| `:misplaced-docstrings` | Function or macro doc strings placed after the argument vector, instead of before the argument vector where they belong. | [[more]](https://github.com/jonase/eastwood#misplaced-docstrings) |
-| `:no-ns-form-found` | Warn about Clojure files where no `ns` form could be found (added 0.2.0). | [[more]](https://github.com/jonase/eastwood#no-ns-form-found) |
-| `:non-clojure-file` (disabled) | Warn about files that will not be linted because they are not Clojure source files, i.e. their name does not end with '.clj' (added 0.2.0). | [[more]](https://github.com/jonase/eastwood#non-clojure-file) |
-| `:redefd-vars` | Redefinitions of the same name in the same namespace. | [[more]](https://github.com/jonase/eastwood#redefd-vars) |
-| `:suspicious-expression` | Suspicious expressions that appear incorrect, because they always return trivial values. | [[more]](https://github.com/jonase/eastwood#suspicious-expression) |
-| `:suspicious-test` | Tests using `clojure.test` that may be written incorrectly. | [[more]](https://github.com/jonase/eastwood#suspicious-test) |
-| `:unlimited-use` | Unlimited `(:use ...)` without `:refer` or `:only` to limit the symbols referred by it. | [[more]](https://github.com/jonase/eastwood#unlimited-use) |
-| `:unused-fn-args` (disabled) | Unused function arguments. | [[more]](https://github.com/jonase/eastwood#unused-fn-args) |
-| `:unused-locals` (disabled) | Symbols bound with `let` or `loop` that are never used (added 0.2.0). | [[more]](https://github.com/jonase/eastwood#unused-locals) |
-| `:unused-meta-on-macro` | Metadata on a macro invocation is ignored by Clojure (added 0.2.0). | [[more]](https://github.com/jonase/eastwood#unused-meta-on-macro) |
-| `:unused-namespaces` (disabled) | Warn if a namespace is given in an `ns` form after `:use` or `:require`, but no Vars within the namespace are ever mentioned. | [[more]](https://github.com/jonase/eastwood#unused-namespaces) |
-| `:unused-private-vars` (disabled) | Unused private vars (updated in version 0.2.0). | [[more]](https://github.com/jonase/eastwood#unused-private-vars) |
-| `:unused-ret-vals` and `:unused-ret-vals-in-try` | Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value. | [[more]](https://github.com/jonase/eastwood#unused-ret-vals) |
-| `:wrong-arity` | Function calls that seem to have the wrong number of arguments. | [[more]](https://github.com/jonase/eastwood#wrong-arity) |
-| `:wrong-tag` | An incorrect type tag for which the Clojure compiler does not give an error (added 0.1.5). | [[more]](https://github.com/jonase/eastwood#wrong-tag) |
+| no name* | Inconsistencies between file names and the namespaces declared within them.  * Cannot be disabled. (added 0.1.1) | [[more]](#check-consistency-of-namespace-and-file-names) |
+| `:bad-arglists` | Function/macro `:arglists` metadata that does not match the number of args it is defined with (added 0.1.1). | [[more]](#bad-arglists) |
+| `:constant-test` | A test expression always evaluates as true, or always false (added 0.2.0). | [[more]](#constant-test) |
+| `:def-in-def` | def's nested inside other def's. | [[more]](#def-in-def) |
+| `:deprecations` | Deprecated Clojure Vars, and deprecated Java constructors, methods, and fields. | [[more]](#deprecations) |
+| `:keyword-typos` (disabled) | Keyword names that may be typos because they occur only once in the source code and are slight variations on other keywords. | [[more]](#keyword-typos) |
+| `:local-shadows-var` | A local name, e.g. a function arg or let binding, has the same name as a global Var, and is called as a function (added 0.1.5). | [[more]](#local-shadows-var) |
+| `:misplaced-docstrings` | Function or macro doc strings placed after the argument vector, instead of before the argument vector where they belong. | [[more]](#misplaced-docstrings) |
+| `:no-ns-form-found` | Warn about Clojure files where no `ns` form could be found (added 0.2.0). | [[more]](#no-ns-form-found) |
+| `:non-clojure-file` (disabled) | Warn about files that will not be linted because they are not Clojure source files, i.e. their name does not end with '.clj' (added 0.2.0). | [[more]](#non-clojure-file) |
+| `:redefd-vars` | Redefinitions of the same name in the same namespace. | [[more]](#redefd-vars) |
+| `:suspicious-expression` | Suspicious expressions that appear incorrect, because they always return trivial values. | [[more]](#suspicious-expression) |
+| `:suspicious-test` | Tests using `clojure.test` that may be written incorrectly. | [[more]](#suspicious-test) |
+| `:unlimited-use` | Unlimited `(:use ...)` without `:refer` or `:only` to limit the symbols referred by it. | [[more]](#unlimited-use) |
+| `:unused-fn-args` (disabled) | Unused function arguments. | [[more]](#unused-fn-args) |
+| `:unused-locals` (disabled) | Symbols bound with `let` or `loop` that are never used (added 0.2.0). | [[more]](#unused-locals) |
+| `:unused-meta-on-macro` | Metadata on a macro invocation is ignored by Clojure (added 0.2.0). | [[more]](#unused-meta-on-macro) |
+| `:unused-namespaces` (disabled) | Warn if a namespace is given in an `ns` form after `:use` or `:require`, but no Vars within the namespace are ever mentioned. | [[more]](#unused-namespaces) |
+| `:unused-private-vars` (disabled) | Unused private vars (updated in version 0.2.0). | [[more]](#unused-private-vars) |
+| `:unused-ret-vals` and `:unused-ret-vals-in-try` | Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value. | [[more]](#unused-ret-vals) |
+| `:wrong-arity` | Function calls that seem to have the wrong number of arguments. | [[more]](#wrong-arity) |
+| `:wrong-tag` | An incorrect type tag for which the Clojure compiler does not give an error (added 0.1.5). | [[more]](#wrong-tag) |
 
 
 ## Usage
@@ -149,7 +146,7 @@ Adding `:out "warn.txt"` to the options map will cause all of the
 Eastwood warning lines and 'Entering directory' lines, but no others,
 to be written to the file `warn.txt`.  This file is useful for
 stepping through warnings as described in the [Editor
-Support](https://github.com/jonase/eastwood#editor-support) section.
+Support](#editor-support) section.
 
     # This works on bash shell in Linux and Mac OS X, and also in
     # Windows cmd shell
@@ -197,15 +194,16 @@ Note that you can add e.g., `{:eastwood {:exclude-linters
 don't like, or add the key `:eastwood` with options to your project's
 `project.clj` file.
 
-As mentioned in the "Installation & Quick usage" section above, using
-Eastwood causes any and all side effects that loading the file would
-cause (e.g. by doing `use` or `require` on the file's namespace).
-Eastwood is able to find potential problems in test code, too.  If you
-wish to use Eastwood on test files without such side effects, consider
-modifying your tests so that merely performing `require`/`use` on the
-files does not cause the side effects.  If you can arrange things so
-that running your tests requires loading the files and then calling
-some function(s) (e.g. as tests written using
+As mentioned in the [Installation & Quick
+usage](#installation--quick-usage) section above, Eastwood causes any
+and all side effects that loading the file would cause (e.g. by doing
+`use` or `require` on the file's namespace).  Eastwood is able to find
+potential problems in test code, too.  If you wish to use Eastwood on
+test files without such side effects, consider modifying your tests so
+that merely performing `require`/`use` on the files does not cause the
+side effects.  If you can arrange things so that running your tests
+requires loading the files and then calling some function(s) (e.g. as
+tests written using
 [`clojure.test/deftest`](http://clojure.github.io/clojure/#clojure.test)
 do), then you can run Eastwood on those files without the side
 effects.
@@ -346,10 +344,10 @@ please file a GitHub issue so they can be included here.
 See the section for the development environment you use for specific
 instructions:
 
-* [Eclipse+Counterclockwise](https://github.com/jonase/eastwood#eclipse--counterclockwise)
-* [Emacs+Cider](https://github.com/jonase/eastwood#emacs--cider)
-* [Emacs](https://github.com/jonase/eastwood#emacs)
-* [Vim](https://github.com/jonase/eastwood#vim)
+* [Eclipse+Counterclockwise](#eclipse--counterclockwise)
+* [Emacs+Cider](#emacs--cider)
+* [Emacs](#emacs)
+* [Vim](#vim)
 
 Below are instructions to create a text file of warnings that can be
 useful for at least the Emacs and Vim cases, but are not needed for

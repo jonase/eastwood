@@ -1,5 +1,7 @@
 # eastwood - a Clojure lint tool
 
+[![Dependencies Status](http://jarkeeper.com/jonase/eastwood/status.svg)](http://jarkeeper.com/jonase/eastwood)
+
 Eastwood is a Clojure
 [lint](http://en.wikipedia.org/wiki/Lint_%28software%29) tool that
 uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
@@ -235,15 +237,15 @@ determined](#how-the-eastwood-options-map-is-determined) for more
 details.
 
 As mentioned in the [Installation & Quick
-usage](#installation--quick-usage) section above, using Eastwood
-causes any and all side effects that loading the file would cause
-(e.g. by doing `use` or `require` on the file's namespace).  Eastwood
-is able to find potential problems in test code, too.  If you wish to
-use Eastwood on test files without such side effects, consider
-modifying your tests so that merely performing `require`/`use` on the
-files does not cause the side effects.  If you can arrange things so
-that running your tests requires loading the files and then calling
-some function(s) (e.g. as tests written using
+usage](#installation--quick-usage) section above, Eastwood causes any
+and all side effects that loading the file would cause (e.g. by doing
+`use` or `require` on the file's namespace).  Eastwood is able to find
+potential problems in test code, too.  If you wish to use Eastwood on
+test files without such side effects, consider modifying your tests so
+that merely performing `require`/`use` on the files does not cause the
+side effects.  If you can arrange things so that running your tests
+requires loading the files and then calling some function(s) (e.g. as
+tests written using
 [`clojure.test/deftest`](http://clojure.github.io/clojure/#clojure.test)
 do), then you can run Eastwood on those files without the side
 effects.
