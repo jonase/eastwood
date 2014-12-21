@@ -281,12 +281,13 @@ return value followed by the time it took to evaluate in millisec."
        (map :name)))
 
 
-(defn- lint [exprs kw opt]
-  (if-let [lint-fn (linter-name->fn kw)]
+(defn- lint-analyze-results [analyze-results linter-kw opt]
+  (if-let [lint-fn (linter-name->fn linter-kw)]
     (try
-      (doall (lint-fn exprs opt))
+      (doall (lint-fn analyze-results opt))
       (catch Throwable e
         [e]))))
+
 
 (defn maybe-unqualified-java-class-name? [x]
   (if-not (or (symbol? x) (string? x))
@@ -566,7 +567,8 @@ curious." eastwood-url))
       (when print-time?
         (note-cb (format "Analysis took %.1f millisec" analyze-time-msec)))
       (doseq [linter linters]
-        (let [[results time-msec] (timeit (lint analyze-results linter opts))]
+        (let [[results time-msec] (timeit (lint-analyze-results analyze-results
+                                                                linter opts))]
           (doseq [result results]
             (if (instance? Throwable result)
               (do
@@ -1143,3 +1145,87 @@ Return value:
       ;; linting a project.  Call shutdown-agents to avoid the
       ;; 1-minute 'hang' that would otherwise occur.
       (shutdown-agents))))
+
+
+(defn lint
+  "Invoke Eastwood from REPL or other Clojure code, and return a map
+containing these keys:
+
+  :warnings - a sequence of maps representing individual warnings.
+      The warning map contents are documented below.
+
+  :err - nil if there were no exceptions thrown or other errors that
+      stopped linting before it completed.  A keyword identifying a
+      kind of error if there was.  See the source file
+      src/eastwood/lint.clj inside Eastwood for defmethod's of
+      error-msg.  Each is specialized on a keyword value that is one
+      possible value the :err key can take.  The body of each method
+      shows how Eastwood shows to the user each kind of error when it
+      is invoked from the command line via Leiningen, serves as a kind
+      of documentation for what the value of the :err-data key
+      contains.
+
+  :err-data - Some data describing the error if :err's value is not
+      nil.  See :err above for where to find out more about its
+      contents.
+
+  :versions - A nested map with its own keys containing information
+      about JVM, Clojure, and Eastwood versions.
+
+Keys in a warning map:
+
+  :uri-or-file-name - string containing file name where warning
+      occurs, relative to :cwd directory of options map, if it is a
+      file inside of that directory, or a URI object,
+      e.g. \"cases/testcases/f02.clj\"
+
+  :line - line number in file for warning, e.g. 20.  The first line in
+      the file is 1, not 0.  Note: In some cases this key may not be
+      present, or the value may be nil.  This is an areas where
+      Eastwood will probably improve in the future, but best to handle
+      it for now, perhaps by replacing it with line 1 as a
+      placeholder.
+
+  :column - column number in file for warning, e.g. 42.  The first
+      character in the file is column 1, not 0.  Same comments apply
+      for :column as for :line.
+
+  :linter - keyword identifying the linter, e.g. :def-in-def
+
+  :msg - string describing the warning message, e.g. \"There is a def
+      of i-am-inner-defonce-sym nested inside def
+      i-am-outer-defonce-sym\"
+
+  :uri - object with class URI of the file, *or* a URI within a JAR
+       file, e.g.  #<URI file:/Users/jafinger/clj/eastwood/0.2.0/eastwood/cases/testcases/f02.clj>
+
+  :namespace-sym - symbol containing namespace, e.g. testcases.f02,
+
+  :file - string containing resource name, relative to some
+      unspecified path in the Java classpath,
+      e.g. \"testcases/f02.clj\""
+  [opts]
+  (let [lint-warnings (atom [])
+        cb (fn cb [info]
+             (case (:kind info)
+               :lint-warning (swap! lint-warnings conj (:warn-data info))
+               :default))  ; do nothing with other kinds of callbacks
+        opts (if (contains? opts :callback)
+               opts
+               (assoc opts :callback cb))
+
+        opts (last-options-map-adjustments opts)
+        _ (when (util/debug? :options opts)
+            (println "\nOptions map after filling in defaults:")
+            (pp/pprint (into (sorted-map) opts)))
+
+        {:keys [err err-data] :as ret} (eastwood-core opts)]
+    {:warnings @lint-warnings
+     :err err
+     :err-data err-data
+     :versions
+     {:eastwood-version-map *eastwood-version*
+      :eastwood-version-string (eastwood-version)
+      :clojure-version-map *clojure-version*
+      :clojure-version-string (clojure-version)
+      :jvm-version-string (get (System/getProperties) "java.version")}}))

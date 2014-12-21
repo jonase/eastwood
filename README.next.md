@@ -388,7 +388,20 @@ appropriate for your build tool.  See
 [Clojars](https://clojars.org/jonase/eastwood) for Gradle and Maven
 syntax.
 
-From within your REPL:
+From within your REPL, there are two different functions you can call,
+depending upon the kind of results you want.
+
+* `eastwood` prints output similar to when you run Eastwood from the
+  Leiningen command line, but it does not exit the JVM when it
+  finishes.
+
+* `lint` returns a map containing data structures describing any
+  warnings or errors encountered.  This result is likely more useful
+  for further processing by editors and IDEs.  For example, file
+  names, line numbers, and column numbers are all available
+  separately, requiring no parsing of strings containing those things
+  combined together.  See the doc string of `eastwood.lint/lint` for
+  details of the return value.
 
 ```clojure
 (require '[eastwood.lint :as e])
@@ -399,13 +412,12 @@ From within your REPL:
 ;; classpath, and their subdirectories recursively, for Clojure source
 ;; files.
 (e/eastwood {:source-paths ["src"] :test-paths ["test"]})
+
+(e/lint {:source-paths ["src"] :test-paths ["test"]})
 ```
 
 All of the same options that can be given on the command line may be
-used in the map given to the `eastwood` function.
-
-This will behave much as running Eastwood from the command line will,
-except it will not exit the JVM at the end.
+used in the map given to the `eastwood` or `lint` functions.
 
 Before reporting problems with Eastwood when run from the REPL, please
 verify that: (a) the problem occurs when Eastwood is run from the
@@ -416,10 +428,12 @@ running Eastwood as possible.  Please include any such sequence in
 your problem report, if you cannot reproduce the issue running
 Eastwood from the command line.
 
-There is a `:callback` key that can be added to the argument map.  Its
-value is a callback function that gives you significant control of
-where warning and error messages appear -- by default these all appear
-on the writer `*out*`.
+There is a `:callback` key that can be added to the argument map for
+the `eastwood` function.  Its value is a callback function that gives
+you significant control of where warning and error messages appear --
+by default these all appear on the writer `*out*`.  This callback
+function should not be overridden for the `lint` function, since
+`lint` uses it in its implementation.
 
 There is no documentation for this callback function yet.  You you are
 welcome to read Eastwood source code to see examples of how to write
