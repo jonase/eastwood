@@ -284,22 +284,17 @@
 ;; second argument to be issued, if we check it.
 
 (defn suspicious-test [{:keys [asts]} opt]
-  (let [frms (fn [ast] (remove #(symbol? (second %))
-                               (map list
-                                    (:eastwood/partly-resolved-forms ast)
-                                    (:raw-forms ast))))
-        pr-formasts (for [ast (mapcat ast/nodes asts)
-                          [pr-form raw-form] (frms ast)]
-                      {:pr-form pr-form
-                       :raw-form raw-form
-                       :ast ast})
+  (let [frms (fn [ast] (remove symbol? (:raw-forms ast)))
+        formasts (for [ast (mapcat ast/nodes asts)
+                       raw-form (frms ast)]
+                   {:raw-form raw-form
+                    :ast ast})
         
         pr-first-is-formasts
         (remove nil?
                 (for [ast (mapcat ast/nodes asts)]
-                  (let [formasts (for [[pr-form raw-form] (frms ast)]
-                                   {:pr-form pr-form
-                                    :raw-form raw-form
+                  (let [formasts (for [raw-form (frms ast)]
+                                   {:raw-form raw-form
                                     :ast ast})]
                     (first (filter #(= 'clojure.test/is
                                        (util/fqsym-of-raw-form (:raw-form %)))
@@ -311,7 +306,7 @@
         ;; each, which are the deftest and the Var name following
         ;; deftest.
         pr-deftest-subexprs
-        (->> pr-formasts
+        (->> formasts
              (filter #(= 'clojure.test/deftest
                          (util/fqsym-of-raw-form (:raw-form %))))
              (mapcat (fn [formast]
@@ -322,7 +317,7 @@
         ;; TBD: Make a helper function to eliminate the nearly
         ;; duplicated code between deftest and testing.
         pr-testing-subexprs
-        (->> pr-formasts
+        (->> formasts
              (filter #(= 'clojure.test/testing
                          (util/fqsym-of-raw-form (:raw-form %))))
              (mapcat (fn [formast]
@@ -509,30 +504,12 @@
   (get core-macros-that-do-little (util/fqsym-of-raw-form raw-form)))
 
 
-(defn and-or-self-expansion-old? [ast]
-  (let [parent-ast (-> ast :eastwood/ancestors peek)]
-    (and (= :if (-> parent-ast :op))
-         (= :local (-> parent-ast :test :op))
-         (#{'clojure.core/and 'clojure.core/or}
-          (-> ast :eastwood/partly-resolved-forms first first)))))
-
-
-(defn and-or-self-expansion-new? [ast]
+(defn and-or-self-expansion? [ast]
   (let [parent-ast (-> ast :eastwood/ancestors peek)]
     (and (= :if (-> parent-ast :op))
          (= :local (-> parent-ast :test :op))
          (#{'clojure.core/and 'clojure.core/or}
           (-> ast :raw-forms first util/fqsym-of-raw-form)))))
-
-
-(defn and-or-self-expansion? [ast]
-  (let [old (and-or-self-expansion-old? ast)
-        new (and-or-self-expansion-new? ast)]
-    (when (not= old new)
-      (println (format "dbg and-or-self-expansion?: old=%s != new=%s"
-                       old new))
-      (-> ast util/clean-ast util/pprint-ast-node))
-    new))
 
 
 (defn cond-self-expansion? [ast]

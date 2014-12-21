@@ -167,7 +167,6 @@ the value of File/separator for the platform."
 
 (defn eastwood-ast-additions [ast ast-idx]
   (-> ast
-      pass/add-partly-resolved-forms
       (pass/add-path [ast-idx])
       pass/add-ancestors))
 

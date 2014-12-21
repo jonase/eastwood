@@ -103,7 +103,18 @@
   (update-children ast (fn [ast] (assoc-in ast [:env :name] name))))
 
 (defn add-partly-resolved-forms
-  "For every node that has a :raw-forms key, add a new
+  "DEPRECATED: Superseded by tools.analyzer(.jvm) adding metadata on
+elements of :raw-forms lists with a key
+of :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op The
+value associated with this key is the Var that the first item of the
+raw form resolves to at the time the form was analyzed.  In some
+unusual cases, e.g. the Var is redefined later, this function
+add-partly-resolved-forms could give an incorrect resolution, where
+the new tools.analyzer(.jvm) will give the correct resolution.  This
+function is only being kept here for quick reference, and may be
+deleted later.
+
+For every node that has a :raw-forms key, add a new
 key :eastwood/partly-resolved-forms.  The value associated with the
 new key is nearly the same as that associated with :raw-forms, except
 that every list that starts with a symbol will have that symbol

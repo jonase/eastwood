@@ -76,7 +76,6 @@ more interesting keys earlier."
                              :form
                              :var
                              :raw-forms
-                             :eastwood/partly-resolved-forms
                              :eastwood/ancestors
                              :env
                              ;; Some keywords I have seen in :children
@@ -614,28 +613,10 @@ of these kind."
   (some deftype-for-fieldless-defrecord
         (nil-safe-rseq (-> ast :eastwood/ancestors))))
 
-(defn ns-form-asts-old [asts]
-  (->> (mapcat ast/nodes asts)
-       (filter #(= 'clojure.core/ns
-                   (safe-first
-                    (first (:eastwood/partly-resolved-forms %)))))))
-
-(defn ns-form-asts-new [asts]
+(defn ns-form-asts [asts]
   (->> (mapcat ast/nodes asts)
        (filter #(= 'clojure.core/ns
                    (-> % :raw-forms first fqsym-of-raw-form)))))
-
-(defn ns-form-asts [asts]
-  (let [old (ns-form-asts-old asts)
-        new (ns-form-asts-new asts)]
-    (when (not= old new)
-      (println (format "dbg ns-form-asts:"))
-      (println (format "   old="))
-      (mapv #(-> % clean-ast pprint-ast-node) old)
-      (println (format "   new="))
-      (mapv #(-> % clean-ast pprint-ast-node) new)
-      )
-    new))
 
 (defn get-in-ast [ast kvec-op-pairs]
   (let [sentinel (Object.)]
@@ -739,26 +720,7 @@ StringWriter."
                  :ast
                  ]))
 
-(defn enclosing-macros-old
-  [ast]
-  (apply concat
-    (for [[i a] (map-indexed vector
-                             (cons ast
-                                   (nil-safe-rseq (-> ast :eastwood/ancestors))))]
-      (for [[j f] (map-indexed vector
-                               (reverse (:eastwood/partly-resolved-forms a)))]
-        (into empty-enclosing-macro-map
-          (merge
-            {:depth i, :index j, :op (:op a), :ast a,
-             :eastwood/path (:eastwood/path a),
-             :form f, :resolved-form-meta (meta (:form a))}
-            (try
-              {:macro (first f)}  ; , :first-only true}
-              (catch Exception e
-                {:macro f} ;, :first-only false}
-                ))))))))
-
-(defn enclosing-macros-new
+(defn enclosing-macros
   [ast]
   (apply concat
     (for [[i a] (map-indexed vector
@@ -771,19 +733,6 @@ StringWriter."
                :eastwood/path (:eastwood/path a),
                :form f, :resolved-form-meta (meta (:form a)),
                :macro (fqsym-of-raw-form f)})))))
-
-(defn enclosing-macros
-  [ast]
-  (let [old (enclosing-macros-old ast)
-        new (enclosing-macros-new ast)]
-    (when (not= (map #(dissoc % :form) old)
-                (map #(dissoc % :form) new))
-      (println (format "dbg enclosing-macros: old="))
-      (pp/pprint (map #(dissoc % :ast) old))
-      (println (format "dbg enclosing-macros: new="))
-      (pp/pprint (map #(dissoc % :ast) new))
-      (-> ast clean-ast pprint-ast-node))
-    new))
 
 
 (defn debug-warning

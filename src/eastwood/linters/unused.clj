@@ -33,37 +33,13 @@
        (map :var)
        set))
 
-(defn macros-invoked-old [asts]
-  (->> asts
-       (mapcat ast/nodes)
-       (mapcat :eastwood/partly-resolved-forms)
-       (map util/safe-first)
-       (remove nil?)
-       set))
-
-(defn macros-invoked-new [asts]
+(defn macros-invoked [asts]
   (->> asts
        (mapcat ast/nodes)
        (mapcat :raw-forms)
        (map util/fqsym-of-raw-form)
        (remove nil?)
        set))
-
-(defn macros-invoked [asts]
-  (let [old (macros-invoked-old asts)
-        new (macros-invoked-new asts)]
-    (when-not (set/superset? old new)
-      (println (format "dbg macros-invoked:"))
-      (println (format "   old="))
-      (pp/pprint (into (sorted-set) old))
-      (println (format "   old classes="))
-      (pp/pprint (map class (into (sorted-set) old)))
-      (println (format "   new="))
-      (pp/pprint (into (sorted-set) new))
-      (pp/pprint (map #(into (sorted-set) %) (take 2 (data/diff old new))))
-;;      (mapv #(-> % util/clean-ast util/pprint-ast-node) asts)
-      )
-    new))
 
 (defn unused-private-vars [{:keys [asts]} opt]
   (let [pdefs (private-non-const-defs asts)
@@ -199,27 +175,10 @@ Example: (all-suffixes [1 2 3])
 ;; clojure.core/loop.  See function foo2 in namespace
 ;; testcases.unusedlocals for an example and discussion.
 
-(defn let-ast-from-loop-expansion-old [ast]
-  (and (= :let (:op ast))
-       (= 'clojure.core/loop
-          (-> ast :eastwood/partly-resolved-forms first first))))
-
-(defn let-ast-from-loop-expansion-new [ast]
+(defn let-ast-from-loop-expansion [ast]
   (and (= :let (:op ast))
        (= 'clojure.core/loop
           (-> ast :raw-forms first util/fqsym-of-raw-form))))
-
-;; For faster bug catching during the change, compare the old and new
-;; versions and abort if there is ever a difference.
-
-(defn let-ast-from-loop-expansion [ast]
-  (let [old (let-ast-from-loop-expansion-old ast)
-        new (let-ast-from-loop-expansion-new ast)]
-    (when (not= old new)
-      (println (format "dbg let-ast-from-loop-expansion: old=%s != new=%s"
-                       old new))
-      (-> ast util/clean-ast util/pprint-ast-node))
-    new))
 
 
 (defn unused-locals [{:keys [asts]} opt]
@@ -250,30 +209,13 @@ Example: (all-suffixes [1 2 3])
 
 ;; Unused namespaces
 
-(defn required-namespaces-old [ns-asts]
-  (->> ns-asts
-       (mapcat #(nnext (first (:eastwood/partly-resolved-forms %))))
-       (filter (fn [f] (#{:require :use} (first f))))
-       (mapcat rest)
-       (mapcat #(#'parse/deps-from-libspec nil %))
-       set))
-
-(defn required-namespaces-new [ns-asts]
+(defn required-namespaces [ns-asts]
   (->> ns-asts
        (mapcat #(nnext (first (:raw-forms %))))
        (filter (fn [f] (#{:require :use} (first f))))
        (mapcat rest)
        (mapcat #(#'parse/deps-from-libspec nil %))
        set))
-
-(defn required-namespaces [ns-asts]
-  (let [old (required-namespaces-old ns-asts)
-        new (required-namespaces-new ns-asts)]
-    (when (not= old new)
-      (println (format "dbg required-namespaces: old=%s != new=%s"
-                       old new))
-      (mapv #(-> % util/clean-ast util/pprint-ast-node) ns-asts))
-    new))
 
 
 ;; (first ns-asts) below will likely find the *only* ns form in the
