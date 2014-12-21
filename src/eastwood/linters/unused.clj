@@ -1,5 +1,6 @@
 (ns eastwood.linters.unused
   (:require [clojure.set :as set]
+            [clojure.data :as data]
             [clojure.string :as str]
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
@@ -32,13 +33,37 @@
        (map :var)
        set))
 
-(defn macros-invoked [asts]
+(defn macros-invoked-old [asts]
   (->> asts
        (mapcat ast/nodes)
        (mapcat :eastwood/partly-resolved-forms)
        (map util/safe-first)
        (remove nil?)
        set))
+
+(defn macros-invoked-new [asts]
+  (->> asts
+       (mapcat ast/nodes)
+       (mapcat :raw-forms)
+       (map util/fqsym-of-raw-form)
+       (remove nil?)
+       set))
+
+(defn macros-invoked [asts]
+  (let [old (macros-invoked-old asts)
+        new (macros-invoked-new asts)]
+    (when-not (set/superset? old new)
+      (println (format "dbg macros-invoked:"))
+      (println (format "   old="))
+      (pp/pprint (into (sorted-set) old))
+      (println (format "   old classes="))
+      (pp/pprint (map class (into (sorted-set) old)))
+      (println (format "   new="))
+      (pp/pprint (into (sorted-set) new))
+      (pp/pprint (map #(into (sorted-set) %) (take 2 (data/diff old new))))
+;;      (mapv #(-> % util/clean-ast util/pprint-ast-node) asts)
+      )
+    new))
 
 (defn unused-private-vars [{:keys [asts]} opt]
   (let [pdefs (private-non-const-defs asts)
@@ -174,10 +199,27 @@ Example: (all-suffixes [1 2 3])
 ;; clojure.core/loop.  See function foo2 in namespace
 ;; testcases.unusedlocals for an example and discussion.
 
-(defn let-ast-from-loop-expansion [ast]
+(defn let-ast-from-loop-expansion-old [ast]
   (and (= :let (:op ast))
        (= 'clojure.core/loop
           (-> ast :eastwood/partly-resolved-forms first first))))
+
+(defn let-ast-from-loop-expansion-new [ast]
+  (and (= :let (:op ast))
+       (= 'clojure.core/loop
+          (-> ast :raw-forms first util/fqsym-of-raw-form))))
+
+;; For faster bug catching during the change, compare the old and new
+;; versions and abort if there is ever a difference.
+
+(defn let-ast-from-loop-expansion [ast]
+  (let [old (let-ast-from-loop-expansion-old ast)
+        new (let-ast-from-loop-expansion-new ast)]
+    (when (not= old new)
+      (println (format "dbg let-ast-from-loop-expansion: old=%s != new=%s"
+                       old new))
+      (-> ast util/clean-ast util/pprint-ast-node))
+    new))
 
 
 (defn unused-locals [{:keys [asts]} opt]
@@ -208,13 +250,30 @@ Example: (all-suffixes [1 2 3])
 
 ;; Unused namespaces
 
-(defn required-namespaces [ns-asts]
+(defn required-namespaces-old [ns-asts]
   (->> ns-asts
        (mapcat #(nnext (first (:eastwood/partly-resolved-forms %))))
        (filter (fn [f] (#{:require :use} (first f))))
        (mapcat rest)
        (mapcat #(#'parse/deps-from-libspec nil %))
        set))
+
+(defn required-namespaces-new [ns-asts]
+  (->> ns-asts
+       (mapcat #(nnext (first (:raw-forms %))))
+       (filter (fn [f] (#{:require :use} (first f))))
+       (mapcat rest)
+       (mapcat #(#'parse/deps-from-libspec nil %))
+       set))
+
+(defn required-namespaces [ns-asts]
+  (let [old (required-namespaces-old ns-asts)
+        new (required-namespaces-new ns-asts)]
+    (when (not= old new)
+      (println (format "dbg required-namespaces: old=%s != new=%s"
+                       old new))
+      (mapv #(-> % util/clean-ast util/pprint-ast-node) ns-asts))
+    new))
 
 
 ;; (first ns-asts) below will likely find the *only* ns form in the
@@ -293,9 +352,7 @@ Example: (all-suffixes [1 2 3])
 
 
 (defn- mark-things-in-defprotocol-expansion-post [ast]
-  (if (not-any? #(= % 'clojure.core/defprotocol)
-                (map #(and (seq? %) (first %))
-                     (:eastwood/partly-resolved-forms ast)))
+  (if (not (util/ast-expands-macro ast #{'clojure.core/defprotocol}))
     ast
     (let [defprotocol-var (get-in ast [:ret :expr :val])
           ;; Mark the second statement, the interface
@@ -488,9 +545,8 @@ discarded inside null: null'."
              (get stmt :eastwood/defprotocol-expansion-sigs)  ; Note 3
              (util/interface? (:form stmt))  ; Note 4
              (and (nil? (:form stmt))  ; Note 5
-                  (some #{'clojure.core/comment 'clojure.core/gen-class}
-                        (map #(and (seq? %) (first %))
-                             (:eastwood/partly-resolved-forms stmt)))))
+                  (util/ast-expands-macro stmt #{'clojure.core/comment
+                                                 'clojure.core/gen-class})))
           nil  ; no warning
           (let [name-found? (contains? (-> stmt :env) :name)
                 loc (or
@@ -573,14 +629,8 @@ discarded inside null: null'."
                                                         :end-line :end-column
                                                         :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op
                                                         }))
-                resolved-form (-> ast :eastwood/partly-resolved-forms first)
-                resolved-macro-symbol (try
-                                        (first resolved-form)
-                                        (catch Exception e
-;;                                          (println (format "eastwood-dbg: resolved-form=%s ast="
-;;                                                           resolved-form))
-;;                                          (util/pprint-ast-node ast)
-                                          nil))
+                resolved-macro-symbol (-> ast :raw-forms first
+                                          util/fqsym-of-raw-form)
                 removed-meta-keys
                 (cond (= :new (:op ast)) non-loc-meta-keys
 

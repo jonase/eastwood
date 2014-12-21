@@ -269,11 +269,10 @@
         :else nil)))))
 
 ;; suspicious-test used to do its job only examining source forms, but
-;; now it goes through the forms on the
-;; :eastwood/partly-resolved-forms lists of AST nodes that have such a
-;; key.  This is useful for distinguishing occurrences of (is ...)
-;; forms that are from clojure.test/is, vs. ones from
-;; clojure.core.typed/is from core.typed.
+;; now it goes through the forms on the :raw-forms lists of the AST
+;; nodes that have such a key.  This is useful for distinguishing
+;; occurrences of (is ...)  forms that are from clojure.test/is,
+;; vs. ones from clojure.core.typed/is from core.typed.
 
 ;; For each AST node, we want only the first expression that has a
 ;; first symbol equal to clojure.test/is.  There can be more than one
@@ -303,19 +302,20 @@
                                     :raw-form raw-form
                                     :ast ast})]
                     (first (filter #(= 'clojure.test/is
-                                       (first (:pr-form %)))
+                                       (util/fqsym-of-raw-form (:raw-form %)))
                                    formasts)))))
         
-        ;; To find deftest subexpressions, first filter all of the
-        ;; partly-resolved forms for those with a first symbol equal
-        ;; to clojure.test/deftest, then get of the first 2 symbols
-        ;; from each, which are the deftest and the Var name following
+        ;; To find deftest subexpressions, first filter all of the raw
+        ;; forms for those with a resolved-op symbol equal to
+        ;; clojure.test/deftest, then get of the first 2 symbols from
+        ;; each, which are the deftest and the Var name following
         ;; deftest.
         pr-deftest-subexprs
         (->> pr-formasts
-             (filter #(= 'clojure.test/deftest (first (:pr-form %))))
+             (filter #(= 'clojure.test/deftest
+                         (util/fqsym-of-raw-form (:raw-form %))))
              (mapcat (fn [formast]
-                       (for [subexpr (nthnext (:pr-form formast) 2)]
+                       (for [subexpr (nthnext (:raw-form formast) 2)]
                          (assoc formast :subexpr subexpr)))))
         
         ;; Similarly for testing subexprs as for deftest subexprs.
@@ -323,9 +323,10 @@
         ;; duplicated code between deftest and testing.
         pr-testing-subexprs
         (->> pr-formasts
-             (filter #(= 'clojure.test/testing (first (:pr-form %))))
+             (filter #(= 'clojure.test/testing
+                         (util/fqsym-of-raw-form (:raw-form %))))
              (mapcat (fn [formast]
-                       (for [subexpr (nthnext (:pr-form formast) 2)]
+                       (for [subexpr (nthnext (:raw-form formast) 2)]
                          (assoc formast :subexpr subexpr)))))
 
         pr-is-formasts pr-first-is-formasts]
@@ -479,9 +480,8 @@
 ;; (-> x (doto (method args)))     ; macro expands to (doto x (method args))
 
 ;; The newer version suspicious-macro-invocations uses the asts, which
-;; contain forms on the key :eastwood/partly-resolved-forms, to see
-;; what the forms looked like before macroexpansion.  This should
-;; avoid the issue above.
+;; contain forms on the key :raw-forms, to see what the forms looked
+;; like before macroexpansion.  This should avoid the issue above.
 
 ;; For suspicious function calls, we check for them in the asts in
 ;; suspicious-fn-calls below, but that will not find suspicious calls
@@ -505,11 +505,11 @@
       nil)))
 
 
-(defn pr-form-of-interest? [pr-form core-macros-that-do-little]
-  (get core-macros-that-do-little (safe-first pr-form)))
+(defn raw-form-of-interest? [raw-form core-macros-that-do-little]
+  (get core-macros-that-do-little (util/fqsym-of-raw-form raw-form)))
 
 
-(defn and-or-self-expansion? [ast]
+(defn and-or-self-expansion-old? [ast]
   (let [parent-ast (-> ast :eastwood/ancestors peek)]
     (and (= :if (-> parent-ast :op))
          (= :local (-> parent-ast :test :op))
@@ -517,11 +517,29 @@
           (-> ast :eastwood/partly-resolved-forms first first)))))
 
 
+(defn and-or-self-expansion-new? [ast]
+  (let [parent-ast (-> ast :eastwood/ancestors peek)]
+    (and (= :if (-> parent-ast :op))
+         (= :local (-> parent-ast :test :op))
+         (#{'clojure.core/and 'clojure.core/or}
+          (-> ast :raw-forms first util/fqsym-of-raw-form)))))
+
+
+(defn and-or-self-expansion? [ast]
+  (let [old (and-or-self-expansion-old? ast)
+        new (and-or-self-expansion-new? ast)]
+    (when (not= old new)
+      (println (format "dbg and-or-self-expansion?: old=%s != new=%s"
+                       old new))
+      (-> ast util/clean-ast util/pprint-ast-node))
+    new))
+
+
 (defn cond-self-expansion? [ast]
   (let [parent-ast (-> ast :eastwood/ancestors peek)]
     (and (= :if (-> parent-ast :op))
          (#{'clojure.core/cond}
-          (-> ast :eastwood/partly-resolved-forms first first)))))
+          (-> ast :raw-forms first util/fqsym-of-raw-form)))))
 
 
 (defn suspicious-macro-invocations [{:keys [asts]} opt]
@@ -529,15 +547,15 @@
         (->> asts
              (mapcat ast/nodes)
              (filter (fn [ast]
-                       (some #(pr-form-of-interest? % core-macros-that-do-little)
-                             (:eastwood/partly-resolved-forms ast)))))]
+                       (some #(raw-form-of-interest? % core-macros-that-do-little)
+                             (:raw-forms ast)))))]
     (for [ast selected-macro-invoke-asts
-          pr-form (filter #(pr-form-of-interest? % core-macros-that-do-little)
-                          (:eastwood/partly-resolved-forms ast))
-          :let [macro-sym (first pr-form)
+          raw-form (filter #(raw-form-of-interest? % core-macros-that-do-little)
+                           (:raw-forms ast))
+          :let [macro-sym (util/fqsym-of-raw-form raw-form)
                 loc (or (pass/has-code-loc? (-> ast :raw-forms first meta))
                         (pass/code-loc (pass/nearest-ast-with-loc ast)))
-                num-args (dec (count pr-form))
+                num-args (dec (count raw-form))
                 suspicious-args (get core-macros-that-do-little macro-sym)
                 info (get suspicious-args num-args)]
           :when (and (contains? suspicious-args num-args)
@@ -554,8 +572,8 @@
           ;; to disable them in a precise fashion.
 ;;          :let [_
 ;;                (do
-;;                  (println "\n\njafinger-dbg: pr-form=")
-;;                  (util/pprint-form pr-form)
+;;                  (println "\n\njafinger-dbg: raw-form=")
+;;                  (util/pprint-form raw-form)
 ;;                  (println (format "  ancestor ops=%s  in-fieldless-defrecord?=%s"
 ;;                                   (seq (map :op (:eastwood/ancestors ast)))
 ;;                                   (boolean (util/inside-fieldless-defrecord ast))
@@ -824,13 +842,13 @@ warning, that contains the constant value."
   (and (= :if (:op ast))
        (seq (:raw-forms ast))
 ;;       (do
-;;         (if-let [x (-> ast :eastwood/partly-resolved-forms first first)]
+;;         (if-let [x (-> ast :raw-forms first util/fqsym-of-raw-form)]
 ;;           (println (format "jafinger-dbg: x=%s %s %s"
 ;;                            x (= 'clojure.core/assert x)
-;;                            (-> ast :eastwood/partly-resolved-forms first))))
+;;                            (-> ast :raw-forms first))))
 ;;         true)
-       (= 'clojure.core/assert (-> ast :eastwood/partly-resolved-forms
-                                   first first))
+       (= 'clojure.core/assert (-> ast :raw-forms
+                                   first util/fqsym-of-raw-form))
        (= :const (-> ast :test :op))
        (contains? #{false nil} (-> ast :test :val))))
 
@@ -846,9 +864,9 @@ warning, that contains the constant value."
   ;; I have seen true and :default used in several projects rather
   ;; than :else
   (and (#{:else :default true} (-> ast :test :form))
-       (seq (:eastwood/partly-resolved-forms ast))
+       (seq (:raw-forms ast))
        (= 'clojure.core/cond
-          (-> ast :eastwood/partly-resolved-forms first first))))
+          (-> ast :raw-forms first util/fqsym-of-raw-form))))
 
 
 (defn constant-test [{:keys [asts]} opt]

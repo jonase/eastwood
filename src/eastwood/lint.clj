@@ -498,7 +498,7 @@ curious." eastwood-url))
 
 (defn show-exception [ns-sym opts ^Throwable exc]
   (let [dat (ex-data exc)
-        msg (.getMessage exc)]
+        msg (or (.getMessage exc) "")]
     (cond
      (re-find #" cannot be cast to clojure\.lang\.Compiler\$LocalBinding" msg)
      (handle-values-of-env ns-sym opts exc)
