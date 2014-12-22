@@ -393,8 +393,8 @@ Merge this into your project's `project.clj` file first:
 Note: This should work even if you do not use Leiningen for your
 project.  You will need to add the dependency above in the manner
 appropriate for your build tool.  See
-[![Clojars Project](http://clojars.org/jonase/eastwood/latest-version.svg)](http://clojars.org/jonase/eastwood)
-for Gradle and Maven syntax.
+[Clojars](https://clojars.org/jonase/eastwood) for Gradle and Maven
+syntax.
 
 From within your REPL, there are two different functions you can call,
 depending upon the kind of results you want.
