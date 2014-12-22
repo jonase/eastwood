@@ -4,7 +4,125 @@
 
 * Implement a way to enable/disable linters on individual Clojure
   expressions.  Issue
-  [#21](https://github.com/jonase/eastwood/issues/21).
+  [#21](https://github.com/jonase/eastwood/issues/21).  Implemented
+  for several linters in version 0.2.1, but there are a few more for
+  which it would likely be helpful.
+
+* TBD: Enhance the code that recognizes reflection and boxed math
+  warnings, and returns them as Eastwood warnings are by the
+  `eastwood.lint/lint` function, i.e. as maps.
+
+
+## Changes from version 0.2.0 to 0.2.1
+
+If you use Emacs+Cider or Eclipse+Counterclockwise development
+environments, there are now add-ons that integrate Eastwood warnings.
+See https://github.com/jonase/eastwood#editor-support
+
+New linters, and new good warnings from existing linters:
+
+* New linter `:wrong-ns-form` that warns about several kinds of wrong
+  or suspicious `:require` or `:use` subforms inside `ns` forms.
+  Issue [#85](https://github.com/jonase/eastwood/issues/85),
+  [#98](https://github.com/jonase/eastwood/issues/98)
+
+* `:suspicious-expression` linter now warns about trivial uses of more
+  `clojure.core` macros then before.
+
+Fewer unwanted warnings, via logic enhancements or configuration
+options:
+
+* Several linters now have configuration options to disable their
+  warnings based upon whether the warnings occur inside of a
+  macroexpansion of a particular macro.  By default, Eastwood loads
+  several config files worth of such disabling options for the linters
+  `:constant-test`, `:redefd-vars`, `:suspicious-expression`, and
+  `:unused-ret-vals` that prevent them from generating many unwanted
+  warning messages, at least when certain macros are used, such as
+  those in `core.contracts`, `core.match`, `core.typed`, Korma,
+  Carmine, Timbre, Instaparse, and Schema.  Eastwood users may write
+  their own config files to disable more warnings.
+  Issue [#45](https://github.com/jonase/eastwood/issues/45),
+  [#96](https://github.com/jonase/eastwood/issues/96),
+  [#108](https://github.com/jonase/eastwood/issues/108),
+  [#111](https://github.com/jonase/eastwood/issues/111),
+  [#118](https://github.com/jonase/eastwood/issues/118),
+  [#122](https://github.com/jonase/eastwood/issues/122),
+  [#123](https://github.com/jonase/eastwood/issues/123)
+
+* The `:wrong-arity` linter now generates nearly no unwanted warnings
+  when you use the `java.jdbc` and Hiccup libraries.  Those libraries
+  modify the `:arglists` key in metadata of some of their functions
+  and macros for documentation purposes, but in a way that fooled
+  Eastwood into generating incorrect warnings.  Like the previous
+  item, this is also configurable, and Eastwood users may extend these
+  configurations for their own situations.
+  Issue [#119](https://github.com/jonase/eastwood/issues/119),
+  [#124](https://github.com/jonase/eastwood/issues/124)
+
+* Limited documentation for how to specify these new config files,
+  plus links to the current ones, where one might learn from the
+  current example configs.  This documentation should expand in the
+  future.
+
+* The `:unused-namespaces` linter had several bugs causing it to
+  report a namespace that was `require`d or `use`d as being unused,
+  when in fact it was.  The only remaining case of such unwanted
+  warnings is at least documented.
+  Issue [#25](https://github.com/jonase/eastwood/issues/25)
+
+* `:suspicious-test` linter now correctly infers in more cases when
+  the last argument to `clojure.test/is` is a string, eliminating some
+  incorrect warnings.
+  Issue [#117](https://github.com/jonase/eastwood/issues/117)
+
+Clearer reporting of exceptions thrown during linting:
+
+Other enhancements:
+
+* When specifying lists of linters to use in Eastwood options, can now
+  use the keyword `:all` as an abbreviation for all linters, or
+  `:default` for all linters enabled by default.
+  Issue [#130](https://github.com/jonase/eastwood/issues/130)
+
+* When reflection or boxed math warnings are enabled and the Clojure
+  compiler prints them during Eastwood's `eval`ing of your code,
+  Eastwood will recognize them and change their format to match that
+  of Eastwood's own warnings, so that they may be stepped through in
+  editors in the same way as other Eastwood warnings.  Note that any
+  such warnings produced when Leiningen is loading other namespaces,
+  before Eastwood analysis begins, are outside of Eastwood's knowledge
+  or control, and are thus not modified.
+
+* New `eastwood.lint/lint` function intended for use by developers
+  integrating Eastwood with editors and IDEs.
+  Issue [#131](https://github.com/jonase/eastwood/issues/131)
+
+* If code uses the values of `&env` in a macro expansions, which
+  causes Eastwood to throw an exception, it now recognizes that
+  exception message and gives a message that explains a little more
+  clearly why the exception occurred, with links to the documentation.
+
+* Documentation of how Eastwood's options map is created from
+  Leiningen configuration files and the command line, plus a new debug
+  option `:options` to show what the options are at several steps of
+  the process.
+  Issue [#125](https://github.com/jonase/eastwood/issues/125)
+
+* Invoking `lein help eastwood` from the command line now prints some
+  help, plus link to the full documentation.
+
+* `:debug` key value in Eastwood options map can now be a list or
+  vector, to avoid the need to type the `#` character as part of the
+  set literal syntax.
+
+Internal Eastwood test/development enhancements:
+
+* Enhancements to Eastwood's tests to make it easier to update
+  expected results to match actual results.
+
+* Update projects in Eastwood's test suite (the "crucible") to include
+  newer versions of `core.logic` and Elastisch.
 
 
 ## Changes from version 0.1.5 to 0.2.0
