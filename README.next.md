@@ -223,12 +223,20 @@ Available options for specifying namespaces and paths are:
 Linter names are given in the previous section.  Available options for
 specifying which linters are enabled or disabled are:
 
-* `:linters` Linters to use.  If not specified, all linters except
-  those mentioned as 'disabled by default' above are used.
+* `:linters` Linters to use.  If not specified, same as `[:default]`,
+  which is all linters except those documented as 'disabled by
+  default'.
 * `:exclude-linters` Linters to exclude
 * `:add-linters` Linters to add.  The final list of linters is the set
   specified by `:linters`, taking away all in `:excluded-linters`,
   then adding all in `:add-linters`.
+
+The keyword `:all` in any of the collections of linters listed above
+will be replace with the collection of all linters.  The keyword
+`:default` will be replaced with the collection of default linters.
+Thus `:linters [:all]` enables all linters, even those disabled by
+default, and `:linters [:all] :exclude-linters [:default]` enables
+only those that are disabled by default.
 
 Note that you can add Eastwood options to a user-wide Leiningen
 `profiles.clj` file or to your project's `project.clj` file if you

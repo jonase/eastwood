@@ -280,6 +280,10 @@ return value followed by the time it took to evaluate in millisec."
        (filter :enabled-by-default)
        (map :name)))
 
+(def all-linters
+  (->> linter-info
+       (map :name)))
+
 
 (defn- lint-analyze-results [analyze-results linter-kw opt]
   (if-let [lint-fn (linter-name->fn linter-kw)]
@@ -865,17 +869,43 @@ file and namespace to avoid name collisions."))))
                                (if tp-included? (:non-clojure-files tp)))}))))))
 
 
+(defn replace-linter-keywords [linters all-linters default-linters]
+  (mapcat (fn [x]
+            (cond (= :all x) all-linters
+                  (= :default x) default-linters
+                  :else [x]))
+          linters))
+
+
+(defn linter-seq->set [linter-seq]
+  (set (replace-linter-keywords linter-seq all-linters default-linters)))
+
+
 (defn opts->linters [opts linter-name->fn default-linters]
-  (let [linters (set (:linters opts))
-        excluded-linters (set (:exclude-linters opts))
-        add-linters (set (:add-linters opts))
-        linters-requested (-> (set/difference linters excluded-linters)
+  (let [linters-orig (linter-seq->set (:linters opts))
+        excluded-linters (linter-seq->set (:exclude-linters opts))
+        add-linters (linter-seq->set (:add-linters opts))
+        linters-requested (-> (set/difference linters-orig excluded-linters)
                               (set/union add-linters))
         known-linters (set (keys linter-name->fn))
         unknown-linters (set/difference (set/union linters-requested
                                                    excluded-linters)
                                         known-linters)
         linters (set/intersection linters-requested known-linters)]
+    (when (util/debug? :options opts)
+      (let [debug-cb (util/make-msg-cb :debug opts)]
+        (debug-cb "Calculation of final list of linters:")
+        (debug-cb (format "    :linters"))
+        (debug-cb (format "      before keyword substituion: %s" (vec (:linters opts))))
+        (debug-cb (format "      after  keyword substituion: %s" (vec (sort linters-orig))))
+        (debug-cb (format "    :exclude-linters"))
+        (debug-cb (format "      before keyword substituion: %s" (vec (:exclude-linters opts))))
+        (debug-cb (format "      after  keyword substituion: %s" (vec (sort excluded-linters))))
+        (debug-cb (format "    :add-linters"))
+        (debug-cb (format "      before keyword substituion: %s" (vec (:add-linters opts))))
+        (debug-cb (format "      after  keyword substituion: %s" (vec (sort add-linters))))
+        (debug-cb (format "    final effective linter set: linters - exclude + add:"))
+        (debug-cb (format "      %s" (vec (sort linters))))))
     (if (and (seq unknown-linters)
              (not (:disable-linter-name-checks opts)))
       {:err :unknown-linter,
