@@ -4,13 +4,7 @@
 
 * Implement a way to enable/disable linters on individual Clojure
   expressions.  Issue
-  [#21](https://github.com/jonase/eastwood/issues/21).  Implemented
-  for several linters in version 0.2.1, but there are a few more for
-  which it would likely be helpful.
-
-* TBD: Enhance the code that recognizes reflection and boxed math
-  warnings, and returns them as Eastwood warnings are by the
-  `eastwood.lint/lint` function, i.e. as maps.
+  [#21](https://github.com/jonase/eastwood/issues/21).
 
 
 ## Changes from version 0.2.0 to 0.2.1
