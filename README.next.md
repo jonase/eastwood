@@ -26,7 +26,7 @@ versions 2.4.x and 2.5.x.  Merge the following into your
 `~/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.0"]] }}
+{:user {:plugins [[jonase/eastwood "0.2.1"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -111,7 +111,7 @@ enabled by default unless they have '(disabled)' after their name.
 | `:unused-private-vars` (disabled) | Unused private vars (updated in version 0.2.0). | [[more]](#unused-private-vars) |
 | `:unused-ret-vals` and `:unused-ret-vals-in-try` | Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value. | [[more]](#unused-ret-vals) |
 | `:wrong-arity` | Function calls that seem to have the wrong number of arguments. | [[more]](#wrong-arity) |
-| `:wrong-ns-form` | ns forms containing incorrect syntax or options | [[more]](#wrong-ns-form) |
+| `:wrong-ns-form` | ns forms containing incorrect syntax or options (added 0.2.1). | [[more]](#wrong-ns-form) |
 | `:wrong-tag` | An incorrect type tag for which the Clojure compiler does not give an error (added 0.1.5). | [[more]](#wrong-tag) |
 
 The following table gives some additional detail about each linter.
@@ -387,7 +387,7 @@ in a production JVM process.
 Merge this into your project's `project.clj` file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.2.0" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.2.1" :exclusions [org.clojure/clojure]]]}}
 ```
 
 Note: This should work even if you do not use Leiningen for your
@@ -601,7 +601,7 @@ can be used to modify this merging behavior.
 For example, if your user-wide `profiles.clj` file contains this:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.0"]]
+{:user {:plugins [[jonase/eastwood "0.2.1"]]
         :eastwood {:exclude-linters [:unlimited-use]
                    :debug [:time]}
         }}
@@ -1150,6 +1150,8 @@ have been defined.
 
 #### ns forms containing incorrect syntax or options
 
+New in Eastwood version 0.2.1
+
 Clojure will accept and correctly execute `ns` forms with references
 in vectors, as shown in this example:
 
@@ -1449,8 +1451,8 @@ cases.
 The macro `schema.core/fn` in Prismatic's
 [Schema](https://github.com/Prismatic/schema) library also has special
 handling similar to `clojure.core/fn`, but at least as of Eastwood
-0.2.0 there is no special handling of this case, so it will warn if
-metadata annotates an invocation of this macro.
+0.2.0 and 0.2.1 there is no special handling of this case, so it will
+warn if metadata annotates an invocation of this macro.
 
 
 ### `:unused-ret-vals`
@@ -1800,7 +1802,7 @@ Also, there are currently many warnings of this kind produced for
 also code that uses those libraries (judging from a small sample set
 which in some case only includes test code for the library).  Perhaps
 in the future Eastwood will be improved, but it is not there as of
-version 0.2.0.
+version 0.2.1.
 
 However, for many projects tested, the warnings are correct.  If you
 wish to eliminate such symbols from your code using these warnings,
@@ -2016,7 +2018,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein install
 
-Then add `[jonase/eastwood "0.2.1-SNAPSHOT"]` (or whatever is the
+Then add `[jonase/eastwood "0.2.2-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `~/.lein/profiles.clj` file.
