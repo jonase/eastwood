@@ -78,10 +78,10 @@ options:
 
 Other enhancements:
 
-* When specifying lists of linters to use in Eastwood options, can now
-  use the keyword `:all` as an abbreviation for all linters, or
-  `:default` for all linters enabled by default.
-  Issue [#130](https://github.com/jonase/eastwood/issues/130)
+* `:constant-test` warning messages now include the expression in
+  which the constant test expression was found.  In some cases where
+  the expression is inside of a macro expansion, this can give more
+  clues about the cause of the constant test.
 
 * When reflection or boxed math warnings are enabled and the Clojure
   compiler prints them during Eastwood's `eval`ing of your code,
@@ -95,6 +95,11 @@ Other enhancements:
 * New `eastwood.lint/lint` function intended for use by developers
   integrating Eastwood with editors and IDEs.
   Issue [#131](https://github.com/jonase/eastwood/issues/131)
+
+* When specifying lists of linters to use in Eastwood options, can now
+  use the keyword `:all` as an abbreviation for all linters, or
+  `:default` for all linters enabled by default.
+  Issue [#130](https://github.com/jonase/eastwood/issues/130)
 
 * If code uses the values of `&env` in a macro expansions, which
   causes Eastwood to throw an exception, it now recognizes that
