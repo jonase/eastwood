@@ -513,10 +513,10 @@ still in early development, but may be usable for you.
 #### Emacs + Cider
 
 If you use Emacs+Cider, take a look at the
-[`squiggly-clojure`](https://github.com/pnf/squiggly-clojure) project,
-which can run Eastwood and `core.typed` in the background on your
-project using Emacs Flycheck, and displays the warnings as annotations
-in your source code.
+[`squiggly-clojure`](https://github.com/clojure-emacs/squiggly-clojure)
+project, which can run Eastwood and `core.typed` in the background on
+your project using Emacs Flycheck, and displays the warnings as
+annotations in your source code.
 
 
 #### Emacs
