@@ -76,8 +76,6 @@ options:
   incorrect warnings.
   Issue [#117](https://github.com/jonase/eastwood/issues/117)
 
-Clearer reporting of exceptions thrown during linting:
-
 Other enhancements:
 
 * When specifying lists of linters to use in Eastwood options, can now
