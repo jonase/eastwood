@@ -263,6 +263,8 @@ return value followed by the time it took to evaluate in millisec."
     :fn misc/unlimited-use}
    {:name :wrong-ns-form,             :enabled-by-default true,
     :fn misc/wrong-ns-form}
+   {:name :wrong-pre-post,            :enabled-by-default true,
+    :fn typos/wrong-pre-post}
    {:name :wrong-tag,                 :enabled-by-default true,
     :fn typetags/wrong-tag}
    {:name :keyword-typos,             :enabled-by-default false,

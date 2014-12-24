@@ -877,3 +877,133 @@ warning, that contains the constant value."
       (do
         (util/debug-warning w ast opt #{:enclosing-macros})
         w))))
+
+
+(defn fn-form-with-pre-post [form info]
+;;  (println "dbg fn-form-with-pre-post:")
+;;  (pp/pprint form)
+;;  (println "  sequential?" (sequential? form))
+;;  (println "  class" (class form))
+;;  (println "  fn?" (#{'clojure.core/fn 'fn} (first form)))
+  (if (and (sequential? form)
+           (not (vector? form))
+           (#{'clojure.core/fn 'fn} (first form)))
+    (let [;;_ (println "dbg2 sequential non-vec starting with fn" form)
+          name (if (symbol? (second form)) (second form))
+          sigs (if name (nnext form) (next form))
+          sigs (if (vector? (first sigs))
+                 (list sigs)
+                 sigs)
+          psig (fn [sig]
+                 (let [[params & body] sig
+                       conds (when (and (next body) (map? (first body)))
+                               (first body))
+                       conds (or conds (meta params))
+                       pre (:pre conds)
+                       post (:post conds)]
+                   (if (or pre post)
+                     (merge info
+                            {:form form, :name name, :params params}
+                            (if pre {:pre pre})
+                            (if post {:post post})))))]
+      (->> sigs
+           (map psig)
+           ;;(map (fn [s] (println "dbg" (:form s)) s))
+           (map-indexed (fn [idx m] (if m (assoc m :method-num idx))))
+           (remove #(nil? %))
+           ))))
+
+
+(defn fn-ast-with-pre-post [ast]
+  (if (= :fn (:op ast))
+    (seq (mapcat #(fn-form-with-pre-post % {:ast ast})
+                 (:raw-forms ast)))))
+
+
+(defn logical-true-constant? [x]
+  ((some-fn true? number? string? char? keyword?
+            vector? set? map?)
+   x))
+
+
+(defn logical-false-constant? [x]
+  ((some-fn false? nil?) x))
+
+
+(defn probably-constant? [x]
+  ((some-fn symbol? var?) x))
+
+
+(defn wrong-pre-post-message [conditions condition-desc-begin
+                              condition-desc-middle]
+  (cond
+   (not (vector? conditions))
+   (format "All function %s should be in a vector.  Found: %s"
+           condition-desc-middle conditions)
+        
+   (some (some-fn logical-true-constant? logical-false-constant?)
+         conditions)
+   (format "%s found that are always logical true or always logical false.  Should be changed to function call?  %s"
+           condition-desc-begin
+           (str/join "  " (filter (some-fn logical-true-constant?
+                                           logical-false-constant?)
+                                  conditions)))
+   
+   (some probably-constant? conditions)
+   (format "%s found that are probably always logical true or always logical false.  Should be changed to function call?  %s"
+           condition-desc-begin
+           (str/join " " (filter probably-constant? conditions)))
+   
+   (not (every? (some-fn list? sequential?) conditions))
+   (format "%s found that are not parenthesized expressions.  Missing parens?  %s"
+           condition-desc-begin
+           (str/join " " (->> conditions
+                              (remove (some-fn list? sequential?))
+                              (map seq))))
+   
+   :else nil))
+
+
+(defn wrong-pre-post [{:keys [asts]} opt]
+  (let [fns-with-pre-post (->> asts
+                          (mapcat ast/nodes)
+                          (mapcat fn-ast-with-pre-post))]
+    (concat
+     (for [{:keys [ast form name pre method-num]} fns-with-pre-post
+           :when pre
+           :let [loc (meta pre)
+;;                 _ (do
+;;                     (println (format "\ndbg-pre Found precondition in method %d at line %d"
+;;                                      method-num (-> pre meta :line)))
+;;                     (pp/pprint pre)
+;;                     (println "   in form:")
+;;                     (pp/pprint form))
+                 msg (wrong-pre-post-message pre "Precondition(s)"
+                                             "preconditions")]
+           :when msg
+           :let [w (util/add-loc-info loc
+                    {:linter :wrong-pre-post
+                     :wrong-pre-post {:kind :pre, :ast ast}
+                     :msg msg})
+                 allow? true]
+           :when allow?]
+       w)
+     (for [{:keys [ast form name post method-num]} fns-with-pre-post
+           :when post
+           :let [loc (meta post)
+;;                 _ (do
+;;                     (println (format "\ndbg-post Found postcondition in method %d at line %d"
+;;                                      method-num (-> post meta :line)))
+;;                     (pp/pprint post)
+;;                     (println "   in form:")
+;;                     (pp/pprint form))
+                 msg (wrong-pre-post-message post "Postcondition(s)"
+                                             "postconditions")]
+           :when msg
+           :let [w (util/add-loc-info loc
+                    {:linter :wrong-pre-post
+                     :wrong-pre-post {:kind :post, :ast ast}
+                     :msg msg})
+                 allow? true]
+           :when allow?]
+       w))))

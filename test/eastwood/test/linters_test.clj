@@ -1662,6 +1662,42 @@ the next."
      :line 182, :column 13}
     1,
     })
+  (lint-test
+   'testcases.wrongprepost
+   @#'eastwood.lint/default-linters
+   default-opts
+   {
+    {:linter :wrong-pre-post,
+     :msg "All function preconditions should be in a vector.  Found: (pos? x)",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 5, :column 9}
+    1,
+    {:linter :wrong-pre-post,
+     :msg "All function preconditions should be in a vector.  Found: (> x y)",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 12, :column 12}
+    1,
+    {:linter :wrong-pre-post,
+     :msg "Postcondition(s) found that are probably always logical true or always logical false.  Should be changed to function call?  number?",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 23, :column 10}
+    1,
+    {:linter :wrong-pre-post,
+     :msg "All function postconditions should be in a vector.  Found: (number? %)",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 35, :column 10}
+    1,
+    {:linter :wrong-pre-post,
+     :msg "All function preconditions should be in a vector.  Found: (number? x)",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 41, :column 9}
+    1,
+    {:linter :wrong-pre-post,
+     :msg "Precondition(s) found that are probably always logical true or always logical false.  Should be changed to function call?  f",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 51, :column 9}
+    1,
+    })
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace
   ;; before lint-test does, and thus the namespace is already there
