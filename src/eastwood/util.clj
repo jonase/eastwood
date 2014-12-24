@@ -914,7 +914,7 @@ StringWriter."
 (require '[eastwood.linters.unused :as un] :reload)
 
 (def nssym 'testcases.f06)
-(def a (ana/analyze-ns nssym :opt {:callback (fn [_])}))
+(def a (ana/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}}))
 (def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv util/clean-ast ast))))
 (insp/inspect-tree a2)
 
