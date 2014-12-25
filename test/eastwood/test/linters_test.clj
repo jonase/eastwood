@@ -1678,7 +1678,7 @@ the next."
      :line 12, :column 12}
     1,
     {:linter :wrong-pre-post,
-     :msg "Postcondition(s) found that are probably always logical true or always logical false.  Should be changed to function call?  number?",
+     :msg "Postcondition found that is probably always logical true or always logical false.  Should be changed to function call?  number?",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 23, :column 10}
     1,
@@ -1693,9 +1693,59 @@ the next."
      :line 41, :column 9}
     1,
     {:linter :wrong-pre-post,
-     :msg "Precondition(s) found that are probably always logical true or always logical false.  Should be changed to function call?  f",
+     :msg "Precondition found that is probably always logical true or always logical false.  Should be changed to function call?  f",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 51, :column 9}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: 7 in form (if 7 nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote 7)))))))",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 69, :column 1}
+    1,
+    {:linter :wrong-pre-post,
+     :msg "Precondition found that is always logical true or always logical false.  Should be changed to function call?  7",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 70, :column 9}
+    1,
+    {:linter :wrong-pre-post,
+     :msg "Precondition found that is probably always logical true or always logical false.  Should be changed to function call?  >=",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 70, :column 9}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: \"constant\" in form (if \"constant\" nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote \"constant\")))))))",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 74, :column 1}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: :a in form (if :a nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote :a)))))))",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 74, :column 1}
+    1,
+    {:linter :wrong-pre-post,
+     :msg "Precondition found that is always logical true or always logical false.  Should be changed to function call?  :a",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 75, :column 9}
+    1,
+    {:linter :wrong-pre-post,
+     :msg "Postcondition found that is always logical true or always logical false.  Should be changed to function call?  \"constant\"",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 76, :column 10}
+    1,
+    {:linter :wrong-pre-post,
+     :msg "Precondition found that is probably always logical true or always logical false.  Should be changed to function call?  wrong-pre-9",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 102, :column 9}
+    1,
+    {:linter :constant-test,
+     :msg "Test expression is always logical true or always logical false: Number in form (if Number nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote Number)))))))",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 108, :column 1}
+    1,
+    {:linter :wrong-pre-post,
+     :msg "All function preconditions should be in a vector.  Found: (instance? Number datastore)",
+     :file (fname-from-parts "testcases" "wrongprepost.clj"),
+     :line 111, :column 9}
     1,
     })
   ;; I would prefer if this threw an exception, but I think it does

@@ -1208,6 +1208,69 @@ common in the many Clojure projects on which Eastwood is tested.
 
 New in Eastwood version 0.2.2
 
+Preconditions and postconditions that throw exceptions if they are
+false can be specified for any Clojure function by putting a map after
+the function's argument vector, with the key `:pre` for preconditions,
+or `:post` for postconditions, or both.  The value of these keys
+should be a vector of expressions to evaluate, all of which are
+evaluated at run time when the function is called.  For example:
+
+```clojure
+(defn square-root [x]
+  {:pre [(>= x 0)]}
+  (Math/sqrt x))
+
+;; AssertionError exception thrown when called with negative number
+user=> (square-root -5)
+
+AssertionError Assert failed: (>= x 0)  user/square-root (file.clj:38)
+```
+
+It is an easy mistake to forget that the conditions should be a vector
+of expressions, and to give one expression instead:
+
+```clojure
+(defn square-root [x]
+  {:pre (>= x 0)}     ; should be [(>= x 0)] like above
+  (Math/sqrt x))
+
+;; No exception when called with negative number!
+user=> (square-root -5)
+NaN
+```
+
+In this case, Clojure does not give any error or warning when defining
+`square-root`.  It treats the precondition as three separate assertion
+expressions: `>=`, `x`, and `0`, each evaluated independently when the
+function is called.  Every value in Clojure is logical true except
+`nil` and `false`, so unless you call `square-root` with an argument
+equal to one of those values, all three of those expressions evaluate
+to logical true, and no exceptions are thrown.
+
+The `:warn-pre-post` linter will warn about any precondition or
+postcondition that is not enclosed in a vector.  Even if you do
+enclose it in a vector, the linter will check whether any of the
+conditions appear to be values that are always logical true or always
+logical false.  For example:
+
+```clojure
+(defn non-neg? [x]
+  (>= x 0))
+
+(defn square-root [x]
+  {:pre [non-neg?]}
+  (Math/sqrt x))
+
+;; No exception when called with negative number!
+user=> (square-root -5)
+NaN
+```
+
+Here Clojure also gives no warning or error.  The assert expression it
+evaluates is the value of `non-neg?` -- not the value when you call
+`non-neg?` with the argument `x`, but the value of the Var `non-neg?`.
+That value is a function, and neither `nil` nor `false`, so logical
+true.
 
 
 ### `:suspicious-test`

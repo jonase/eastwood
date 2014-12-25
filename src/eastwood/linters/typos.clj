@@ -860,9 +860,7 @@ warning, that contains the constant value."
                                     [% x]))))]
     (for [[ast constant-test-ast] const-tests
           :let [test-form (-> constant-test-ast :form)
-                test-form-to-print (if (nil? test-form) "nil" test-form)
                 form (-> ast :form)
-                form-to-print (if (nil? form) "nil" form)
                 loc (or (pass/has-code-loc? (-> ast :form meta))
                         (pass/code-loc (pass/nearest-ast-with-loc ast)))
                 w (util/add-loc-info
@@ -871,7 +869,7 @@ warning, that contains the constant value."
                     :constant-test {:kind :the-only-kind
                                     :ast ast}
                     :msg (format "Test expression is always logical true or always logical false: %s in form %s"
-                                 test-form-to-print form-to-print)})
+                                 (pr-str test-form) (pr-str form))})
                 allow? (util/allow-warning w opt)]
           :when allow?]
       (do
@@ -879,17 +877,16 @@ warning, that contains the constant value."
         w))))
 
 
-(defn fn-form-with-pre-post [form info]
+(defn fn-form-with-pre-post [form ast]
 ;;  (println "dbg fn-form-with-pre-post:")
 ;;  (pp/pprint form)
 ;;  (println "  sequential?" (sequential? form))
 ;;  (println "  class" (class form))
 ;;  (println "  fn?" (#{'clojure.core/fn 'fn} (first form)))
   (if (and (sequential? form)
-           (not (vector? form))
+           (not (vector? form))  ; TBD: Is this needed for anything?
            (#{'clojure.core/fn 'fn} (first form)))
-    (let [;;_ (println "dbg2 sequential non-vec starting with fn" form)
-          name (if (symbol? (second form)) (second form))
+    (let [name (if (symbol? (second form)) (second form))
           sigs (if name (nnext form) (next form))
           sigs (if (vector? (first sigs))
                  (list sigs)
@@ -902,8 +899,7 @@ warning, that contains the constant value."
                        pre (:pre conds)
                        post (:post conds)]
                    (if (or pre post)
-                     (merge info
-                            {:form form, :name name, :params params}
+                     (merge {:form form, :name name, :params params, :ast ast}
                             (if pre {:pre pre})
                             (if post {:post post})))))]
       (->> sigs
@@ -915,53 +911,96 @@ warning, that contains the constant value."
 
 
 (defn fn-ast-with-pre-post [ast]
-  (if (= :fn (:op ast))
-    (seq (mapcat #(fn-form-with-pre-post % {:ast ast})
+  (when (= :fn (:op ast))
+;;    (println (format "dbg6: Found :op :fn node with :raw-forms"))
+;;    (pp/pprint (:raw-forms ast))
+;;    (println (format "     Found pre-postconditions:"))
+;;    (pp/pprint (mapcat #(map (juxt :pre :post) (fn-form-with-pre-post % ast))
+;;                       (:raw-forms ast)))
+    (seq (mapcat #(fn-form-with-pre-post % ast)
                  (:raw-forms ast)))))
 
 
-(defn logical-true-constant? [x]
-  ((some-fn true? number? string? char? keyword?
-            vector? set? map?)
-   x))
+(defn ast-of-condition-test
+  [kind fn-ast method-num condition-idx condition-form]
+  (let [{do-body-ast :ast, s :stop-reason}
+        (util/get-in-ast fn-ast
+                         [[[:methods method-num] :fn-method]
+                          [[:body] :do]])]
+    (assert (nil? s))
+    (let [matching-assert-asts
+          (filter (fn [ast]
+;;                    (when (:raw-forms ast)
+;;                      (println (format "dbg5: Looking for raw-forms containing assert: %s"
+;;                                       (pr-str (:raw-forms ast)))))
+                    (some (fn [f]
+;;                            (println (format "dbg7: assert?=%s matches?=%s condition-form=%s (second f)=%s"
+;;                                             (#{'assert 'clojure.core/assert} (first f))
+;;                                             (= condition-form (second f))
+;;                                             condition-form
+;;                                             (second f)))
+                            (and (sequential? f)
+                                 (#{'assert 'clojure.core/assert}
+                                  (first f))
+                                 (= condition-form
+                                    (second f))))
+                          (:raw-forms ast)))
+                  (ast/nodes do-body-ast))]
+      ;; Don't return more than one, as we might issue incorrect
+      ;; warnings.  Hopefully it will be rare that we find multiple
+      ;; matching ASTs.
+      (if (= 1 (count matching-assert-asts))
+        (:test (first matching-assert-asts))
+        (println (format "dbg wrong-pre-post: found %d ASTs with :raw-forms containing assert of condition %s"
+                         (count matching-assert-asts)
+                         (pr-str condition-form)))))))
 
 
-(defn logical-false-constant? [x]
-  ((some-fn false? nil?) x))
+(defn wrong-pre-post-messages [kind conditions method-num ast
+                               condition-desc-begin condition-desc-middle]
+  (if (not (vector? conditions))
+    [(format "All function %s should be in a vector.  Found: %s"
+            condition-desc-middle (pr-str conditions))]
+    
+    (remove nil?
+     (for [[condition test-ast]
+           (map-indexed (fn [i condition]
+                          [condition
+                           (ast-of-condition-test kind ast method-num i
+                                                  condition)])
+                        conditions)]
+;;       (do
+;;         (println (format "dbg3: kind=%s line=%d :op=%s condition=%s :form=%s same?=%s"
+;;                          kind (:line (meta conditions))
+;;                          (:op test-ast)
+;;                          condition (:form test-ast)
+;;                          (= condition (:form test-ast))))
+       (cond
+        (= :const (:op test-ast))
+        (format "%s found that is always logical true or always logical false.  Should be changed to function call?  %s"
+                condition-desc-begin (pr-str condition))
 
-
-(defn probably-constant? [x]
-  ((some-fn symbol? var?) x))
-
-
-(defn wrong-pre-post-message [conditions condition-desc-begin
-                              condition-desc-middle]
-  (cond
-   (not (vector? conditions))
-   (format "All function %s should be in a vector.  Found: %s"
-           condition-desc-middle conditions)
+        (= :var (:op test-ast))
+        (format "%s found that is probably always logical true or always logical false.  Should be changed to function call?  %s"
+                condition-desc-begin (pr-str condition))
         
-   (some (some-fn logical-true-constant? logical-false-constant?)
-         conditions)
-   (format "%s found that are always logical true or always logical false.  Should be changed to function call?  %s"
-           condition-desc-begin
-           (str/join "  " (filter (some-fn logical-true-constant?
-                                           logical-false-constant?)
-                                  conditions)))
-   
-   (some probably-constant? conditions)
-   (format "%s found that are probably always logical true or always logical false.  Should be changed to function call?  %s"
-           condition-desc-begin
-           (str/join " " (filter probably-constant? conditions)))
-   
-   (not (every? (some-fn list? sequential?) conditions))
-   (format "%s found that are not parenthesized expressions.  Missing parens?  %s"
-           condition-desc-begin
-           (str/join " " (->> conditions
-                              (remove (some-fn list? sequential?))
-                              (map seq))))
-   
-   :else nil))
+        ;; In this case, probably the developer wanted to assert that
+        ;; a function arg was logical true, i.e. neither nil nor
+        ;; false.
+        (= :local (:op test-ast))
+        nil
+        
+        ;; The following kinds of things are 'complex' enough that we
+        ;; will not try to do any fancy calculation to determine
+        ;; whether their results are constant or not.
+        (#{:invoke :static-call :let :instance?} (:op test-ast))
+        nil
+
+        :else
+        (println (format "dbg wrong-pre-post: condition=%s line=%d test-ast :op=%s"
+                         condition (:line (meta conditions))
+                         (:op test-ast))))))))
+;;)
 
 
 (defn wrong-pre-post [{:keys [asts]} opt]
@@ -972,38 +1011,26 @@ warning, that contains the constant value."
      (for [{:keys [ast form name pre method-num]} fns-with-pre-post
            :when pre
            :let [loc (meta pre)
-;;                 _ (do
-;;                     (println (format "\ndbg-pre Found precondition in method %d at line %d"
-;;                                      method-num (-> pre meta :line)))
-;;                     (pp/pprint pre)
-;;                     (println "   in form:")
-;;                     (pp/pprint form))
-                 msg (wrong-pre-post-message pre "Precondition(s)"
-                                             "preconditions")]
-           :when msg
+                 msgs (wrong-pre-post-messages :precondition pre
+                                               method-num ast
+                                               "Precondition"
+                                               "preconditions")]
+           msg msgs
            :let [w (util/add-loc-info loc
                     {:linter :wrong-pre-post
                      :wrong-pre-post {:kind :pre, :ast ast}
-                     :msg msg})
-                 allow? true]
-           :when allow?]
+                     :msg msg})]]
        w)
      (for [{:keys [ast form name post method-num]} fns-with-pre-post
            :when post
            :let [loc (meta post)
-;;                 _ (do
-;;                     (println (format "\ndbg-post Found postcondition in method %d at line %d"
-;;                                      method-num (-> post meta :line)))
-;;                     (pp/pprint post)
-;;                     (println "   in form:")
-;;                     (pp/pprint form))
-                 msg (wrong-pre-post-message post "Postcondition(s)"
-                                             "postconditions")]
-           :when msg
+                 msgs (wrong-pre-post-messages :postcondition post
+                                               method-num ast
+                                               "Postcondition"
+                                               "postconditions")]
+           msg msgs
            :let [w (util/add-loc-info loc
                     {:linter :wrong-pre-post
                      :wrong-pre-post {:kind :post, :ast ast}
-                     :msg msg})
-                 allow? true]
-           :when allow?]
+                     :msg msg})]]
        w))))
