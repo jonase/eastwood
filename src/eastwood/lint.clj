@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [eastwood.analyze-ns :as analyze]
             [eastwood.util :as util]
+            [clojure.inspector :as inspector]
             [clojure.set :as set]
             [clojure.string :as str]
             [clojure.pprint :as pp]
@@ -1261,3 +1262,17 @@ Keys in a warning map:
       :clojure-version-map *clojure-version*
       :clojure-version-string (clojure-version)
       :jvm-version-string (get (System/getProperties) "java.version")}}))
+
+
+(defn insp
+  "Read, analyze, and eval a file specified by namespace as a symbol,
+e.g. 'testcases.f01.  Return a value that has been 'cleaned up', by
+removing some keys from ASTs, so that it is more convenient to call
+clojure.inspector/inspect-tree on it.  Example in REPL:
+
+(require '[eastwood.lint :as l] '[clojure.inspector :as i])
+(i/inspect-tree (l/insp 'testcases.f01))"
+  [nssym]
+  (let [a (analyze/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}})]
+    (update-in a [:analyze-results :asts]
+               (fn [ast] (mapv util/clean-ast ast)))))
