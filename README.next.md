@@ -1258,7 +1258,7 @@ logical false.  For example:
   (>= x 0))
 
 (defn square-root [x]
-  {:pre [non-neg?]}
+  {:pre [non-neg?]}     ; [(non-neg? x)] would be correct
   (Math/sqrt x))
 
 ;; No exception when called with negative number!
