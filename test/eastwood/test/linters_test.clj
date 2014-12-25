@@ -221,6 +221,11 @@ the next."
      :file (fname-from-parts "testcases" "f04.clj"),
      :line 64, :column 20}
     1,
+    {:linter :local-shadows-var,
+     :msg "local: dogs invoked as function shadows var: #'testcases.f04/dogs",
+     :file (fname-from-parts "testcases" "f04.clj"),
+     :line 90, :column 13}
+    1,
     })
   ;; The following test is known to fail with Clojure 1.5.1 because of
   ;; protocol method names that begin with "-".  See

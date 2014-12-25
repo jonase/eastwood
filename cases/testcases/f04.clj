@@ -63,3 +63,28 @@
          data  :data} fetched-data
         real-count (count data)]
     (inc real-count)))
+
+
+;; Example code exhibiting the issue from Benjamin Peter, submitted in
+;; description of Clojure ticket CLJ-1249
+
+(defprotocol HasPets
+  (dogs [this])
+  (cats [this])
+  (octopus [this])
+  (cute-ones [this]))
+
+;; Here the field "dogs" is added with the same name as the protocol
+
+(defrecord Petshop [dogs] 
+  HasPets
+  (dogs [this]
+    [:pluto :bethoven])
+  (cats [this]
+    [:tom])
+  (octopus [this]
+    [:henry])
+  (cute-ones [this]
+    ;; Here it was intended to call the function "dogs", instead the
+    ;; field is used.
+    (concat (dogs this) (cats this))))

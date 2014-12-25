@@ -1655,7 +1655,7 @@ in this map will never cause one of these warnings.
 
 ### `:local-shadows-var`
 
-#### A local name, e.g. a function arg or let binding, has the same name as a global Var, and is called as a function
+#### A local name, e.g. a function arg, let binding, or record field name, has the same name as a global Var, and is called as a function
 
 New in Eastwood version 0.1.5
 
@@ -1703,6 +1703,9 @@ not sophisticated enough to determine that the value bound to
 (let [replace (comp str biginteger)]
   (println (replace 5)))
 ```
+
+Eastwood also warns if a field of a Clojure record is called as a
+function, where there is a Var visible with the same name.
 
 The following example will not cause a warning, because even though
 `pmap` is determined to have a non-function value, Eastwood does not
