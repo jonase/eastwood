@@ -112,7 +112,7 @@ enabled by default unless they have '(disabled)' after their name.
 | `:unused-ret-vals` and `:unused-ret-vals-in-try` | Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value. | [[more]](#unused-ret-vals) |
 | `:wrong-arity` | Function calls that seem to have the wrong number of arguments. | [[more]](#wrong-arity) |
 | `:wrong-ns-form` | ns forms containing incorrect syntax or options (added 0.2.1). | [[more]](#wrong-ns-form) |
-| `:wrong-pre-post` | function has preconditions or postconditions that are likely incorrect (added 0.2.2). | [[more]](#wrong-pre-pro) |
+| `:wrong-pre-post` | function has preconditions or postconditions that are likely incorrect (added 0.2.2). | [[more]](#wrong-pre-post) |
 | `:wrong-tag` | An incorrect type tag for which the Clojure compiler does not give an error (added 0.1.5). | [[more]](#wrong-tag) |
 
 The following table gives some additional detail about each linter.
