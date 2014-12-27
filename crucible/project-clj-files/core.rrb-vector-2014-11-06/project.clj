@@ -1,4 +1,4 @@
-(defproject org.clojure/core.rrb-vector "0.0.11-SNAPSHOT"
+(defproject org.clojure/core.rrb-vector "0.0.12-SNAPSHOT"
   :description "RRB-Trees for Clojure(Script) -- see Bagwell & Rompf"
   :url "https://github.com/clojure/core.rrb-vector"
   :license {:name "Eclipse Public License"
@@ -12,9 +12,9 @@
   :global-vars {*warn-on-reflection* true}
   :jvm-opts ^:replace []
   :profiles {:dev {:test-paths ["src/test_local/clojure"]
-                   :dependencies [[org.clojure/clojurescript "0.0-2156"]
-                                  [collection-check "0.1.1"]]
-                   :plugins [[lein-cljsbuild "1.0.1"]]}
+                   :dependencies [[org.clojure/clojurescript "0.0-2371"]
+                                  [collection-check "0.1.3"]]
+                   :plugins [[lein-cljsbuild "1.0.3"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
   :cljsbuild {:builds {:test {:source-paths ["src/main/cljs"
