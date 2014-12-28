@@ -1,4 +1,4 @@
-(defproject org.clojure/tools.reader "0.8.4-SNAPSHOT"
+(defproject org.clojure/tools.reader "0.8.14-SNAPSHOT"
   :description "A Clojure reader in Clojure"
   :parent [org.clojure/pom.contrib "0.1.2"]
   :url "https://github.com/clojure/tools.reader"
@@ -15,6 +15,6 @@
              :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
-  :aliases {"test-all" ["with-profile" "test,1.3:test,1.4:test,1.5:test,1.6" "test"]
-            "check-all" ["with-profile" "1.3:1.4:1.5:1.6" "check"]}
+  :aliases {"test-all" ["with-profile" "test,1.3:test,1.4:test,1.5:test,1.6:test,1.7" "test"]
+            "check-all" ["with-profile" "1.3:1.4:1.5:1.6:1.7" "check"]}
   :min-lein-version "2.0.0")
