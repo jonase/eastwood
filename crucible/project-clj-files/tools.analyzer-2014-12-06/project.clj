@@ -1,4 +1,4 @@
-(defproject org.clojure/tools.analyzer "0.1.0-SNAPSHOT"
+(defproject org.clojure/tools.analyzer "0.6.5-SNAPSHOT"
   :description "An analyzer for Clojure code, written in Clojure and producing AST in EDN."
   :url "https://github.com/clojure/tools.analyzer"
   :license {:name "Eclipse Public License"
@@ -9,4 +9,4 @@
   :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
   :dependencies [[org.clojure/clojure "1.5.1"]
-                 [com.datomic/datomic-free "0.9.4699" :scope "provided"]])
+                 [com.datomic/datomic-free "0.9.5067" :scope "provided" :exclusions [joda-time]]])
