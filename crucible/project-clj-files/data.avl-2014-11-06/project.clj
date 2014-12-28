@@ -1,4 +1,4 @@
-(defproject org.clojure/data.avl "0.0.12-SNAPSHOT"
+(defproject org.clojure/data.avl "0.0.13-SNAPSHOT"
   :description "Persistent sorted maps and sets with log-time rank queries"
   :url "https://github.com/clojure/data.avl"
   :license {:name "Eclipse Public License"
@@ -12,8 +12,8 @@
   :source-paths ["src/main/clojure" "src/main/cljs"]
   :test-paths ["src/test/clojure"]
   :global-vars {*warn-on-reflection* true}
-  :profiles {:dev {:dependencies [[org.clojure/clojurescript "0.0-2173"]]
-                   :plugins [[lein-cljsbuild "1.0.1"]]
+  :profiles {:dev {:dependencies [[org.clojure/clojurescript "0.0-2371"]]
+                   :plugins [[lein-cljsbuild "1.0.3"]]
                    :cljsbuild
                    {:builds {:test
                              {:source-paths ["src/main/cljs"
