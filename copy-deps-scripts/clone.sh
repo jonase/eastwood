@@ -8,14 +8,14 @@ cd repos
 git clone https://github.com/clojure/tools.analyzer.git
 cd tools.analyzer
 #git checkout tools.analyzer-0.6.4
-# Several commits after 0.6.4, up through Dec 6 2014
-git checkout d64039c947c10952d18799d196c11d842ebe871a
+# Several commits after 0.6.4, up through Dec 28 2014
+git checkout 1c8693b30e8459ad3fbdb21871164ba82afb7b43
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
 #git checkout tools.analyzer.jvm-0.6.5
-# Several commits after 0.6.5, up through Dec 6 2014
+# Several commits after 0.6.5, up through Dec 20 2014
 git checkout 2de8705df9f895a028c678e04450228144fb070d
 cd ..
 
