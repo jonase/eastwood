@@ -6,6 +6,19 @@ interest.
 
 ## Changes from version 0.2.0 to pre-0.2.1 version as of Dec 15 2014
 
+### Eastwood 0.2.2 as of Dec 28 2014 throws exception for same-dated version of several libraries
+
+#### cheshire
+
+`lein do clean, test` passes, but `lein eastwood` throws exception
+during eval of a form in namespace `cheshire.core`.  I haven't
+investigated why yet.
+
+#### core.async
+
+
+## Changes from version 0.2.0 to pre-0.2.1 version as of Dec 15 2014
+
 ### Difference between Eastwood with Clojure 1.6.0 vs 1.7.0-alpha4
 
 This is *not* a difference in behavior between Eastwood 0.2.0 and
