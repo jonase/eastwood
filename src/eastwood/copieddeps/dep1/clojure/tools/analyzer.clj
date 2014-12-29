@@ -717,7 +717,7 @@
 
         meta-expr (when meta (analyze-form meta (ctx env :ctx/expr))) ;; meta on def sym will be evaluated
 
-        args (when-let [init (:init args)]
+        args (when-let [[_ init] (find args :init)]
                (assoc args :init (analyze-form init (ctx env :ctx/expr))))
         init? (:init args)
         children (into (into [] (when meta [:meta]))
