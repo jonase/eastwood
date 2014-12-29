@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [eastwood.analyze-ns :as analyze]
             [eastwood.util :as util]
+            [clojure.inspector :as inspector]
             [clojure.set :as set]
             [clojure.string :as str]
             [clojure.pprint :as pp]
@@ -21,7 +22,7 @@
 (def eastwood-url "https://github.com/jonase/eastwood")
 
 (def ^:dynamic *eastwood-version*
-  {:major 0, :minor 2, :incremental 1, :qualifier "SNAPSHOT"})
+  {:major 0, :minor 2, :incremental 2, :qualifier "SNAPSHOT"})
 
 (defn eastwood-version []
   (let [{:keys [major minor incremental qualifier]} *eastwood-version*]
@@ -263,6 +264,8 @@ return value followed by the time it took to evaluate in millisec."
     :fn misc/unlimited-use}
    {:name :wrong-ns-form,             :enabled-by-default true,
     :fn misc/wrong-ns-form}
+   {:name :wrong-pre-post,            :enabled-by-default true,
+    :fn typos/wrong-pre-post}
    {:name :wrong-tag,                 :enabled-by-default true,
     :fn typetags/wrong-tag}
    {:name :keyword-typos,             :enabled-by-default false,
@@ -280,13 +283,18 @@ return value followed by the time it took to evaluate in millisec."
        (filter :enabled-by-default)
        (map :name)))
 
+(def all-linters
+  (->> linter-info
+       (map :name)))
 
-(defn- lint [exprs kw opt]
-  (if-let [lint-fn (linter-name->fn kw)]
+
+(defn- lint-analyze-results [analyze-results linter-kw opt]
+  (if-let [lint-fn (linter-name->fn linter-kw)]
     (try
-      (doall (lint-fn exprs opt))
+      (doall (lint-fn analyze-results opt))
       (catch Throwable e
         [e]))))
+
 
 (defn maybe-unqualified-java-class-name? [x]
   (if-not (or (symbol? x) (string? x))
@@ -566,7 +574,8 @@ curious." eastwood-url))
       (when print-time?
         (note-cb (format "Analysis took %.1f millisec" analyze-time-msec)))
       (doseq [linter linters]
-        (let [[results time-msec] (timeit (lint analyze-results linter opts))]
+        (let [[results time-msec] (timeit (lint-analyze-results analyze-results
+                                                                linter opts))]
           (doseq [result results]
             (if (instance? Throwable result)
               (do
@@ -863,17 +872,43 @@ file and namespace to avoid name collisions."))))
                                (if tp-included? (:non-clojure-files tp)))}))))))
 
 
+(defn replace-linter-keywords [linters all-linters default-linters]
+  (mapcat (fn [x]
+            (cond (= :all x) all-linters
+                  (= :default x) default-linters
+                  :else [x]))
+          linters))
+
+
+(defn linter-seq->set [linter-seq]
+  (set (replace-linter-keywords linter-seq all-linters default-linters)))
+
+
 (defn opts->linters [opts linter-name->fn default-linters]
-  (let [linters (set (:linters opts))
-        excluded-linters (set (:exclude-linters opts))
-        add-linters (set (:add-linters opts))
-        linters-requested (-> (set/difference linters excluded-linters)
+  (let [linters-orig (linter-seq->set (:linters opts))
+        excluded-linters (linter-seq->set (:exclude-linters opts))
+        add-linters (linter-seq->set (:add-linters opts))
+        linters-requested (-> (set/difference linters-orig excluded-linters)
                               (set/union add-linters))
         known-linters (set (keys linter-name->fn))
         unknown-linters (set/difference (set/union linters-requested
                                                    excluded-linters)
                                         known-linters)
         linters (set/intersection linters-requested known-linters)]
+    (when (util/debug? :options opts)
+      (let [debug-cb (util/make-msg-cb :debug opts)]
+        (debug-cb "Calculation of final list of linters:")
+        (debug-cb (format "    :linters"))
+        (debug-cb (format "      before keyword substituion: %s" (vec (:linters opts))))
+        (debug-cb (format "      after  keyword substituion: %s" (vec (sort linters-orig))))
+        (debug-cb (format "    :exclude-linters"))
+        (debug-cb (format "      before keyword substituion: %s" (vec (:exclude-linters opts))))
+        (debug-cb (format "      after  keyword substituion: %s" (vec (sort excluded-linters))))
+        (debug-cb (format "    :add-linters"))
+        (debug-cb (format "      before keyword substituion: %s" (vec (:add-linters opts))))
+        (debug-cb (format "      after  keyword substituion: %s" (vec (sort add-linters))))
+        (debug-cb (format "    final effective linter set: linters - exclude + add:"))
+        (debug-cb (format "      %s" (vec (sort linters))))))
     (if (and (seq unknown-linters)
              (not (:disable-linter-name-checks opts)))
       {:err :unknown-linter,
@@ -1143,3 +1178,101 @@ Return value:
       ;; linting a project.  Call shutdown-agents to avoid the
       ;; 1-minute 'hang' that would otherwise occur.
       (shutdown-agents))))
+
+
+(defn lint
+  "Invoke Eastwood from REPL or other Clojure code, and return a map
+containing these keys:
+
+  :warnings - a sequence of maps representing individual warnings.
+      The warning map contents are documented below.
+
+  :err - nil if there were no exceptions thrown or other errors that
+      stopped linting before it completed.  A keyword identifying a
+      kind of error if there was.  See the source file
+      src/eastwood/lint.clj inside Eastwood for defmethod's of
+      error-msg.  Each is specialized on a keyword value that is one
+      possible value the :err key can take.  The body of each method
+      shows how Eastwood shows to the user each kind of error when it
+      is invoked from the command line via Leiningen, serves as a kind
+      of documentation for what the value of the :err-data key
+      contains.
+
+  :err-data - Some data describing the error if :err's value is not
+      nil.  See :err above for where to find out more about its
+      contents.
+
+  :versions - A nested map with its own keys containing information
+      about JVM, Clojure, and Eastwood versions.
+
+Keys in a warning map:
+
+  :uri-or-file-name - string containing file name where warning
+      occurs, relative to :cwd directory of options map, if it is a
+      file inside of that directory, or a URI object,
+      e.g. \"cases/testcases/f02.clj\"
+
+  :line - line number in file for warning, e.g. 20.  The first line in
+      the file is 1, not 0.  Note: In some cases this key may not be
+      present, or the value may be nil.  This is an areas where
+      Eastwood will probably improve in the future, but best to handle
+      it for now, perhaps by replacing it with line 1 as a
+      placeholder.
+
+  :column - column number in file for warning, e.g. 42.  The first
+      character in the file is column 1, not 0.  Same comments apply
+      for :column as for :line.
+
+  :linter - keyword identifying the linter, e.g. :def-in-def
+
+  :msg - string describing the warning message, e.g. \"There is a def
+      of i-am-inner-defonce-sym nested inside def
+      i-am-outer-defonce-sym\"
+
+  :uri - object with class URI of the file, *or* a URI within a JAR
+       file, e.g.  #<URI file:/Users/jafinger/clj/eastwood/0.2.0/eastwood/cases/testcases/f02.clj>
+
+  :namespace-sym - symbol containing namespace, e.g. testcases.f02,
+
+  :file - string containing resource name, relative to some
+      unspecified path in the Java classpath,
+      e.g. \"testcases/f02.clj\""
+  [opts]
+  (let [lint-warnings (atom [])
+        cb (fn cb [info]
+             (case (:kind info)
+               :lint-warning (swap! lint-warnings conj (:warn-data info))
+               :default))  ; do nothing with other kinds of callbacks
+        opts (if (contains? opts :callback)
+               opts
+               (assoc opts :callback cb))
+
+        opts (last-options-map-adjustments opts)
+        _ (when (util/debug? :options opts)
+            (println "\nOptions map after filling in defaults:")
+            (pp/pprint (into (sorted-map) opts)))
+
+        {:keys [err err-data] :as ret} (eastwood-core opts)]
+    {:warnings @lint-warnings
+     :err err
+     :err-data err-data
+     :versions
+     {:eastwood-version-map *eastwood-version*
+      :eastwood-version-string (eastwood-version)
+      :clojure-version-map *clojure-version*
+      :clojure-version-string (clojure-version)
+      :jvm-version-string (get (System/getProperties) "java.version")}}))
+
+
+(defn insp
+  "Read, analyze, and eval a file specified by namespace as a symbol,
+e.g. 'testcases.f01.  Return a value that has been 'cleaned up', by
+removing some keys from ASTs, so that it is more convenient to call
+clojure.inspector/inspect-tree on it.  Example in REPL:
+
+(require '[eastwood.lint :as l] '[clojure.inspector :as i])
+(i/inspect-tree (l/insp 'testcases.f01))"
+  [nssym]
+  (let [a (analyze/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}})]
+    (update-in a [:analyze-results :asts]
+               (fn [ast] (mapv util/clean-ast ast)))))

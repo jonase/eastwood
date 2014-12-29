@@ -1,5 +1,7 @@
 # eastwood - a Clojure lint tool
 
+[![Dependencies Status](http://jarkeeper.com/jonase/eastwood/status.svg)](http://jarkeeper.com/jonase/eastwood)
+
 Eastwood is a Clojure
 [lint](http://en.wikipedia.org/wiki/Lint_%28software%29) tool that
 uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
@@ -24,7 +26,7 @@ versions 2.4.x and 2.5.x.  Merge the following into your
 `~/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.0"]] }}
+{:user {:plugins [[jonase/eastwood "0.2.1"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -109,7 +111,8 @@ enabled by default unless they have '(disabled)' after their name.
 | `:unused-private-vars` (disabled) | Unused private vars (updated in version 0.2.0). | [[more]](#unused-private-vars) |
 | `:unused-ret-vals` and `:unused-ret-vals-in-try` | Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value. | [[more]](#unused-ret-vals) |
 | `:wrong-arity` | Function calls that seem to have the wrong number of arguments. | [[more]](#wrong-arity) |
-| `:wrong-ns-form` | ns forms containing incorrect syntax or options | [[more]](#wrong-ns-form) |
+| `:wrong-ns-form` | ns forms containing incorrect syntax or options (added 0.2.1). | [[more]](#wrong-ns-form) |
+| `:wrong-pre-post` | function has preconditions or postconditions that are likely incorrect (added 0.2.2). | [[more]](#wrong-pre-post) |
 | `:wrong-tag` | An incorrect type tag for which the Clojure compiler does not give an error (added 0.1.5). | [[more]](#wrong-tag) |
 
 The following table gives some additional detail about each linter.
@@ -150,6 +153,7 @@ linter can be selectively disabled via Eastwood config files.  See
 | `:unused-ret-vals` and `:unused-ret-vals-in-try` | yes | yes |
 | `:wrong-arity`           | yes | yes |
 | `:wrong-ns-form`         |  |  |
+| `:wrong-pre-post`        |  |  |
 | `:wrong-tag`             |  |  |
 
 
@@ -221,12 +225,20 @@ Available options for specifying namespaces and paths are:
 Linter names are given in the previous section.  Available options for
 specifying which linters are enabled or disabled are:
 
-* `:linters` Linters to use.  If not specified, all linters except
-  those mentioned as 'disabled by default' above are used.
+* `:linters` Linters to use.  If not specified, same as `[:default]`,
+  which is all linters except those documented as 'disabled by
+  default'.
 * `:exclude-linters` Linters to exclude
 * `:add-linters` Linters to add.  The final list of linters is the set
   specified by `:linters`, taking away all in `:excluded-linters`,
   then adding all in `:add-linters`.
+
+The keyword `:all` in any of the collections of linters listed above
+will be replace with the collection of all linters.  The keyword
+`:default` will be replaced with the collection of default linters.
+Thus `:linters [:all]` enables all linters, even those disabled by
+default, and `:linters [:all] :exclude-linters [:default]` enables
+only those that are disabled by default.
 
 Note that you can add Eastwood options to a user-wide Leiningen
 `profiles.clj` file or to your project's `project.clj` file if you
@@ -235,15 +247,15 @@ determined](#how-the-eastwood-options-map-is-determined) for more
 details.
 
 As mentioned in the [Installation & Quick
-usage](#installation--quick-usage) section above, using Eastwood
-causes any and all side effects that loading the file would cause
-(e.g. by doing `use` or `require` on the file's namespace).  Eastwood
-is able to find potential problems in test code, too.  If you wish to
-use Eastwood on test files without such side effects, consider
-modifying your tests so that merely performing `require`/`use` on the
-files does not cause the side effects.  If you can arrange things so
-that running your tests requires loading the files and then calling
-some function(s) (e.g. as tests written using
+usage](#installation--quick-usage) section above, Eastwood causes any
+and all side effects that loading the file would cause (e.g. by doing
+`use` or `require` on the file's namespace).  Eastwood is able to find
+potential problems in test code, too.  If you wish to use Eastwood on
+test files without such side effects, consider modifying your tests so
+that merely performing `require`/`use` on the files does not cause the
+side effects.  If you can arrange things so that running your tests
+requires loading the files and then calling some function(s) (e.g. as
+tests written using
 [`clojure.test/deftest`](http://clojure.github.io/clojure/#clojure.test)
 do), then you can run Eastwood on those files without the side
 effects.
@@ -377,7 +389,7 @@ in a production JVM process.
 Merge this into your project's `project.clj` file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.2.0" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.2.1" :exclusions [org.clojure/clojure]]]}}
 ```
 
 Note: This should work even if you do not use Leiningen for your
@@ -386,7 +398,20 @@ appropriate for your build tool.  See
 [Clojars](https://clojars.org/jonase/eastwood) for Gradle and Maven
 syntax.
 
-From within your REPL:
+From within your REPL, there are two different functions you can call,
+depending upon the kind of results you want.
+
+* `eastwood` prints output similar to when you run Eastwood from the
+  Leiningen command line, but it does not exit the JVM when it
+  finishes.
+
+* `lint` returns a map containing data structures describing any
+  warnings or errors encountered.  This result is likely more useful
+  for further processing by editors and IDEs.  For example, file
+  names, line numbers, and column numbers are all available
+  separately, requiring no parsing of strings containing those things
+  combined together.  See the doc string of `eastwood.lint/lint` for
+  details of the return value.
 
 ```clojure
 (require '[eastwood.lint :as e])
@@ -397,13 +422,12 @@ From within your REPL:
 ;; classpath, and their subdirectories recursively, for Clojure source
 ;; files.
 (e/eastwood {:source-paths ["src"] :test-paths ["test"]})
+
+(e/lint {:source-paths ["src"] :test-paths ["test"]})
 ```
 
 All of the same options that can be given on the command line may be
-used in the map given to the `eastwood` function.
-
-This will behave much as running Eastwood from the command line will,
-except it will not exit the JVM at the end.
+used in the map given to the `eastwood` or `lint` functions.
 
 Before reporting problems with Eastwood when run from the REPL, please
 verify that: (a) the problem occurs when Eastwood is run from the
@@ -414,10 +438,12 @@ running Eastwood as possible.  Please include any such sequence in
 your problem report, if you cannot reproduce the issue running
 Eastwood from the command line.
 
-There is a `:callback` key that can be added to the argument map.  Its
-value is a callback function that gives you significant control of
-where warning and error messages appear -- by default these all appear
-on the writer `*out*`.
+There is a `:callback` key that can be added to the argument map for
+the `eastwood` function.  Its value is a callback function that gives
+you significant control of where warning and error messages appear --
+by default these all appear on the writer `*out*`.  This callback
+function should not be overridden for the `lint` function, since
+`lint` uses it in its implementation.
 
 There is no documentation for this callback function yet.  You you are
 welcome to read Eastwood source code to see examples of how to write
@@ -489,10 +515,10 @@ still in early development, but may be usable for you.
 #### Emacs + Cider
 
 If you use Emacs+Cider, take a look at the
-[`squiggly-clojure`](https://github.com/pnf/squiggly-clojure) project,
-which can run Eastwood and `core.typed` in the background on your
-project using Emacs Flycheck, and displays the warnings as annotations
-in your source code.
+[`squiggly-clojure`](https://github.com/clojure-emacs/squiggly-clojure)
+project, which can run Eastwood and `core.typed` in the background on
+your project using Emacs Flycheck, and displays the warnings as
+annotations in your source code.
 
 
 #### Emacs
@@ -577,7 +603,7 @@ can be used to modify this merging behavior.
 For example, if your user-wide `profiles.clj` file contains this:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.0"]]
+{:user {:plugins [[jonase/eastwood "0.2.1"]]
         :eastwood {:exclude-linters [:unlimited-use]
                    :debug [:time]}
         }}
@@ -1126,6 +1152,8 @@ have been defined.
 
 #### ns forms containing incorrect syntax or options
 
+New in Eastwood version 0.2.1
+
 Clojure will accept and correctly execute `ns` forms with references
 in vectors, as shown in this example:
 
@@ -1172,6 +1200,77 @@ No warning is given if a prefix list is contained within a vector.
 Clojure processes prefix lists in vectors, and `tools.namespace`
 recognizes them as dependencies as Clojure does.  It is also somewhat
 common in the many Clojure projects on which Eastwood is tested.
+
+
+### `:wrong-pre-post`
+
+#### function has preconditions or postconditions that are likely incorrect
+
+New in Eastwood version 0.2.2
+
+Preconditions and postconditions that throw exceptions if they are
+false can be specified for any Clojure function by putting a map after
+the function's argument vector, with the key `:pre` for preconditions,
+or `:post` for postconditions, or both.  The value of these keys
+should be a vector of expressions to evaluate, all of which are
+evaluated at run time when the function is called.  For example:
+
+```clojure
+(defn square-root [x]
+  {:pre [(>= x 0)]}
+  (Math/sqrt x))
+
+;; AssertionError exception thrown when called with negative number
+user=> (square-root -5)
+
+AssertionError Assert failed: (>= x 0)  user/square-root (file.clj:38)
+```
+
+It is an easy mistake to forget that the conditions should be a vector
+of expressions, and to give one expression instead:
+
+```clojure
+(defn square-root [x]
+  {:pre (>= x 0)}     ; should be [(>= x 0)] like above
+  (Math/sqrt x))
+
+;; No exception when called with negative number!
+user=> (square-root -5)
+NaN
+```
+
+In this case, Clojure does not give any error or warning when defining
+`square-root`.  It treats the precondition as three separate assertion
+expressions: `>=`, `x`, and `0`, each evaluated independently when the
+function is called.  Every value in Clojure is logical true except
+`nil` and `false`, so unless you call `square-root` with an argument
+equal to one of those values, all three of those expressions evaluate
+to logical true, and no exceptions are thrown.
+
+The `:warn-pre-post` linter will warn about any precondition or
+postcondition that is not enclosed in a vector.  Even if you do
+enclose it in a vector, the linter will check whether any of the
+conditions appear to be values that are always logical true or always
+logical false.  For example:
+
+```clojure
+(defn non-neg? [x]
+  (>= x 0))
+
+(defn square-root [x]
+  {:pre [non-neg?]}     ; [(non-neg? x)] would be correct
+  (Math/sqrt x))
+
+;; No exception when called with negative number!
+user=> (square-root -5)
+NaN
+```
+
+Here Clojure also gives no warning or error.  The assert expression it
+evaluates is the value of `non-neg?` -- not the value when you call
+`non-neg?` with the argument `x`, but the value of the Var `non-neg?`.
+That value is a function, and neither `nil` nor `false`, so logical
+true.
 
 
 ### `:suspicious-test`
@@ -1425,8 +1524,8 @@ cases.
 The macro `schema.core/fn` in Prismatic's
 [Schema](https://github.com/Prismatic/schema) library also has special
 handling similar to `clojure.core/fn`, but at least as of Eastwood
-0.2.0 there is no special handling of this case, so it will warn if
-metadata annotates an invocation of this macro.
+0.2.0 and 0.2.1 there is no special handling of this case, so it will
+warn if metadata annotates an invocation of this macro.
 
 
 ### `:unused-ret-vals`
@@ -1556,7 +1655,7 @@ in this map will never cause one of these warnings.
 
 ### `:local-shadows-var`
 
-#### A local name, e.g. a function arg or let binding, has the same name as a global Var, and is called as a function
+#### A local name, e.g. a function arg, let binding, or record field name, has the same name as a global Var, and is called as a function
 
 New in Eastwood version 0.1.5
 
@@ -1604,6 +1703,9 @@ not sophisticated enough to determine that the value bound to
 (let [replace (comp str biginteger)]
   (println (replace 5)))
 ```
+
+Eastwood also warns if a field of a Clojure record is called as a
+function, where there is a Var visible with the same name.
 
 The following example will not cause a warning, because even though
 `pmap` is determined to have a non-function value, Eastwood does not
@@ -1776,7 +1878,7 @@ Also, there are currently many warnings of this kind produced for
 also code that uses those libraries (judging from a small sample set
 which in some case only includes test code for the library).  Perhaps
 in the future Eastwood will be improved, but it is not there as of
-version 0.2.0.
+version 0.2.1.
 
 However, for many projects tested, the warnings are correct.  If you
 wish to eliminate such symbols from your code using these warnings,
@@ -1992,7 +2094,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein install
 
-Then add `[jonase/eastwood "0.2.1-SNAPSHOT"]` (or whatever is the
+Then add `[jonase/eastwood "0.2.2-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `~/.lein/profiles.clj` file.
