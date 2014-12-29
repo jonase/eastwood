@@ -19,7 +19,8 @@
    [irclj "0.5.0-alpha3"]
    [congomongo "0.4.1"]
    [com.draines/postal "1.11.1"]
-   [server-socket "1.0.0"]]
+   [server-socket "1.0.0"]
+   [org.zeromq/cljzmq "0.1.4"]]
 
   :test-paths ["test" "src"]
   :profiles
