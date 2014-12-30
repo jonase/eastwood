@@ -227,60 +227,85 @@ return value followed by the time it took to evaluate in millisec."
 (def linter-info
   [
    {:name :no-ns-form-found,          :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#no-ns-form-found",
     :fn nil}
    {:name :non-clojure-file,          :enabled-by-default false,
+    :url "https://github.com/jonase/eastwood#non-clojure-file",
     :fn nil}
    {:name :misplaced-docstrings,      :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#misplaced-docstrings",
     :fn misc/misplaced-docstrings}
    {:name :deprecations,              :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#deprecations",
     :fn deprecated/deprecations}
    {:name :redefd-vars,               :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#redefd-vars",
     :fn misc/redefd-vars}
    {:name :def-in-def,                :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#def-in-def",
     :fn misc/def-in-def}
    {:name :wrong-arity,               :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#wrong-arity",
     :fn misc/wrong-arity}
    {:name :bad-arglists,              :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#bad-arglists",
     :fn misc/bad-arglists}
    {:name :local-shadows-var,         :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#local-shadows-var",
     :fn misc/local-shadows-var}
    {:name :suspicious-test,           :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#suspicious-test",
     :fn typos/suspicious-test}
    {:name :suspicious-expression,     :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#suspicious-expression",
     :fn typos/suspicious-expression}
    {:name :constant-test,             :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#constant-test",
     :fn typos/constant-test}
    {:name :unused-ret-vals,           :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#unused-ret-vals",
     :fn unused/unused-ret-vals}
    {:name :unused-ret-vals-in-try,    :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#unused-ret-vals",
     :fn unused/unused-ret-vals-in-try}
    {:name :unused-private-vars,       :enabled-by-default false,
+    :url "https://github.com/jonase/eastwood#unused-private-vars",
     :fn unused/unused-private-vars}
    {:name :unused-fn-args,            :enabled-by-default false,
+    :url "https://github.com/jonase/eastwood#unused-fn-args",
     :fn unused/unused-fn-args}
    {:name :unused-locals,             :enabled-by-default false,
+    :url "https://github.com/jonase/eastwood#unused-locals",
     :fn unused/unused-locals}
    {:name :unused-namespaces,         :enabled-by-default false,
+    :url "https://github.com/jonase/eastwood#unused-namespaces",
     :fn unused/unused-namespaces}
    {:name :unused-meta-on-macro,      :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#unused-meta-on-macro",
     :fn unused/unused-meta-on-macro}
    {:name :unlimited-use,             :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#unlimited-use",
     :fn misc/unlimited-use}
    {:name :wrong-ns-form,             :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#wrong-ns-form",
     :fn misc/wrong-ns-form}
    {:name :wrong-pre-post,            :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#wrong-pre-post",
     :fn typos/wrong-pre-post}
    {:name :wrong-tag,                 :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#wrong-tag",
     :fn typetags/wrong-tag}
    {:name :keyword-typos,             :enabled-by-default false,
+    :url "https://github.com/jonase/eastwood#keyword-typos",
     :fn typos/keyword-typos}
    {:name :non-dynamic-earmuffs,      :enabled-by-default false,
+    :url nil,
     :fn misc/non-dynamic-earmuffs}
    ])
 
 
-(def linter-name->fn (into {} (for [{:keys [name fn]} linter-info]
-                                [name fn])))
+(def linter-name->info (into {} (for [{:keys [name] :as info} linter-info]
+                                  [name info])))
 
 (def default-linters
   (->> linter-info
@@ -293,7 +318,7 @@ return value followed by the time it took to evaluate in millisec."
 
 
 (defn- lint-analyze-results [analyze-results linter-kw opt]
-  (if-let [lint-fn (linter-name->fn linter-kw)]
+  (if-let [lint-fn (get-in linter-name->info [linter-kw :fn])]
     (try
       (doall (lint-fn analyze-results opt))
       (catch Throwable e
@@ -590,7 +615,10 @@ curious." eastwood-url))
               (do
                 (swap! warning-count inc)
                 (cb {:kind :lint-warning,
-                     :warn-data (merge result ns-info)
+                     :warn-data (merge result ns-info
+                                       (if-let [url (get-in linter-name->info
+                                                            [linter :url])]
+                                         {:warning-details-url url}))
                      :opt opts}))))
           (when print-time?
             (note-cb (format "Linter %s took %.1f millisec"
@@ -888,13 +916,13 @@ file and namespace to avoid name collisions."))))
   (set (replace-linter-keywords linter-seq all-linters default-linters)))
 
 
-(defn opts->linters [opts linter-name->fn default-linters]
+(defn opts->linters [opts linter-name->info default-linters]
   (let [linters-orig (linter-seq->set (:linters opts))
         excluded-linters (linter-seq->set (:exclude-linters opts))
         add-linters (linter-seq->set (:add-linters opts))
         linters-requested (-> (set/difference linters-orig excluded-linters)
                               (set/union add-linters))
-        known-linters (set (keys linter-name->fn))
+        known-linters (set (keys linter-name->info))
         unknown-linters (set/difference (set/union linters-requested
                                                    excluded-linters)
                                         known-linters)
@@ -991,7 +1019,7 @@ Return value:
   (let [warning-count (atom 0)
         exception-count (atom 0)
         cb (:callback opts)
-        {:keys [linters] :as m1} (opts->linters opts linter-name->fn
+        {:keys [linters] :as m1} (opts->linters opts linter-name->info
                                                 default-linters)
         opts (assoc opts :enabled-linters linters)
 
