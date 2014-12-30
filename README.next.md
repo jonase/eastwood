@@ -303,8 +303,9 @@ value that is a list or vector of keywords, e.g.
 * `:progress` - show a brief debug message after each top-level form
   is read
 * `:compare-forms` - print all forms as read to a file
-  `forms-read.txt`, and all forms after being read, analyzed into an
-  AST, and converted back into a form from the AST, to a file
+  `forms-read.txt`, all forms after being analyzed to a file
+  `forms-analyzed.txt`, and all forms after being read, analyzed into
+  an AST, and converted back into a form from the AST, to a file
   `forms-emitted.txt`.
 * `:ns` - print the initial set of namespaces loaded into the Clojure
   run-time at the beginning of each file being linted.  (TBD: it used
@@ -1704,9 +1705,6 @@ not sophisticated enough to determine that the value bound to
   (println (replace 5)))
 ```
 
-Eastwood also warns if a field of a Clojure record is called as a
-function, where there is a Var visible with the same name.
-
 The following example will not cause a warning, because even though
 `pmap` is determined to have a non-function value, Eastwood does not
 'know' that the function call to `map` will use `pmap`'s value as a
@@ -1716,6 +1714,13 @@ function.
 (let [pmap {:a 1 :b 2}]
   (println (map pmap [1 2 3])))
 ```
+
+Eastwood also warns if a field of a Clojure record is called as a
+function, where there is a Var visible with the same name.
+
+No matter what kind of local symbol is shadowing a Var, you can force
+use of the Var by qualifying it with a namespace, or an alias of a
+namespace as created by `:as` in a `require` form.
 
 
 ### `:wrong-tag`

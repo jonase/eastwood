@@ -17,6 +17,7 @@
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.trim :refer [trim]]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
+             [emit-form :refer [emit-form]]
              [warn-on-reflection :refer [warn-on-reflection]]]))
 
 ;; uri-for-ns, pb-reader-for-ns were copied from library
@@ -102,12 +103,16 @@ the value of File/separator for the platform."
     ;; dont-expand-twice? returns false.
     (cb {:kind :debug-form-read, :event :form, :form form,
          :opt opt})
-    (cb {:kind :debug-form-emitted, :event :form, :form (:form ast),
+    (cb {:kind :debug-form-analyzed, :event :form, :form (:form ast),
+         :opt opt})
+    (cb {:kind :debug-form-emitted, :event :form, :form (emit-form ast),
          :opt opt})))
 
 (defn begin-file-debug [filename ns opt]
   (let [cb (:callback opt)]
     (cb {:kind :debug-form-read, :event :begin-file, :filename filename,
+         :opt opt})
+    (cb {:kind :debug-form-analyzed, :event :begin-file, :filename filename,
          :opt opt})
     (cb {:kind :debug-form-emitted, :event :begin-file, :filename filename,
          :opt opt})))

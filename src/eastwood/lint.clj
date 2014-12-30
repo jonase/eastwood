@@ -179,14 +179,16 @@ describing the error."
     :eval-err  (util/assert-keys info [:msg :opt])
     :debug     (util/assert-keys info [:msg :opt])
     :debug-ast (util/assert-keys info [:ast :opt])
-    :debug-form-read    (assert-debug-form-cb-has-proper-keys info)
-    :debug-form-emitted (assert-debug-form-cb-has-proper-keys info)))
+    :debug-form-read     (assert-debug-form-cb-has-proper-keys info)
+    :debug-form-analyzed (assert-debug-form-cb-has-proper-keys info)
+    :debug-form-emitted  (assert-debug-form-cb-has-proper-keys info)))
 
 
 (defn make-eastwood-cb [{:keys [error dirs-scanned lint-warning note
                                 eval-out eval-err
                                 debug debug-ast
-                                debug-form-read debug-form-emitted]}]
+                                debug-form-read debug-form-analyzed
+                                debug-form-emitted]}]
   (fn eastwood-cb [info]
     (assert-cb-has-proper-keys info)
     (case (:kind info)
@@ -198,10 +200,12 @@ describing the error."
       :eval-err  (eval-err info)
       :debug     (debug info)
       :debug-ast (debug-ast info)
-      :debug-form-read    (when debug-form-read
-                            (debug-form-read info))
-      :debug-form-emitted (when debug-form-emitted
-                            (debug-form-emitted info)))))
+      :debug-form-read     (when debug-form-read
+                             (debug-form-read info))
+      :debug-form-analyzed (when debug-form-analyzed
+                             (debug-form-analyzed info))
+      :debug-form-emitted  (when debug-form-emitted
+                             (debug-form-emitted info)))))
 
 
 (defmacro timeit
@@ -1082,9 +1086,10 @@ Return value:
         default-lint-warning-cb (make-default-lint-warning-cb warn-wrtr)
         default-debug-ast-cb (make-default-debug-ast-cb wrtr)
         
-        [form-read-cb form-emitted-cb]
+        [form-read-cb form-analyzed-cb form-emitted-cb]
         (if (util/debug? :compare-forms opts)
           [ (make-default-form-cb (io/writer "forms-read.txt"))
+            (make-default-form-cb (io/writer "forms-analyzed.txt"))
             (make-default-form-cb (io/writer "forms-emitted.txt")) ]
           [])]
     (make-eastwood-cb {:error default-msg-cb
@@ -1096,6 +1101,7 @@ Return value:
                        :debug default-msg-cb
                        :debug-ast default-debug-ast-cb
                        :debug-form-read form-read-cb
+                       :debug-form-analyzed form-analyzed-cb
                        :debug-form-emitted form-emitted-cb})))
 
 
