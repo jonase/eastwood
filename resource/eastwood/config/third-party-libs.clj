@@ -221,6 +221,13 @@
   :within-depth 2
   :reason "potemkin/def-derived-map expands to code with multiple def's for the same Var."})
 
+(disable-warning
+ {:linter :unused-ret-vals
+  :if-inside-macroexpansion-of #{'potemkin/import-vars
+                                 'potemkin.namespaces/import-vars}
+  :within-depth 3
+  :reason "Potemkin ipmort-vars often causes :unused-ret-vals warnings for imported Vars."})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Configs to disable warnings in Schema 0.3.3
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
