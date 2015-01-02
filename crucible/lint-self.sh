@@ -15,4 +15,4 @@
 # because of lots of tools.reader metadata on subexpressions of
 # backquoted expressions.
 
-lein eastwood '{:exclude-namespaces [eastwood.copieddeps.dep4.clojure.core.cache eastwood.copieddeps.dep6.leinjacker.utils eastwood.copieddeps.dep6.leinjacker.eval eastwood.copieddeps.dep6.leinjacker.eval-in-project leiningen.eastwood eastwood.test.linters-test]}'
+lein eastwood '{:exclude-namespaces [eastwood.copieddeps.dep4.clojure.core.cache eastwood.copieddeps.dep6.leinjacker.utils eastwood.copieddeps.dep6.leinjacker.eval eastwood.copieddeps.dep6.leinjacker.eval-in-project leiningen.eastwood eastwood.test.linters-test] :exclude-linters [:unlimited-use]}'
