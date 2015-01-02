@@ -113,6 +113,14 @@
                   (== -1 (.indexOf token "/")))
           [nil token])))))
 
+(defn starting-line-col-info [rdr]
+  (when (indexing-reader? rdr)
+    [(get-line-number rdr) (int (dec (get-column-number rdr)))]))
+
+(defn ending-line-col-info [rdr]
+  (when (indexing-reader? rdr)
+    [(get-line-number rdr) (get-column-number rdr)]))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; readers
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -120,6 +128,30 @@
 (defn read-comment
   [rdr & _]
   (skip-line rdr))
+
+(def saved-forms-atom (atom []))
+
+(defn- read-comment-remembering-contents* [reader]
+  (loop [sb (StringBuilder.)
+         ch (read-char reader)]
+    (if (newline? ch)
+      [(str sb) ch]
+      (recur (.append sb ch) (read-char reader)))))
+
+(defn read-comment-remembering-contents
+  "Patterned after function read-string*.  Like read-comment and
+skip-line, returns the reader."
+  [reader _]
+  (let [[start-line start-column] (ending-line-col-info reader)
+        [s last-ch] (read-comment-remembering-contents* reader)
+        _ (if last-ch (unread reader last-ch))
+        [end-line end-column] (ending-line-col-info reader)
+        _ (if last-ch (read-char reader))]
+    (swap! saved-forms-atom conj
+           {:kind :comment, :form s,
+            :line start-line, :column start-column,
+            :end-line end-line, :end-column end-column}))
+  reader)
 
 (defn throwing-reader
   [msg]
@@ -142,3 +174,23 @@
                   (reader-error rdr "EOF while reading regex"))
                 (.append sb ch)))
             (recur (read-char rdr))))))))
+
+(defn wrap-read-fn-remembering-loc [read-fn kind]
+  (fn [reader initch]
+    (let [[start-line start-column] (starting-line-col-info reader)
+          ;; Adjust start-column to include:
+          ;; the # in a #"regex" #'var or #(anonymous-function)
+          start-column (if (and start-column
+                                (#{:regex :var-quote :fn} kind))
+                         (dec start-column)
+                         start-column)
+          v (read-fn reader initch)
+          [end-line end-column] (ending-line-col-info reader)]
+      (swap! saved-forms-atom conj
+             {:kind kind, :form v,
+              :line start-line, :column start-column,
+              :end-line end-line, :end-column end-column})
+      v)))
+
+(def read-regex-remembering-loc
+  (wrap-read-fn-remembering-loc read-regex :regex))

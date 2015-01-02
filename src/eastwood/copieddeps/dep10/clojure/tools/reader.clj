@@ -49,14 +49,14 @@
             (str sb))
         (recur (.append sb ch) (read-char rdr))))))
 
-(declare read-tagged)
+(declare read-tagged-remembering-loc)
 
 (defn- read-dispatch
   [rdr _]
   (if-let [ch (read-char rdr)]
     (if-let [dm (dispatch-macros ch)]
       (dm rdr ch)
-      (if-let [obj (read-tagged (doto rdr (unread ch)) ch)] ;; ctor reader is implemented as a taggged literal
+      (if-let [obj (read-tagged-remembering-loc (doto rdr (unread ch)) ch)] ;; ctor reader is implemented as a taggged literal
         obj
         (reader-error rdr "No dispatch macro for " ch)))
     (reader-error rdr "EOF while reading character")))
@@ -147,14 +147,6 @@
 
          :else (reader-error rdr "Unsupported character: \\" token)))
       (reader-error rdr "EOF while reading character"))))
-
-(defn ^:private starting-line-col-info [rdr]
-  (when (indexing-reader? rdr)
-    [(get-line-number rdr) (int (dec (get-column-number rdr)))]))
-
-(defn ^:private ending-line-col-info [rdr]
-  (when (indexing-reader? rdr)
-    [(get-line-number rdr) (get-column-number rdr)]))
 
 (defn- ^PersistentVector read-delimited
   [delim rdr recursive?]
@@ -359,6 +351,8 @@
 (defn- read-set
   [rdr _]
   (let [[start-line start-column] (starting-line-col-info rdr)
+        ;; subtract 1 from start-column so it includes the # in the leading #{
+        start-column (if start-column (dec start-column))
         the-set (PersistentHashSet/createWithCheck (read-delimited \} rdr true))
         [end-line end-column] (ending-line-col-info rdr)]
     (with-meta the-set
@@ -590,37 +584,89 @@
     (-> (read rdr true nil true)
       syntax-quote*)))
 
+(def read-char-remembering-loc
+  (wrap-read-fn-remembering-loc read-char* :char))
+
+(def read-number-remembering-loc
+  (wrap-read-fn-remembering-loc read-number :number))
+
+(def read-string-remembering-loc
+  (wrap-read-fn-remembering-loc read-string* :string))
+
+(def read-symbol-remembering-loc
+  (wrap-read-fn-remembering-loc read-symbol :symbol))
+
+(def read-keyword-remembering-loc
+  (wrap-read-fn-remembering-loc read-keyword :keyword))
+
+(def read-meta-remembering-loc
+  (wrap-read-fn-remembering-loc read-meta :meta))
+
+(def ^:private read-fn-remembering-loc
+  (wrap-read-fn-remembering-loc read-fn :fn))
+
+(def ^:private read-arg-remembering-loc
+  (wrap-read-fn-remembering-loc read-arg :arg))
+
+(def ^:private read-quote-remembering-loc
+  (wrap-read-fn-remembering-loc (wrapping-reader 'quote) :quote))
+
+(def ^:private read-deref-remembering-loc
+  (wrap-read-fn-remembering-loc (wrapping-reader 'clojure.core/deref) :deref))
+
+(def ^:private read-var-remembering-loc
+  (wrap-read-fn-remembering-loc (wrapping-reader 'var) :var-quote))
+
+(defn wrap-coll-read-fn-remembering-locs [read-coll-fn kind]
+  (fn [reader initch]
+    (let [v (read-coll-fn reader initch)]
+      (swap! saved-forms-atom conj
+             (merge (meta v) {:kind kind, :form v}))
+      v)))
+
+(def ^:private read-list-remembering-loc
+  (wrap-coll-read-fn-remembering-locs read-list :list))
+
+(def ^:private read-vector-remembering-loc
+  (wrap-coll-read-fn-remembering-locs read-vector :vector))
+
+(def ^:private read-map-remembering-loc
+  (wrap-coll-read-fn-remembering-locs read-map :map))
+
+(def ^:private read-set-remembering-loc
+  (wrap-coll-read-fn-remembering-locs read-set :set))
+
 (defn- macros [ch]
   (case ch
-    \" read-string*
-    \: read-keyword
-    \; read-comment
-    \' (wrapping-reader 'quote)
-    \@ (wrapping-reader 'clojure.core/deref)
-    \^ read-meta
+    \" read-string-remembering-loc
+    \: read-keyword-remembering-loc
+    \; read-comment-remembering-contents
+    \' read-quote-remembering-loc
+    \@ read-deref-remembering-loc
+    \^ read-meta-remembering-loc
     \` read-syntax-quote ;;(wrapping-reader 'syntax-quote)
     \~ read-unquote
-    \( read-list
+    \( read-list-remembering-loc
     \) read-unmatched-delimiter
-    \[ read-vector
+    \[ read-vector-remembering-loc
     \] read-unmatched-delimiter
-    \{ read-map
+    \{ read-map-remembering-loc
     \} read-unmatched-delimiter
-    \\ read-char*
-    \% read-arg
+    \\ read-char-remembering-loc
+    \% read-arg-remembering-loc
     \# read-dispatch
     nil))
 
 (defn- dispatch-macros [ch]
   (case ch
     \^ read-meta                ;deprecated
-    \' (wrapping-reader 'var)
-    \( read-fn
+    \' read-var-remembering-loc
+    \( read-fn-remembering-loc
     \= read-eval
-    \{ read-set
+    \{ read-set-remembering-loc
     \< (throwing-reader "Unreadable form")
-    \" read-regex
-    \! read-comment
+    \" read-regex-remembering-loc  ;; column info includes surrounding " but not the leading #
+    \! read-comment-remembering-contents
     \_ read-discard
     nil))
 
@@ -673,6 +719,9 @@
         (if-let [f *default-data-reader-fn*]
           (f tag (read rdr true nil true))
           (reader-error rdr "No reader function for tag " (name tag)))))))
+
+(def read-tagged-remembering-loc
+  (wrap-read-fn-remembering-loc read-tagged :tagged))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Public API
@@ -742,14 +791,15 @@
              (cond
               (whitespace? ch) (recur)
               (nil? ch) (if eof-error? (reader-error reader "EOF") sentinel)
-              (number-literal? reader ch) (read-number reader ch)
+              (number-literal? reader ch) (read-number-remembering-loc reader
+                                                                       ch)
               :else (let [f (macros ch)]
                       (if f
                         (let [res (f reader ch)]
                           (if (identical? res reader)
                             (recur)
                             res))
-                        (read-symbol reader ch)))))))
+                        (read-symbol-remembering-loc reader ch)))))))
        (catch Exception e
          (if (ex-info? e)
            (let [d (ex-data e)]
@@ -792,3 +842,76 @@
   [form]
   (binding [gensym-env {}]
     (syntax-quote* form)))
+
+(defn read-form-locs
+  "Same as read, except return a vector of 2 values.  The first is the
+return value from read.  The second is a sequence of maps, each
+describing an expression read and its starting and ending location in
+the input.  This has only been tested by calling it with a
+source-logging-push-back-reader, although it may work with other
+reader types, too."
+  [& args]
+  ;; At least for now, clear saved-forms-atom at the beginning, since
+  ;; calling read can have the side effect of appending things to it,
+  ;; without clearing it at the end.  That is a memory leak waiting to
+  ;; happen if it is not corrected, and someone calls read but not
+  ;; this function.
+  (reset! saved-forms-atom [])
+  (try
+    (let [v (apply read args)]
+      [v @saved-forms-atom])
+    (finally
+      ;; Clear this out in a finally block, in case the read call
+      ;; above throws an exception.
+      (reset! saved-forms-atom []))))
+
+(defn- cmp-forms-key [a]
+  ;; Make :coll-end-marker items always come before anything else that
+  ;; has the same :line and :column, since another value may start at
+  ;; the same line/column that a collection ends, e.g. the "[3 4]" in
+  ;; "[[1 2][3 4]]" has the same :line and :column as the :end-line
+  ;; and :end-column of "[1 2]".
+  [(:line a) (:column a) (if (= :coll-end-marker (:kind a)) 0 1)])
+
+(defn- comment-form? [f]
+  (= :comment (:kind f)))
+
+(defn- first-ci [[_ form-locs]]
+  (let [fs (drop-while (complement comment-form?) form-locs)
+        [comments remaining] (split-with comment-form? fs)]
+    (when (and (seq comments) (seq remaining))
+;;      (println (format "dbg: comments=%s"
+;;                       (mapv :form comments)))
+;;      (println (format "     (first remaining)=%s"
+;;                       (first remaining)))
+      [(assoc (first remaining)
+         :comments (mapv :form comments))
+       (rest remaining)])))
+
+(defn comment-block-info
+  "Take a sequence of form-locs as returned by read-form-locs, and
+return a sequence of maps describing each block of consecutive
+comments in the Clojure code read, and the expression that immediately
+follows the comment block."
+  [form-locs]
+  ;; Add :coll-end-marker values with :line and :column of where
+  ;; collections end in the source code.  These are useful for
+  ;; ensuring that any comments after the last item in a collection,
+  ;; but before the ending delimiter, are not associated with any
+  ;; forms.
+  (let [form-locs (mapcat (fn [info]
+                            (if (#{:list :vector :map :set} (:kind info))
+                              [info
+                               (assoc info
+                                 :kind :coll-end-marker
+                                 :line (:end-line info)
+                                 :column (:end-column info))]
+                              [info]))
+                          form-locs)
+        form-locs (sort-by cmp-forms-key form-locs)]
+    (->> (iterate first-ci [nil form-locs])
+         (take-while identity)
+         (map first)
+         (remove #(= :coll-end-marker (:kind %)))
+         ;; remove the initial nil
+         rest)))

@@ -48,6 +48,8 @@ cd ..
 git clone https://github.com/clojure/tools.reader.git
 cd tools.reader
 git checkout tools.reader-0.8.13
+patch -p1 < ../../trdr-20-v1.patch
+patch -p1 < ../../trdr-enhance-comment-contents-and-locs-v4.patch
 cd ..
 
 git clone https://github.com/sattvik/leinjacker.git

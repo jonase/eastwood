@@ -1,7 +1,7 @@
-diff --git a/src/eastwood/copieddeps/dep9/clojure/tools/namespace/dir.clj b/src/eastwood/copieddeps/dep9/clojure/tools/namespace/dir.clj
+diff --git a/src/main/clojure/clojure/tools/namespace/dir.clj b/src/main/clojure/clojure/tools/namespace/dir.clj
 index 07b59bb..6202612 100644
---- a/src/eastwood/copieddeps/dep9/clojure/tools/namespace/dir.clj
-+++ b/src/eastwood/copieddeps/dep9/clojure/tools/namespace/dir.clj
+--- a/src/main/clojure/clojure/tools/namespace/dir.clj
++++ b/src/main/clojure/clojure/tools/namespace/dir.clj
 @@ -18,12 +18,19 @@
    (:import (java.io File) (java.util.regex Pattern)))
  
