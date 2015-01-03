@@ -931,6 +931,167 @@ StringWriter."
          w linter "" suppress-conditions opt)))))
 
 
+(defn start-pos [loc]
+  [(:line loc) (:column loc)])
+
+
+(defn end-pos [loc]
+  [(:end-line loc) (:end-column loc)])
+
+
+(defn cmp-start-pos [loc-a loc-b]
+  (compare (start-pos loc-a) (start-pos loc-b)))
+
+
+(defn loc-inside?
+  "Return true if loc-a is contained entirely within loc-b, i.e. if:
+
+  (start-pos loc-b) <= (start-pos loc-a)  and
+  (end-pos loc-a) <= (end-pos loc-b)
+
+Note: Returns true if loc-a and loc-b have the same start-pos and
+end-pos."
+  [loc-a loc-b]
+  (and (<= (compare (start-pos loc-b) (start-pos loc-a)) 0)
+       (<= (compare (end-pos loc-a) (end-pos loc-b)) 0)))
+
+
+(defn loc-no-overlap?
+  [loc-a loc-b]
+  (or (<= (compare (end-pos loc-a) (start-pos loc-b)) 0)
+      (<= (compare (end-pos loc-b) (start-pos loc-a)) 0)))
+
+
+(def empty-forms-loc-sorted-set
+  (sorted-set-by cmp-start-pos))
+
+
+(defn add-form-loc [tree form-loc]
+  (assert (number? (:line form-loc)))
+  (assert (number? (:column form-loc)))
+  (assert (number? (:end-line form-loc)))
+  (assert (number? (:end-column form-loc)))
+  (assert (<= (compare (start-pos form-loc) (end-pos form-loc)) 0))
+  (let [all-lt (rsubseq tree < form-loc)
+        last-lt (first all-lt)
+        all-geq (subseq tree >= form-loc)
+        first-geq (first all-geq)]
+;;    (println (format "dbg add-form-loc: form-loc:  %3d:%3d %3d:%3d"
+;;                     (:line form-loc) (:column form-loc)
+;;                     (:end-line form-loc) (:end-column form-loc)))
+;;    (println (format "                  last-lt:   %s"
+;;                     (if last-lt
+;;                       (format "%3d:%3d %3d:%3d"
+;;                               (:line last-lt) (:column last-lt)
+;;                               (:end-line last-lt) (:end-column last-lt))
+;;                       "--")))
+;;    (println (format "                  first-geq: %s"
+;;                     (if first-geq
+;;                       (format "%3d:%3d %3d:%3d"
+;;                               (:line first-geq) (:column first-geq)
+;;                               (:end-line first-geq) (:end-column first-geq))
+;;                       "--")))
+    (when last-lt
+      (assert (or (loc-inside? form-loc last-lt)
+                  (loc-no-overlap? last-lt form-loc))
+              (format "last-lt=%s form-loc=%s"
+                      (dissoc last-lt :children)
+                      (dissoc form-loc :children))))
+    (when first-geq
+      (assert (or (loc-inside? form-loc first-geq)
+                  (loc-inside? first-geq form-loc)
+                  (loc-no-overlap? first-geq form-loc))
+              (format "first-geq=%s form-loc=%s"
+                      (dissoc first-geq :children)
+                      (dissoc form-loc :children))))
+
+    (cond
+     (and last-lt (loc-inside? form-loc last-lt))
+     ;; make new form-loc a descendant of last-lt in the tree
+     (-> tree
+         (disj last-lt)
+         (conj (assoc last-lt
+                 :children (add-form-loc (or (:children last-lt)
+                                             empty-forms-loc-sorted-set)
+                                         form-loc))))
+
+     (and first-geq (loc-inside? form-loc first-geq))
+     ;; make new form-loc a descendant of first-geq in the tree
+     (-> tree
+         (disj first-geq)
+         (conj (assoc first-geq
+                 :children (add-form-loc (or (:children first-geq)
+                                             empty-forms-loc-sorted-set)
+                                         form-loc))))
+
+     (and first-geq (loc-inside? first-geq form-loc))
+     ;; new form-loc takes first-geq's place, with first-geq as its
+     ;; child.  There may be other items, consecutively after
+     ;; first-geq, that should also be children of form-loc because
+     ;; they lie completely inside of form-loc.
+     (let [children (take-while #(loc-inside? % form-loc) all-geq)]
+       (-> (apply disj tree children)
+           (conj (assoc form-loc
+                   :children (into empty-forms-loc-sorted-set children)))))
+
+     (and (or (nil? last-lt)
+              (<= (compare (end-pos last-lt) (start-pos form-loc)) 0))
+          (or (nil? first-geq)
+              (<= (compare (end-pos form-loc) (start-pos first-geq)) 0)))
+     ;; new form-loc is completely after last-lt (or there is no
+     ;; last-lt), and is completely before first-geq (or there is no
+     ;; first-geq).  Make it a new root node.
+     (conj tree form-loc)
+
+     :else
+     ;; tbd, probably an error
+     (assert false))))
+
+
+(defn make-form-locs-tree
+  "Given a sequence of form-locs, i.e. maps with
+keys :line :column :end-line :end-column :kind :form, return a
+sorted-set of trees where each tree node is a map with all of the keys
+of the original, plus :children.  The value associated with the
+key :children is a sorted-set of child nodes, each of which might have
+their own :children key.
+
+Form-loc map A is made a child of another form-loc map B if A's
+starting and ending position lie completely within B's starting and
+ending position, i.e. (loc-inside? loc-a loc-b)
+
+The top-level set returned, and all :children sets, will be sorted by
+the value of [(:line m) (:column m)], i.e. from earliest occurrence in
+the source file to latest.
+
+Throw an exception if any two form-locs have overlapping ranges of
+positions, but neither is nested inside of the other, or if two
+form-locs have identical start and end locations."
+  [form-locs]
+  (reduce add-form-loc empty-forms-loc-sorted-set form-locs))
+
+
+(defn- nodes-sorted-and-non-overlapping [tree-nodes]
+  (every? (fn [[loc-a loc-b]]
+            (<= (compare (end-pos loc-a) (start-pos loc-b)) 0))
+          (partition 2 1 tree-nodes)))
+
+
+(defn check-form-locs-tree-invariants [tree-nodes]
+  (and (nodes-sorted-and-non-overlapping tree-nodes)
+       (every? check-form-locs-tree-invariants (:children tree-nodes))))
+
+
+(defn count-tree-node [tree-node]
+  (if (:children tree-node)
+    (reduce + 1 (map count-tree-node (:children tree-node)))
+    1))
+
+
+(defn count-tree-nodes [tree-nodes]
+  (reduce + 0 (map count-tree-node tree-nodes)))
+
+
 (comment
 
 ;; This version tends to be much slower due to the size of the :env
@@ -1004,5 +1165,11 @@ StringWriter."
                      (mapv (fn [ast] (-> ast add-resolved-ops util/clean-ast))
                            asts))))
 (insp/inspect-tree a2)
+
+(def fl (-> a2 :analyze-results :form-locs))
+(def a3 (util/make-form-locs-tree fl))
+(= (count fl) (util/count-tree-nodes a3))
+(util/check-form-locs-tree-invariants a3)
+(= a3 (util/make-form-locs-tree (shuffle fl)))
 
 )

@@ -193,10 +193,19 @@ recursing into ASTs with :op equal to :do"
           (ast/nodes ast)))
 
 
+(def saved-forms-atom (atom []))
+
+
+(defn read-saving-form-locs [& args]
+  (let [[val form-locs] (apply tr/read-form-locs args)]
+    (swap! saved-forms-atom conj form-locs)
+    val))
+
+
 (defn remaining-forms [pushback-reader forms]
   (let [eof (reify)]
     (loop [forms forms]
-      (let [form (tr/read pushback-reader nil eof)]
+      (let [form (read-saving-form-locs pushback-reader nil eof)]
         (if (identical? form eof)
           forms
           (recur (conj forms form)))))))
@@ -209,6 +218,71 @@ recursing into ASTs with :op equal to :do"
   (when (not= err-msgs-str "")
     (doseq [s (string/split-lines err-msgs-str)]
       ((:callback opt) {:kind :eval-err, :msg s, :opt opt}))))
+
+
+(defn analyze-file*
+  [source-path & {:keys [reader opt]}]
+  (let [debug-cb (util/make-msg-cb :debug opt)
+        eof (reify)]
+    (when (util/debug? :ns opt)
+      (debug-cb (format "all-ns before (analyze-file \"%s\") begins:"
+                        source-path))
+      (debug-cb (with-out-str (pp/pprint (sort (all-ns-names-set))))))
+    ;; If we eval a form that changes *ns*, I want it to go back to
+    ;; the original before returning.
+    (binding [*ns* *ns*
+              *file* (str source-path)]
+      (env/with-env (ana.jvm/global-env)
+        (begin-file-debug *file* *ns* opt)
+        (loop [forms []
+               asts []]
+          (let [form (read-saving-form-locs reader nil eof)]
+            (if (identical? form eof)
+              {:forms forms, :asts asts, :exception nil}
+              (let [cur-env (env/deref-env)
+                    _ (pre-analyze-debug asts form cur-env *ns* opt)
+                    [exc ast]
+                    (try
+                      (let [{:keys [val out err]}
+                            (util/with-out-str2
+                              (binding [ana.jvm/run-passes run-passes]
+                                (ana.jvm/analyze+eval
+                                 form (ana.jvm/empty-env)
+                                 {:passes-opts eastwood-passes-opts})))]
+                        (do-eval-output-callbacks out err opt)
+                        [nil val])
+                      (catch Exception e
+                        [e nil]))]
+                (if exc
+                  {:forms (remaining-forms reader (conj forms form)),
+                   :asts asts, :exception exc, :exception-phase :analyze+eval,
+                   :exception-form form}
+                  (if-let [first-exc-ast (first (asts-with-eval-exception ast))]
+                    {:forms (remaining-forms reader (conj forms form)),
+                     :asts asts,
+                     :exception (wrapped-exception? (:result first-exc-ast)),
+                     :exception-phase :eval,
+                     :exception-form (if-let [f (first (:raw-forms first-exc-ast))]
+                                       f
+                                       (:form first-exc-ast))}
+                    (do
+                      (post-analyze-debug asts form ast *ns* opt)
+                      (recur (conj forms form)
+                             (conj asts
+                                   (eastwood-ast-additions
+                                    ast (count asts)))))))))))))))
+
+
+(def empty-form-loc-map
+  (util/ordering-map [
+                      :line
+                      :column
+                      :end-line
+                      :end-column
+                      :kind
+                      :form
+                      :file
+                      ]))
 
 
 (defn analyze-file
@@ -255,56 +329,15 @@ recursing into ASTs with :op equal to :do"
       - :ast Print complete ASTs just after analysis of each form.
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
-  [source-path & {:keys [reader opt]}]
-  (let [debug-cb (util/make-msg-cb :debug opt)
-        eof (reify)]
-    (when (util/debug? :ns opt)
-      (debug-cb (format "all-ns before (analyze-file \"%s\") begins:"
-                        source-path))
-      (debug-cb (with-out-str (pp/pprint (sort (all-ns-names-set))))))
-    ;; If we eval a form that changes *ns*, I want it to go back to
-    ;; the original before returning.
-    (binding [*ns* *ns*
-              *file* (str source-path)]
-      (env/with-env (ana.jvm/global-env)
-        (begin-file-debug *file* *ns* opt)
-        (loop [forms []
-               asts []]
-          (let [form (tr/read reader nil eof)]
-            (if (identical? form eof)
-              {:forms forms, :asts asts, :exception nil}
-              (let [cur-env (env/deref-env)
-                    _ (pre-analyze-debug asts form cur-env *ns* opt)
-                    [exc ast]
-                    (try
-                      (let [{:keys [val out err]}
-                            (util/with-out-str2
-                              (binding [ana.jvm/run-passes run-passes]
-                                (ana.jvm/analyze+eval
-                                 form (ana.jvm/empty-env)
-                                 {:passes-opts eastwood-passes-opts})))]
-                        (do-eval-output-callbacks out err opt)
-                        [nil val])
-                      (catch Exception e
-                        [e nil]))]
-                (if exc
-                  {:forms (remaining-forms reader (conj forms form)),
-                   :asts asts, :exception exc, :exception-phase :analyze+eval,
-                   :exception-form form}
-                  (if-let [first-exc-ast (first (asts-with-eval-exception ast))]
-                    {:forms (remaining-forms reader (conj forms form)),
-                     :asts asts,
-                     :exception (wrapped-exception? (:result first-exc-ast)),
-                     :exception-phase :eval,
-                     :exception-form (if-let [f (first (:raw-forms first-exc-ast))]
-                                       f
-                                       (:form first-exc-ast))}
-                    (do
-                      (post-analyze-debug asts form ast *ns* opt)
-                      (recur (conj forms form)
-                             (conj asts
-                                   (eastwood-ast-additions
-                                    ast (count asts)))))))))))))))
+  [& args]
+  (reset! saved-forms-atom [])
+  (let [v (apply analyze-file* args)
+        form-locs @saved-forms-atom]
+    (reset! saved-forms-atom [])
+    (assoc v :form-locs (->> form-locs
+                             (apply concat)
+                             (map #(into empty-form-loc-map %))
+                             (into [])))))
 
 
 (defn analyze-ns
@@ -330,8 +363,7 @@ recursing into ASTs with :op equal to :do"
   [source-nsym & {:keys [reader opt] :or {reader (pb-reader-for-ns source-nsym)}}]
   (let [source-path (#'move/ns-file-name source-nsym)
         m (analyze-file source-path :reader reader :opt opt)]
-    (assoc (dissoc m :forms :asts)
-      :analyze-results {:source (slurp (uri-for-ns source-nsym))
-                        :namespace source-nsym
-                        :forms (:forms m)
-                        :asts (:asts m)})))
+    (assoc (dissoc m :forms :asts :form-locs)
+      :analyze-results (merge (select-keys m [:forms :asts :form-locs])
+                              {:source (slurp (uri-for-ns source-nsym))
+                               :namespace source-nsym}))))
