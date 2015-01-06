@@ -1713,7 +1713,9 @@ Clojure will give a compilation error with a clear message if you
 attempt to use any primitive type besides long or double in this way.
 
 You can also type hint function arguments and return values with Java
-class names.
+class names, or one of the shorthand names Clojure allows you to use
+for array types: `bytes`, `shorts`, `ints`, `longs`, `booleans`,
+`chars`, `floats`, `doubles`, or `objects`.
 
 Such type hints on function arguments can help avoid reflection in
 Java interop calls within the function body, and it does not matter
