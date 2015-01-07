@@ -118,28 +118,33 @@ the value of File/separator for the platform."
          :opt opt})))
 
 (defn eastwood-wrong-tag-handler [t ast]
-;;  (let [tag (if (= t :name/tag)
-;;              (-> ast :name meta :tag)
-;;              (get ast t))]
-;;    ;; (assert false)
+  (let [tag (if (= t :name/tag)
+              (-> ast :name meta :tag)
+            (get ast t))]
 ;;    (println (format "\nWrong tag: t=%s %s (%s) in %s"
 ;;                     t tag (class tag)
-;;                     ;;(eval tag) (class (eval tag))
 ;;                     (:name ast)))
 ;;    (println (format "  op=%s form=%s" (:op ast) (:form ast)))
+;;    (println (meta (:form ast)))
 ;;    (pp/pprint (:form ast))
 ;;    (util/pprint-ast-node ast)
-;;    (flush))
-  ;; Key/value pairs to be merged into ast for later code to find and
-  ;; issue warnings.  We use a different map key for each different
-  ;; value of t, because if we used the same map key, only the last
-  ;; one merged in would remain, the way tools.analyzer.jvm uses this
-  ;; return value.
-  (case t
-    :name/tag {:eastwood/name-tag t}
-    :tag {:eastwood/tag t}
-    :o-tag {:eastwood/o-tag t}
-    :return-tag {:eastwood/return-tag t}))
+;;    (flush)
+
+    ;; Key/value pairs to be merged into ast for later code to find
+    ;; and issue warnings.  We use a different map key for each
+    ;; different value of t, because if we used the same map key, only
+    ;; the last one merged in would remain, the way tools.analyzer.jvm
+    ;; uses this return value.
+
+    ;; Remember the value of 'tag' calculated here in the map, since
+    ;; it seems that some later tools.analyzer(.jvm) pass may be
+    ;; changing the values of the keys :tag :o-tag etc. that existed
+    ;; when this function was called.
+    (case t
+      :name/tag {:eastwood/name-tag tag}
+      :tag {:eastwood/tag tag}
+      :o-tag {:eastwood/o-tag tag}
+      :return-tag {:eastwood/return-tag tag})))
 
 ;; eastwood-passes is a cut-down version of run-passes in
 ;; tools.analyzer.jvm.  It eliminates phases that are not needed for

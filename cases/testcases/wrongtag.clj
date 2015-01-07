@@ -158,7 +158,9 @@
 ;;  (Math/abs x))
 
 ;; The functions below do not give compiler errors, *and* the type
-;; hints on their arg vectors do help avoid reflection.
+;; hints on their arg vectors do help avoid reflection.  Eastwood
+;; 0.2.1 gives incorrect warnings about ^objects type tags on arg
+;; vectors.
 
 (defn copy-object-array
   (^objects [^objects arr]
@@ -177,17 +179,33 @@
     (Arrays/copyOf arr (int (alength arr)))))
 
 ;; no reflection warning
-(println (aget (copy-object-array (object-array [1 2 3]))
-               1))
+(aget (copy-object-array (object-array [1 2 3])) 1)
 
 ;; This gives reflection warning
-(println (aget (copy-object-array-2 (object-array [1 2 3]))
-               1))
+(aget (copy-object-array-2 (object-array [1 2 3])) 1)
 
 ;; no reflection warning
-(println (aget (copy-int-array (int-array [1 2 3]))
-               1))
+(aget (copy-int-array (int-array [1 2 3])) 1)
 
 ;; This gives reflection warning
-(println (aget (copy-int-array-2 (int-array [1 2 3]))
-               1))
+(aget (copy-int-array-2 (int-array [1 2 3])) 1)
+
+
+;; Copied and modified from some core.matrix code, which caused
+;; exceptions in the :wrong-tag linter of Eastwood 0.2.1.
+
+(defn copy-double-array
+  "Returns a copy of a double array"
+  (^doubles [^doubles arr]
+    (Arrays/copyOf arr (int (alength arr)))))
+
+
+(defprotocol PDoubleArrayOutput
+  (to-double-array [m])
+  (as-double-array [m]))
+
+
+(extend-protocol PDoubleArrayOutput
+  (Class/forName "[D")
+    (to-double-array [m] (copy-double-array m))
+    (as-double-array [m] m))

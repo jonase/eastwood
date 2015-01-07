@@ -1210,14 +1210,14 @@ the next."
      :line 38, :column 1}
     1,
     {:linter :wrong-tag,
-     :msg "Tag: (quote LinkedList) for return type of function on arg vector: [coll] should be Java class name (fully qualified if not in java.lang package)",
+     :msg "Tag: (quote LinkedList) for return type of function method: ([coll] (java.util.LinkedList. coll)) should be Java class name (fully qualified if not in java.lang package)",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 84, :column 36}
+     :line 84, :column 12}
     1,
     {:linter :wrong-tag,
-     :msg "Tag: (quote LinkedList) for return type of function on arg vector: [coll] should be Java class name (fully qualified if not in java.lang package)",
+     :msg "Tag: (quote LinkedList) for return type of function method: ([coll] (java.util.LinkedList. coll)) should be Java class name (fully qualified if not in java.lang package)",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 85, :column 33}
+     :line 85, :column 1}
     1,
     {:linter :wrong-tag,
      :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace",
@@ -1243,6 +1243,26 @@ the next."
      :msg "Wrong tag: (class (log-window-proxy nil)) on form: this",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 153, :column 11}
+    1,
+    {:linter :wrong-tag,
+     :msg "Tag: (Class/forName \"[D\") for return type of function method: ([m] m) should be Java class name (fully qualified if not in java.lang package)",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 208, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: (Class/forName \"[D\") on form: (do m)",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 208, :column 1}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: (Class/forName \"[D\") on form: m",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 210, :column 23}
+    1,
+    {:linter :wrong-tag,
+     :msg "Wrong tag: (Class/forName \"[D\") on form: m",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 211, :column 23}
     1,
     }
         clojure-1-6-or-earlier-expected-warnings

@@ -48,9 +48,9 @@ significance needed by the user."
                     
                     (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
                          (= op :fn-method))
-                    [:fn-method
-                     (-> form first meta :tag)
-                     (-> form first meta)]
+                    (let [m (or (pass/has-code-loc? (meta form))
+                                (pass/code-loc (pass/nearest-ast-with-loc ast)))]
+                      [:fn-method (-> ast :eastwood/tag) m])
                     
                     ;; This set of wrong-tag-keys sometimes occurs for
                     ;; op :local, but since those can be multiple
@@ -74,7 +74,7 @@ significance needed by the user."
                     [:invoke (-> ast :tag) (meta form)]
 
                     (or (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
-                             (= op :binding))
+                             (#{:binding :do} op))
                         (and (= wrong-tag-keys #{:eastwood/tag})
                              (#{:local :const :var} op)))
                     [:tag (get ast :tag)
@@ -147,9 +147,9 @@ significance needed by the user."
         :invoke (format "Tag: %s for return type of function %s should be Java class name (fully qualified if not in java.lang package).  It may be defined in another namespace."
                         (replace-variable-tag-part tag)
                         (-> form first))
-        :fn-method (format "Tag: %s for return type of function on arg vector: %s should be Java class name (fully qualified if not in java.lang package)"
+        :fn-method (format "Tag: %s for return type of function method: %s should be Java class name (fully qualified if not in java.lang package)"
                            (replace-variable-tag-part tag)
-                           (-> form first)))})))
+                           form))})))
 
 (defn fq-classname-to-class [cname-str]
   (try
