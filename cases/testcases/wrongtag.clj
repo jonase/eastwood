@@ -1,5 +1,5 @@
 (ns testcases.wrongtag
-  (:import (java.util LinkedList))
+  (:import (java.util LinkedList) (java.util Arrays))
   (:require [clojure.test :refer :all]))
 
 ;; These two cases should cause a warning, because Clojure 1.6.0
@@ -88,8 +88,8 @@
 (defn avlf4 ^LinkedList [coll] (java.util.LinkedList. coll))
 ;; The following will not warn with Clojure <= 1.7.0-alpha1, but will
 ;; with Clojure >= 1.7.0-alpha2, because of the fix for ticket
-;; CLJ-887.  Before that fix, metadata was lost argument vectors that
-;; use destructuring.
+;; CLJ-887.  Before that fix, metadata was lost on argument vectors
+;; that use destructuring.
 (defn avlf4b ^LinkedList [& {:keys [coll]}] (java.util.LinkedList. coll))
 
 ;; No warnings for these cases
@@ -152,3 +152,60 @@
     (println "message" message))
   (clear [this]
     nil))
+
+;; This gives a compiler error "Only long and double primitives are supported"
+;;(defn compiler-error-1 [^int x]
+;;  (Math/abs x))
+
+;; The functions below do not give compiler errors, *and* the type
+;; hints on their arg vectors do help avoid reflection.  Eastwood
+;; 0.2.1 gives incorrect warnings about ^objects type tags on arg
+;; vectors.
+
+(defn copy-object-array
+  (^objects [^objects arr]
+    (Arrays/copyOf arr (int (alength arr)))))
+
+(defn copy-object-array-2
+  ([^objects arr]
+    (Arrays/copyOf arr (int (alength arr)))))
+
+(defn copy-int-array
+  (^ints [^ints arr]
+    (Arrays/copyOf arr (int (alength arr)))))
+
+(defn copy-int-array-2
+  ([^ints arr]
+    (Arrays/copyOf arr (int (alength arr)))))
+
+;; no reflection warning
+(aget (copy-object-array (object-array [1 2 3])) 1)
+
+;; This gives reflection warning
+(aget (copy-object-array-2 (object-array [1 2 3])) 1)
+
+;; no reflection warning
+(aget (copy-int-array (int-array [1 2 3])) 1)
+
+;; This gives reflection warning
+(aget (copy-int-array-2 (int-array [1 2 3])) 1)
+
+
+;; Copied and modified from some core.matrix code, which caused
+;; exceptions in the :wrong-tag linter of Eastwood 0.2.1.
+
+(defn copy-double-array
+  "Returns a copy of a double array"
+  (^doubles [^doubles arr]
+    (Arrays/copyOf arr (int (alength arr)))))
+
+
+(defprotocol PDoubleArrayOutput
+  (to-double-array [m])
+  (as-double-array [m]))
+
+
+(extend-protocol PDoubleArrayOutput
+  (Class/forName "[D")
+    (to-double-array [m] (copy-double-array m))
+    (as-double-array [m] m))

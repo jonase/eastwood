@@ -48,9 +48,9 @@ significance needed by the user."
                     
                     (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
                          (= op :fn-method))
-                    [:fn-method
-                     (-> form first meta :tag)
-                     (-> form first meta)]
+                    (let [m (or (pass/has-code-loc? (meta form))
+                                (pass/code-loc (pass/nearest-ast-with-loc ast)))]
+                      [:fn-method (-> ast :eastwood/tag) m])
                     
                     ;; This set of wrong-tag-keys sometimes occurs for
                     ;; op :local, but since those can be multiple
@@ -74,7 +74,7 @@ significance needed by the user."
                     [:invoke (-> ast :tag) (meta form)]
 
                     (or (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
-                             (= op :binding))
+                             (#{:binding :do} op))
                         (and (= wrong-tag-keys #{:eastwood/tag})
                              (#{:local :const :var} op)))
                     [:tag (get ast :tag)
@@ -147,9 +147,9 @@ significance needed by the user."
         :invoke (format "Tag: %s for return type of function %s should be Java class name (fully qualified if not in java.lang package).  It may be defined in another namespace."
                         (replace-variable-tag-part tag)
                         (-> form first))
-        :fn-method (format "Tag: %s for return type of function on arg vector: %s should be Java class name (fully qualified if not in java.lang package)"
+        :fn-method (format "Tag: %s for return type of function method: %s should be Java class name (fully qualified if not in java.lang package)"
                            (replace-variable-tag-part tag)
-                           (-> form first)))})))
+                           form))})))
 
 (defn fq-classname-to-class [cname-str]
   (try
@@ -157,11 +157,22 @@ significance needed by the user."
     (catch ClassNotFoundException e
       nil)))
 
+;; These tags are ok, and the Clojure compiler uses them in a way that
+;; can avoid reflection.
+
+(def ok-return-tags '#{bytes shorts ints longs
+                       booleans chars
+                       floats doubles
+                       objects})
+
 (defn wrong-tag-clj-1232 [{:keys [asts]} opt]
   (for [{:keys [op form] :as ast} (mapcat ast/nodes asts)
         :when (= op :fn-method)
-        :let [tag (-> form first meta :tag)
-              loc (-> form first meta)
+        :let [tag (-> form first meta :tag)]
+        :when (and tag
+                   (symbol? tag)
+                   (not (contains? ok-return-tags tag)))
+        :let [loc (-> form first meta)
               ;; *If* this :fn-method is part of a defn, then the
               ;; 'parent' ast should be the one with :op :fn, and its
               ;; parent ast should be the one with :op :def.  That
@@ -181,8 +192,15 @@ significance needed by the user."
                                        (-> % :meta :val :private))
                                  gp-and-ggp-asts)
 ;;              _ (when tag
-;;                  (println (format "jafinger-dbg3: tag=%s op=%s gp-op=%s loc=%s"
-;;                                   tag op (:op (first gp-and-ggp-asts)) loc))
+;;                  (println (format "jafinger-dbg3: tag=%s (class tag)=%s op=%s gp-op=%s loc=%s"
+;;                                   tag (class tag) op
+;;                                   (:op (first gp-and-ggp-asts))
+;;                                   loc))
+;;                  (println (format "               private-var?=%s in-default-classname-mapping?=%s to-class='%s'"
+;;                                   (pr-str private-var?)
+;;                                   (contains? default-classname-mapping tag)
+;;                                   (pr-str (fq-classname-to-class (str tag)))
+;;                                   ))
 ;;                  )
               ]
         :when (and tag
