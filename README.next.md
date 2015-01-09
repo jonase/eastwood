@@ -23,7 +23,7 @@ if you do not use Leiningen.
 
 As a Leiningen plugin, Eastwood has been tested most with Leiningen
 versions 2.4.x and 2.5.x.  Merge the following into your
-`~/.lein/profiles.clj` file:
+`$HOME/.lein/profiles.clj` file:
 
 ```clojure
 {:user {:plugins [[jonase/eastwood "0.2.1"]] }}
@@ -531,7 +531,7 @@ then do the command `M-x compilation-mode`, you can use `next-error`
 and `previous-error` commands to step through the warnings, and the
 other buffer will jump to the specified file, line, and column.
 Adding lines like the following to your Emacs init file
-(`~/.emacs.d/init.el` with recent versions of Emacs) is one way to
+(`$HOME/.emacs.d/init.el` with recent versions of Emacs) is one way to
 create convenient function key bindings for `next-error` and
 `previous-error`.  Use `C-h f next-error RET` to see the current key
 bindings for `next-error`, since you may not mind the defaults.
@@ -1091,11 +1091,26 @@ This is known to affect several functions in
 created with the [Hiccup](https://github.com/weavejester/hiccup)
 library's macro `defelem`.
 
-A good potential future enhancement to this linter would be to allow a
-developer to specify a list of functions that should never have
-`:wrong-arity` warnings generated for calls to the function, or to use
-`:arglists` specified in a different place so the warnings are
-accurate.
+Starting with Eastwood version 0.2.1, you can create a [config
+file](#eastwood-config-files) for Eastwood that specifies the arglists
+to use for this linter.  An example for the function `query` in the
+[`java.jdbc`](https://github.com/clojure/java.jdbc) Clojure contrib
+library is given below, copied from Eastwood's built-in config files
+that it uses by default.  The value of the `:arglists-for-linting` key
+is a list of all argument vectors taken by the function, as the
+argument vectors are given in the function definition, not as modified
+via metadata.
+
+```clojure
+(disable-warning
+ {:linter :wrong-arity
+  :function-symbol 'clojure.java.jdbc/query
+  :arglists-for-linting
+  '([db sql-params & {:keys [result-set-fn row-fn identifiers as-arrays?]
+                      :or {row-fn identity
+                           identifiers str/lower-case}}])
+  :reason "clojure.java.jdbc/query uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
+```
 
 
 ### `:bad-arglists`
@@ -1372,12 +1387,17 @@ warnings are gone.
 
 The bad news is that with some libraries, there can be many incorrect
 warnings from this linter, because it is macroexpanding before
-checking.  In particular, if you use the `core.match` library, you may
-find warnings from this linter that have nothing obvious to do with
-your code.  They are due to the way that macros in `core.match` expand
-into code that contains suspicious expressions.  Eastwood issue
-[#108](https://github.com/jonase/eastwood/issues/108) has been created
-to track this.
+checking.
+
+For example, if you use the `core.match` library with Eastwood version
+0.2.0, you may find warnings from this linter that have nothing
+obvious to do with your code, about expressions of the form `(and x)`
+with only one argument.  They are due to the way that macros in
+`core.match` are written.  Starting with version 0.2.1, Eastwood's
+built-in [config files](#eastwood-config-files) contain code that
+should disable these warnings for `core.match` and macros in several
+other libraries.  Search those config files for
+`:suspicious-expression` to find them.
 
 
 ### `:constant-test`
@@ -1409,15 +1429,23 @@ For example:
 Like most Eastwood linters, these checks are performed after
 macroexpansion, so at times the code that causes the warning may not
 be in your source file.  Users of the `core.match` library may see
-many such warnings that are not directly in their code, but in the way
-`core.match` macros expand.  You may wish to disable this linter,
-either from the command line or REPL using the `:exclude-linters`
-option, or from Leiningen you can merge the following into your
-`project.clj` or `~/.lein/profiles.clj` file:
+many such warnings with Eastwood version 0.2.0 that are not directly
+in their code, but in the way `core.match` macros expand.
+
+The blanket approach to disabling all `:constant-test` warnings is to
+use the `:exclude-linters` keyword in the Eastwood options map, or
+from Leiningen you can merge the following into your `project.Clj` or
+`$HOME/.lein/profiles.clj` file:
 
 ```clojure
 :eastwood {:exclude-linters [:constant-test]}
 ```
+
+Starting with Eastwood version 0.2.1, the more surgical approach is to
+add expressions to a config file [config file](#eastwood-config-files)
+to disable these warnings, only when they occur within particular
+macro expansions.  Search those config files for `:constant-test` to
+find examples.
 
 It is common across Clojure projects tested to use `:else` as the last
 'always do this case` at the end of a `cond` form.  It is also fairly
@@ -1891,7 +1919,7 @@ you must explicitly enable it.  You can specify it in `:add-linters`
 on the command line or when invoked from a REPL.  To avoid specifying
 it each time when using Leiningen, you can merge a line like the
 following into your `project.clj` file or user-wide
-`~/.lein/profiles.clj` file.
+`$HOME/.lein/profiles.clj` file.
 
 ```clojure
 :eastwood {:add-linters [:unused-locals]}
@@ -1936,7 +1964,7 @@ the namespace.  Thus the namespace could be eliminated.
 Currently this linter also warns if the only place a namespace is used
 is inside of syntax-quoted expressions, as shown in the example below.
 Eastwood will unfortunately warn about `clojure.repl` being unused,
-even though it clearly is.  Issue
+even though it clearly is used by the reference to `repl/doc`.  Issue
 [#113](https://github.com/jonase/eastwood/issues/113) has been created
 to track this.
 
@@ -2102,7 +2130,7 @@ your local Maven repository:
 Then add `[jonase/eastwood "0.2.2-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
-`~/.lein/profiles.clj` file.
+`$HOME/.lein/profiles.clj` file.
 
 
 ## License

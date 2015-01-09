@@ -23,7 +23,7 @@ if you do not use Leiningen.
 
 As a Leiningen plugin, Eastwood has been tested most with Leiningen
 versions 2.4.x and 2.5.x.  Merge the following into your
-`~/.lein/profiles.clj` file:
+`$HOME/.lein/profiles.clj` file:
 
 ```clojure
 {:user {:plugins [[jonase/eastwood "0.2.1"]] }}
@@ -528,7 +528,7 @@ then do the command `M-x compilation-mode`, you can use `next-error`
 and `previous-error` commands to step through the warnings, and the
 other buffer will jump to the specified file, line, and column.
 Adding lines like the following to your Emacs init file
-(`~/.emacs.d/init.el` with recent versions of Emacs) is one way to
+(`$HOME/.emacs.d/init.el` with recent versions of Emacs) is one way to
 create convenient function key bindings for `next-error` and
 `previous-error`.  Use `C-h f next-error RET` to see the current key
 bindings for `next-error`, since you may not mind the defaults.
@@ -1088,11 +1088,26 @@ This is known to affect several functions in
 created with the [Hiccup](https://github.com/weavejester/hiccup)
 library's macro `defelem`.
 
-A good potential future enhancement to this linter would be to allow a
-developer to specify a list of functions that should never have
-`:wrong-arity` warnings generated for calls to the function, or to use
-`:arglists` specified in a different place so the warnings are
-accurate.
+Starting with Eastwood version 0.2.1, you can create a [config
+file](#eastwood-config-files) for Eastwood that specifies the arglists
+to use for this linter.  An example for the function `query` in the
+[`java.jdbc`](https://github.com/clojure/java.jdbc) Clojure contrib
+library is given below, copied from Eastwood's built-in config files
+that it uses by default.  The value of the `:arglists-for-linting` key
+is a list of all argument vectors taken by the function, as the
+argument vectors are given in the function definition, not as modified
+via metadata.
+
+```clojure
+(disable-warning
+ {:linter :wrong-arity
+  :function-symbol 'clojure.java.jdbc/query
+  :arglists-for-linting
+  '([db sql-params & {:keys [result-set-fn row-fn identifiers as-arrays?]
+                      :or {row-fn identity
+                           identifiers str/lower-case}}])
+  :reason "clojure.java.jdbc/query uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
+```
 
 
 ### `:bad-arglists`
@@ -1298,12 +1313,17 @@ warnings are gone.
 
 The bad news is that with some libraries, there can be many incorrect
 warnings from this linter, because it is macroexpanding before
-checking.  In particular, if you use the `core.match` library, you may
-find warnings from this linter that have nothing obvious to do with
-your code.  They are due to the way that macros in `core.match` expand
-into code that contains suspicious expressions.  Eastwood issue
-[#108](https://github.com/jonase/eastwood/issues/108) has been created
-to track this.
+checking.
+
+For example, if you use the `core.match` library with Eastwood version
+0.2.0, you may find warnings from this linter that have nothing
+obvious to do with your code, about expressions of the form `(and x)`
+with only one argument.  They are due to the way that macros in
+`core.match` are written.  Starting with version 0.2.1, Eastwood's
+built-in [config files](#eastwood-config-files) contain code that
+should disable these warnings for `core.match` and macros in several
+other libraries.  Search those config files for
+`:suspicious-expression` to find them.
 
 
 ### `:constant-test`
@@ -1335,15 +1355,23 @@ For example:
 Like most Eastwood linters, these checks are performed after
 macroexpansion, so at times the code that causes the warning may not
 be in your source file.  Users of the `core.match` library may see
-many such warnings that are not directly in their code, but in the way
-`core.match` macros expand.  You may wish to disable this linter,
-either from the command line or REPL using the `:exclude-linters`
-option, or from Leiningen you can merge the following into your
-`project.clj` or `~/.lein/profiles.clj` file:
+many such warnings with Eastwood version 0.2.0 that are not directly
+in their code, but in the way `core.match` macros expand.
+
+The blanket approach to disabling all `:constant-test` warnings is to
+use the `:exclude-linters` keyword in the Eastwood options map, or
+from Leiningen you can merge the following into your `project.Clj` or
+`$HOME/.lein/profiles.clj` file:
 
 ```clojure
 :eastwood {:exclude-linters [:constant-test]}
 ```
+
+Starting with Eastwood version 0.2.1, the more surgical approach is to
+add expressions to a config file [config file](#eastwood-config-files)
+to disable these warnings, only when they occur within particular
+macro expansions.  Search those config files for `:constant-test` to
+find examples.
 
 It is common across Clojure projects tested to use `:else` as the last
 'always do this case` at the end of a `cond` form.  It is also fairly
@@ -1713,9 +1741,7 @@ Clojure will give a compilation error with a clear message if you
 attempt to use any primitive type besides long or double in this way.
 
 You can also type hint function arguments and return values with Java
-class names, or one of the shorthand names Clojure allows you to use
-for array types: `bytes`, `shorts`, `ints`, `longs`, `booleans`,
-`chars`, `floats`, `doubles`, or `objects`.
+class names.
 
 Such type hints on function arguments can help avoid reflection in
 Java interop calls within the function body, and it does not matter
@@ -1769,112 +1795,6 @@ is not fully qualified.
 ```
 
 
-#### `:wrong-tag` warnings in uses of `extend-type` and `extend-protocol` macros
-
-`extend-type` and `extend-protocol` convenience macros take the class
-name you specify and propagate them as type tags on the first argument
-of all functions.  This is handy, as long as the class name is a valid
-type tag, as in this example:
-
-```clojure
-(defprotocol MyType
-  (get-type [x]))
-
-;; A more interesting example would avoid reflection only because of
-;; the auto-propagated type tags on the argument m.  Better example
-;; welcome.
-
-(extend-protocol MyType
-  Long
-  (get-type [m] :long)
-  Double
-  (get-type [m] :double))
-
-;; The extend-protocol expression above becomes the following after
-;; macro expansion, with valid type tags ^Long and ^Double.
-
-(do
-  (clojure.core/extend Long
-    MyType
-    {:get-type (fn ([^{:tag Long} m] :long))})
-  (clojure.core/extend Double
-    MyType
-    {:get-type (fn ([^{:tag Double} m] :double))}))
-
-(get-type 5)
-;; => :long
-
-(get-type 5.3)
-;; => :double
-```
-
-However, if you try to use `extend-type` or `extend-protocol` with an
-expression that evaluates to a class at run time, e.g. `(Class/forName
-"[D")` as the type, most things will work correctly, but it will also
-expand to code that has that expression as a type tag on the first
-argument of all functions.  That expression is not a valid type tag.
-Clojure silently ignores such type tags, so there are no errors or
-warnings during compilation.  Since the invalid type tag is ignored,
-you will be disappointed if you were relying on it to avoid
-reflection.
-
-Note: `(Class/forName "[D")` evaluates to the Java class for an array
-of primitive doubles.  In places where you want to use such a type as
-a type tag, you can use `^doubles` in Clojure.  However, that will not
-work as an argument to `extend` or its variants.
-
-```clojure
-(defprotocol PGetElem
-  (get-elem [m idx]))
-
-;; This will cause reflection on the aget call, because m has an
-;; invalid, ignored type tag of (Class/forName "[D").  Eastwood will
-;; give a :wrong-tag warning on m.
-
-(extend-protocol PGetElem
-  (Class/forName "[D")
-    (get-elem [m idx] (aget m idx)))
-
-;; This also causes reflection on the aget call, because the ^doubles
-;; type tag is replaced by the invalid, ignored type tag when
-;; extend-protocol is macroexpanded.  Eastwood will give a :wrong-tag
-;; warning on m.
-
-(extend-protocol PGetElem
-  (Class/forName "[D")
-    (get-elem [^doubles m idx] (aget m idx)))
-
-;; No reflection here, because the valid type hint ^doubles is inside
-;; of the aget call, where extend-protocol does not overwrite it.
-;; Eastwood will give a :wrong-tag warning on m.
-
-(extend-protocol PGetElem
-  (Class/forName "[D")
-    (get-elem [m idx] (aget ^doubles m idx)))
-
-;; You will always get an Eastwood :wrong-tag warning if you use a
-;; run-time evaluated expression as a type in extend-protocol or
-;; extend-type.  You can suppress Eastwood's warning, or instead use
-;; the function extend.
-
-;; This is the only version that both (a) avoids reflection, and (b)
-;; Eastwood will not warn about.  It calls the function extend, and
-;; uses a correct type tag ^doubles on the first argument.  You could
-;; also put the type tag inside of the aget call if you prefer.
-
-(extend (Class/forName "[D")
- PGetElem
- {:get-elem
-  (fn ([^doubles m idx]
-    (aget m idx)))})
-```
-
-See Clojure ticket
-[CLJ-1308](http://dev.clojure.org/jira/browse/CLJ-1308).  Vote on it
-if you are interested in Clojure changing its implementation and/or
-make its documentation more explicit.
-
-
 ### `:unused-fn-args`
 
 #### Unused arguments of functions, macros, methods
@@ -1925,7 +1845,7 @@ you must explicitly enable it.  You can specify it in `:add-linters`
 on the command line or when invoked from a REPL.  To avoid specifying
 it each time when using Leiningen, you can merge a line like the
 following into your `project.clj` file or user-wide
-`~/.lein/profiles.clj` file.
+`$HOME/.lein/profiles.clj` file.
 
 ```clojure
 :eastwood {:add-linters [:unused-locals]}
@@ -1970,7 +1890,7 @@ the namespace.  Thus the namespace could be eliminated.
 Currently this linter also warns if the only place a namespace is used
 is inside of syntax-quoted expressions, as shown in the example below.
 Eastwood will unfortunately warn about `clojure.repl` being unused,
-even though it clearly is.  Issue
+even though it clearly is used by the reference to `repl/doc`.  Issue
 [#113](https://github.com/jonase/eastwood/issues/113) has been created
 to track this.
 
@@ -2136,7 +2056,7 @@ your local Maven repository:
 Then add `[jonase/eastwood "0.2.2-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
-`~/.lein/profiles.clj` file.
+`$HOME/.lein/profiles.clj` file.
 
 
 ## License
