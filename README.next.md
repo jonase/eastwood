@@ -2,7 +2,9 @@
 
 [![Dependencies Status](http://jarkeeper.com/jonase/eastwood/status.svg)](http://jarkeeper.com/jonase/eastwood)
 
-![](doc/Clint_Eastwood_-_1960s_medium.jpg)
+<div style="float: right">
+    <img src="doc/Clint_Eastwood_-_1960s_medium.jpg" alt="Picture of Clint Eastwood in 'A Fistful of Dollars'">
+</div>
 
 Eastwood is a Clojure
 [lint](http://en.wikipedia.org/wiki/Lint_%28software%29) tool that
