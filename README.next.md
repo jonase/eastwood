@@ -3,7 +3,7 @@
 [![Dependencies Status](http://jarkeeper.com/jonase/eastwood/status.svg)](http://jarkeeper.com/jonase/eastwood)
 
 <div>
-<img align="right" src="doc/Clint_Eastwood_-_1960s_medium.jpg" alt="Picture of Clint Eastwood in 'A Fistful of Dollars'" title="Clint Eastwood"/>
+<img align="right" src="doc/Clint_Eastwood_-_1960s_small.jpg" alt="Picture of Clint Eastwood in 'A Fistful of Dollars' (1964)" title="Clint Eastwood in 'A Fistful of Dollars' (1964)"/>
 
 Eastwood is a Clojure
 <a href="http://en.wikipedia.org/wiki/Lint_%28software%29">lint</a>
