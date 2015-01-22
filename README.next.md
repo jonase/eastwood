@@ -2,11 +2,8 @@
 
 [![Dependencies Status](http://jarkeeper.com/jonase/eastwood/status.svg)](http://jarkeeper.com/jonase/eastwood)
 
-<div style="float: right">
-    <img src="doc/Clint_Eastwood_-_1960s_medium.jpg" alt="Picture of Clint Eastwood in 'A Fistful of Dollars'" title="Clint Eastwood"/>
-</div>
-
-<div style="float: left">
+<div>
+<img align="right" src="doc/Clint_Eastwood_-_1960s_medium.jpg" alt="Picture of Clint Eastwood in 'A Fistful of Dollars'" title="Clint Eastwood"/>
 
 Eastwood is a Clojure
 <a href="http://en.wikipedia.org/wiki/Lint_%28software%29">lint</a>
@@ -18,7 +15,6 @@ libraries to inspect namespaces and report possible problems.  It has
 been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 alpha versions.  As
 of Eastwood version 0.2.0, it no longer supports Clojure 1.4.0 or
 earlier versions.
-
 </div>
 
 It supports only Clojure on Java, not ClojureScript or Clojure/CLR.
