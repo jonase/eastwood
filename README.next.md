@@ -2,7 +2,7 @@
 
 [![Dependencies Status](http://jarkeeper.com/jonase/eastwood/status.svg)](http://jarkeeper.com/jonase/eastwood)
 
-![](doc/Clint_Eastwood_-_1960s.JPG)
+![](doc/Clint_Eastwood_-_1960s_medium.JPG)
 
 Eastwood is a Clojure
 [lint](http://en.wikipedia.org/wiki/Lint_%28software%29) tool that
