@@ -6,6 +6,12 @@
  alt="Picture of Clint Eastwood in 'A Fistful of Dollars' (1964)" title="Clint Eastwood in 'A Fistful of Dollars' (1964)"
  align="right" />
 
+> "Now remember, things look bad and it looks like you're not gonna
+> make it, then you gotta get mean.  I mean plumb, mad-dog mean.
+> 'Cause if you lose your head and you give up then you neither live
+> nor win.  That's just the way it is."
+> - Josey Wales, played by Clint Eastwood in "The Outlaw Josey Wales"
+
 Eastwood is a Clojure
 [lint](http://en.wikipedia.org/wiki/Lint_%28software%29) tool that
 uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
