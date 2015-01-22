@@ -3,7 +3,7 @@
 [![Dependencies Status](http://jarkeeper.com/jonase/eastwood/status.svg)](http://jarkeeper.com/jonase/eastwood)
 
 <div style="float: right">
-    <img src="doc/Clint_Eastwood_-_1960s_medium.jpg" alt="Picture of Clint Eastwood in 'A Fistful of Dollars'">
+    <img src="doc/Clint_Eastwood_-_1960s_medium.jpg" alt="Picture of Clint Eastwood in 'A Fistful of Dollars'" title="Clint Eastwood"/>
 </div>
 
 Eastwood is a Clojure
