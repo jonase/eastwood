@@ -6,15 +6,20 @@
     <img src="doc/Clint_Eastwood_-_1960s_medium.jpg" alt="Picture of Clint Eastwood in 'A Fistful of Dollars'" title="Clint Eastwood"/>
 </div>
 
+<div style="float: left">
+
 Eastwood is a Clojure
-[lint](http://en.wikipedia.org/wiki/Lint_%28software%29) tool that
-uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
+<a href="http://en.wikipedia.org/wiki/Lint_%28software%29">lint</a>
+tool that uses the
+<a href="https://github.com/clojure/tools.analyzer">tools.analyzer</a>
 and
-[tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
+<a href="https://github.com/clojure/tools.analyzer.jvm">tools.analyzer.jvm</a>
 libraries to inspect namespaces and report possible problems.  It has
 been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 alpha versions.  As
 of Eastwood version 0.2.0, it no longer supports Clojure 1.4.0 or
 earlier versions.
+
+</div>
 
 It supports only Clojure on Java, not ClojureScript or Clojure/CLR.
 
