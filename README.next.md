@@ -48,7 +48,11 @@ If it is not obvious what a warning message means, _please_ check the
 next section, which has a `[more]` link for each type of warning.
 Most types of warning messages have a page or more of text describing
 the warning, why it occurs, and sometimes suggestions on what you can
-do about it.
+do about it.  Also note that there are several types of warnings
+marked as '(disabled)', meaning that by default no such warnings will
+be checked for.  You may wish to enable those for your project.  See
+the [Usage](#usage) section for options to enable or disable types of
+warnings for your entire project.
 
 See [Editor Support](#editor-support) below for instructions on using
 a text editor or IDE to quickly take you to the file, line, and column
@@ -320,7 +324,7 @@ value that is a list or vector of keywords, e.g.
 Starting with version 0.2.1, Eastwood `eval`s several config files in
 its internal resources.  You can see the latest versions
 [here](https://github.com/jonase/eastwood/tree/master/resource/eastwood/config).
-It also support command line options to change which of these files
+It also supports command line options to change which of these files
 are read, or to read user-written config files.
 
 Currently Eastwood supports config files that contain code to
