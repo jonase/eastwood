@@ -19,8 +19,7 @@
 
 (defn flatten-also-colls
   [x]
-  (filter (complement flattenable?)
-          (rest (tree-seq flattenable? seq x))))
+  (remove flattenable? (rest (tree-seq flattenable? seq x))))
 
 ;(defn debug-seq [x]
 ;  (when (some #{:end-line} (flatten-also-colls x))
@@ -901,8 +900,7 @@ warning, that contains the constant value."
            (map psig)
            ;;(map (fn [s] (println "dbg" (:form s)) s))
            (map-indexed (fn [idx m] (if m (assoc m :method-num idx))))
-           (remove #(nil? %))
-           ))))
+           (remove nil?)))))
 
 
 (defn fn-ast-with-pre-post [ast]
