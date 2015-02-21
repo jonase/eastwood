@@ -731,7 +731,7 @@ in `tools.analyzer`.
 With Eastwood 0.1.4 and earlier, the Clojure Contrib libraries
 [`data.fressian`](https://github.com/clojure/data.fressian) and
 [`test.generative`](https://github.com/clojure/test.generative) cannot
-be analyzed due to a known bug in `tools.analyer.jvm`:
+be analyzed due to a known bug in `tools.analyzer.jvm`:
 [TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24).  With
 Eastwood 0.1.5, `tools.analyzer.jvm` has been enhanced to enable
 Eastwood to issue warnings instead, which it does as part of the
