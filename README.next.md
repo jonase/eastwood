@@ -1460,7 +1460,7 @@ from Leiningen you can merge the following into your `project.Clj` or
 ```
 
 Starting with Eastwood version 0.2.1, the more surgical approach is to
-add expressions to a config file [config file](#eastwood-config-files)
+add expressions to a [config file](#eastwood-config-files)
 to disable these warnings, only when they occur within particular
 macro expansions.  Search those config files for `:constant-test` to
 find examples.
