@@ -32,3 +32,13 @@
   :within-depth 3
   :reason "when-some with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Configs to disable warnings in clojure.test, version 1.6.0
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'clojure.test/is}
+  :within-depth 1
+  :reason "The is macro commonly expands to contain an if with a condition that is a constant."})
