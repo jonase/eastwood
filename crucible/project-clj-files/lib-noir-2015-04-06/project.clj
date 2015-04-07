@@ -1,4 +1,4 @@
-(defproject lib-noir "0.9.5"
+(defproject lib-noir "0.9.8"
   :description "Libraries from Noir for your enjoyment."
   :url "https://github.com/noir-clojure/lib-noir"
   :license {:name "Eclipse Public License - v 1.0"
@@ -9,10 +9,10 @@
                  [ring/ring-defaults "0.1.2"]
                  [cheshire "5.4.0"]
                  [ring "1.3.2"]
-                 [compojure "1.3.1"]
-                 [clout "2.1.0"]
+                 [compojure "1.3.3"]
+                 [clout "2.1.1"]
                  [hiccup "1.0.5"]
-                 [ring-middleware-format "0.4.0"]
+                 [ring-middleware-format "0.5.0"]
                  [ring/ring-session-timeout "0.1.0"]
                  [clojurewerkz/scrypt "1.2.0"]]
   :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
