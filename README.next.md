@@ -1791,7 +1791,9 @@ However, the following examples cause Clojure to use the values of the
 functions `clojure.core/int`, `clojure.core/bytes`, and
 `clojure.core/boolean` as (incorrect) type tags.  They will not help
 Clojure avoid reflection in Java interop calls.  Clojure gives no
-errors or warnings for such type hints, but Eastwood will.
+errors or warnings for such type hints, but Eastwood will.  This
+happens because the Clojure compiler `eval`s metadata applied to a Var
+being `def`d, as documented [here](http://clojure.org/special_forms).
 
 ```clojure
 ;; Incorrect primitive/primitive-array type hints on Vars, for which
