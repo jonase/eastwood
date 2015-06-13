@@ -179,7 +179,6 @@ All in all, I hope you will find priority maps to be an easy-to-use and useful a
 to Clojure's assortment of built-in maps (hash-map and sorted-map).
 "}
     eastwood.copieddeps.dep5.clojure.data.priority-map
-  (:use clojure.test)
   (:import clojure.lang.MapEntry java.util.Map clojure.lang.PersistentTreeMap))
 
 ; Note that the plan is to eventually support subseq, but this will require
@@ -254,7 +253,10 @@ to Clojure's assortment of built-in maps (hash-map and sorted-map).
   (empty [this] (PersistentPriorityMap. (empty priority->set-of-items) {} _meta keyfn))
 
   ; cons defines conj behavior
-  (cons [this e] (let [[item priority] e] (.assoc this item priority)))
+  (cons [this e] 
+    (if (map? e)
+      (into this e)
+      (let [[item priority] e] (.assoc this item priority))))
 
   ; Like sorted maps, priority maps are equal to other maps provided
   ; their key-value pairs are the same.

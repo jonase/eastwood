@@ -4,10 +4,10 @@
   ;; This project.clj file has the same dependencies as Eastwood's project.clj file used to, before I copied in the source of many of those dependencies.
 
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/tools.analyzer "0.6.4"]
-                 [org.clojure/tools.analyzer.jvm "0.6.5"]
-                 [org.clojure/tools.namespace "0.2.7"]
-                 [org.clojure/tools.reader "0.8.13"]
+                 [org.clojure/tools.analyzer "0.6.6"]
+                 [org.clojure/tools.analyzer.jvm "0.6.7"]
+                 [org.clojure/tools.namespace "0.2.9"]
+                 [org.clojure/tools.reader "0.9.2"]
                  [leinjacker "0.4.1"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]]
   :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.2"]

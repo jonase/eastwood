@@ -35,7 +35,7 @@
   (get-line-number [reader]
     "Returns the line number of the next character to be read from the stream")
   (get-column-number [reader]
-    "Returns the line number of the next character to be read from the stream")
+    "Returns the column number of the next character to be read from the stream")
   (get-file-name [reader]
     "Returns the file name the reader is reading from, or nil"))
 
@@ -232,10 +232,10 @@ logging frames. Called when pushing a character back."
   (get-file-name [reader] file-name))
 
 (defn log-source*
-  [reader f unread?]
+  [reader f]
   (let [frame (.source-log-frames ^SourceLoggingPushbackReader reader)
         ^StringBuilder buffer (:buffer @frame)
-        new-frame (assoc-in @frame [:offset] (+ (.length buffer) (if unread? -1 0)))]
+        new-frame (assoc-in @frame [:offset] (.length buffer))]
     (with-bindings {frame new-frame}
       (let [ret (f)]
         (if (instance? clojure.lang.IMeta ret)
@@ -346,14 +346,11 @@ logging frames. Called when pushing a character back."
   [reader & body]
   `(if (and (source-logging-reader? ~reader)
             (not (whitespace? (peek-char ~reader))))
-     (log-source* ~reader (^{:once true} fn* [] ~@body) false)
+     (log-source* ~reader (^:once fn* [] ~@body))
      (do ~@body)))
 
-(defmacro log-source-unread
-  "If reader is a SourceLoggingPushbackReader, execute body in a source
-  logging context. Otherwise, execute body, returning the result."
-  [reader & body]
-  `(if (and (source-logging-reader? ~reader)
-            (not (whitespace? (peek-char ~reader))))
-     (log-source* ~reader (^{:once true} fn* [] ~@body) true)
-     (do ~@body)))
+(defn line-start?
+  "Returns true if rdr is an IndexingReader and the current char starts a new line"
+  [rdr]
+  (when (indexing-reader? rdr)
+    (== 1 (get-column-number rdr))))

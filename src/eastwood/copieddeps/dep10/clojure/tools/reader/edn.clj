@@ -140,9 +140,6 @@
              (reader-error rdr "Invalid character constant: \\u" (Integer/toString ic 16))
              c))
 
-         (.startsWith token "x")
-         (read-unicode-char token 1 2 16)
-
          (.startsWith token "o")
          (let [len (dec token-len)]
            (if (> len 3)
@@ -217,10 +214,6 @@
            (if (== -1 (Character/digit (int ch) 16))
              (reader-error rdr "Invalid unicode escape: \\u" ch)
              (read-unicode-char rdr ch 16 4 true)))
-      \x (let [ch (read-char rdr)]
-           (if (== -1 (Character/digit (int ch) 16))
-             (reader-error rdr "Invalid unicode escape: \\x" ch)
-             (read-unicode-char rdr ch 16 2 true)))
       (if (numeric? ch)
         (let [ch (read-unicode-char rdr ch 8 3 false)]
           (if (> (int ch) 0337)

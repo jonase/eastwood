@@ -96,7 +96,10 @@
     (let [result (print-and-return refresh-tracker)]
       (if (= :ok result)
         (if after-sym
-          ((ns-resolve *ns* after-sym))
+          (if-let [after (ns-resolve *ns* after-sym)]
+            (after)
+            (throw (Exception.
+                    (str "Cannot resolve :after symbol " after-sym))))
           result)
         ;; There was an error, recover as much as we can:
         (do (when-not (or (false? (::unload (meta *ns*)))

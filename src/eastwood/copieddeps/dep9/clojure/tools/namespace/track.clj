@@ -71,11 +71,15 @@
          deps ::deps
          :or {load (), unload (), deps (dep/graph)}} tracker
         new-deps (update-deps deps depmap)
-        changed (affected-namespaces new-deps (keys depmap))]
+        changed (affected-namespaces new-deps (keys depmap))
+        ;; With a new tracker, old dependencies are empty, so
+        ;; unload order will be undefined unless we use new
+        ;; dependencies (TNS-20).
+        old-deps (if (empty? (dep/nodes deps)) new-deps deps)]
     (assoc tracker
       ::deps new-deps
       ::unload (distinct
-               (concat (reverse (sort (dep/topo-comparator deps) changed))
+               (concat (reverse (sort (dep/topo-comparator old-deps) changed))
                        unload))
       ::load (distinct
              (concat (sort (dep/topo-comparator new-deps) changed)

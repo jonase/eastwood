@@ -45,7 +45,8 @@
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as readers]
 
             [eastwood.copieddeps.dep3.clojure.core.memoize :refer [memo-clear!]])
-  (:import (clojure.lang IObj RT Compiler Var)))
+  (:import (clojure.lang IObj RT Compiler Var)
+           java.net.URL))
 
 (def specials
   "Set of the special forms for clojure in the JVM"
@@ -297,6 +298,12 @@
       :interfaces interfaces
       :children   [:methods]})))
 
+(defn parse-opts+methods [methods]
+  (loop [opts {} methods methods]
+    (if (keyword? (first methods))
+      (recur (assoc opts (first methods) (second methods)) (nnext methods))
+      [opts methods])))
+
 (defn parse-deftype*
   [[_ name class-name fields _ interfaces & methods :as form] env]
   (let [interfaces (disj (set (mapv maybe-class interfaces)) Object)
@@ -316,6 +323,7 @@
                :context :ctx/expr
                :locals  (zipmap fields (map dissoc-env fields-expr))
                :this    class-name)
+        [opts methods] (parse-opts+methods methods)
         methods (mapv #(assoc (analyze-method-impls % menv) :interfaces interfaces)
                       methods)]
 
@@ -524,21 +532,34 @@
   ([ns env] (analyze-ns ns env {}))
   ([ns env opts]
      (env/ensure (global-env)
-       (let [res (ns-resource ns)]
+       (let [res ^URL (ns-url ns)]
          (assert res (str "Can't find " ns " in classpath"))
-         (let [filename (source-path res)
-               path (res-path res)]
+         (let [filename (str res)
+               path     (.getPath res)]
            (when-not (get-in (env/deref-env) [::analyzed-clj path])
-             (binding [*ns* *ns*]
+             (binding [*ns*   *ns*
+                       *file* filename]
                (with-open [rdr (io/reader res)]
                  (let [pbr (readers/indexing-push-back-reader
                             (java.io.PushbackReader. rdr) 1 filename)
-                       eof (Object.)]
+                       eof (Object.)
+                       opts {:eof :eofthrow :features #{:clj :t.a.jvm}}
+                       opts (if (.endsWith filename "cljc")
+                              (assoc opts :read-cond :allow)
+                              opts)]
                    (loop []
-                     (let [form (reader/read pbr nil eof)]
+                     (let [form (reader/read opts pbr)]
                        (when-not (identical? form eof)
                          (swap! *env* update-in [::analyzed-clj path]
                                 (fnil conj [])
                                 (analyze+eval form (assoc env :ns (ns-name *ns*)) opts))
                          (recur))))))))
            (get-in @*env* [::analyzed-clj path]))))))
+
+(defn macroexpand-all
+  "Like clojure.walk/macroexpand-all but correctly handles lexical scope"
+  ([form] (macroexpand-all form (empty-env) {}))
+  ([form env] (macroexpand-all form env {}))
+  ([form env opts]
+     (binding [run-passes emit-form]
+       (analyze form env opts))))

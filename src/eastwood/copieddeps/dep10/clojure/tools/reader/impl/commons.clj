@@ -11,7 +11,7 @@
   (:use eastwood.copieddeps.dep10.clojure.tools.reader.reader-types
         eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils)
   (:import (clojure.lang BigInt Numbers)
-           (java.util regex.Pattern regex.Matcher)
+           (java.util.regex Pattern Matcher)
            java.lang.reflect.Constructor))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -95,9 +95,12 @@
             (when (.matches ratio-matcher)
               (match-ratio ratio-matcher))))))))
 
-(defn parse-symbol [^String token]
+(defn parse-symbol
+  "Parses a string into a vector of the namespace and symbol"
+  [^String token]
   (when-not (or (= "" token)
-                (not= -1 (.indexOf token "::")))
+                (.endsWith token ":")
+                (.startsWith token "::"))
     (let [ns-idx (.indexOf token "/")]
       (if-let [ns (and (pos? ns-idx)
                        (subs token 0 ns-idx))]
@@ -106,6 +109,7 @@
             (let [sym (subs token ns-idx)]
               (when (and (not (numeric? (nth sym 0)))
                          (not (= "" sym))
+                         (not (.endsWith ns ":"))
                          (or (= sym "/")
                              (== -1 (.indexOf sym "/"))))
                 [ns sym]))))
@@ -125,20 +129,3 @@
   [msg]
   (fn [rdr & _]
     (reader-error rdr msg)))
-
-(defn read-regex
-  [rdr ch]
-  (let [sb (StringBuilder.)]
-    (loop [ch (read-char rdr)]
-      (if (identical? \" ch)
-        (Pattern/compile (str sb))
-        (if (nil? ch)
-          (reader-error rdr "EOF while reading regex")
-          (do
-            (.append sb ch )
-            (when (identical? \\ ch)
-              (let [ch (read-char rdr)]
-                (if (nil? ch)
-                  (reader-error rdr "EOF while reading regex"))
-                (.append sb ch)))
-            (recur (read-char rdr))))))))

@@ -60,7 +60,7 @@ available:
 
 ### Current dependencies of project deps
 
-As of December 18 2014:
+As of June 13 2015:
 
     % lein deps :tree
     warn
@@ -72,20 +72,22 @@ As of December 18 2014:
          [org.clojure/core.unify "0.5.3"]
      [org.clojars.brenton/google-diff-match-patch "0.1"]
      [org.clojure/clojure "1.6.0"]
-     [org.clojure/tools.analyzer.jvm "0.6.5"]
+     [org.clojure/tools.analyzer.jvm "0.6.7"]
        [org.clojure/core.memoize "0.5.6"]
          [org.clojure/core.cache "0.6.3"]
            [org.clojure/data.priority-map "0.0.2"]
        [org.ow2.asm/asm-all "4.2"]
-     [org.clojure/tools.analyzer "0.6.4"]
+     [org.clojure/tools.analyzer "0.6.6"]
      [org.clojure/tools.macro "0.1.2" :scope "test"]
-     [org.clojure/tools.namespace "0.2.7"]
+     [org.clojure/tools.namespace "0.2.9"]
      [org.clojure/tools.nrepl "0.2.6" :scope "test" :exclusions [[org.clojure/clojure]]]
-     [org.clojure/tools.reader "0.8.13"]
+     [org.clojure/tools.reader "0.9.2"]
 
     % lein ancient
+    [org.clojure/tools.namespace "0.2.10"] is available but we use "0.2.9"
     [leinjacker "0.4.2"] is available but we use "0.4.1"
     [org.clojure/tools.macro "0.1.5"] is available but we use "0.1.2"
+
     
 Latest versions of some transitive dependencies as of May 29 2014:
 
@@ -133,7 +135,7 @@ for details.
     (def dry-run {:dry-run? true :print? true})
     (def for-real {:dry-run? false :print? true})
 
-    (def e-root "/Users/jafinger/clj/andy-forks/eastwood")
+    (def e-root "/Users/jafinger/clj/eastwood/latest/eastwood")
     (def src-path (str e-root "/src"))
     (def staging-path (str e-root "/staging"))
 

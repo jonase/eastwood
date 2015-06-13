@@ -50,8 +50,8 @@
 
 (defmethod -emit-form :host-field
   [{:keys [target field]} opts]
-  (list (symbol (str ".-" (name field)))
-        (-emit-form* target opts)))
+  (list '. (-emit-form* target opts)
+        (symbol (str "-" (name field)))))
 
 (defmethod -emit-form :host-interop
   [{:keys [target m-or-f]} opts]
