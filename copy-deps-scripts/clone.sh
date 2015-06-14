@@ -56,6 +56,10 @@ cd tools.reader
 # Eastwood until and unless I explicity enable it.  If this does cause
 # a problem, try backing off to 0.8.16, the last 0.8.x release.
 git checkout tools.reader-0.9.2
+# Patch to eliminate one .endsWith call that uses reflection.  Has
+# been committed to tools.reader after release 0.9.2, but I don't want
+# all of those post-0.9.2 commits in Eastwood yet.
+patch -p1 < ../../trdr-27-fix-v1.patch
 cd ..
 
 git clone https://github.com/sattvik/leinjacker.git

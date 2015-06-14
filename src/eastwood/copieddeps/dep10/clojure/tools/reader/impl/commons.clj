@@ -102,8 +102,8 @@
                 (.endsWith token ":")
                 (.startsWith token "::"))
     (let [ns-idx (.indexOf token "/")]
-      (if-let [ns (and (pos? ns-idx)
-                       (subs token 0 ns-idx))]
+      (if-let [^String ns (and (pos? ns-idx)
+                               (subs token 0 ns-idx))]
         (let [ns-idx (inc ns-idx)]
           (when-not (== ns-idx (count token))
             (let [sym (subs token ns-idx)]
