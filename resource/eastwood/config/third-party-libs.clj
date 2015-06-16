@@ -65,9 +65,9 @@
 
 (disable-warning
  {:linter :constant-test
-  :if-inside-macroexpansion-of #{'taoensso.timbre.profiling/defnp 'taoensso.timbre.profiling/p}
+  :if-inside-macroexpansion-of #{'taoensso.timbre.profiling/defnp 'taoensso.timbre.profiling/p 'taoensso.timbre.profiling/profile}
   :within-depth 11
-  :reason "Timbre's defnp and p macros commonly expand to contain a check if the function name is a keyword, which is constant if file is a compile-time constant."})
+  :reason "Timbre's defnp, profile and p macros commonly expand to contain a check if the function name is a keyword, which is constant if file is a compile-time constant."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Configs to disable warnings in Korma, version 0.4.0
