@@ -63,6 +63,12 @@
   :within-depth 11
   :reason "Timbre's logf and log macros commonly expand to contain a when with condition of (not= file \"NO_SOURCE_PATH\"), which is constant if file is a compile-time constant."})
 
+(disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'taoensso.timbre.profiling/defnp 'taoensso.timbre.profiling/p}
+  :within-depth 11
+  :reason "Timbre's defnp and p macros commonly expand to contain a check if the function name is a keyword, which is constant if file is a compile-time constant."})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Configs to disable warnings in Korma, version 0.4.0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -84,7 +90,7 @@
 ;; The definitions of these macros are identical to select, except for
 ;; the var given as the first argument:
 
-;; update, delete, insert, union, union-all, intersect, 
+;; update, delete, insert, union, union-all, intersect,
 
 ;; defentity has -> in its own definition, where if the body is empty
 ;; it is a 'trivial' (-> x) form that would normally be warned about.
