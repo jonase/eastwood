@@ -40,6 +40,21 @@
 (defn levenshtein [s1 s2]
   (.diff_levenshtein dmp (.diff_main dmp s1 s2)))
 
+(defn keywords-very-similar?
+  "Check for the special case of two names differing only by one of
+  them being equal to \"_\" followed by the other name.  Apparently
+  this is somewhat common for keywords names when interacting with
+  Datomic."
+  [name-str1 name-str2]
+  (let [l1 (count name-str1)
+        l2 (count name-str2)
+        [^String n1 l1 ^String n2 l2] (if (< l2 l1)
+                                        [name-str2 l2 name-str1 l1]
+                                        [name-str1 l1 name-str2 l2])]
+    (and (== l2 (inc l1))
+         (.startsWith n2 "_")
+         (.endsWith n2 n1))))
+
 ;; Note: Walking the asts and looking for keywords also finds keywords
 ;; from macro expansions, ones that the developer never typed in their
 ;; code.  Better to use the forms to stay closer to the source code
@@ -86,6 +101,7 @@
                 s2 (name kw2)]
           :when (and (= n 1)
                      (not= s1 s2)
+                     (not (keywords-very-similar? s1 s2))
                      (< 3 (count s1))
                      (< (levenshtein s1 s2) 2))]
       {:linter :keyword-typos
