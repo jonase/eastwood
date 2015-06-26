@@ -4,11 +4,7 @@
 
 (defn middleware
   [project]
-  (let [opts (:eastwood project)]
-    (leval/eval-in-project 
-      project
-      (intern
-        'eastwood.config
-        'options
-        opts))
-  project))
+  (let [opts (or (:eastwood project) {})]
+    (update-in project [:injections] concat
+               `[(require 'eastwood.config)
+                 (intern 'eastwood.config '~'options ~opts)])))
