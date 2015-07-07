@@ -554,7 +554,7 @@ The warnings tend to be longer than one screen width.  You can use
 previous.  See the Vim documentation for more details,
 e.g. [here](http://vimdoc.sourceforge.net/htmldoc/quickfix.html).
 
-If you have [Syntastic](https://github.com/scrooloose/syntastic) and 
+If you have [Syntastic](https://github.com/scrooloose/syntastic) and
 [vim-fireplace](https://github.com/tpope/vim-fireplace/) installed,
 you can use [vim-eastwood](https://github.com/venantius/vim-eastwood)
 to automatically run Eastwood on the namespace in your current buffer.
@@ -1153,7 +1153,7 @@ to some other thing used purely for documentation purposes.
 It is true that even Clojure itself does not conform to this
 restriction.  For example, the arglists of `defn`, `defmacro`, and
 several other macros override `:arglists` for purposes of clearer
-documentation.  However, all but these few exceptional macros 
+documentation.  However, all but these few exceptional macros
 
 Other facts supporting this belief are:
 
@@ -1382,7 +1382,7 @@ macro expansions.  Search those config files for `:constant-test` to
 find examples.
 
 It is common across Clojure projects tested to use `:else` as the last
-'always do this case` at the end of a `cond` form.  It is also fairly
+`always do this case` at the end of a `cond` form.  It is also fairly
 common to use `true` or `:default` for this purpose, and Eastwood will
 not warn about these.  If you use some other constant in that
 position, Eastwood will warn.
