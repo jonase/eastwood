@@ -10,9 +10,12 @@ and
 libraries to inspect namespaces and report possible problems.
 
 It has been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 (the new
-`.cljc` files are _not_ linted yet -- their contents are ignored).  As
-of Eastwood version 0.2.0, it no longer supports Clojure 1.4.0 or
-earlier versions.
+`.cljc` files are _not_ linted yet -- their contents are ignored).  It
+has been tried with some of the Clojure 1.8.0-alpha versions, but
+there are known problems there (e.g. incorrect warning about misplaced
+docstrings, perhaps incorrect warnings about wrong tags, etc.).  As of
+Eastwood version 0.2.0, it no longer supports Clojure 1.4.0 or earlier
+versions.
 
 It supports only Clojure on Java, not ClojureScript or Clojure/CLR.
 
