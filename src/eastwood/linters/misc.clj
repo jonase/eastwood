@@ -92,9 +92,9 @@
 ;; Misplaced docstring
 
 (defn- misplaced-docstring? [expr]
-  (when (= :fn (-> expr :init :op))
+  (if-let [fn-ast (util/get-fn-in-def expr)]
     (some true?
-          (for [method (-> expr :init :methods)
+          (for [method (-> fn-ast :methods)
                 :let [body (:body method)]
                 :when (and (= :do (:op body))
                            (>= (count (-> body :statements)) 1))

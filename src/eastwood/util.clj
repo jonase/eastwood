@@ -13,6 +13,29 @@
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rdr-types]))
 
 
+;; Before Clojure 1.8.0, an :op :def node resulting from a defn form would
+;; have its :init value equal to an AST node with :op :fn
+
+;; Clojure 1.8.0 changed things so that often (always?) the :op :def
+;; node has an :init value being an AST node with :op :with-meta, and
+;; _that_ AST node has an :expr key whose value is the AST node
+;; with :op :fn.
+
+;; Handle both of those cases here.
+
+;; Commit that leads to different behavior with Clojure 1.8.0:
+;; https://github.com/clojure/clojure/commit/309c03055b06525c275b278542c881019424760e
+
+(defn get-fn-in-def [expr]
+  (let [init (:init expr)]
+    (case (:op init)
+      :fn init
+      :with-meta (let [init-expr (:expr init)]
+                   (if (= :fn (:op init-expr))
+                     init-expr
+                     nil))
+      nil)))
+
 ;; Copied from clojure.repl/pst then modified to 'print' using a
 ;; callback function, and to use depth nil to print all stack frames.
 
