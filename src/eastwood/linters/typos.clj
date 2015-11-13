@@ -920,9 +920,17 @@ warning, that contains the constant value."
 
 
 (defn fn-ast-with-pre-post [ast]
-  (when (= :fn (:op ast))
+  ;; Starting in Clojure 1.8.0, the :op :fn AST is usually not the one
+  ;; to have the macroexpansion from clojure.core/fn to
+  ;; clojure.core/fn*.  Instead it is its parent AST, which
+  ;; has :op :with-meta.  fn-form-with-pre-post should have all the
+  ;; needed checks on the node to determine whether a
+  ;; particular :op :with-meta AST node contains preconditions or not.
+  (when (#{:fn :with-meta} (:op ast))
 ;;    (println (format "dbg6: Found :op :fn node with :raw-forms"))
 ;;    (pp/pprint (:raw-forms ast))
+;;    (println (format "     Cleaned ast:"))
+;;    (util/pprint-ast-node ast)
 ;;    (println (format "     Found pre-postconditions:"))
 ;;    (pp/pprint (mapcat #(map (juxt :pre :post) (fn-form-with-pre-post % ast))
 ;;                       (:raw-forms ast)))
