@@ -927,7 +927,7 @@ warning, that contains the constant value."
   ;; needed checks on the node to determine whether a
   ;; particular :op :with-meta AST node contains preconditions or not.
   (when (#{:fn :with-meta} (:op ast))
-;;    (println (format "dbg6: Found :op :fn node with :raw-forms"))
+;;    (println (format "dbg6: Found :op %s node with :raw-forms" (:op ast)))
 ;;    (pp/pprint (:raw-forms ast))
 ;;    (println (format "     Cleaned ast:"))
 ;;    (util/pprint-ast-node ast)
@@ -938,12 +938,23 @@ warning, that contains the constant value."
                  (:raw-forms ast)))))
 
 
+(defn get-do-body-from-fn-or-with-meta-ast [fn-or-with-meta-ast method-num]
+  (case (:op fn-or-with-meta-ast)
+    :fn (util/get-in-ast fn-or-with-meta-ast
+                         [[[:methods method-num] :fn-method]
+                          [[:body] :do]])
+    :with-meta (util/get-in-ast fn-or-with-meta-ast
+                                [[[:expr] :fn]
+                                 [[:methods method-num] :fn-method]
+                                 [[:body] :do]])))
+
+
 (defn ast-of-condition-test
   [kind fn-ast method-num condition-idx condition-form]
   (let [{do-body-ast :ast, s :stop-reason}
-        (util/get-in-ast fn-ast
-                         [[[:methods method-num] :fn-method]
-                          [[:body] :do]])]
+        (get-do-body-from-fn-or-with-meta-ast fn-ast method-num)]
+;;    (println (format "dbg ast-of-condition-test s=%s ast:" s))
+;;    (util/pprint-ast-node do-body-ast)
     (assert (nil? s))
     (let [matching-assert-asts
           (filter (fn [ast]
@@ -975,6 +986,10 @@ warning, that contains the constant value."
 
 (defn wrong-pre-post-messages [kind conditions method-num ast
                                condition-desc-begin condition-desc-middle]
+;;  (println (format "dbg wrong-pre-post-messages: kind=%s method-num=%s conditions=%s (vector? conditions)=%s (class conditions)=%s"
+;;                   kind method-num conditions
+;;                   (vector? conditions)
+;;                   (class conditions)))
   (if (not (vector? conditions))
     [(format "All function %s should be in a vector.  Found: %s"
             condition-desc-middle (pr-str conditions))]

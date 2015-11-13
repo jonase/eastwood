@@ -7,7 +7,9 @@
   :global-vars {*warn-on-reflection* true
                 ;;*unchecked-math* :warn-on-boxed
                }
-  :dependencies [[org.clojure/clojure "1.8.0-RC1"]
+  :dependencies [
+                 ;[org.clojure/clojure "1.7.0"]
+                 [org.clojure/clojure "1.8.0-RC1"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
                  [org.ow2.asm/asm-all "4.2"]]
   :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.2"]
