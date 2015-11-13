@@ -69,6 +69,14 @@ significance needed by the user."
                          (#{:local :quote} op))
                     [nil nil nil]
 
+                    ;; This started appearing with Clojure 1.8.0 due
+                    ;; to the :rettag changes.  See
+                    ;; eastwood.util/get-fn-in-def for some more
+                    ;; details of this change.
+                    (and (= wrong-tag-keys #{:eastwood/return-tag})
+                         (#{:with-meta} op))
+                    [nil nil nil]
+
                     (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
                          (= op :invoke))
                     [:invoke (-> ast :tag) (meta form)]
