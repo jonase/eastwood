@@ -19,4 +19,5 @@
                         [criterium "0.4.3"]
                         [javax.servlet/servlet-api "2.5"]]}
    :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
-   :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}})
+   :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
+   :1.8 {:dependencies [[org.clojure/clojure "1.8.0-master-SNAPSHOT"]]}})

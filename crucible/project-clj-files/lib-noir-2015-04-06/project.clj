@@ -16,7 +16,8 @@
                  [ring/ring-session-timeout "0.1.0"]
                  [clojurewerkz/scrypt "1.2.0"]]
   :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
-             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
+             :1.8 {:dependencies [[org.clojure/clojure "1.8.0-master-SNAPSHOT"]]}}
   :plugins [[codox "0.8.10"]
             [lein-ancient "0.5.5"]]
   :codox {:output-dir "doc"})

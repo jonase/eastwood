@@ -7,7 +7,8 @@
                                   [criterium "0.4.3"]
                                   [collection-check "0.1.3"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
-             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]]}}
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
+             :1.8 {:dependencies [[org.clojure/clojure "1.8.0-master-SNAPSHOT"]]}}
   :global-vars {*warn-on-reflection* true}
   :test-selectors {:default #(not (some #{:benchmark}
                                         (cons (:tag %) (keys %))))

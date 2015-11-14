@@ -25,6 +25,9 @@
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]
                                   [collection-check "0.1.1"]]
                    :test-paths ["src/test_local/clojure"]}
-             :1.7 {:dependencies [[org.clojure/clojure "1.7.0-master-SNAPSHOT"]
+             :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]
+                                  [collection-check "0.1.1"]]
+                   :test-paths ["src/test_local/clojure"]}
+             :1.8 {:dependencies [[org.clojure/clojure "1.8.0-master-SNAPSHOT"]
                                   [collection-check "0.1.1"]]
                    :test-paths ["src/test_local/clojure"]}})
