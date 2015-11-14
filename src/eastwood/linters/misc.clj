@@ -487,6 +487,126 @@
 
 ;; Bad :arglists
 
+;; Function names below are defined in namespace testcases.arglists
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Places on :op :def AST node to find :arglists keyword with various
+;; values.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Function fn-with-arglists1, Clojure 1.6.0:
+
+;; where to find '([name expr]):
+;; somewhere in :raw-forms
+;; (get-in ast [:meta :form :arglists])
+;; (get-in ast [:meta :val :arglists])
+;; (get-in ast [:arglists])
+
+;; where to find '([name]):
+;; (get-in ast [:init :arglists])
+
+;; where to find :params [{... :form name ...}]
+;; (get-in ast [:init :methods 0 :params])
+
+
+;; Function fn-with-arglists1, Clojure 1.8.0-RC1:
+
+;; where to find '([name expr]):
+;; (get-in ast [:meta :form :arglists])
+;; (get-in ast [:meta :val :arglists])
+;; (get-in ast [:arglists])
+
+;; where to find '([name]):
+
+;; (get-in ast [:init :expr :arglists])
+;; (get-in ast [:init :arglists])
+
+;; where to find :params [{... :form name ...}]
+;; (get-in ast [:init :expr :methods 0 :params])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Function fn-with-arglists3, Clojure 1.6.0:
+
+;; where to find '([x y] [x y z w]):
+;; somewhere in :raw-forms
+;; (get-in ast [:meta :form :arglists])
+;; (get-in ast [:meta :val :arglists])
+;; (get-in ast [:arglists])
+
+;; where to find '([a1] [a1 a2 a3]):
+;; (get-in ast [:init :arglists])
+
+;; where to find :params [{... :form a1 ...}]
+;; (get-in ast [:init :methods 0 :params])
+
+;; where to find :params [{... :form a1 ...} {... a2 ...} {... a3 ...}]
+;; (get-in ast [:init :methods 1 :params])
+
+
+;; Function fn-with-arglists3, Clojure 1.8.0-RC1:
+
+;; where to find '([x y] [x y z w]):
+;; somewhere in :raw-forms
+;; (get-in ast [:meta :form :arglists])
+;; (get-in ast [:meta :val :arglists])
+;; (get-in ast [:arglists])
+
+;; where to find '([a1] [a1 a2 a3]):
+;; (get-in ast [:init :expr :arglists])
+;; (get-in ast [:init :arglists])
+
+;; where to find :params [{... :form a1 ...}]
+;; (get-in ast [:init :expr :methods 0 :params])
+
+;; where to find :params [{... :form a1 ...} {... a2 ...} {... a3 ...}]
+;; (get-in ast [:init :expr :methods 1 :params])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Function fn-no-arglists3, Clojure 1.6.0:
+
+;; (-> ast :init :op) is :fn
+
+;; where to find '([x y] [x y z w]):
+;; NOWHERE in :raw-forms
+;; (get-in ast [:meta :form :arglists])
+;; (get-in ast [:meta :val :arglists])
+;; (get-in ast [:arglists])
+
+;; where to find '([a1] [a1 a2 a3]):
+;; (get-in ast [:init :arglists])
+
+;; where to find :params [{... :form a1 ...}]
+;; (get-in ast [:init :methods 0 :params])
+
+;; where to find :params [{... :form a1 ...} {... a2 ...} {... a3 ...}]
+;; (get-in ast [:init :methods 1 :params])
+
+
+;; Function fn-no-arglists3, Clojure 1.8.0-RC1:
+
+;; (-> ast :init :op) is :with-meta
+;; (-> ast :init :expr :op) is :fn
+
+;; where to find '([a1] [a1 a2 a3]):
+;; NOWHERE in :raw-forms
+;; (get-in ast [:meta :form :arglists])
+;; (get-in ast [:meta :val :arglists])
+;; (get-in ast [:arglists])
+
+;; where to find '([a1] [a1 a2 a3]):
+;; (get-in ast [:init :expr :arglists])
+;; (get-in ast [:init :arglists])
+
+;; where to find :params [{... :form a1 ...}]
+;; (get-in ast [:init :expr :methods 0 :params])
+
+;; where to find :params [{... :form a1 ...} {... a2 ...} {... a3 ...}]
+;; (get-in ast [:init :expr :methods 1 :params])
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 ;; TBD: Try to make this *not* warn for macros with custom :arglists,
 ;; but only for non-macro functions.  Perhaps even better, separate
 ;; linter names for each type of warning.
@@ -526,11 +646,14 @@
                          (filter (fn [a]
                                    (and (= :def (:op a))
                                         (not (-> a :name meta :declared true?))
-                                        (= :fn (-> a :init :op))))))]
+                                        (or (= :fn (-> a :init :op))
+                                            ;; this case handles
+                                            ;; Clojure 1.8.0-RC1
+                                            (= :fn (-> a :init :expr :op)))))))]
     (apply concat
      (for [a def-fn-asts]
        (let [macro? (-> a :var meta :macro)
-             fn-arglists (-> a :arglists)
+             fn-arglists (-> a :init :arglists)
              macro-args? (or (not macro?)
                              (every? #(= '(&form &env) (take 2 %)) fn-arglists))
              meta-arglists (cond (contains? (-> a :meta :val) :arglists)
@@ -547,6 +670,14 @@
                            fn-arglists)
              fn-sigs (all-sigs fn-arglists)
              meta-sigs (all-sigs meta-arglists)
+;;             _ (do
+;;                 (println (format "dbg bad-arglists (:name a)=%s:" (:name a)))
+;;                 ;;(util/pprint-ast-node a)
+;;                 (println (format "    (:name a)=%s" (:name a)))
+;;                 (println (format "    fn-arglists: %s" fn-arglists))
+;;                 (println (format "    fn-sigs: %s" fn-sigs))
+;;                 (println (format "    meta-arglists: %s" meta-arglists))
+;;                 (println (format "    meta-sigs: %s" meta-sigs)))
              loc (-> a var-of-ast meta)]
          (if (and (not (nil? meta-arglists))
                   (not= fn-sigs meta-sigs))
