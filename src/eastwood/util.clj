@@ -358,9 +358,9 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
 
 ;; TBD: pprint-meta-elided does not elide metadata that is on the keys
 ;; or values inside of other metadata maps.  Such metadata does occur
-;; in output of tools.reader, e.g. when metadta is in the source code,
-;; symbols inside the metadata map keys/vals have metadata maps with
-;; :line :column etc. info.
+;; in output of tools.reader, e.g. when metadata is in the source
+;; code, symbols inside the metadata map keys/vals have metadata
+;; maps with :line :column etc. info.
 
 (defn pprint-meta-elided [form]
   (binding [*print-meta* true
