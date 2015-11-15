@@ -2,6 +2,16 @@
 
 [![Dependencies Status](http://jarkeeper.com/jonase/eastwood/status.svg)](http://jarkeeper.com/jonase/eastwood)
 
+<img src="doc/Clint_Eastwood_-_1960s_small.jpg"
+ alt="Picture of Clint Eastwood in 'A Fistful of Dollars' (1964)" title="Clint Eastwood in 'A Fistful of Dollars' (1964)"
+ align="right" />
+
+> "Now remember, things look bad and it looks like you're not gonna
+> make it, then you gotta get mean.  I mean plumb, mad-dog mean.
+> 'Cause if you lose your head and you give up then you neither live
+> nor win.  That's just the way it is."
+> - Josey Wales, played by Clint Eastwood in "The Outlaw Josey Wales"
+
 Eastwood is a Clojure
 [lint](http://en.wikipedia.org/wiki/Lint_%28software%29) tool that
 uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
@@ -9,15 +19,26 @@ and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.
 
-It has been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 (the new
-`.cljc` files are _not_ linted yet -- their contents are ignored).  It
-has been tried with some of the Clojure 1.8.0-alpha versions, but
-there are known problems there (e.g. incorrect warning about misplaced
-docstrings, perhaps incorrect warnings about wrong tags, etc.).  As of
-Eastwood version 0.2.0, it no longer supports Clojure 1.4.0 or earlier
-versions.
+Clojure version compatibility:
 
-It supports only Clojure on Java, not ClojureScript or Clojure/CLR.
+* Eastwood supports only Clojure on Java, not ClojureScript or
+  Clojure/CLR.
+
+* Clojure 1.8.0-RC1 - Use Eastwood 0.2.2 or later.  There are known
+  problems using Eastwood 0.2.1 and earlier with Clojure 1.8.0.
+
+* Clojure 1.6.0 or 1.7.0 - Many versions of Eastwood have been tested
+  with these, up through Eastwood 0.2.2.
+
+* Clojure 1.5.1 - There may be some issues with Eastwood 0.2.2.
+  Consider using Eastwood 0.2.1 or earlier if you need Clojure 1.5.1,
+  or adding any problems you come across with Eastwood 0.2.2 to [issue
+  #174](https://github.com/jonase/eastwood/issues/174).
+
+* Clojure 1.4.0 - Use Eastwood 0.1.5 or earlier.
+
+The `.cljc` files introduced in Clojure 1.7.0 are _not_ linted yet.
+Their contents are ignored.
 
 
 ## Installation & Quick usage
@@ -121,6 +142,7 @@ enabled by default unless they have '(disabled)' after their name.
 | `:unused-ret-vals` and `:unused-ret-vals-in-try` | Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value. | [[more]](#unused-ret-vals) |
 | `:wrong-arity` | Function calls that seem to have the wrong number of arguments. | [[more]](#wrong-arity) |
 | `:wrong-ns-form` | ns forms containing incorrect syntax or options (added 0.2.1). | [[more]](#wrong-ns-form) |
+| `:wrong-pre-post` | function has preconditions or postconditions that are likely incorrect (added 0.2.2). | [[more]](#wrong-pre-post) |
 | `:wrong-tag` | An incorrect type tag for which the Clojure compiler does not give an error (added 0.1.5). | [[more]](#wrong-tag) |
 
 The following table gives some additional detail about each linter.
@@ -161,6 +183,7 @@ linter can be selectively disabled via Eastwood config files.  See
 | `:unused-ret-vals` and `:unused-ret-vals-in-try` | yes | yes |
 | `:wrong-arity`           | yes | yes |
 | `:wrong-ns-form`         |  |  |
+| `:wrong-pre-post`        |  |  |
 | `:wrong-tag`             |  |  |
 
 
@@ -310,8 +333,9 @@ value that is a list or vector of keywords, e.g.
 * `:progress` - show a brief debug message after each top-level form
   is read
 * `:compare-forms` - print all forms as read to a file
-  `forms-read.txt`, and all forms after being read, analyzed into an
-  AST, and converted back into a form from the AST, to a file
+  `forms-read.txt`, all forms after being analyzed to a file
+  `forms-analyzed.txt`, and all forms after being read, analyzed into
+  an AST, and converted back into a form from the AST, to a file
   `forms-emitted.txt`.
 * `:ns` - print the initial set of namespaces loaded into the Clojure
   run-time at the beginning of each file being linted.  (TBD: it used
@@ -1127,7 +1151,8 @@ via metadata.
 
 #### Function/macro `:arglists` metadata that does not match the number of args it is defined with
 
-New in Eastwood version 0.1.1
+New in Eastwood version 0.1.1.  Significant bug fixes made in version
+0.2.2.
 
 Clearly this linter needs to be better documented.
 
@@ -1226,6 +1251,77 @@ No warning is given if a prefix list is contained within a vector.
 Clojure processes prefix lists in vectors, and `tools.namespace`
 recognizes them as dependencies as Clojure does.  It is also somewhat
 common in the many Clojure projects on which Eastwood is tested.
+
+
+### `:wrong-pre-post`
+
+#### function has preconditions or postconditions that are likely incorrect
+
+New in Eastwood version 0.2.2
+
+Preconditions and postconditions that throw exceptions if they are
+false can be specified for any Clojure function by putting a map after
+the function's argument vector, with the key `:pre` for preconditions,
+or `:post` for postconditions, or both.  The value of these keys
+should be a vector of expressions to evaluate, all of which are
+evaluated at run time when the function is called.  For example:
+
+```clojure
+(defn square-root [x]
+  {:pre [(>= x 0)]}
+  (Math/sqrt x))
+
+;; AssertionError exception thrown when called with negative number
+user=> (square-root -5)
+
+AssertionError Assert failed: (>= x 0)  user/square-root (file.clj:38)
+```
+
+It is an easy mistake to forget that the conditions should be a vector
+of expressions, and to give one expression instead:
+
+```clojure
+(defn square-root [x]
+  {:pre (>= x 0)}     ; should be [(>= x 0)] like above
+  (Math/sqrt x))
+
+;; No exception when called with negative number!
+user=> (square-root -5)
+NaN
+```
+
+In this case, Clojure does not give any error or warning when defining
+`square-root`.  It treats the precondition as three separate assertion
+expressions: `>=`, `x`, and `0`, each evaluated independently when the
+function is called.  Every value in Clojure is logical true except
+`nil` and `false`, so unless you call `square-root` with an argument
+equal to one of those values, all three of those expressions evaluate
+to logical true, and no exceptions are thrown.
+
+The `:warn-pre-post` linter will warn about any precondition or
+postcondition that is not enclosed in a vector.  Even if you do
+enclose it in a vector, the linter will check whether any of the
+conditions appear to be values that are always logical true or always
+logical false.  For example:
+
+```clojure
+(defn non-neg? [x]
+  (>= x 0))
+
+(defn square-root [x]
+  {:pre [non-neg?]}     ; [(non-neg? x)] would be correct
+  (Math/sqrt x))
+
+;; No exception when called with negative number!
+user=> (square-root -5)
+NaN
+```
+
+Here Clojure also gives no warning or error.  The assert expression it
+evaluates is the value of `non-neg?` -- not the value when you call
+`non-neg?` with the argument `x`, but the value of the Var `non-neg?`.
+That value is a function, and neither `nil` nor `false`, so logical
+true.
 
 
 ### `:suspicious-test`
