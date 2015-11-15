@@ -32,8 +32,8 @@ Clojure version compatibility:
 
 * Clojure 1.5.1 - There may be some issues with Eastwood 0.2.2.
   Consider using Eastwood 0.2.1 or earlier if you need Clojure 1.5.1,
-  or adding any problems you come across with Eastwood 0.2.2 to [issue
-  #174](https://github.com/jonase/eastwood/issues/174).
+  or adding any problems you come across with Eastwood 0.2.2 to
+  [issue #174](https://github.com/jonase/eastwood/issues/174).
 
 * Clojure 1.4.0 - Use Eastwood 0.1.5 or earlier.
 
