@@ -52,7 +52,7 @@ versions 2.4.x and 2.5.x.  Merge the following into your
 `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.1"]] }}
+{:user {:plugins [[jonase/eastwood "0.2.2"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
