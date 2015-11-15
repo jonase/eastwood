@@ -7,6 +7,71 @@
   [#21](https://github.com/jonase/eastwood/issues/21).
 
 
+## Changes from version 0.2.1 to 0.2.2
+
+There are potentially issues with using Eastwood 0.2.2 with Clojure
+1.5.1.  I have created an issue to track this.  Issue
+[#174](https://github.com/jonase/eastwood/issues/174).
+
+New linter:
+
+* New linter `:wrong-pre-post` that warns about several kinds of wrong
+  or suspicious preconditions or postconditions in a function.
+  [link](https://github.com/jonase/eastwood#keyword-typos).  Issue
+  [#89](https://github.com/jonase/eastwood/issues/89).
+
+
+Other enhancements and bug fixes:
+
+* Updates to support Clojure 1.8.0-RC1.
+
+* Picture of Clint Eastwood in the README.
+
+* Warn when a record field and function name are identical.  This was
+  actually implemented in an earlier version of Eastwood, but I did
+  not notice that until now.  Issue
+  [#55](https://github.com/jonase/eastwood/issues/55).
+
+* Change keyword-typos linter so that it no longer warns if the only
+  difference between two keywords is the presence or absence of an
+  initial underscore character.  Issue
+  [#163](https://github.com/jonase/eastwood/issues/163).
+
+* If you use the APIs to invoke Eastwood that return a map of info
+  about each warning, there is a new :warning-details-url key that
+  gives a link to the Eastwood documentation giving more detail about
+  each type of warning.  Issue
+  [#105](https://github.com/jonase/eastwood/issues/105).
+
+* Eliminate exception thrown when linting byte-streams library.  Issue
+  [#120](https://github.com/jonase/eastwood/issues/120).
+
+* Disable unused-ret-vals warnings inside Potemkin's import-vars
+  macro.  Issue [#135](https://github.com/jonase/eastwood/issues/135).
+
+
+Internal enhancements:
+
+* Correct the output put into debug file forms-emitted.txt.  Issue
+  [#136](https://github.com/jonase/eastwood/issues/136).
+
+* Updated versions of tools.analyzer, tools.analyzer.jvm and several
+  other libraries used by Eastwood.  The current version of these
+  should always be visible in the file
+  [clone.sh](https://github.com/jonase/eastwood/blob/master/copy-deps-scripts/clone.sh)
+
+
+There were changes in the way the 'defn' macro was implemented in
+Clojure 1.8.0-RC1 that caused the tools.analyzer ASTs (abstract syntax
+trees) to differ when analyzing Clojure code.  Eastwood 0.2.1 and
+earlier did not gracefully handle those changes, causing the warnings
+issued for the same Clojure project to differ significantly when using
+Clojure 1.8.0-RC1 instead of an earlier version of Clojure, most
+noticeably for misplaced doc strings and wrong tag warnings.
+Hopefully all of these issues have been eliminated with Eastwood
+0.2.2.
+
+
 ## Changes from version 0.2.0 to 0.2.1
 
 If you use Emacs+Cider or Eclipse+Counterclockwise development
