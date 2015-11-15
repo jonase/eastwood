@@ -4,8 +4,7 @@
             :url "http://opensource.org/licenses/MIT"}
   :dependencies [[rhizome "0.2.1"]
                  [primitive-math "0.1.4"]
-                 [potemkin "0.3.9"]
-                 [riddley "0.1.7"]
+                 [potemkin "0.4.1"]
                  [proteus "0.1.4"]]
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.6.0"]
                                   [org.clojure/test.check "0.5.9"]
