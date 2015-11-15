@@ -32,7 +32,24 @@ cause that to happen, use:
 
     % git push origin --tags
 
-Then ask Jonas Enlund to create the release to Clojars.org
+----------------------------------------------------------------------
+Then release to Clojars.org
+
+Instructions to deploy to Clojars, used with Eastwood 0.2.2 and
+Leiningen 2.5.3:
+
+    % lein clean
+    % lein deploy clojars
+
+Username 'jafingerhut' and password for 'Clojars' in my password
+database.  I had Clojure 1.6.0 as the version of Clojure in Eastwood's
+project.clj when I did this.  I believe that if you do a 'lein
+install' on Eastwood with Clojure 1.8.0-RC1 as the version of Clojure,
+and then try to run Eastwood on a project that uses an earlier version
+of Clojure, you get an error message about Tuple not being defined.
+This is probably an AOT issue, combined with Clojure 1.8.0-RC1
+introducing new Java classes.
+----------------------------------------------------------------------
 
 
 When that is complete, then pick the next version number, at least a
