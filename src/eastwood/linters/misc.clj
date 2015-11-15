@@ -402,15 +402,57 @@
       -1
       (compare (first kind1) (first kind2)))))
 
-(defn all-sigs [arglists]
-  (->> arglists
-       (map argvec-kind)
-       (sort cmp-argvec-kinds)
-       (mapcat (fn [kind]
-                 (if (= '>= (first kind))
-                   [(second kind) :or-more]
-                   [(first kind)])))
-       vec))
+
+(defn signature-union [arglists]
+  (let [kinds (group-by #(= '>= (first %))
+                        (map argvec-kind arglists))
+        ;; If there are multiple 'N args or more', keep only the one
+        ;; with smallest N, since it is the most permissive.
+        n-or-more (if (seq (get kinds true))
+                    (apply min (map second (get kinds true))))
+        ;; If there are exact arg counts that are larger than the
+        ;; smallest 'N args or more', remove them.  Sort any that are
+        ;; smaller, dropping duplicates.
+        exacts (->> (get kinds false)
+                    (map first)
+                    (remove #(and n-or-more (>= % n-or-more)))
+                    (into (sorted-set)))]
+    (vec (concat exacts (and n-or-more [n-or-more :or-more])))))
+
+
+(defn deconstruct-signature-union [sigs]
+  (let [n (count sigs)]
+    (if (= :or-more (peek sigs))
+      [(subvec sigs 0 (- n 2))
+       (sigs (- n 2))]
+      ;; else
+      [sigs nil])))
+
+
+(defn more-restrictive-sigs?
+  "sigs1 and sigs2 are expected to be return values of
+  signature-union, i.e. vectors of non-negative integers, no
+  duplicates, sorted in increasing order, optionally having
+  an :or-more keyword at the end.
+
+  Return true if sigs1 are more restrictive than sigs2.
+
+  For example [0 2 4 6] is more restrictive than [0 2 3 :or-more]."
+  [sigs1 sigs2]
+  (let [[exact-sigs1 or-more1] (deconstruct-signature-union sigs1)
+        [exact-sigs2 or-more2] (deconstruct-signature-union sigs2)]
+    (if or-more2
+      (if or-more1
+        (if (>= or-more1 or-more2)
+          (set/subset? (set (remove #(>= % or-more2) exact-sigs1))
+                       (set exact-sigs2))
+          (set/subset? (set (concat exact-sigs1 (range or-more1 or-more2)))
+                       (set exact-sigs2)))
+        (set/subset? (set (remove #(>= % or-more2) exact-sigs1))
+                     (set exact-sigs2)))
+      (if or-more1
+        false
+        (set/subset? (set exact-sigs1) (set exact-sigs2))))))
 
 
 (defn arg-count-compatible-with-arglists [arg-count arglists]
@@ -668,8 +710,8 @@
              fn-arglists (if (and macro? macro-args?)
                            (map #(subvec % 2) fn-arglists)
                            fn-arglists)
-             fn-sigs (all-sigs fn-arglists)
-             meta-sigs (all-sigs meta-arglists)
+             fn-sigs (signature-union fn-arglists)
+             meta-sigs (signature-union meta-arglists)
 ;;             _ (do
 ;;                 (println (format "dbg bad-arglists (:name a)=%s:" (:name a)))
 ;;                 ;;(util/pprint-ast-node a)
@@ -677,10 +719,13 @@
 ;;                 (println (format "    fn-arglists: %s" fn-arglists))
 ;;                 (println (format "    fn-sigs: %s" fn-sigs))
 ;;                 (println (format "    meta-arglists: %s" meta-arglists))
-;;                 (println (format "    meta-sigs: %s" meta-sigs)))
+;;                 (println (format "    meta-sigs: %s" meta-sigs))
+;;                 (println (format "    (more-restrictive-sigs? meta-sigs fn-sigs)=%s"
+;;                                  (more-restrictive-sigs? meta-sigs fn-sigs)))
+;;                 )
              loc (-> a var-of-ast meta)]
          (if (and (not (nil? meta-arglists))
-                  (not= fn-sigs meta-sigs))
+                  (not (more-restrictive-sigs? meta-sigs fn-sigs)))
            [(util/add-loc-info loc
              {:linter :bad-arglists
               :msg (format "%s on var %s defined taking # args %s but :arglists metadata has # args %s"

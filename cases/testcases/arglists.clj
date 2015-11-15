@@ -43,3 +43,23 @@
   [name & sigs]
   (let [[name [expr]] (cons name sigs)]
     `(def ~name ~expr)))
+
+;; This is adapted from a macro named with-replies* in the
+;; carmine library.  It has given warnings at one time with Eastwood,
+;; but I think it should not.
+
+(defmacro macro-with-arglists-no-warn1
+  {:arglists '([:as-pipeline & body] [& body])}
+  [& [s1 & sn :as sigs]]
+  (let [as-pipeline? (identical? s1 :as-pipeline)
+        body         (if as-pipeline? sn sigs)]
+    `(do ~@body (do :get-replies ~as-pipeline?))))
+
+;; Adapted from a macro named fnm in the core.logic library.  I
+;; think it should not give any warnings, because the developer-supplied
+;; :arglists is more restrictive than the actual arg vector(s) allow.
+
+(defmacro macro-with-arglists-no-warn2
+  {:arglists '([t as tabled? & cs])}
+  [t as & cs]
+  :macro-with-arglists-no-warn2)

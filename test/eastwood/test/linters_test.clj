@@ -1788,16 +1788,6 @@ the next."
      :file (fname-from-parts "testcases" "arglists.clj"),
      :line 22, :column 7}
     1,
-    {:linter :bad-arglists,
-     :msg "Function on var fn-with-arglists4 defined taking # args [1 :or-more] but :arglists metadata has # args [2]",
-     :file (fname-from-parts "testcases" "arglists.clj"),
-     :line 31, :column 7}
-    1,
-    {:linter :bad-arglists,
-     :msg "Macro on var macro-with-arglists1 defined taking # args [1 :or-more] but :arglists metadata has # args [2]",
-     :file (fname-from-parts "testcases" "arglists.clj"),
-     :line 41, :column 11}
-    1,
     })
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace
