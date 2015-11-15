@@ -19,12 +19,26 @@ and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.
 
-It has been tested with Clojure 1.5.1, 1.6.0, and 1.7.0 (the new
-`.cljc` files are _not_ linted yet -- their contents are ignored).  As
-of Eastwood version 0.2.0, it no longer supports Clojure 1.4.0 or
-earlier versions.
+Clojure version compatibility:
 
-It supports only Clojure on Java, not ClojureScript or Clojure/CLR.
+* Eastwood supports only Clojure on Java, not ClojureScript or
+  Clojure/CLR.
+
+* Clojure 1.8.0-RC1 - Use Eastwood 0.2.2 or later.  There are known
+  problems using Eastwood 0.2.1 and earlier with Clojure 1.8.0.
+
+* Clojure 1.6.0 or 1.7.0 - Many versions of Eastwood have been tested
+  with these, up through Eastwood 0.2.2.
+
+* Clojure 1.5.1 - There may be some issues with Eastwood 0.2.2.
+  Consider using Eastwood 0.2.1 or earlier if you need Clojure 1.5.1,
+  or adding any problems you come across with Eastwood 0.2.2 to [issue
+  #174](https://github.com/jonase/eastwood/issues/174).
+
+* Clojure 1.4.0 - Use Eastwood 0.1.5 or earlier.
+
+The `.cljc` files introduced in Clojure 1.7.0 are _not_ linted yet.
+Their contents are ignored.
 
 
 ## Installation & Quick usage
