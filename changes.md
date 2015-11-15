@@ -32,6 +32,8 @@ Other enhancements and bug fixes:
   not notice that until now.  Issue
   [#55](https://github.com/jonase/eastwood/issues/55).
 
+* Several fixes to the bad-arglists linter.
+
 * Change keyword-typos linter so that it no longer warns if the only
   difference between two keywords is the presence or absence of an
   initial underscore character.  Issue
