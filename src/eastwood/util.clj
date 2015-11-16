@@ -994,8 +994,7 @@ StringWriter."
           (when (> (count file-but-not-loaded) 0)
             (println (format "            In file but not loaded:"))
             (doseq [name (sort file-but-not-loaded)]
-              (println (format "            %s" name)))))))
-    (System/exit 0)))
+              (println (format "            %s" name)))))))))
 
 
 (comment
