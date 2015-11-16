@@ -2281,7 +2281,7 @@ your `:plugins` vector in your `:user` profile, perhaps in your
 
 ## License
 
-Copyright (C) 2012-2014 Jonas Enlund
+Copyright (C) 2012-2015 Jonas Enlund, Nicola Mometto, and Andy Fingerhut
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
