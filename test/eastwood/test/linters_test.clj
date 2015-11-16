@@ -22,6 +22,11 @@
                [1 7])
       0))
 
+(def clojure-1-8-or-later
+  (>= (compare ((juxt :major :minor) *clojure-version*)
+               [1 8])
+      0))
+
 (def lint-warning-map-keys-for-testing-in-order
   [:linter
    :msg
@@ -441,32 +446,44 @@ the next."
     1,
     }
 
-        clojure-1-5-expected-warnings
-        (assoc common-expected-warnings
-          {:line 140, :column 3,
-           :file (fname-from-parts "testcases" "f07.clj"),
-           :linter :unused-ret-vals,
-           :msg "Pure function call return value is discarded: (false? a)"}
-          1)
+        clojure-1-5-additional-expected-warnings
+        {
+         {:line 140, :column 3,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (false? a)"}
+         1}
 
         ;; Clojure 1.5 does not have clojure.core/some? so it does not
         ;; warn about calling that function when its return value is
         ;; unused.  Clojure 1.6 and later should.
-        clojure-1-6-or-later-expected-warnings
-        (assoc common-expected-warnings
-          {:line 140, :column 3,
-           :file (fname-from-parts "testcases" "f07.clj"),
-           :linter :unused-ret-vals,
-           :msg "Pure function call return value is discarded: (some? a)"}
-          1)]
+        clojure-1-6-or-later-additional-expected-warnings
+        {
+         {:line 140, :column 3,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (some? a)"}
+         1}
+
+        clojure-1-8-or-later-additional-expected-warnings
+        {
+         {:line 162, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (str/includes? \"food\" \"oo\")"}
+         1}
+        ]
     (lint-test
      'testcases.f07
      [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
       :local-shadows-var :wrong-tag]
      default-opts
-     (if clojure-1-6-or-later
-       clojure-1-6-or-later-expected-warnings
-       clojure-1-5-expected-warnings)))
+     (merge common-expected-warnings
+            (if clojure-1-6-or-later
+              clojure-1-6-or-later-additional-expected-warnings
+              clojure-1-5-additional-expected-warnings)
+            (if clojure-1-8-or-later
+              clojure-1-8-or-later-additional-expected-warnings))))
   (lint-test
    'testcases.deprecated
    [:deprecations :wrong-arity :local-shadows-var :wrong-tag]

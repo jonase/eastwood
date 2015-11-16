@@ -93,6 +93,7 @@
  clojure.core/> {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/>= {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/EMPTY-NODE {:var-kind nil, :macro nil},
+ clojure.core/Throwable->map {:var-kind nil, :macro nil, :lazy false, :pure-fn true}
  clojure.core/accessor {:var-kind nil, :macro nil},
  clojure.core/aclone {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/add-classpath {:var-kind nil, :macro nil},
@@ -162,6 +163,7 @@
  clojure.core/bytes {:var-kind nil, :macro nil},
  clojure.core/case {:var-kind nil, :macro true},
  clojure.core/cast {:var-kind nil, :macro nil},
+ clojure.core/cat {:var-kind nil, :macro nil}, ;; TBD: Are transducer fns pure?  Does it ever make sense to call one and ignore its return value?
  clojure.core/char {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/char-array {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/char-escape-string {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
@@ -369,6 +371,7 @@
  clojure.core/make-array {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/make-hierarchy {:var-kind nil, :macro nil},
  clojure.core/map {:var-kind nil, :macro nil, :lazy true, :pure-fn-if-fn-args-pure true},
+ clojure.core/map-entry? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/map-indexed {:var-kind nil, :macro nil, :lazy true, :pure-fn-if-fn-args-pure true},
  clojure.core/map? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/mapcat {:var-kind nil, :macro nil, :lazy true, :pure-fn-if-fn-args-pure true},
@@ -475,6 +478,7 @@
  clojure.core/read {:var-kind nil, :macro nil, :io-fn true, :evals-exprs true, :lazy false, :warn-if-ret-val-unused true},
  clojure.core/read-line {:var-kind nil, :macro nil, :io-fn true, :evals-exprs false, :lazy false, :warn-if-ret-val-unused true},  ; Note that it never evals anything, only returns a string read from a stream
  clojure.core/read-string {:var-kind nil, :macro nil, :evals-exprs true, :lazy false, :warn-if-ret-val-unused true},
+ clojure.core/reader-conditional? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/realized? {:var-kind nil, :macro nil, :lazy false, :pure-fn false, :predicate true},  ; Definitely not pure, as its return value can change over time for the same arg
  clojure.core/record? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/reduce {:var-kind nil, :macro nil, :lazy false, :pure-fn-if-fn-args-pure true},
@@ -564,6 +568,7 @@
  clojure.core/symbol {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/symbol? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/sync {:var-kind nil, :macro true},
+ clojure.core/tagged-literal? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/take {:var-kind nil, :macro nil, :lazy true, :pure-fn true},
  clojure.core/take-last {:var-kind nil, :macro nil, :lazy false, :pure-fn true},  ; TBD: I am categorizing this as not lazy, because it will often force the evaluation of part of its argument, even if the return value can still be an unevaluated lazy sequence.
  clojure.core/take-nth {:var-kind nil, :macro nil, :lazy true, :pure-fn true},
@@ -604,6 +609,7 @@
  clojure.core/unquote {:var-kind nil, :macro nil},
  clojure.core/unquote-splicing {:var-kind nil, :macro nil},
  clojure.core/unsigned-bit-shift-right {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.core/update {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/update-in {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/update-proxy {:var-kind nil, :macro nil},
  clojure.core/use {:var-kind nil, :macro nil, :io-fn true, :evals-exprs true, :side-effect true},
@@ -617,6 +623,9 @@
  clojure.core/vector {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/vector-of {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/vector? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
+ clojure.core/volatile? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
+ clojure.core/vreset! {:var-kind nil, :macro nil, :side-effect true},
+ clojure.core/vswap! {:var-kind nil, :macro nil, :side-effect true},
  clojure.core/when {:var-kind nil, :macro true},
  clojure.core/when-first {:var-kind nil, :macro true},
  clojure.core/when-let {:var-kind nil, :macro true},
@@ -666,9 +675,9 @@
  clojure.java.browse/browse-url {:var-kind nil, :macro nil, :io-fn true, :side-effect true},
  clojure.java.io/Coercions {:var-kind nil, :macro nil},
  clojure.java.io/IOFactory {:var-kind nil, :macro nil},
- clojure.java.io/as-file {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},  ; tbd
- clojure.java.io/as-relative-path {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},  ; tbd: pure fn?
- clojure.java.io/as-url {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},  ; tbd: pure fn?
+ clojure.java.io/as-file {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},  ; TBD
+ clojure.java.io/as-relative-path {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},  ; TBD: pure fn?
+ clojure.java.io/as-url {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},  ; TBD: pure fn?
  clojure.java.io/copy {:var-kind nil, :macro nil, :io-fn true, :side-effect true},
  clojure.java.io/default-streams-impl {:var-kind nil, :macro nil},
  clojure.java.io/delete-file {:var-kind nil, :macro nil, :io-fn true, :side-effect true},
@@ -788,10 +797,14 @@
  clojure.stacktrace/print-throwable {:var-kind nil, :macro nil, :side-effect true},
  clojure.stacktrace/print-trace-element {:var-kind nil, :macro nil, :side-effect true},
  clojure.stacktrace/root-cause {:var-kind nil, :macro nil},
- clojure.string/blank? {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.string/blank? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.string/capitalize {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.string/ends-with? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.string/escape {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.string/includes? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
+ clojure.string/index-of {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.string/join {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.string/last-index-of {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.string/lower-case {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.string/re-quote-replacement {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.string/replace {:var-kind nil, :macro nil, :lazy false, :pure-fn-if-fn-args-pure true},
@@ -799,6 +812,7 @@
  clojure.string/reverse {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.string/split {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.string/split-lines {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.string/starts-with? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.string/trim {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.string/trim-newline {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.string/triml {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
@@ -869,14 +883,14 @@
  clojure.test/with-test-out {:var-kind nil, :macro true},
  clojure.walk/keywordize-keys {:var-kind nil, :macro nil},
  clojure.walk/macroexpand-all {:var-kind nil, :macro nil},
- clojure.walk/postwalk {:var-kind nil, :macro nil},  ; tbd :pure-if-fn-args-pure true
- clojure.walk/postwalk-demo {:var-kind nil, :macro nil},  ; tbd see postwalk
- clojure.walk/postwalk-replace {:var-kind nil, :macro nil},  ; tbd see postwalk
- clojure.walk/prewalk {:var-kind nil, :macro nil},  ; tbd see postwalk
- clojure.walk/prewalk-demo {:var-kind nil, :macro nil},  ; tbd see postwalk
- clojure.walk/prewalk-replace {:var-kind nil, :macro nil},  ; tbd see postwalk
+ clojure.walk/postwalk {:var-kind nil, :macro nil},  ; TBD :pure-if-fn-args-pure true
+ clojure.walk/postwalk-demo {:var-kind nil, :macro nil},  ; TBD see postwalk
+ clojure.walk/postwalk-replace {:var-kind nil, :macro nil},  ; TBD see postwalk
+ clojure.walk/prewalk {:var-kind nil, :macro nil},  ; TBD see postwalk
+ clojure.walk/prewalk-demo {:var-kind nil, :macro nil},  ; TBD see postwalk
+ clojure.walk/prewalk-replace {:var-kind nil, :macro nil},  ; TBD see postwalk
  clojure.walk/stringify-keys {:var-kind nil, :macro nil},
- clojure.walk/walk {:var-kind nil, :macro nil},  ; tbd see postwalk
+ clojure.walk/walk {:var-kind nil, :macro nil},  ; TBD see postwalk
  clojure.xml/*current* {:var-kind nil, :macro nil},
  clojure.xml/*sb* {:var-kind nil, :macro nil},
  clojure.xml/*stack* {:var-kind nil, :macro nil},
@@ -982,5 +996,14 @@
  clojure.data.json/write-string {:var-kind nil, :macro nil, :lazy false, :io-fn true, :side-effect true},
  clojure.data.json/print-json {:var-kind nil, :macro nil, :lazy false, :io-fn true, :side-effect true},
  clojure.data.json/pprint-json {:var-kind nil, :macro nil, :lazy false, :io-fn true, :side-effect true},
+
+ ;; data.priority-map 0.0.7
+ clojure.data.priority-map/priority-map {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
+ clojure.data.priority-map/priority-map-by {:var-kind nil, :macro nil, :lazy false, :pure-fn-if-fn-args-pure true},
+ clojure.data.priority-map/priority-map-keyfn {:var-kind nil, :macro nil, :lazy false, :pure-fn-if-fn-args-pure true},
+ clojure.data.priority-map/priority-map-keyfn-by {:var-kind nil, :macro nil, :lazy false, :pure-fn-if-fn-args-pure true},
+
+ ;; core.memoize 0.5.8
+ clojure.core.memoize/lu {:var-kind nil, :macro nil, :pure-fn false}
  
  }

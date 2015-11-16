@@ -156,3 +156,14 @@
     (- 5 y))
   (comment "flamtacious")
   7)
+
+(defn unused-ret-vals34 [i n]
+  (let [a (* i n)]
+    (compile-if (resolve 'clojure.string/includes?)
+      (str/includes? "food" "oo")
+      ;; I'd like it if Eastwood warned about the return value of the
+      ;; .contains call below not being used, too, but currently the
+      ;; unused-ret-vals linter only handles static method calls, not
+      ;; instance method calls.
+      (.contains "food" "oo"))
+    a))
