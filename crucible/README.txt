@@ -6,14 +6,16 @@ This will also copy project.clj files from the directory
 project-clj-files into some of the cloned repositories, in order to
 make running Eastwood on them possible.  It will also overwrite some
 existing project.clj files, so that they should all consistently use
-Clojure 1.5.1 by default, and have profiles named 1.4, 1.5, and 1.6,
-where 1.6 uses Clojure 1.6.0-master-SNAPSHOT.
+Clojure 1.5.1 by default, and have profiles named 1.5, 1.6, 1.7, and
+1.8, where 1.8 uses Clojure 1.8.0-master-SNAPSHOT.
 
-To build and install a copy of 1.6.0-master-SNAPSHOT in your local
-$HOME/.m2 Maven repository, do this:
+To build and install a copy of Clojure x.y.0-master-SNAPSHOT in your
+local $HOME/.m2 Maven repository, do this:
 
-    % cd repos/clojure
-    % mvn install
+    % git clone https://github.com/clojure/clojure.git
+    % cd clojure
+    % git checkout <tag-or-commit-id>
+    % mvn clean install
 
 To run Eastwood on many of these repos, make sure you have edited your
 $HOME/.lein/profiles.clj file to include the line recommended in
@@ -28,6 +30,6 @@ To save all of the output in a file:
 You can see the progress with 'less out.txt' or 'tail -f out.txt' in
 another terminal window.
 
-To change the options used for eastwood, the easiest way right now is
+To change the options used for Eastwood, the easiest way right now is
 simply to edit lint.sh and change the command lines that invoke
-eastwood.
+Eastwood.
