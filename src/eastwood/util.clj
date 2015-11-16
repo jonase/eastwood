@@ -7,6 +7,7 @@
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as trdr]
+            [clojure.set :as set]
             [clojure.java.io :as io]
             [clojure.pprint :as pp]
             [clojure.repl :as repl]
@@ -898,6 +899,103 @@ StringWriter."
       (let [suppress-conditions (get-in opt [:warning-enable-config linter])]
         (allow-warning-based-on-enclosing-macros
          w linter "" suppress-conditions opt)))))
+
+
+;; Linters that use the info in resource file var-info.edn as of
+;; Eastwood 0.2.2:
+
+;; suspicious-test linter:
+
+;; functions with :predicate true are suspicious if they are at top
+;; level of deftest or testing, without being wrapped inside (is ...)
+;; or similar form.
+
+;; functions with :pure-fn true at top level are similarly suspicious.
+
+;; constant-test linter:
+
+;; functions with :pure-fn true that have constant arguments return
+;; constant values, and are thus suspicious as tests in conditional
+;; expressions like if or cond.
+
+;; unused-ret-vals and unused-ret-vals-in-try linters:
+
+;; Use several properties
+;; like :side-effect :lazy-fn :pure-fn :pure-fn-if-fn-args-pure
+;; :warn-if-ret-val-unused to determine whether an expression has an
+;; unused return value.
+
+
+;; For each namespace with at least one symbol as a key in
+;; var-info.edn, print the following:
+;; * how many of them are in var-info.edn
+
+;; If the namespace is already loaded, also print:
+;; * how many are in var-info.edn but not in that namespace
+;; * how many are in that namespace but not in var-info.edn.
+
+;; For each namespace returned by (all-ns), list the ones
+;; that have no symbols mentioned in var-info.edn at all.
+
+(defn print-var-info-summary [var-info-map opts]
+  (let [file-vars-by-ns (->> (keys var-info-map)
+                             (group-by #(namespace %))
+                             (map-vals #(set (map name %))))
+        ;; Try to require the namespaces mentioned in the file, but
+        ;; mask any exceptions that occur when trying.
+        _ (doseq [ns-name (keys file-vars-by-ns)]
+            (try
+              (println "require " ns-name "...")
+              (require (symbol ns-name))
+              (catch Throwable t)))
+        loaded-vars-by-ns (->> (all-ns)
+                               (map (fn [ns]
+                                      [(str ns)
+                                       (->> (ns-publics ns)
+                                            keys
+                                            (map str)
+                                            set)]))
+                               (into {}))
+        ns-names (into (sorted-set) (concat (keys file-vars-by-ns)
+                                            (keys loaded-vars-by-ns)))
+        ]
+    (println "Clojure version " (clojure-version))
+    (println)
+    (println "Summary of contents of var-info.edn file:")
+    (println)
+    (println "Columns:")
+    (println "A  # of symbols in the file")
+    (println "B  namespace is loaded?")
+    (println "C  # of symbols in loaded namespace, but not in the file")
+    (println "D  # of symbols in the file, but not in the loaded namespace")
+    (println)
+    (println (format "   A B    C    D Namespace name"))
+    (doseq [ns-name ns-names]
+      (let [loaded-vars (get loaded-vars-by-ns ns-name)
+            file-vars (get file-vars-by-ns ns-name #{})
+            loaded-but-not-file (set/difference (or loaded-vars #{}) file-vars)
+            file-but-not-loaded (set/difference file-vars (or loaded-vars #{}))]
+        (println
+         (format "%4d %s %4s %4s %s"
+                 (count file-vars)
+                 (if loaded-vars "Y" "N")
+                 (if loaded-vars
+                   (count loaded-but-not-file)
+                   "-")
+                 (if loaded-vars
+                   (count file-but-not-loaded)
+                   "-")
+                 ns-name))
+        (when (> (count file-vars) 0)
+          (when (> (count loaded-but-not-file) 0)
+            (println (format "        Loaded but not in file:"))
+            (doseq [name (sort loaded-but-not-file)]
+              (println (format "        %s" name))))
+          (when (> (count file-but-not-loaded) 0)
+            (println (format "            In file but not loaded:"))
+            (doseq [name (sort file-but-not-loaded)]
+              (println (format "            %s" name)))))))
+    (System/exit 0)))
 
 
 (comment

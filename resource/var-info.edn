@@ -1,3 +1,13 @@
+;; See comments before function print-var-info-summary in namespace
+;; eastwood.util for a description of what the data in this file is
+;; used for.
+
+;; Run the following command to get a summary of what is in this file,
+;; and a comparison of what is in this file vs. what is defined in
+;; Clojure namespaces:
+
+;; 'lein eastwood '{:debug [:var-info]}'
+
 {clojure.core.protocols/CollReduce {:var-kind nil, :macro nil},
  clojure.core.protocols/IKVReduce {:var-kind nil, :macro nil},
  clojure.core.protocols/InternalReduce {:var-kind nil, :macro nil},

@@ -1177,6 +1177,8 @@ Return value:
         _ (when (util/debug? :options opts)
             (println "\nOptions map after filling in defaults:")
             (pp/pprint (into (sorted-map) opts)))
+        _ (when (util/debug? :var-info opts)
+            (util/print-var-info-summary @typos/var-info-map-delayed opts))
         error-cb (util/make-msg-cb :error opts)
         note-cb (util/make-msg-cb :note opts)
         debug-cb (util/make-msg-cb :debug opts)
