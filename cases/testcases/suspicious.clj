@@ -4,7 +4,7 @@
 
 ;; Test cases targeted at :suspicious-expression linter.  There are
 ;; some more in testcases.testtest namespace.
-
+(defmacro compile-if [test then] (if (eval test) then))
 ;; Empty defrecords have macroexpansions containing suspicious-looking
 ;; macro invocations at intermediate steps, which would be good not to
 ;; warn about.
@@ -23,7 +23,7 @@
     (doto (StringBuffer.)))
 
 (-> 1)
-(->> 1)
+(compile-if (resolve 'clojure.core/if-some) (->> 1))    ;; compile-if is because this arity was not defined for ->> macro in Clojure 1.5.1
 (and)
 (and 1)
 (as-> 1 x)
@@ -52,7 +52,7 @@
 (when-first [x [5]])   ; tbd: Extra let warning to be suppressed
 (when-let [x 5])       ; tbd: Extra let warning to be suppressed
 (when-not 5)
-(when-some [x 5])      ; tbd: Extra let warning to be suppressed
+(compile-if (resolve 'clojure.core/when-some) (when-some [x 5]))      ; tbd: Extra let warning to be suppressed
 (with-bindings {#'*warn-on-reflection* false})
 (with-in-str "foo")
 (with-local-vars [x 5])

@@ -61,7 +61,7 @@
   nil
   (coll-reduce
    ([coll f] (f))
-   ([coll f val] val))
+   ([coll f val] (cons val coll)))
 
   clojure.lang.ASeq
   (coll-reduce

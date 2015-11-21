@@ -1,7 +1,7 @@
 (ns testcases.constanttestexpr
   (:require [clojure.pprint :as pprint]))
 ;; Expressions that evaluate to a constant value as a test
-
+(defmacro compile-if [test then] (if (eval test) then))
 ;; not truthy:
 ;; false
 ;; nil
@@ -65,14 +65,14 @@
   (assert false "This won't be reached, but shouldn't warn about it whether it can be reached or not."))
 
 (if-let [x [false]] "w" "v")
-(when-let [x #{5 7}] (println "Hello"))
+(when-let [x (sorted-set 5 7)] (println "Hello"))
 (when-first [x [1 2]] (println "Goodbye"))
 
 (and (nil? nil) 7 (inc 2))
 (or false 2)
 
-(if-some [x {:a 1}] "w" "v")  ; tbd: needs (nil? const) handling as in-line
-(when-some [x "w"] nil)       ; tbd: same as if-some
+(compile-if (resolve 'clojure.core/if-some) (if-some [x {:a 1}] "w" "v"))  ; tbd: needs (nil? const) handling as in-line
+(compile-if (resolve 'clojure.core/when-some) (when-some [x "w"] nil))       ; tbd: same as if-some
 
 (if shrouded-false
   (assert nil "string"))

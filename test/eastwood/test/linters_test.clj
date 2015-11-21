@@ -895,11 +895,9 @@ the next."
      :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?"}
     1,
     })
-  (lint-test
-   'testcases.suspicious
-   [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
-   default-opts
-   {
+
+  (let [common-expected-warnings
+        {
     {:linter :suspicious-expression,
      :msg "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?",
      :file (fname-from-parts "testcases" "suspicious.clj"),
@@ -910,12 +908,6 @@ the next."
      "-> called with 1 args.  (-> x) always returns x.  Perhaps there are misplaced parentheses?",
      :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 25, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "->> called with 1 args.  (->> x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 26, :column 1}
     1,
     {:linter :suspicious-expression,
      :msg
@@ -1087,12 +1079,6 @@ the next."
     1,
     {:linter :suspicious-expression,
      :msg
-     "when-some called with 1 args.  (when-some [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 55, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
      "with-bindings called with 1 args.  (with-bindings map) always returns nil.  Perhaps there are misplaced parentheses?",
      :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 56, :column 1}
@@ -1133,7 +1119,33 @@ the next."
      :file (fname-from-parts "testcases" "suspicious.clj"),
      :line 62, :column 1}
     1,
-    })
+    }
+        clojure-1-6-or-later-additional-expected-warnings
+        {
+         {:linter :suspicious-expression,
+          :msg
+          "->> called with 1 args.  (->> x) always returns x.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 26, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "when-some called with 1 args.  (when-some [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 55, :column 1}
+         1,
+         }
+        expected-warnings
+        (merge common-expected-warnings
+               (if clojure-1-6-or-later
+                 clojure-1-6-or-later-additional-expected-warnings
+                 nil))]
+  (lint-test
+   'testcases.suspicious
+   [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
+   default-opts
+   expected-warnings))
+
   ;; It is strange that the :unlimited-use linter has nil for :line
   ;; and :column here, but integer values when I use it from the
   ;; command line.  What is going on here?
@@ -1375,11 +1387,9 @@ the next."
      :line 104, :column 20}
     1,
     })
-  (lint-test
-   'testcases.constanttestexpr
-   [:constant-test]
-   default-opts
-   {
+
+  (let [common-expected-warnings
+        {
     {:linter :constant-test,
      :msg "Test expression is always logical true or always logical false: false in form (if false 1 2)",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
@@ -1511,7 +1521,7 @@ the next."
      :line 67, :column 1}
     1,
     {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: #{7 5} in form (if temp__<num>__auto__ (do (clojure.core/let [x temp__<num>__auto__] (println \"Hello\"))))",
+     :msg "Test expression is always logical true or always logical false: (sorted-set 5 7) in form (if temp__<num>__auto__ (do (clojure.core/let [x temp__<num>__auto__] (println \"Hello\"))))",
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 68, :column 1}
     1,
@@ -1565,7 +1575,21 @@ the next."
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 131, :column 3}
     1,
-    })
+    }
+        clojure-1-6-or-later-additional-expected-warnings
+        {
+         }
+        expected-warnings
+        (merge common-expected-warnings
+               (if clojure-1-6-or-later
+                 clojure-1-6-or-later-additional-expected-warnings
+                 nil))]
+    (lint-test
+     'testcases.constanttestexpr
+     [:constant-test]
+     default-opts
+     expected-warnings))
+  
   (lint-test
    'testcases.unusedlocals
    [:unused-locals :unused-private-vars]
