@@ -32,8 +32,8 @@ Clojure version compatibility:
 
 * Clojure 1.5.1 - There may be some issues with Eastwood 0.2.2.
   Consider using Eastwood 0.2.1 or earlier if you need Clojure 1.5.1,
-  or adding any problems you come across with Eastwood 0.2.2 to [issue
-  #174](https://github.com/jonase/eastwood/issues/174).
+  or adding any problems you come across with Eastwood 0.2.2 to
+  [issue #174](https://github.com/jonase/eastwood/issues/174).
 
 * Clojure 1.4.0 - Use Eastwood 0.1.5 or earlier.
 
@@ -52,7 +52,7 @@ versions 2.4.x and 2.5.x.  Merge the following into your
 `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.1"]] }}
+{:user {:plugins [[jonase/eastwood "0.2.2"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -1151,7 +1151,8 @@ via metadata.
 
 #### Function/macro `:arglists` metadata that does not match the number of args it is defined with
 
-New in Eastwood version 0.1.1
+New in Eastwood version 0.1.1.  Significant bug fixes made in version
+0.2.2.
 
 Clearly this linter needs to be better documented.
 
@@ -1848,7 +1849,8 @@ name of the function.
 ```
 
 Clojure will give a compilation error with a clear message if you
-attempt to use any primitive type besides long or double in this way.
+attempt to use any primitive type besides `long` or `double` in this
+way.
 
 You can also type hint function arguments and return values with Java
 class names.
@@ -1903,6 +1905,114 @@ is not fully qualified.
 ;; no warning for this because Class is in java.lang package
 (defn cls ^Class [obj] (class obj))
 ```
+
+
+#### `:wrong-tag` warnings in uses of `extend-type` and `extend-protocol` macro
+
+
+`extend-type` and `extend-protocol` convenience macros take the class
+name you specify and propagate them as type tags on the first argument
+of all functions.  This is handy, as long as the class name is a valid
+type tag, as in this example:
+
+```clojure
+(defprotocol MyType
+  (get-type [x]))
+
+;; A more interesting example would avoid reflection only because of
+;; the auto-propagated type tags on the argument m.  Better example
+;; welcome.
+
+(extend-protocol MyType
+  Long
+  (get-type [m] :long)
+  Double
+  (get-type [m] :double))
+
+;; The extend-protocol expression above becomes the following after
+;; macro expansion, with valid type tags ^Long and ^Double.
+
+(do
+  (clojure.core/extend Long
+    MyType
+    {:get-type (fn ([^{:tag Long} m] :long))})
+  (clojure.core/extend Double
+    MyType
+    {:get-type (fn ([^{:tag Double} m] :double))}))
+
+(get-type 5)
+;; => :long
+
+(get-type 5.3)
+;; => :double
+```
+
+
+However, if you try to use `extend-type` or `extend-protocol` with an
+expression that evaluates to a class at run time, e.g. `(Class/forName
+"[D")` as the type, most things will work correctly, but it will also
+expand to code that has that expression as a type tag on the first
+argument of all functions.  That expression is not a valid type tag.
+Clojure silently ignores such type tags, so there are no errors or
+warnings during compilation.  Since the invalid type tag is ignored,
+you will be disappointed if you were relying on it to avoid
+reflection.
+
+Note: `(Class/forName "[D")` evaluates to the Java class for an array
+of primitive doubles.  In places where you want to use such a type as
+a type tag, you can use `^doubles` in Clojure.  However, that will not
+work as an argument to `extend` or its variants.
+
+```clojure
+(defprotocol PGetElem
+  (get-elem [m idx]))
+
+;; This will cause reflection on the aget call, because m has an
+;; invalid, ignored type tag of (Class/forName "[D").  Eastwood will
+;; give a :wrong-tag warning on m.
+
+(extend-protocol PGetElem
+  (Class/forName "[D")
+    (get-elem [m idx] (aget m idx)))
+
+;; This also causes reflection on the aget call, because the ^doubles
+;; type tag is replaced by the invalid, ignored type tag when
+;; extend-protocol is macroexpanded.  Eastwood will give a :wrong-tag
+;; warning on m.
+
+(extend-protocol PGetElem
+  (Class/forName "[D")
+    (get-elem [^doubles m idx] (aget m idx)))
+
+;; No reflection here, because the valid type hint ^doubles is inside
+;; of the aget call, where extend-protocol does not overwrite it.
+;; Eastwood will give a :wrong-tag warning on m.
+
+(extend-protocol PGetElem
+  (Class/forName "[D")
+    (get-elem [m idx] (aget ^doubles m idx)))
+
+;; You will always get an Eastwood :wrong-tag warning if you use a
+;; run-time evaluated expression as a type in extend-protocol or
+;; extend-type.  You can suppress Eastwood's warning, or instead use
+;; the function extend.
+
+;; This is the only version that both (a) avoids reflection, and (b)
+;; Eastwood will not warn about.  It calls the function extend, and
+;; uses a correct type tag ^doubles on the first argument.  You could
+;; also put the type tag inside of the aget call if you prefer.
+
+(extend (Class/forName "[D")
+ PGetElem
+ {:get-elem
+  (fn ([^doubles m idx]
+    (aget m idx)))})
+```
+
+See Clojure ticket
+[CLJ-1308](http://dev.clojure.org/jira/browse/CLJ-1308).  Vote on it
+if you are interested in Clojure changing its implementation and/or
+make its documentation more explicit.
 
 
 ### `:unused-fn-args`
@@ -2171,7 +2281,7 @@ your `:plugins` vector in your `:user` profile, perhaps in your
 
 ## License
 
-Copyright (C) 2012-2014 Jonas Enlund
+Copyright (C) 2012-2015 Jonas Enlund, Nicola Mometto, and Andy Fingerhut
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
