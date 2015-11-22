@@ -218,11 +218,12 @@ return value followed by the time it took to evaluate in millisec."
      [ret# elapsed-msec#]))
 
 
-;; Note: Linters below with nil for a value, e.g. :no-ns-form-found,
-;; can be enabled/disabled from the opt map like other linters, but
-;; they are a bit different in their implementation as they have no
-;; separate function to call on each namespace.  They are done very
-;; early, and are not specific to a namespace.
+;; Note: Linters below with nil for the value of the key :fn,
+;; e.g. :no-ns-form-found, can be enabled/disabled from the opt map
+;; like other linters, but they are a bit different in their
+;; implementation as they have no separate function to call on each
+;; namespace.  They are done very early, and are not specific to a
+;; namespace.
 
 (def linter-info
   [
@@ -576,9 +577,7 @@ curious." eastwood-url))
           uri
           (let [file-str (str file-or-nil)
                 cwd-str (if cwd-file (str cwd-file File/separator) "")]
-            (if (.startsWith file-str cwd-str)
-              (subs file-str (count cwd-str))
-              file-str)))]
+            (util/remove-prefix file-str cwd-str)))]
     {:uri uri
      :uri-or-file-name uri-or-rel-file-str}))
 
@@ -716,10 +715,8 @@ exception."))
      {}
      (for [[dir fd] fd-by-dir,
            [f namespace] (:filemap fd)
-           :let [fname (str f)
-                 fname (if (.startsWith fname dir)
-                         (subs fname (inc (count dir))) ; inc to get rid of a separator
-                         fname)
+           :let [dir-with-sep (str dir File/separator)
+                 fname (util/remove-prefix (str f) dir-with-sep)
                  desired-ns (filename-to-ns fname)
                  desired-fname (ns-to-filename namespace)]
            :when (not= fname desired-fname)]
@@ -766,7 +763,6 @@ user=> (ns/canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
                           (java.io.File. ^String fname))]
     (.getCanonicalPath f)))
 
-
 (defn nss-in-dirs [dir-name-strs opt warning-count]
   (let [dir-name-strs (map canonical-filename dir-name-strs)
         mismatches (filename-namespace-mismatches dir-name-strs)]
@@ -787,8 +783,13 @@ user=> (ns/canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
                     tfilemap (-> tracker
                                  :eastwood.copieddeps.dep9.clojure.tools.namespace.file/filemap
                                  keys
-                                 set)]
-                (set/difference tfiles tfilemap)))]
+                                 set)
+                    maybe-data-readers (->> dir-name-strs
+                                            (map #(File.
+                                                   (str % File/separator
+                                                        "data_readers.clj")))
+                                            set)]
+                (set/difference tfiles tfilemap maybe-data-readers)))]
         {:err nil
          :dirs (map #(file-warn-info % (:cwd opt)) dir-name-strs)
          :non-clojure-files

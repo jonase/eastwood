@@ -894,25 +894,37 @@ i.e. if its file name does not end with '.clj'.
 
 #### Warn about Clojure files where no `ns` form could be found
 
-New in Eastwood version 0.2.0
+New in Eastwood version 0.2.0.  Updated in Eastwood version 0.3.0.
 
 If you explicitly specify `:source-paths` or `:test-paths`, or use the
 default Eastwood options from the command line that cause it to scan
 these paths for Clojure source files, with this linter enabled (the
 default), it will warn about each file where it could not find an `ns`
-form.
+form.  For each such file, its contents will not be linted, unless it
+is loaded from another linted file.
 
-Eastwood uses library `tools.namespace` to scan for Clojure source
-files, and in each one it reads it looking for a top-level `ns` form.
-It need not be the first form, but it will not find it if it is not at
-the top level, e.g. if it is inside of a `let`, `if`, `compile-if`,
-etc.
+Eastwood uses the library `tools.namespace` to scan for Clojure source
+files, and in each Clojure source file it looks for a top-level `ns`
+form.  This form need not be the first form, but Eastwood will not
+find it if it is not at the top level, e.g. if it is inside of a
+`let`, `if`, `compile-if`, etc.
 
 It is somewhat unusual to have a file with no `ns` form at all, not
 even inside of a `let`, `compile-if`, etc.  However, there are valid
 reasons to have them, e.g. you have some code that you want to use in
 common between Clojure/Java and ClojureScript, and you use `load` to
-include it from two or more other source files.
+include it from two or more other source files.  Starting with Clojure
+1.7.0, this purpose is better satisfied with `.cljc` files (see
+[Reader Conditions](http://clojure.org/reader#The%20Reader--Reader%20Conditionals)).
+
+Before Eastwood 0.3.0, files named `data_readers.clj` that are in the
+root directory of a source or test path directory and contained no
+`ns` form would cause a warning when this linter was enabled.  Such
+files should not contain an `ns` form.  See
+[The Reader - Tagged Literals](http://clojure.org/reader#The%20Reader--Tagged%20Literals)
+for the purpose and contents of these files.  Starting with Eastwood
+0.3.0, no warning will be generated for these files (their contents
+will still not be linted, as before Eastwood version 0.3.0).
 
 
 ### `:misplaced-docstrings`
