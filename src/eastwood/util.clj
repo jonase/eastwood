@@ -244,7 +244,7 @@ twice."
 (defn remove-prefix
   "If string s starts with the string prefix, return s with that
   prefix removed.  Otherwise, return s."
-  [s prefix]
+  [^String s ^String prefix]
   (if (.startsWith s prefix)
     (subs s (count prefix))
     s))
@@ -254,7 +254,7 @@ twice."
   "If string s starts with any of the strings in the sequence
   prefixes, return s with the longest of these prefixes removed.
   Otherwise, return s."
-  [s prefixes]
+  [^String s prefixes]
   (if-let [matching-prefixes (seq (filter #(.startsWith s %) prefixes))]
     (let [longest-match (apply max-key count matching-prefixes)]
       (subs s (count longest-match)))
