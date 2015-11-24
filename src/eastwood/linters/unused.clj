@@ -1,4 +1,5 @@
 (ns eastwood.linters.unused
+  (:import (java.lang.reflect Method))
   (:require [clojure.set :as set]
             [clojure.data :as data]
             [clojure.string :as str]
@@ -386,9 +387,15 @@ discarded inside null: null'."
                          (#{:side-effect :lazy-fn :pure-fn
                             :pure-fn-if-fn-args-pure :warn-if-ret-val-unused}
                           action)))
-                 (if (pass/void-method? (pass/get-method stmt))
-                   :side-effect
-                   :warn-if-ret-val-unused)
+                 (let [m (pass/get-method stmt)]
+                   ;; If pass/get-method could not determine the method,
+                   ;; do not give an unused-ret-val warning for it.  We
+                   ;; may at some point in the future wish to give a
+                   ;; warning that we could not determine which method
+                   ;; it is.
+                   (cond (not (instance? Method m)) :side-effect
+                         (pass/void-method? m) :side-effect
+                         :else :warn-if-ret-val-unused))
                  action)
         linter (case location
                  :outside-try :unused-ret-vals

@@ -1,5 +1,5 @@
 (ns testcases.f07
-  (:use clojure.test)
+  (:use clojure.test)   (:import (org.apache.commons.io IOUtils))
   (:require [clojure.set :as set]
             [clojure.string :as str]
             [clojure.java.shell :as sh]
@@ -167,3 +167,31 @@
       ;; instance method calls.
       (.contains "food" "oo"))
     a))
+
+;; As of Eastwood 0.2.2, passes/get-method when called on
+;; the (IOUtils/closeQuietly out) static method call can call
+;; .getMethod and .getDeclaredMethod with
+;; args (Class/forName "org.apache.commons.io.IOUtils") "closeQuietly" (into-array
+;; Class [(Class/forName "java.io.PrintWriter")]), for which it does
+;; not find a method (it does if the last argument is changed to
+;; PrintWriter's superclass, Writer).
+
+;; This leads to the unused-ret-vals linter, which calls
+;; passes/get-method and then passes/void-method? on the return value,
+;; to throw an exception.  A quick fix for Issue #173 is to only call
+;; passes/void-method? if the return value of passes/get-method is a
+;; Method, and otherwise never give an :unused-ret-val warning for the
+;; method call.  It would be preferable to find a way to resolve the
+;; method call even better, but I'm not sure how to do that in
+;; general, with multiple arguments of different types.
+
+(defn issue-173-test
+  [connect-fn prefix ^java.io.PrintWriter out rollup]
+  (try
+    (let [socket (if (and out (not (.checkError out)))
+                   out
+                   (do (IOUtils/closeQuietly out)
+                       (connect-fn)))]
+      (println prefix socket rollup 0.0))
+    (catch Exception e
+      (IOUtils/closeQuietly out))))
