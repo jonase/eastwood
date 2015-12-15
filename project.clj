@@ -1,4 +1,4 @@
-(defproject jonase/eastwood "0.2.3-SNAPSHOT"
+(defproject jonase/eastwood "0.2.3"
   :description "A Clojure lint tool"
   :url "https://github.com/jonase/eastwood"
   :license {:name "Eclipse Public License"
@@ -8,7 +8,8 @@
                 ;;*unchecked-math* :warn-on-boxed
                }
   :dependencies [
-                 [org.clojure/clojure "1.6.0"]
+                 [org.clojure/clojure "1.5.1"]
+                 ;[org.clojure/clojure "1.6.0"]
                  ;[org.clojure/clojure "1.7.0"]
                  ;[org.clojure/clojure "1.8.0-RC1"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]

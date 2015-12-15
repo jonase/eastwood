@@ -1,17 +1,24 @@
 # Change log for Eastwood
 
-## Changes planned for near future
 
-* Implement a way to enable/disable linters on individual Clojure
-  expressions.  Issue
-  [#21](https://github.com/jonase/eastwood/issues/21).
+## Changes from version 0.2.2 to 0.2.3
+
+No new linters.  The only difference with 0.2.2 is a few bug fixes:
+
+* Ignore the contents of any file `data_readers.clj` in any directory
+  of your classpath.  Earlier versions of Eastwood would lint their
+  contents, and by default complain that there was no `ns` form at the
+  beginning.  There should not be an `ns` form in such a file, and
+  Eastwood no longer issues such incorrect warnings.  Issue
+  [#172](https://github.com/jonase/eastwood/issues/172).
+
+* Eliminate an exception caused by Eastwood's `unused-ret-vals` and
+  `unused-ret-vals-in-try` linters that could occur if a Java method
+  cannot be resolved.  Issue
+  [#173](https://github.com/jonase/eastwood/issues/173).
 
 
 ## Changes from version 0.2.1 to 0.2.2
-
-There are potentially issues with using Eastwood 0.2.2 with Clojure
-1.5.1.  I have created an issue to track this.  Issue
-[#174](https://github.com/jonase/eastwood/issues/174).
 
 New linter:
 
