@@ -24,16 +24,11 @@ Clojure version compatibility:
 * Eastwood supports only Clojure on Java, not ClojureScript or
   Clojure/CLR.
 
-* Clojure 1.8.0-RC1 - Use Eastwood 0.2.2 or later.  There are known
+* Clojure 1.8.0-RC3 - Use Eastwood 0.2.2 or later.  There are known
   problems using Eastwood 0.2.1 and earlier with Clojure 1.8.0.
 
-* Clojure 1.6.0 or 1.7.0 - Many versions of Eastwood have been tested
-  with these, up through Eastwood 0.2.2.
-
-* Clojure 1.5.1 - There may be some issues with Eastwood 0.2.2.
-  Consider using Eastwood 0.2.1 or earlier if you need Clojure 1.5.1,
-  or adding any problems you come across with Eastwood 0.2.2 to
-  [issue #174](https://github.com/jonase/eastwood/issues/174).
+* Clojure 1.5.1, 1.6.0, or 1.7.0 - Many versions of Eastwood have been
+  tested with these, up through Eastwood 0.2.3.
 
 * Clojure 1.4.0 - Use Eastwood 0.1.5 or earlier.
 
@@ -52,7 +47,7 @@ versions 2.4.x and 2.5.x.  Merge the following into your
 `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.2"]] }}
+{:user {:plugins [[jonase/eastwood "0.2.3"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -343,6 +338,11 @@ value that is a list or vector of keywords, e.g.
   desired: "and then after each top level form print any changes to
   that list of loaded namespaces (typically as the result of
   evaluating a `require` or `use` form).")
+* `:var-info` - print some info about Vars that exist in various
+  namespaces, and how many of them have data describing them in
+  Eastwood's `var-info.edn` resource file, and how many do not.
+  Useful when new releases of Clojure are made that add new Vars, to
+  determine which ones Eastwood does not know about yet.
 
 
 ### Eastwood config files
@@ -420,7 +420,7 @@ in a production JVM process.
 Merge this into your project's `project.clj` file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.2.1" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.2.3" :exclusions [org.clojure/clojure]]]}}
 ```
 
 Note: This should work even if you do not use Leiningen for your
@@ -638,7 +638,7 @@ can be used to modify this merging behavior.
 For example, if your user-wide `profiles.clj` file contains this:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.1"]]
+{:user {:plugins [[jonase/eastwood "0.2.3"]]
         :eastwood {:exclude-linters [:unlimited-use]
                    :debug [:time]}
         }}
@@ -894,25 +894,37 @@ i.e. if its file name does not end with '.clj'.
 
 #### Warn about Clojure files where no `ns` form could be found
 
-New in Eastwood version 0.2.0
+New in Eastwood version 0.2.0.  Updated in Eastwood version 0.2.3.
 
 If you explicitly specify `:source-paths` or `:test-paths`, or use the
 default Eastwood options from the command line that cause it to scan
 these paths for Clojure source files, with this linter enabled (the
 default), it will warn about each file where it could not find an `ns`
-form.
+form.  For each such file, its contents will not be linted, unless it
+is loaded from another linted file.
 
-Eastwood uses library `tools.namespace` to scan for Clojure source
-files, and in each one it reads it looking for a top-level `ns` form.
-It need not be the first form, but it will not find it if it is not at
-the top level, e.g. if it is inside of a `let`, `if`, `compile-if`,
-etc.
+Eastwood uses the library `tools.namespace` to scan for Clojure source
+files, and in each Clojure source file it looks for a top-level `ns`
+form.  This form need not be the first form, but Eastwood will not
+find it if it is not at the top level, e.g. if it is inside of a
+`let`, `if`, `compile-if`, etc.
 
 It is somewhat unusual to have a file with no `ns` form at all, not
 even inside of a `let`, `compile-if`, etc.  However, there are valid
 reasons to have them, e.g. you have some code that you want to use in
 common between Clojure/Java and ClojureScript, and you use `load` to
-include it from two or more other source files.
+include it from two or more other source files.  Starting with Clojure
+1.7.0, this purpose is better satisfied with `.cljc` files (see
+[Reader Conditions](http://clojure.org/reader#The%20Reader--Reader%20Conditionals)).
+
+Before Eastwood 0.2.3, files named `data_readers.clj` that are in the
+root directory of a source or test path directory and contained no
+`ns` form would cause a warning when this linter was enabled.  Such
+files should not contain an `ns` form.  See
+[The Reader - Tagged Literals](http://clojure.org/reader#The%20Reader--Tagged%20Literals)
+for the purpose and contents of these files.  Starting with Eastwood
+0.2.3, no warning will be generated for these files (their contents
+will still not be linted, as before Eastwood version 0.2.3).
 
 
 ### `:misplaced-docstrings`
@@ -2273,7 +2285,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein install
 
-Then add `[jonase/eastwood "0.2.2-SNAPSHOT"]` (or whatever is the
+Then add `[jonase/eastwood "0.2.4-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `$HOME/.lein/profiles.clj` file.
