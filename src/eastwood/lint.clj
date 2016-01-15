@@ -9,7 +9,6 @@
             [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.move :as move]
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.unused :as unused]
@@ -737,25 +736,25 @@ Examples:
 Context: A Linux or Mac OS X system, where the current working
 directory is /Users/jafinger/clj/dolly
 
-user=> (ns/canonical-filename \"README.md\")
+user=> (canonical-filename \"README.md\")
 \"/Users/jafinger/clj/dolly/README.md\"
 
-user=> (ns/canonical-filename \"../../Documents/\")
+user=> (canonical-filename \"../../Documents/\")
 \"/Users/jafinger/Documents\"
 
-user=> (ns/canonical-filename \"../.././clj/../Documents/././\")
+user=> (canonical-filename \"../.././clj/../Documents/././\")
 \"/Users/jafinger/Documents\"
 
 Context: A Windows 7 system, where the current working directory is
 C:\\Users\\jafinger\\clj\\dolly
 
-user=> (ns/canonical-filename \"README.md\")
+user=> (canonical-filename \"README.md\")
 \"C:\\Users\\jafinger\\clj\\dolly\\README.md\"
 
-user=> (ns/canonical-filename \"..\\..\\Documents\\\")
+user=> (canonical-filename \"..\\..\\Documents\\\")
 \"C:\\Users\\jafinger\\Documents\"
 
-user=> (ns/canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
+user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
 \"C:\\Users\\jafinger\\Documents\""
   [fname]
   (let [^java.io.File f (if (instance? java.io.File fname)
@@ -1251,13 +1250,13 @@ Keys in a warning map:
 
   :line - line number in file for warning, e.g. 20.  The first line in
       the file is 1, not 0.  Note: In some cases this key may not be
-      present, or the value may be nil.  This is an areas where
+      present, or the value may be nil.  This is an area where
       Eastwood will probably improve in the future, but best to handle
       it for now, perhaps by replacing it with line 1 as a
       placeholder.
 
   :column - column number in file for warning, e.g. 42.  The first
-      character in the file is column 1, not 0.  Same comments apply
+      character of each line is column 1, not 0.  Same comments apply
       for :column as for :line.
 
   :linter - keyword identifying the linter, e.g. :def-in-def
