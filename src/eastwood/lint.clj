@@ -1157,7 +1157,7 @@ Return value:
                      (contains? opts :test-paths))
                opts
                (assoc opts :source-paths
-                      (#'eastwood.copieddeps.dep9.clojure.tools.namespace.dir/dirs-on-classpath)))
+                      (#'eastwood.copieddeps.dep11.clojure.java.classpath/classpath-directories)))
         ;; The following value is equivalent to (merge {:callback ...}
         ;; opts), but it does not calculate the value unless needed.
         opts (if (contains? opts :callback)

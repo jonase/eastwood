@@ -7,7 +7,6 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns ^:skip-wiki eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils
-  (:require eastwood.copieddeps.dep10.clojure.tools.reader.impl.ExceptionInfo) ;; force loading
   (:refer-clojure :exclude [char]))
 
 (defn char [x]
@@ -38,21 +37,8 @@
     then
     else))
 
-(compile-if (= 3 (:minor *clojure-version*))
-  (do
-    (defn ex-info
-      ([msg map]
-         (eastwood.copieddeps.dep10.clojure.tools.reader.impl.ExceptionInfo. msg map))
-      ([msg map cause]
-         (eastwood.copieddeps.dep10.clojure.tools.reader.impl.ExceptionInfo. msg map cause)))
-    (defn ex-data
-      [^eastwood.copieddeps.dep10.clojure.tools.reader.impl.ExceptionInfo ex]
-      (.getData ex))
-    (defn ex-info? [ex]
-      (instance? eastwood.copieddeps.dep10.clojure.tools.reader.impl.ExceptionInfo ex)))
-
-  (defn ex-info? [ex]
-    (instance? clojure.lang.ExceptionInfo ex)))
+(defn ex-info? [ex]
+  (instance? clojure.lang.ExceptionInfo ex))
 
 (compile-if <=clojure-1-7-alpha5
   (do

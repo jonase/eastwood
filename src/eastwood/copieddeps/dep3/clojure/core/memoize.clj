@@ -44,17 +44,32 @@
   (toString [_] (str cache)))
 
 
-(defn ^:private d-lay [fun]
-  (let [memory (atom {})]
-    (reify
-      clojure.lang.IDeref
-      (deref [this]
-        (if-let [e (find @memory fun)]
-          (val e)
-          (let [ret (fun)]
-            (swap! memory assoc fun ret)
-            ret))))))
+;; Similar to clojure.lang.Delay, but will not memoize an exception and will
+;; instead retry.
+;;   fun - the function, never nil
+;;   available? - indicates a memoized value is available, volatile for visibility
+;;   value - the value (if available) - volatile for visibility
+(deftype RetryingDelay [fun ^:volatile-mutable available? ^:volatile-mutable value]
+  clojure.lang.IDeref
+  (deref [this]
+    ;; first check (safe with volatile flag)
+    (if available?
+      value
+      (locking fun
+        ;; second check (race condition with locking)
+        (if available?
+          value
+          (do
+            ;; fun may throw - will retry on next deref
+            (let [v (fun)]
+              ;; this ordering is important - MUST set value before setting available?
+              ;; or you have a race with the first check above
+              (set! value v)
+              (set! available? true)
+              v)))))))
 
+(defn ^:private d-lay [fun]
+  (->RetryingDelay fun false nil))
 
 ;; # Auxilliary functions
 

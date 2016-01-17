@@ -3,7 +3,6 @@
   :url "https://github.com/jonase/eastwood"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :aot [eastwood.copieddeps.dep10.clojure.tools.reader.impl.ExceptionInfo]
   :global-vars {*warn-on-reflection* true
                 ;;*unchecked-math* :warn-on-boxed
                }

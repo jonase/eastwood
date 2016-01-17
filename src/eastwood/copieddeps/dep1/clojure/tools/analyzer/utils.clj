@@ -228,16 +228,8 @@
 
 (defn const-val
   "Returns the value of a constant node (either :quote or :const)"
-  [{:keys [op form val expr]}]
-  (cond
-   (= :quote op)
-   (const-val expr)
-
-   val
-   val
-
-   :else
-   form))
+  [{:keys [form val]}]
+  (or val form))
 
 (def mmerge
   "Same as (fn [m1 m2] (merge-with merge m2 m1))"

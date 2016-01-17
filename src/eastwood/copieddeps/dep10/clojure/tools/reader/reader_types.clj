@@ -8,11 +8,12 @@
 
 (ns ^{:doc "Protocols and default Reader types implementation"
       :author "Bronsa"}
-  eastwood.copieddeps.dep10.clojure.tools.reader.reader-types
+    eastwood.copieddeps.dep10.clojure.tools.reader.reader-types
   (:refer-clojure :exclude [char read-line])
-  (:use eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils)
+  (:require [eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils :refer
+             [char whitespace? newline? compile-if >=clojure-1-5-alpha*? make-var]])
   (:import clojure.lang.LineNumberingPushbackReader
-           (java.io InputStream BufferedReader)))
+           (java.io InputStream BufferedReader Closeable)))
 
 (defmacro ^:private update! [what f]
   (list 'set! what (list f what)))
@@ -71,7 +72,10 @@
       (when (== -1 (.read is buf))
         (set! buf nil)))
     (when buf
-      (char (aget buf 0)))))
+      (char (aget buf 0))))
+  Closeable
+  (close [this]
+    (.close is)))
 
 (deftype PushbackReader
     [rdr ^"[Ljava.lang.Object;" buf buf-len ^:unsynchronized-mutable buf-pos]
@@ -93,7 +97,11 @@
     (when ch
       (if (zero? buf-pos) (throw (RuntimeException. "Pushback buffer is full")))
       (update! buf-pos dec)
-      (aset buf buf-pos ch))))
+      (aset buf buf-pos ch)))
+  Closeable
+  (close [this]
+    (when (instance? Closeable rdr)
+      (.close ^Closeable rdr))))
 
 (defn- normalize-newline [rdr ch]
   (if (identical? \return ch)
@@ -136,7 +144,14 @@
   IndexingReader
   (get-line-number [reader] (int line))
   (get-column-number [reader] (int column))
-  (get-file-name [reader] file-name))
+  (get-file-name [reader] file-name)
+
+  Closeable
+  (close [this]
+    (when (instance? Closeable rdr)
+      (.close ^Closeable rdr))))
+
+;; Java interop
 
 (extend-type java.io.PushbackReader
   Reader
@@ -164,19 +179,55 @@
                         (fn [rdr] 0))
    :get-file-name (constantly nil)})
 
+(defprotocol ReaderCoercer
+  (to-rdr [rdr]))
+
+(declare string-reader push-back-reader)
+
+(extend-protocol ReaderCoercer
+  Object
+  (to-rdr [rdr]
+    (if (satisfies? Reader rdr)
+      rdr
+      (throw (IllegalArgumentException. (str "Argument of type: " (class rdr) " cannot be converted to Reader")))))
+  eastwood.copieddeps.dep10.clojure.tools.reader.reader_types.Reader
+  (to-rdr [rdr] rdr)
+  String
+  (to-rdr [str] (string-reader str))
+  java.io.Reader
+  (to-rdr [rdr] (java.io.PushbackReader. rdr)))
+
+(defprotocol PushbackReaderCoercer
+  (to-pbr [rdr buf-len]))
+
+(extend-protocol PushbackReaderCoercer
+  Object
+  (to-pbr [rdr buf-len]
+    (if (satisfies? Reader rdr)
+      (push-back-reader rdr buf-len)
+      (throw (IllegalArgumentException. (str "Argument of type: " (class rdr) " cannot be converted to IPushbackReader")))))
+  eastwood.copieddeps.dep10.clojure.tools.reader.reader_types.Reader
+  (to-pbr [rdr buf-len] (push-back-reader rdr buf-len))
+  eastwood.copieddeps.dep10.clojure.tools.reader.reader_types.PushbackReader
+  (to-pbr [rdr buf-len] (push-back-reader rdr buf-len))
+  String
+  (to-pbr [str buf-len] (push-back-reader str buf-len))
+  java.io.Reader
+  (to-pbr [rdr buf-len] (java.io.PushbackReader. rdr buf-len)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Source Logging support
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defn merge-meta
   "Returns an object of the same type and value as `obj`, with its
-metadata merged over `m`."
+  metadata merged over `m`."
   [obj m]
   (let [orig-meta (meta obj)]
     (with-meta obj (merge m (dissoc orig-meta :source)))))
 
 (defn- peek-source-log
   "Returns a string containing the contents of the top most source
-logging frame."
+  logging frame."
   [source-log-frames]
   (let [current-frame @source-log-frames]
     (.substring ^StringBuilder (:buffer current-frame) (:offset current-frame))))
@@ -189,7 +240,7 @@ logging frame."
 
 (defn- drop-last-logged-char
   "Removes the last logged character from all currently active source
-logging frames. Called when pushing a character back."
+  logging frames. Called when pushing a character back."
   [source-log-frames]
   (when-let [^StringBuilder buffer (:buffer @source-log-frames)]
     (.deleteCharAt buffer (dec (.length buffer)))))
@@ -229,7 +280,12 @@ logging frames. Called when pushing a character back."
   IndexingReader
   (get-line-number [reader] (int line))
   (get-column-number [reader] (int column))
-  (get-file-name [reader] file-name))
+  (get-file-name [reader] file-name)
+
+  Closeable
+  (close [this]
+    (when (instance? Closeable rdr)
+      (.close ^Closeable rdr))))
 
 (defn log-source*
   [reader f]
@@ -260,68 +316,73 @@ logging frames. Called when pushing a character back."
 (defn string-reader
   "Creates a StringReader from a given string"
   ([^String s]
-     (StringReader. s (count s) 0)))
+   (StringReader. s (count s) 0)))
 
-(defn string-push-back-reader
+(defn ^Closeable push-back-reader
+  "Creates a PushbackReader from a given reader or string"
+  ([rdr] (push-back-reader rdr 1))
+  ([rdr buf-len] (PushbackReader. (to-rdr rdr) (object-array buf-len) buf-len buf-len)))
+
+(defn ^Closeable string-push-back-reader
   "Creates a PushbackReader from a given string"
   ([s]
-     (string-push-back-reader s 1))
+   (string-push-back-reader s 1))
   ([^String s buf-len]
-     (PushbackReader. (string-reader s) (object-array buf-len) buf-len buf-len)))
+   (push-back-reader (string-reader s) buf-len)))
 
-(defn input-stream-reader
+(defn ^Closeable input-stream-reader
   "Creates an InputStreamReader from an InputStream"
   [is]
   (InputStreamReader. is nil))
 
-(defn input-stream-push-back-reader
+(defn ^Closeable input-stream-push-back-reader
   "Creates a PushbackReader from a given InputStream"
   ([is]
-     (input-stream-push-back-reader is 1))
+   (input-stream-push-back-reader is 1))
   ([^InputStream is buf-len]
-     (PushbackReader. (input-stream-reader is) (object-array buf-len) buf-len buf-len)))
+   (push-back-reader (input-stream-reader is) buf-len)))
 
-(defn indexing-push-back-reader
+(defn ^Closeable indexing-push-back-reader
   "Creates an IndexingPushbackReader from a given string or PushbackReader"
   ([s-or-rdr]
-     (indexing-push-back-reader s-or-rdr 1))
+   (indexing-push-back-reader s-or-rdr 1))
   ([s-or-rdr buf-len]
-     (indexing-push-back-reader s-or-rdr buf-len nil))
+   (indexing-push-back-reader s-or-rdr buf-len nil))
   ([s-or-rdr buf-len file-name]
-     (IndexingPushbackReader.
-      (if (string? s-or-rdr) (string-push-back-reader s-or-rdr buf-len) s-or-rdr) 1 1 true nil 0 file-name)))
+   (IndexingPushbackReader.
+    (to-pbr s-or-rdr buf-len) 1 1 true nil 0 file-name)))
 
-(defn source-logging-push-back-reader
+(defn ^Closeable source-logging-push-back-reader
   "Creates a SourceLoggingPushbackReader from a given string or PushbackReader"
   ([s-or-rdr]
-     (source-logging-push-back-reader s-or-rdr 1))
+   (source-logging-push-back-reader s-or-rdr 1))
   ([s-or-rdr buf-len]
-     (source-logging-push-back-reader s-or-rdr buf-len nil))
+   (source-logging-push-back-reader s-or-rdr buf-len nil))
   ([s-or-rdr buf-len file-name]
-     (SourceLoggingPushbackReader.
-      (if (string? s-or-rdr) (string-push-back-reader s-or-rdr buf-len) s-or-rdr)
-      1
-      1
-      true
-      nil
-      0
-      file-name
-      (doto (make-var)
-        (alter-var-root (constantly {:buffer (StringBuilder.)
-                                     :offset 0}))))))
+   (SourceLoggingPushbackReader.
+    (to-pbr s-or-rdr buf-len)
+    1
+    1
+    true
+    nil
+    0
+    file-name
+    (doto (make-var)
+      (alter-var-root (constantly {:buffer (StringBuilder.)
+                                   :offset 0}))))))
 
 (defn read-line
   "Reads a line from the reader or from *in* if no reader is specified"
   ([] (read-line *in*))
   ([rdr]
-     (if (or (instance? LineNumberingPushbackReader rdr)
-             (instance? BufferedReader rdr))
-       (binding [*in* rdr]
-         (clojure.core/read-line))
-       (loop [c (read-char rdr) s (StringBuilder.)]
-         (if (newline? c)
-           (str s)
-           (recur (read-char rdr) (.append s c)))))))
+   (if (or (instance? LineNumberingPushbackReader rdr)
+           (instance? BufferedReader rdr))
+     (binding [*in* rdr]
+       (clojure.core/read-line))
+     (loop [c (read-char rdr) s (StringBuilder.)]
+       (if (newline? c)
+         (str s)
+         (recur (read-char rdr) (.append s c)))))))
 
 (defn reader-error
   "Throws an ExceptionInfo with the given message.

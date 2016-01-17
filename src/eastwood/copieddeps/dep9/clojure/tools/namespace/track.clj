@@ -114,7 +114,8 @@
   {})
 
 (comment
-  ;; Structure of the namespace tracker map
+  ;; Structure of the namespace tracker map. Documented for reference
+  ;; only: This is not a public API.
 
   {;; Dependency graph of namespace names (symbols) as defined in
    ;; eastwood.copieddeps.dep9.clojure.tools.namespace.dependency/graph

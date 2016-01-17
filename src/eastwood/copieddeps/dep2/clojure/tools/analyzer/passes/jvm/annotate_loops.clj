@@ -60,6 +60,10 @@
       (assoc ast :recurs true)
       ast)))
 
+(defmethod check-recur :case-then
+  [ast]
+  (-check-recur ast :then))
+
 (defmethod check-recur :recur
   [ast]
   (assoc ast :recurs true))

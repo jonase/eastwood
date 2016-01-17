@@ -12,9 +12,13 @@
   (:refer-clojure :exclude [read read-line read-string char
                             default-data-readers *default-data-reader-fn*
                             *read-eval* *data-readers* *suppress-read*])
-  (:use eastwood.copieddeps.dep10.clojure.tools.reader.reader-types
-        [eastwood.copieddeps.dep10.clojure.tools.reader.impl utils commons])
-  (:require [eastwood.copieddeps.dep10.clojure.tools.reader.default-data-readers :as data-readers])
+  (:require [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :refer
+             [read-char reader-error unread peek-char indexing-reader?
+              get-line-number get-column-number get-file-name string-push-back-reader
+              log-source]]
+            [eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils :refer :all] ;; [char ex-info? whitespace? numeric? desugar-meta]
+            [eastwood.copieddeps.dep10.clojure.tools.reader.impl.commons :refer :all]
+            [eastwood.copieddeps.dep10.clojure.tools.reader.default-data-readers :as data-readers])
   (:import (clojure.lang PersistentHashSet IMeta
                          RT Symbol Reflector Var IObj
                          PersistentVector IRecord Namespace)
@@ -180,20 +184,22 @@
 (defonce ^:private READ_EOF (Object.))
 (defonce ^:private READ_FINISHED (Object.))
 
+(def ^:dynamic *read-delim* false)
 (defn- ^PersistentVector read-delimited
   "Reads and returns a collection ended with delim"
   [delim rdr opts pending-forms]
   (let [[start-line start-column] (starting-line-col-info rdr)
         delim (char delim)]
-    (loop [a (transient [])]
-      (let [form (read* rdr false READ_EOF delim opts pending-forms)]
-        (if (identical? form READ_FINISHED)
-          (persistent! a)
-          (if (identical? form READ_EOF)
-            (reader-error rdr "EOF while reading"
-                          (when start-line
-                            (str ", starting at line " start-line " and column " start-column)))
-            (recur (conj! a form))))))))
+    (binding [*read-delim* true]
+      (loop [a (transient [])]
+        (let [form (read* rdr false READ_EOF delim opts pending-forms)]
+          (if (identical? form READ_FINISHED)
+            (persistent! a)
+            (if (identical? form READ_EOF)
+              (reader-error rdr "EOF while reading"
+                            (when start-line
+                              (str ", starting at line " start-line " and column " start-column)))
+              (recur (conj! a form)))))))))
 
 (defn- read-list
   "Read in a list, including its location if the reader is an indexing reader"
@@ -437,6 +443,8 @@
       (when (identical? form READ_FINISHED)
         READ_FINISHED))))
 
+(def ^:private NO_MATCH (Object.))
+
 (defn- match-feature
   "Read next feature. If matched, read next form and return.
    Otherwise, read and skip next form, returning READ_FINISHED or nil."
@@ -453,29 +461,29 @@
             (check-eof-error rdr first-line)
             (check-invalid-read-cond rdr first-line))
           ;; feature not matched, ignore next form
-          (read-suppress first-line rdr opts pending-forms))))))
+          (or (read-suppress first-line rdr opts pending-forms)
+              NO_MATCH))))))
 
 (defn- read-cond-delimited
   [rdr splicing opts pending-forms]
   (let [first-line (if (indexing-reader? rdr) (get-line-number rdr) -1)
-        result (loop [matched nil
+        result (loop [matched NO_MATCH
                       finished nil]
                  (cond
-                   ;; still looking for match, read feature+form
-                   (nil? matched)
-                   (let [match (match-feature first-line rdr opts pending-forms)]
-                     (if (not (nil? match))
-                       (when-not (identical? match READ_FINISHED)
-                         (recur match nil))
-                       (recur nil nil)))
+                  ;; still looking for match, read feature+form
+                  (identical? matched NO_MATCH)
+                  (let [match (match-feature first-line rdr opts pending-forms)]
+                    (if (identical? match READ_FINISHED)
+                      READ_FINISHED
+                      (recur match nil)))
 
-                   ;; found match, just read and ignore the rest
-                   (not (identical? finished READ_FINISHED))
-                   (recur matched (read-suppress first-line rdr opts pending-forms))
+                  ;; found match, just read and ignore the rest
+                  (not (identical? finished READ_FINISHED))
+                  (recur matched (read-suppress first-line rdr opts pending-forms))
 
-                   :else
-                   matched))]
-    (if (nil? result)
+                  :else
+                  matched))]
+    (if (identical? result READ_FINISHED)
       rdr
       (if splicing
         (if (instance? List result)
@@ -492,6 +500,9 @@
   (if-let [ch (read-char rdr)]
     (let [splicing (= ch \@)
           ch (if splicing (read-char rdr) ch)]
+      (when splicing
+        (when-not *read-delim*
+          (reader-error rdr "cond-splice not in list")))
       (if-let [ch (if (whitespace? ch) (read-past whitespace? rdr) ch)]
         (if (not= ch \()
           (throw (RuntimeException. "read-cond body must be a list"))
@@ -694,7 +705,7 @@
                :else (resolve-symbol form)))))
 
     (unquote? form) (second form)
-    (unquote-splicing? form) (throw (IllegalStateException. "splice not in list"))
+    (unquote-splicing? form) (throw (IllegalStateException. "unquote-splice not in list"))
 
     (coll? form)
     (cond

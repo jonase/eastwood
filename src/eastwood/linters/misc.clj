@@ -682,6 +682,17 @@
 ;; (def fun3 (fn [y] (inc y)))
 ;; (defn ^Class fun4 "docstring" {:seesaw {:class `Integer}} [x & y] ...)
 
+;; tools.analyzer.jvm 0.6.8 introduced extra level of (quote ...)
+;; around the value of (-> a :meta :val :arglists) for function ASTs
+;; a, over what version 0.6.7 had.  I have filed ticket TANAL-117 to
+;; point this out, and learn whether this is a bug or not.  Until
+;; then, work around it if it is seen.
+(defn maybe-unwrap-quote [x]
+  (if (and (sequential? x)
+           (= 'quote (first x)))
+    (second x)
+    x))
+
 (defn bad-arglists [{:keys [asts]} opt]
   (let [def-fn-asts (->> asts
                          (mapcat ast/nodes)
@@ -699,7 +710,8 @@
              macro-args? (or (not macro?)
                              (every? #(= '(&form &env) (take 2 %)) fn-arglists))
              meta-arglists (cond (contains? (-> a :meta :val) :arglists)
-                                 (-> a :meta :val :arglists)
+                                 (maybe-unwrap-quote
+                                  (-> a :meta :val :arglists))
                                  ;; see case 2 notes above
                                  (and (contains? (-> a :meta) :keys)
                                       (->> (-> a :meta :keys)

@@ -86,8 +86,11 @@
   DependencyGraphUpdate
   (depend [graph node dep]
     (when (or (= node dep) (depends? graph dep node))
-      (throw (Exception. (str "Circular dependency between "
-                              (pr-str node) " and " (pr-str dep)))))
+      (throw (ex-info (str "Circular dependency between "
+                           (pr-str node) " and " (pr-str dep))
+                      {:reason ::circular-dependency
+                       :node node
+                       :dependency dep})))
     (MapDependencyGraph.
      (update-in dependencies [node] set-conj dep)
      (update-in dependents [dep] set-conj node)))
@@ -142,6 +145,9 @@
                (remove-node g' node)
                (clojure.set/union (set more) (set add)))))))
 
+(def ^:private max-number
+  Long/MAX_VALUE)
+
 (defn topo-comparator
   "Returns a comparator fn which produces a topological sort based on
   the dependencies in graph. Nodes not present in the graph will sort
@@ -149,6 +155,5 @@
   [graph]
   (let [pos (zipmap (topo-sort graph) (range))]
     (fn [a b]
-      (compare (get pos a Long/MAX_VALUE)
-               (get pos b Long/MAX_VALUE)))))
-
+      (compare (get pos a max-number)
+               (get pos b max-number)))))

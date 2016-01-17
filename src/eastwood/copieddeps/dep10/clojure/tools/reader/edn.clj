@@ -9,10 +9,14 @@
 (ns ^{:doc "An EDN reader in clojure"
       :author "Bronsa"}
   eastwood.copieddeps.dep10.clojure.tools.reader.edn
-  (:refer-clojure :exclude [read read-line read-string char default-data-readers])
-  (:use eastwood.copieddeps.dep10.clojure.tools.reader.reader-types
-        [eastwood.copieddeps.dep10.clojure.tools.reader.impl utils commons]
-        [eastwood.copieddeps.dep10.clojure.tools.reader :only [default-data-readers]])
+  (:refer-clojure :exclude [read read-string char default-data-readers])
+  (:require [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :refer
+             [read-char reader-error unread peek-char indexing-reader?
+              get-line-number get-column-number get-file-name string-push-back-reader]]
+            [eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils :refer
+             [char ex-info? whitespace? numeric? desugar-meta]]
+            [eastwood.copieddeps.dep10.clojure.tools.reader.impl.commons :refer :all]
+            [eastwood.copieddeps.dep10.clojure.tools.reader :refer [default-data-readers]])
   (:import (clojure.lang PersistentHashSet IMeta RT PersistentVector)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

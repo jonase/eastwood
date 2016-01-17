@@ -10,7 +10,8 @@
       :doc "Parse Clojure namespace (ns) declarations and extract
   dependencies."}
   eastwood.copieddeps.dep9.clojure.tools.namespace.parse
-  (:require [clojure.set :as set]))
+  (:require [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
+            [clojure.set :as set]))
 
 (defn comment?
   "Returns true if form is a (comment ...)"
@@ -22,22 +23,39 @@
   [form]
   (and (list? form) (= 'ns (first form))))
 
+(def clj-read-opts
+  "Map of options for tools.reader/read allowing reader conditionals
+  with the :clj feature enabled."
+  {:read-cond :allow
+   :features #{:clj}})
+
+(def cljs-read-opts
+  "Map of options for tools.reader/read allowing reader conditionals
+  with the :cljs feature enabled."
+  {:read-cond :allow
+   :features #{:cljs}})
+
 (defn read-ns-decl
-  "Attempts to read a (ns ...) declaration from a
-  java.io.PushbackReader, and returns the unevaluated form. Returns
-  the first top-level ns form found. Returns nil if read fails or if a
-  ns declaration cannot be found. Note that read can execute code
-  (controlled by *read-eval*), and as such should be used only with
-  trusted sources."
-  [rdr]
-  {:pre [(instance? java.io.PushbackReader rdr)]}
-  (try
-   (loop []
-     (let [form (doto (read rdr) str)]  ; str forces errors, see TNS-1
-       (if (ns-decl? form)
-         form
-         (recur))))
-   (catch Exception e nil)))
+  "Attempts to read a (ns ...) declaration from a reader, and returns
+  the unevaluated form. Returns the first top-level ns form found.
+  Returns nil if ns declaration cannot be found. Throws exception on
+  invalid syntax.
+
+  Note that read can execute code (controlled by
+  tools.reader/*read-eval*), and as such should be used only with
+  trusted sources. read-opts is passed through to tools.reader/read,
+  defaults to clj-read-opts"
+  ([rdr]
+   (read-ns-decl rdr nil))
+  ([rdr read-opts]
+   (let [opts (assoc (or read-opts clj-read-opts)
+                     :eof ::eof)]
+     (loop []
+       (let [form (reader/read opts rdr)]
+         (cond
+           (ns-decl? form) form
+           (= ::eof form) nil
+           :else (recur)))))))
 
 ;;; Parsing dependencies
 
@@ -74,13 +92,32 @@
 	(keyword? form)  ; Some people write (:require ... :reload-all)
           nil
 	:else
-          (throw (IllegalArgumentException.
-                  (pr-str "Unparsable namespace form:" form)))))
+          (throw (ex-info "Unparsable namespace form"
+                          {:reason ::unparsable-ns-form
+                           :form form}))))
+
+(def ^:private ns-clause-head-names
+  "Set of symbol/keyword names which can appear as the head of a
+  clause in the ns form."
+  #{"use" "require"})
+
+(def ^:private ns-clause-heads
+  "Set of all symbols and keywords which can appear at the head of a
+  dependency clause in the ns form."
+  (set (mapcat (fn [name] (list (keyword name)
+                                (symbol name)))
+               ns-clause-head-names)))
 
 (defn- deps-from-ns-form [form]
   (when (and (sequential? form)  ; should be list but sometimes is not
-	     (contains? #{:use :require 'use 'require} (first form)))
+	     (contains? ns-clause-heads (first form)))
     (mapcat #(deps-from-libspec nil %) (rest form))))
+
+(defn name-from-ns-decl
+  "Given an (ns...) declaration form (unevaluated), returns the name
+  of the namespace as a symbol."
+  [decl]
+  (second decl))
 
 (defn deps-from-ns-decl
   "Given an (ns...) declaration form (unevaluated), returns a set of

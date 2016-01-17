@@ -1,23 +1,12 @@
 (ns eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
+  "Utilities for pass scheduling"
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [prewalk postwalk]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [update-vals]]))
-
-(def ^:private ffilter (comp first filter))
-
-(defn ^:private ffilter-walk [f c]
-  (ffilter (comp f :walk) c))
 
 (defn ^:private has-deps?
   "Returns true if the pass has some dependencies"
   [pass]
   (seq (:dependencies pass)))
-
-(defn ^:private group-by-walk
-  "Takes a set of pass-infos and returns a map grouping them by :walk.
-   Possible keys are :any, :none, :pre and :post"
-  [passes]
-  (reduce-kv (fn [m k v] (assoc m k (set (map :name v))))
-             {} (group-by :walk passes)))
 
 (defn ^:private indicize
   "Takes a set of pass-infos and returns a map of pass-name -> pass-info"
@@ -32,6 +21,15 @@
                                         (update-in [:dependants] disj pass))))
                     #{} (vals (dissoc passes pass)))))
 
+(defn desugar-deps
+  "Takes a map of pass-name -> pass deps and puts the :after :affects and :before passes
+   in the appropriate pass :depends"
+  [passes]
+  (reduce-kv (fn [m name {:keys [after affects before]}]
+               (reduce (fn [m p] (update-in m [p :depends] (fnil conj #{}) name))
+                       (update-in m [name :depends] (fnil into #{}) (into affects (filter passes after)))
+                       before)) passes passes))
+
 (defn ^:private calc-deps
   "Takes a map of pass-name -> pass deps, a pass name, the explicit pass dependencies
    and a set of available pass-infos.
@@ -44,12 +42,6 @@
               (let [m (calc-deps m dep (get-in passes [dep :depends]) passes)]
                 (update-in m [k] into (conj (or (m dep) #{}) dep))))
             (assoc m k deps) deps)))
-
-(defn desugar-deps [passes]
-  (reduce-kv (fn [m name {:keys [after affects before]}]
-               (reduce (fn [m p] (update-in m [p :depends] (fnil conj #{}) name))
-                       (update-in m [name :depends] (fnil into #{}) (into affects (filter passes after)))
-                       before)) passes passes))
 
 (defn calculate-deps
   "Takes a map of pass-name -> pass-info and adds to each pass-info :dependencies and
@@ -120,17 +112,21 @@
     ;; pick a random available pass
     (first free)))
 
+(def ^:private ffilter (comp first filter))
+
+(defn ^:private first-walk [f c]
+  (ffilter (comp #{f} :walk) c))
+
 (defn schedule* [state passes]
-  (let [f                         (filter (comp empty? :dependants val) passes)
-        [free & frs :as free-all] (vals f)
-        w                         (first (group state))
-        non-looping-free          (remove :affects free-all)]
+  (let [free             (filter (comp empty? :dependants) (vals passes))
+        w                (first (group state))
+        non-looping-free (remove :affects free)]
     (if (seq passes)
-      (let [{:keys [name] :as pass} (or (ffilter :compiler free-all)
-                                        (and w (or (ffilter-walk #{w} non-looping-free)
-                                                   (ffilter-walk #{:any} non-looping-free)))
-                                        (ffilter-walk #{:none} free-all)
-                                        (maybe-looping-pass free-all passes))]
+      (let [{:keys [name] :as pass} (or (ffilter :compiler free)
+                                        (and w (or (first-walk w non-looping-free)
+                                                   (first-walk :any non-looping-free)))
+                                        (first-walk :none free)
+                                        (maybe-looping-pass free passes))]
         (recur (cons (assoc pass :passes [name]) state)
                (remove-pass passes name)))
       state)))
@@ -146,8 +142,7 @@
 
 (defn schedule-passes
   [passes]
-  (let [passes (calculate-deps passes)
-        dependencies (set (mapcat :dependencies (vals passes)))]
+  (let [passes (calculate-deps passes)]
 
     (when (every? has-deps? (vals passes))
       (throw (ex-info "Dependency cycle detected" passes)))
@@ -200,7 +195,7 @@
                This pass must take a function as argument and return the actual pass, the
                argument represents the reified tree traversal which the pass can use to
                control a recursive traversal, implies :depends
-   * :state    a no-arg function that should return the init value of an atom that will be
+   * :state    a no-arg function that should return an atom holding an init value that will be
                passed as the first argument to the pass (the pass will thus take the ast
                as the second parameter), the atom will be the same for the whole tree traversal
                and thus can be used to preserve state across the traversal

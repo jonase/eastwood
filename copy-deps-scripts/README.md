@@ -158,7 +158,7 @@ for details.
     ;; diff command like the following from the dolly project root
     ;; directory in a command shell should show no differences.
 
-    ;; diff -cr copy-deps-scripts/repos/tools.analyzer/src/main/clojure staging
+    ;; diff -cr copy-deps-scripts/repos/tools.analyzer.jvm/src/main/clojure staging
 
     ;; Now move the files from the staging area into dolly's code and
     ;; rename the namespaces.
@@ -203,7 +203,7 @@ for details.
 
     ;; java.classpath
     (c/copy-namespaces-unmodified jc-src-path staging-path 'clojure.java.classpath for-real)
-    (c/move-namespaces-and-rename staging-path src-path 'clojure.java.classpath 'eastwood.copieddeps.dep9.clojure.java.classpath [src-path] for-real)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.java.classpath 'eastwood.copieddeps.dep11.clojure.java.classpath [src-path] for-real)
 
 
 Here are the dependencies copied in, given in a topologically sorted

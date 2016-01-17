@@ -6,10 +6,10 @@
 ;;   the terms of this license.
 ;;   You must not remove this notice, or any other, from this software.
 
-(ns ^:skip-wiki eastwood.copieddeps.dep10.clojure.tools.reader.impl.commons
-  (:refer-clojure :exclude [char read-line])
-  (:use eastwood.copieddeps.dep10.clojure.tools.reader.reader-types
-        eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils)
+(ns eastwood.copieddeps.dep10.clojure.tools.reader.impl.commons
+  (:refer-clojure :exclude [char])
+  (:require [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :refer [peek-char read-char reader-error]]
+            [eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils :refer [numeric? newline? char]])
   (:import (clojure.lang BigInt Numbers)
            (java.util.regex Pattern Matcher)
            java.lang.reflect.Constructor))
@@ -57,10 +57,9 @@
              (.group m 5) [(.group m 5) 8]
              (.group m 7) [(.group m 7) (Integer/parseInt (.group m 6))]
              :else        [nil nil])
-          ^String n (a 0)
-          radix (int (a 1))]
+          ^String n (a 0)]
       (when n
-        (let [bn (BigInteger. n radix)
+        (let [bn (BigInteger. n (int (a 1)))
               bn (if negate? (.negate bn) bn)]
           (if (.group m 8)
             (BigInt/fromBigInteger bn)

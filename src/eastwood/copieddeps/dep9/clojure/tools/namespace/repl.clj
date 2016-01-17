@@ -11,11 +11,12 @@
   eastwood.copieddeps.dep9.clojure.tools.namespace.repl
   (:require [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
+            [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.reload :as reload]))
 
-(defonce ^:private refresh-tracker (track/tracker))
+(defonce refresh-tracker (track/tracker))
 
-(defonce ^:private refresh-dirs [])
+(defonce refresh-dirs [])
 
 (defn- print-and-return [tracker]
   (if-let [e (::reload/error tracker)]
@@ -79,7 +80,7 @@
     (when (find-ns ns-name)
       (alias alias-sym ns-name))))
 
-(defn- do-refresh [scan-fn after-sym]
+(defn- do-refresh [scan-opts after-sym]
   (when after-sym
     (assert (symbol? after-sym) ":after value must be a symbol")
     (assert (namespace after-sym)
@@ -87,8 +88,7 @@
   (let [current-ns-name (ns-name *ns*)
         current-ns-refers (referred *ns*)
         current-ns-aliases (aliased *ns*)]
-    (alter-var-root #'refresh-tracker
-                    #(apply scan-fn % refresh-dirs))
+    (alter-var-root #'refresh-tracker dir/scan-dirs refresh-dirs scan-opts)
     (alter-var-root #'refresh-tracker remove-disabled)
     (print-pending-reloads refresh-tracker)
     (alter-var-root #'refresh-tracker reload/track-reload)
@@ -142,7 +142,7 @@
                been reloaded."
   [& options]
   (let [{:keys [after]} options]
-    (do-refresh dir/scan after)))
+    (do-refresh {:platform find/clj} after)))
 
 (defn refresh-all
   "Scans source code directories for all Clojure source files and
@@ -159,7 +159,7 @@
                been reloaded."
   [& options]
   (let [{:keys [after]} options]
-    (do-refresh dir/scan-all after)))
+    (do-refresh {:platform find/clj :add-all? true} after)))
 
 (defn set-refresh-dirs
   "Sets the directories which are scanned by 'refresh'. Supports the
