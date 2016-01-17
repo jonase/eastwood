@@ -7,6 +7,7 @@
             [clojure.string :as str]
             [clojure.pprint :as pp]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
+            [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
             [eastwood.linters.misc :as misc]
@@ -706,9 +707,10 @@ exception."))
 (defn filename-namespace-mismatches [dir-name-strs]
   (let [files-by-dir (into {} (for [dir-name-str dir-name-strs]
                                 [dir-name-str (:clojure-files
-                                               (#'dir/find-files [dir-name-str]))]))
+                                               (#'dir/find-files [dir-name-str]
+                                                                 find/clj))]))
         fd-by-dir (util/map-vals (fn [files]
-                                   (#'file/files-and-deps files))
+                                   (#'file/files-and-deps files find/clj))
                                  files-by-dir)]
     (into
      {}
