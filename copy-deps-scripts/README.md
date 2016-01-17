@@ -60,11 +60,10 @@ available:
 
 ### Current dependencies of project deps
 
-As of June 13 2015:
+As of Jan 15 2016:
 
     % lein deps :tree
-    warn
-     [clojure-complete "0.2.3" :scope "test" :exclusions [[org.clojure/clojure]]]
+     [clojure-complete "0.2.3" :exclusions [[org.clojure/clojure]]]
      [jafingerhut/dolly "0.1.0" :scope "test"]
        [rhizome "0.2.1" :scope "test"]
      [leinjacker "0.4.1"]
@@ -72,19 +71,19 @@ As of June 13 2015:
          [org.clojure/core.unify "0.5.3"]
      [org.clojars.brenton/google-diff-match-patch "0.1"]
      [org.clojure/clojure "1.6.0"]
-     [org.clojure/tools.analyzer.jvm "0.6.7"]
-       [org.clojure/core.memoize "0.5.6"]
-         [org.clojure/core.cache "0.6.3"]
-           [org.clojure/data.priority-map "0.0.2"]
+     [org.clojure/tools.analyzer.jvm "0.6.9"]
+       [org.clojure/core.memoize "0.5.8"]
+         [org.clojure/core.cache "0.6.4"]
+           [org.clojure/data.priority-map "0.0.4"]
        [org.ow2.asm/asm-all "4.2"]
-     [org.clojure/tools.analyzer "0.6.6"]
+     [org.clojure/tools.analyzer "0.6.7"]
      [org.clojure/tools.macro "0.1.2" :scope "test"]
-     [org.clojure/tools.namespace "0.2.9"]
-     [org.clojure/tools.nrepl "0.2.6" :scope "test" :exclusions [[org.clojure/clojure]]]
-     [org.clojure/tools.reader "0.9.2"]
+     [org.clojure/tools.namespace "0.3.0-alpha3"]
+       [org.clojure/java.classpath "0.2.3"]
+     [org.clojure/tools.nrepl "0.2.10" :exclusions [[org.clojure/clojure]]]
+     [org.clojure/tools.reader "1.0.0-alpha3"]
 
     % lein ancient
-    [org.clojure/tools.namespace "0.2.10"] is available but we use "0.2.9"
     [leinjacker "0.4.2"] is available but we use "0.4.1"
     [org.clojure/tools.macro "0.1.5"] is available but we use "0.1.2"
 
@@ -149,6 +148,7 @@ for details.
     (def ccontracts-src-path (str e-root "/copy-deps-scripts/repos/core.contracts/src/main/clojure"))
     (def cu-src-path (str e-root "/copy-deps-scripts/repos/core.unify/src/main/clojure"))
     (def tn-src-path (str e-root "/copy-deps-scripts/repos/tools.namespace/src/main/clojure"))
+    (def jc-src-path (str e-root "/copy-deps-scripts/repos/java.classpath/src/main/clojure"))
 
     ;; Change for-real to dry-run to see what will happen without
     ;; changing anything.  Look it over to see if it is reasonable.
@@ -201,6 +201,10 @@ for details.
     (c/copy-namespaces-unmodified tn-src-path staging-path 'clojure.tools.namespace for-real)
     (c/move-namespaces-and-rename staging-path src-path 'clojure.tools.namespace 'eastwood.copieddeps.dep9.clojure.tools.namespace [src-path] for-real)
 
+    ;; java.classpath
+    (c/copy-namespaces-unmodified jc-src-path staging-path 'clojure.java.classpath for-real)
+    (c/move-namespaces-and-rename staging-path src-path 'clojure.java.classpath 'eastwood.copieddeps.dep9.clojure.java.classpath [src-path] for-real)
+
 
 Here are the dependencies copied in, given in a topologically sorted
 order such that for all 'A requires B' dependencies, A occurs before
@@ -220,3 +224,4 @@ renaming by the end.
         eastwood.copieddeps.dep8 clojure.core.unify
 
     eastwood.copieddeps.dep9 clojure.tools.namespace
+      eastwood.copieddeps.dep11 clojure.java.classpath
