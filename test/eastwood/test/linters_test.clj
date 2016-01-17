@@ -1668,6 +1668,11 @@ the next."
     1,
     })
   (lint-test
+   'testcases.unusednss3
+   [:unused-namespaces]
+   default-opts
+   {})
+  (lint-test
    'testcases.wrongnsform
    [:wrong-ns-form]
    default-opts

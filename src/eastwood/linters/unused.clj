@@ -42,6 +42,19 @@
        (remove nil?)
        set))
 
+(defn namespace-for [^Class klass]
+  (-> (.getCanonicalName klass)
+      (str/replace "_" "-")
+      (str/replace #"\.[^\.]+$" "")
+      symbol))
+
+(defn protocols-used [asts]
+  (->> asts
+       (mapcat ast/nodes)
+       (mapcat :interfaces)
+       (remove nil?)
+       set))
+
 (defn unused-private-vars [{:keys [asts]} opt]
   (let [pdefs (private-non-const-defs asts)
         vars-used-set (vars-used asts)]
@@ -236,18 +249,22 @@ Example: (all-suffixes [1 2 3])
         required (required-namespaces ns-asts)
         used-vars (vars-used asts)
         used-macros (macros-invoked asts)
+        used-protocols (protocols-used asts)
 ;;        _ (do
 ;;            (println "dbg: required namespaces:")
 ;;            (pp/pprint required)
 ;;            (println "dbg: vars used:")
 ;;            (pp/pprint (map (juxt #(.getName (.ns %)) #(.sym %)) used-vars))
 ;;            (println "dbg: macros used:")
-;;            (pp/pprint used-macros))
+;;            (pp/pprint used-macros)
+;;            (println "dbg: protocols used:")
+;;            (pp/pprint used-protocols))
         used-namespaces (set
                          (concat (map #(-> ^clojure.lang.Var % .ns .getName)
                                       used-vars)
                                  (keep #(if-let [n (namespace %)] (symbol n))
-                                       used-macros)))]
+                                       used-macros)
+                                 (map namespace-for used-protocols)))]
     (for [ns (set/difference required used-namespaces)]
       (util/add-loc-info loc
        {:linter :unused-namespaces
