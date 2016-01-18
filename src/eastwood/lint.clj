@@ -10,6 +10,7 @@
             [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
+            [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
             [eastwood.linters.misc :as misc]
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.unused :as unused]
@@ -1159,7 +1160,7 @@ Return value:
                      (contains? opts :test-paths))
                opts
                (assoc opts :source-paths
-                      (#'eastwood.copieddeps.dep11.clojure.java.classpath/classpath-directories)))
+                      (classpath/classpath-directories)))
         ;; The following value is equivalent to (merge {:callback ...}
         ;; opts), but it does not calculate the value unless needed.
         opts (if (contains? opts :callback)
