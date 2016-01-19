@@ -693,17 +693,20 @@ exception."))
 
 (defn filename-to-ns [fname]
   (-> fname
-      (str/replace-first #"\.clj$" "")
+      (util/separate-suffix (:extensions find/clj))
+      first
       (str/replace "_" "-")
       (str/replace File/separator ".")
       symbol))
 
-(defn ns-to-filename [namespace]
-  (str (-> namespace
-           str
-           (str/replace "-" "_")
-           (str/replace "." File/separator))
-       ".clj"))
+
+(defn ns-to-filename-set [namespace extensions]
+  (let [basename (-> namespace
+                     str
+                     (str/replace "-" "_")
+                     (str/replace "." File/separator))]
+    (set (map #(str basename %) extensions))))
+
 
 (defn filename-namespace-mismatches [dir-name-strs]
   (let [files-by-dir (into {} (for [dir-name-str dir-name-strs]
@@ -720,10 +723,11 @@ exception."))
            :let [dir-with-sep (str dir File/separator)
                  fname (util/remove-prefix (str f) dir-with-sep)
                  desired-ns (filename-to-ns fname)
-                 desired-fname (ns-to-filename namespace)]
-           :when (not= fname desired-fname)]
+                 desired-fname-set (ns-to-filename-set namespace
+                                                       (:extensions find/clj))]
+           :when (not (contains? desired-fname-set fname))]
        [fname {:dir dir, :namespace namespace,
-               :recommended-fname desired-fname,
+               :recommended-fnames desired-fname-set,
                :recommended-namespace desired-ns}]))))
 
 (defn canonical-filename
@@ -808,17 +812,22 @@ user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
     (with-out-str
       (println "The following file(s) contain ns forms with namespaces that do not correspond
 with their file names:")
-      (doseq [[fname {:keys [dir namespace recommended-fname recommended-namespace]}]
+      (doseq [[fname {:keys [dir namespace recommended-fnames recommended-namespace]}]
               mismatches]
         (println (format "Directory: %s" dir))
-        (println (format "    File                 : %s" fname))
-        (println (format "    has namespace        : %s" namespace))
+        (println (format "    File                   : %s" fname))
+        (println (format "    has namespace          : %s" namespace))
         (if (= namespace recommended-namespace)
           ;; Give somewhat clearer message in this case
-          (println (format "    should be in file    : %s" recommended-fname))
+          (println (format "    should be in file(s)   : %s"
+                           (str/join "\n                             "
+                                     recommended-fnames)))
           (do
-            (println (format "    should have namespace: %s" recommended-namespace))
-            (println (format "    or should be in file : %s" recommended-fname)))))
+            (println (format "    should have namespace  : %s"
+                             recommended-namespace))
+            (println (format "    or should be in file(s): %s"
+                             (str/join "\n                             "
+                                       recommended-fnames))))))
       (println "
 No other linting checks will be performed until these problems have
 been corrected.
