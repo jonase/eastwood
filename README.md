@@ -43,8 +43,10 @@ Eastwood can be run from the command line as a
 if you do not use Leiningen.
 
 As a Leiningen plugin, Eastwood has been tested most with Leiningen
-versions 2.4.x and 2.5.x.  Merge the following into your
-`$HOME/.lein/profiles.clj` file:
+versions 2.4.x and 2.5.x.  There is a known bug in Leiningen 2.6.0
+where many plugins, including Eastwood, often cause exceptions to be
+thrown -- Leiningen 2.6.1 was released to fix that problem.  Merge the
+following into your `$HOME/.lein/profiles.clj` file:
 
 ```clojure
 {:user {:plugins [[jonase/eastwood "0.2.3"]] }}
