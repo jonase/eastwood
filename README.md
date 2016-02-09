@@ -24,7 +24,7 @@ Clojure version compatibility:
 * Eastwood supports only Clojure on Java, not ClojureScript or
   Clojure/CLR.
 
-* Clojure 1.8.0-RC3 - Use Eastwood 0.2.2 or later.  There are known
+* Clojure 1.8.0 - Use Eastwood 0.2.2 or later.  There are known
   problems using Eastwood 0.2.1 and earlier with Clojure 1.8.0.
 
 * Clojure 1.5.1, 1.6.0, or 1.7.0 - Many versions of Eastwood have been
