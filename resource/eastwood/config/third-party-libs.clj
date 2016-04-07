@@ -286,3 +286,14 @@
   '([coll obj & {:keys [from to many write-concern]
                  :or {from :clojure to :clojure many false}}])
   :reason "somnium.congomongo/insert!  uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Configs to disable warnings in slingshot, version 0.12.2
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(disable-warning
+ {:linter :suspicious-expression
+  :for-macro 'clojure.core/and
+  :if-inside-macroexpansion-of #{'slingshot.slingshot/try+}
+  :within-depth 10
+  :reason "slingshot.slingshot/try+ generates an (and ...) with one or more arguments. Suppress the 'and called with 1 args' warning."})
