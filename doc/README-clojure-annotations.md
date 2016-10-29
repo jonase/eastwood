@@ -534,5 +534,5 @@ user=> (prm y)
 [IntelliJ]: http://www.jetbrains.com/idea
 [ClojureDev]: https://groups.google.com/forum/#!forum/clojure-dev
 [ClojureDevCodeAnnotation]: https://groups.google.com/forum/#!topic/clojure-dev/5_dlGSNR6xQ
-[RewriteClj]: ttps://github.com/xsc/rewrite-clj
+[RewriteClj]: https://github.com/xsc/rewrite-clj
 [ToolsReader]: https://github.com/clojure/tools.reader
