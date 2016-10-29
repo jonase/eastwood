@@ -60,7 +60,7 @@ In order to make it possible to _use_ such annotations, a reader is
 needed that is capable of recognizing such special comments, or all
 comments, and returning data about them.  The existing code and EDN
 read functions included with Clojure, and those in the
-[`tools.reader`](ToolsReader) library (latest release as of this
+[`tools.reader`][ToolsReader] library (latest release as of this
 writing is 1.0.0-beta3) skip over comments, returning no data
 indicating their presence.
 
@@ -347,7 +347,7 @@ generating warnings as is, but immediately before reporting the
 warning, suppress it if it should be suppressed according to the
 specially formatted comments.
 
-The [`rewrite-clj`](RewriteClj) library reads Clojure code and returns
+The [`rewrite-clj`][RewriteClj] library reads Clojure code and returns
 a data structure that preserves not only comments, but also white
 space.  It also contains line and column metadata for every Clojure
 form (and comments, and white space).  Unfortunately, `tools.analyzer`
@@ -384,16 +384,6 @@ after implementing and testing this approach.
 There was an discussion of some of these alternatives in the
 [clojure-dev][ClojureDev] group [here][ClojureDevCodeAnnotation]
 starting in June 2014.
-
-[CoreTyped]: https://github.com/clojure/core.typed
-[CoreTypedRt]: http://mvnrepository.com/artifact/org.clojure/core.typed.rt
-[Eastwood]: https://github.com/jonase/eastwood
-[Cursive]: https://cursiveclojure.com
-[IntelliJ]: http://www.jetbrains.com/idea
-[ClojureDev]: https://groups.google.com/forum/#!forum/clojure-dev
-[ClojureDevCodeAnnotation]: https://groups.google.com/forum/#!topic/clojure-dev/5_dlGSNR6xQ
-[RewriteClj]: ttps://github.com/xsc/rewrite-clj
-[ToolsReader]: https://github.com/clojure/tools.reader
 
 
 
@@ -534,3 +524,15 @@ user=> (def y ['b (with-meta 'a {:a 1 :b 2})])
 user=> (prm y)
 [b ^{:b 2, :a 1} a]nil
 ```
+
+
+
+[CoreTyped]: https://github.com/clojure/core.typed
+[CoreTypedRt]: http://mvnrepository.com/artifact/org.clojure/core.typed.rt
+[Eastwood]: https://github.com/jonase/eastwood
+[Cursive]: https://cursiveclojure.com
+[IntelliJ]: http://www.jetbrains.com/idea
+[ClojureDev]: https://groups.google.com/forum/#!forum/clojure-dev
+[ClojureDevCodeAnnotation]: https://groups.google.com/forum/#!topic/clojure-dev/5_dlGSNR6xQ
+[RewriteClj]: ttps://github.com/xsc/rewrite-clj
+[ToolsReader]: https://github.com/clojure/tools.reader
