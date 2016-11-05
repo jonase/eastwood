@@ -602,6 +602,13 @@ curious." eastwood-url))
   (rwn/printable-only? rw-form))
 
 
+(defn rw-form-token-beginning-with-%? [rw-form]
+  (and (= :token (rwn/tag rw-form))
+       (let [s (get rw-form :string-value)]
+         (and (string? s)
+              (= \% (get s 0))))))
+
+
 (defn action-this-step [form rw-form]
   (loop [form form,
          rw-form rw-form]
@@ -614,11 +621,12 @@ curious." eastwood-url))
       ;; fully, but for now skip them as they cause miscompares, the way
       ;; they are represented in the rewrite-clj data structure.
       ;;(#{:quote :deref :fn} (rwn/tag rw-form))
-      (#{:deref :fn} (rwn/tag rw-form))
+      (#{:deref} (rwn/tag rw-form))
       {:action :skip-compare}
 
       ;; TBD: Should probably have a way to prevent looping multiple
-      ;; times on this case.
+      ;; times on this case.  Or would that be correct for a form with
+      ;; multiple levels of quoting?
       (= :quote (rwn/tag rw-form))
       (let [quoted-form (first (rwn/children rw-form))]
 ;;        (println (format "  form:"))
@@ -656,22 +664,49 @@ curious." eastwood-url))
       ;; to the sexpr of the rw-form immediately.
       (and (rw-form-has-children? rw-form)
            (sequential? form))
-      (if (#{:var} (rwn/tag rw-form))
+      (cond
+        (#{:var} (rwn/tag rw-form))
         {:action :compare-sexpr, :form form, :rw-form rw-form}
+
+        ;; From debugging prints I used when testing this case, I saw
+        ;; that (nth form 0) was always the symbol fn*, (nth form 1)
+        ;; was the function's argument vector, and (nth form 2) was
+        ;; the 1 expression of the function's body.  rw-form was
+        ;; always the rewrite-clj node of the 1 expression of the
+        ;; function's body, with (rwn/tag rw-form) equal to :fn.
+        ;; Adding the case below causes this code to recursively
+        ;; compare the function bodies to each other.  That combined
+        ;; with the new case that calls
+        ;; rw-form-token-beginning-with-%? inside of
+        ;; compare-one-form-to-rw-form allows these forms to be
+        ;; compared as matching.
+        (#{:fn} (rwn/tag rw-form))
+        {:action :compare-children-recursively,
+         :form (nth form 2), :rw-form rw-form}
+
+        :else
         {:action :compare-children-recursively, :form form, :rw-form rw-form})
       
       :else {:action :compare-sexpr, :form form, :rw-form rw-form})))
 
 
 (defn compare-one-form-to-rw-form [form rw-form get-in-stack idx]
-  (if (= form (rwn/sexpr rw-form))
+  (cond
+    (= form (rwn/sexpr rw-form))
     {:difference nil}
+
+    ;; TBD: This case should only be valid when inside of a #( ... )
+    ;; form.  Best to add some kind of context for the comparison
+    ;; indicating whether we are currently inside of such a form, and
+    ;; only make the comparison have a matching result in that case.
+    (and (rw-form-token-beginning-with-%? rw-form) (symbol? form))
+    {:difference nil}
+
+    :else
     {:difference :first-non-equal-items
      :get-in-loc (conj get-in-stack idx)
      :data {:form form :rw-form rw-form :rw-sexpr (rwn/sexpr rw-form)
-            :form-class (class form) :rw-form-class (class rw-form)
-            :form-1st (first form)
-            :form-2nd (second form)}
+            :form-class (class form) :rw-form-class (class rw-form)}
      :meta [(meta form) (meta rw-form)]
      :rw-form-has-children? (rw-form-has-children? rw-form)
      :rw-form-tag (rwn/tag rw-form)
