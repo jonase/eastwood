@@ -11,6 +11,7 @@
                  ;[org.clojure/clojure "1.6.0"]
                  ;[org.clojure/clojure "1.7.0"]
                  ;[org.clojure/clojure "1.8.0-RC1"]
+                 [rewrite-clj "0.5.2"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
                  [org.ow2.asm/asm-all "4.2"]]
   :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.2"]

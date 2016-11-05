@@ -7,6 +7,8 @@
             [eastwood.passes :as pass]
             [clojure.set :as set]
             [clojure.java.io :as io]
+            [rewrite-clj.parser :as rwp]
+            [rewrite-clj.node :as rwn]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as tr]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rts]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.move :as move]
@@ -310,6 +312,10 @@ recursing into ASTs with :op equal to :do"
                              (conj asts
                                    (eastwood-ast-additions
                                     ast (count asts)))))))))))))))
+
+
+(defn read-using-rewrite-clj [source-fname]
+  (rwn/children (rwp/parse-file-all source-fname)))
 
 
 (defn analyze-ns

@@ -6,6 +6,7 @@
             [clojure.set :as set]
             [clojure.string :as str]
             [clojure.pprint :as pp]
+            [rewrite-clj.node :as rwn]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
@@ -590,6 +591,155 @@ curious." eastwood-url))
      (file-warn-info uri cwd-file))))
 
 
+(defn rw-form-has-children? [rw-form]
+  (try
+    (rwn/children rw-form)
+    (catch UnsupportedOperationException e
+      nil)))
+
+
+(defn rw-form-to-skip? [rw-form]
+  (rwn/printable-only? rw-form))
+
+
+(defn action-this-step [form rw-form]
+  (loop [form form,
+         rw-form rw-form]
+    (cond
+      ;; Do not compare syntax-quoted forms.  Skip them.
+      (= :syntax-quote (rwn/tag rw-form))
+      {:action :skip-compare}
+      
+      ;; I would like to compare the following kinds of forms more
+      ;; fully, but for now skip them as they cause miscompares, the way
+      ;; they are represented in the rewrite-clj data structure.
+      ;;(#{:quote :deref :fn} (rwn/tag rw-form))
+      (#{:deref :fn} (rwn/tag rw-form))
+      {:action :skip-compare}
+
+      ;; TBD: Should probably have a way to prevent looping multiple
+      ;; times on this case.
+      (= :quote (rwn/tag rw-form))
+      (let [quoted-form (first (rwn/children rw-form))]
+;;        (println (format "  form:"))
+;;        (pp/pprint form)
+;;        (println (format "  (second form)=%s" (second form)))
+;;        (println (format "  rw-form:"))
+;;        (pp/pprint rw-form)
+;;        (println (format "  children=%s" (rwn/children rw-form)))
+        (recur (second form) quoted-form))
+      
+      ;; Value of rwn/tag for some kinds of rewrite-clj data
+      ;; structures, and how they are handled somewhat
+      ;; differently for purposes of comparing.
+      
+      ;; rwn/tag is :meta - expressions with metadata,
+      ;; e.g. ^Object (first s)
+      
+      ;; From looking at rewrite-clj source code, it appears that
+      ;; the rw-form will always have 3 children: a node for the
+      ;; metadata, a whitspace node, and a node for the value
+      ;; that has metadata attached to it.
+      
+      ;; TBD: The most complete comparison would compare the
+      ;; metadata and the value, but for now just compare the
+      ;; values to each other alone.
+      (= :meta (rwn/tag rw-form))
+      (let [value-rw-form (nth (rwn/children rw-form) 2)]
+        (recur form value-rw-form))
+      
+      ;; rwn/tag is :var - var-quoted vars, e.g. #'inc.
+      
+      ;; rw-form-has-children? is true for such rewrite-clj
+      ;; forms, but we will get a miscompare if we try to descend
+      ;; into the children and compare them.  Instead, compare the form
+      ;; to the sexpr of the rw-form immediately.
+      (and (rw-form-has-children? rw-form)
+           (sequential? form))
+      (if (#{:var} (rwn/tag rw-form))
+        {:action :compare-sexpr, :form form, :rw-form rw-form}
+        {:action :compare-children-recursively, :form form, :rw-form rw-form})
+      
+      :else {:action :compare-sexpr, :form form, :rw-form rw-form})))
+
+
+(defn compare-one-form-to-rw-form [form rw-form get-in-stack idx]
+  (if (= form (rwn/sexpr rw-form))
+    {:difference nil}
+    {:difference :first-non-equal-items
+     :get-in-loc (conj get-in-stack idx)
+     :data {:form form :rw-form rw-form :rw-sexpr (rwn/sexpr rw-form)
+            :form-class (class form) :rw-form-class (class rw-form)
+            :form-1st (first form)
+            :form-2nd (second form)}
+     :meta [(meta form) (meta rw-form)]
+     :rw-form-has-children? (rw-form-has-children? rw-form)
+     :rw-form-tag (rwn/tag rw-form)
+     :rw-form-class (class rw-form)
+     :form-sequential? (sequential? form)}))
+
+
+(defn first-diff-from-forms-to-rw-forms
+  ([forms rw-forms]
+   (first-diff-from-forms-to-rw-forms forms rw-forms []))
+  ([forms rw-forms get-in-stack]
+   (loop [fs (seq forms)
+          rwfs (seq rw-forms)
+          idx 0]
+;;     (println)
+;;     (if (and rwfs (rwn/printable-only? (first rwfs)))
+;;       (println "skipping printable-only? node")
+;;       (do
+;;         (println (format "dbg: idx=%d get-in-stack=%s" idx get-in-stack))
+;;         (println (format "  (class (first fs))=%s" (class (first fs))))
+;;         (println (format "  (class (first rwfs))=%s" (class (first rwfs))))
+;;         (when (map? (first rwfs))
+;;           (println (format "  (:tag (first rwfs))=%s" (:tag (first rwfs)))))
+;;;;         (println (format "  (first fs)="))
+;;;;         (pp/pprint (first fs))
+;;;;         (println (format "  (first rwfs)="))
+;;;;         (pp/pprint (first rwfs))
+;;         (when (list? (first rwfs))
+;;           (println (format "  (class (ffirst rwfs))=%s" (class (ffirst rwfs)))))))
+     (cond
+
+       (and rwfs (rw-form-to-skip? (first rwfs)))
+       (recur fs (next rwfs) idx)
+       
+       (nil? fs)
+       {:difference nil}
+       
+       (nil? rwfs)
+       {:difference :rwfs-prefix-of-fs,
+        :get-in-loc (conj get-in-stack idx)
+        :data (first fs)}
+       
+       :else
+       (let [action-info (action-this-step (first fs) (first rwfs))
+;;             _ (do
+;;                 (println (format "dbg: (:action action-info)=%s"
+;;                                  (:action action-info))))
+             result (case (:action action-info)
+                      :skip-compare
+                      {:difference nil}
+                      
+                      :compare-children-recursively
+                      (first-diff-from-forms-to-rw-forms
+                       (:form action-info) (rwn/children (:rw-form action-info))
+                       (conj get-in-stack idx))
+                      
+                      :compare-sexpr
+                      (compare-one-form-to-rw-form (:form action-info)
+                                                   (:rw-form action-info)
+                                                   get-in-stack idx))
+;;             _ (do
+;;                 (println (format "dbg: result=%s" result)))
+             ]
+         (if (nil? (:difference result))
+           (recur (next fs) (next rwfs) (inc idx))
+           result))))))
+
+
 (defn lint-ns [ns-sym linters opts warning-count exception-count]
   (let [cb (:callback opts)
         error-cb (util/make-msg-cb :error opts)
@@ -598,10 +748,20 @@ curious." eastwood-url))
     (note-cb (str "== Linting " ns-sym " =="))
     (let [[{:keys [analyze-results exception exception-phase exception-form]}
            analyze-time-msec]
-          (timeit (analyze/analyze-ns ns-sym :opt opts))
+          ,,(timeit (analyze/analyze-ns ns-sym :opt opts))
+          source-uri (analyze/uri-for-ns ns-sym)
+          [rewrite-clj-forms rewrite-clj-read-time-msec]
+          ,,(timeit (analyze/read-using-rewrite-clj source-uri))
+          first-diff (first-diff-from-forms-to-rw-forms (:forms analyze-results)
+                                                        rewrite-clj-forms)
           print-time? (util/debug? :time opts)]
       (when print-time?
-        (note-cb (format "Analysis took %.1f millisec" analyze-time-msec)))
+        (note-cb (format "Analysis took %.1f millisec" analyze-time-msec))
+        (note-cb (format "rewrite-clj reading took %.1f millisec"
+                         rewrite-clj-read-time-msec)))
+      (when-not (nil? (:difference first-diff))
+        (note-cb (format "Mismatch between read results of tools.reader and rewrite-clj:"))
+        (note-cb (with-out-str (pp/pprint first-diff))))
       (doseq [linter linters]
         (let [[results time-msec] (timeit (lint-analyze-results analyze-results
                                                                 linter opts))]
