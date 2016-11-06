@@ -652,7 +652,7 @@ curious." eastwood-url))
       ;; TBD: The most complete comparison would compare the
       ;; metadata and the value, but for now just compare the
       ;; values to each other alone.
-      (= :meta (rwn/tag rw-form))
+      (#{:meta :meta*} (rwn/tag rw-form))
       (let [value-rw-form (nth (rwn/children rw-form) 2)]
         (recur form value-rw-form))
       

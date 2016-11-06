@@ -48,5 +48,13 @@
   (.hashCode ^Object (first s)))
 
 
+(defn metadata2 []
+  ^{:a 1 :b 2} [1 2 3])
+
+
+(defn metadata3 []
+  #^{:a 1 :b 2} [1 2 3])
+
+
 (defn var-quoted-symbol [s]
   #'inc)
