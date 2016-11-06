@@ -609,6 +609,62 @@ curious." eastwood-url))
               (= \% (get s 0))))))
 
 
+(defn regex? [obj]
+  (instance? java.util.regex.Pattern obj))
+
+
+(defn keyword-with-namespace? [obj]
+  (and (keyword? obj) (not (nil? (namespace obj)))))
+
+
+(declare remove-hard-to-compare-things)
+
+
+;; Clojure 1.8.0 added map-entry?, but I would like to enable this
+;; code to work in slightly older versions of Clojure, too.
+(defn map-entry-x? [x]
+  (instance? java.util.Map$Entry x))
+
+
+(defn hard-to-compare-thing [obj]
+  (cond
+    (keyword-with-namespace? obj)
+    {:keep false}
+
+    (regex? obj)
+    {:keep false}
+
+    (map-entry-x? obj)
+    (let [k (key obj)
+          v (val obj)
+          kinfo (hard-to-compare-thing k)]
+      (if (:keep kinfo)
+        (let [vinfo (hard-to-compare-thing v)]
+          (if (:keep vinfo)
+            {:keep true, :replace-with [(:replace-with kinfo)
+                                        (:replace-with vinfo)]}
+            {:keep false}))
+        {:keep false}))
+    
+    (or (set? obj) (map? obj))
+    {:keep true, :replace-with (remove-hard-to-compare-things obj)}
+
+    :else
+    {:keep true, :replace-with obj}))
+
+
+(defn remove-hard-to-compare-things [form]
+  (cond
+    (or (set? form) (map? form))
+    (into (empty form)
+          (->> (seq form)
+               (map hard-to-compare-thing)
+               (filter :keep)
+               (map :replace-with)))
+
+    :else form))
+
+
 (defn action-this-step [form rw-form]
   (loop [form form,
          rw-form rw-form]
@@ -668,32 +724,66 @@ curious." eastwood-url))
       ;; forms, but we will get a miscompare if we try to descend
       ;; into the children and compare them.  Instead, compare the form
       ;; to the sexpr of the rw-form immediately.
-      (and (rw-form-has-children? rw-form)
-           (sequential? form))
-      (cond
-        (#{:var} (rwn/tag rw-form))
-        {:action :compare-sexpr, :form form, :rw-form rw-form}
 
-        ;; From debugging prints I used when testing this case, I saw
-        ;; that (nth form 0) was always the symbol fn*, (nth form 1)
-        ;; was the function's argument vector, and (nth form 2) was
-        ;; the 1 expression of the function's body.  rw-form was
-        ;; always the rewrite-clj node of the 1 expression of the
-        ;; function's body, with (rwn/tag rw-form) equal to :fn.
-        ;; Adding the case below causes this code to recursively
-        ;; compare the function bodies to each other.  That combined
-        ;; with the new case that calls
-        ;; rw-form-token-beginning-with-%? inside of
-        ;; compare-one-form-to-rw-form allows these forms to be
-        ;; compared as matching.
-        (#{:fn} (rwn/tag rw-form))
-        {:action :compare-children-recursively,
-         :form (nth form 2), :rw-form rw-form}
+      ;; (sequential? form) is true for such forms, because #'foo is
+      ;; read as (var foo), which is a list.
+      (rw-form-has-children? rw-form)
+      (if (sequential? form)
+        (cond
+          (#{:var} (rwn/tag rw-form))
+          {:action :compare-sexpr, :form form, :rw-form rw-form}
 
-        :else
-        {:action :compare-children-recursively, :form form, :rw-form rw-form})
+          ;; From debugging print statements I used when testing this
+          ;; case, I saw that (nth form 0) was always the symbol
+          ;; fn*, (nth form 1) was the function's argument vector,
+          ;; and (nth form 2) was the 1 expression of the function's
+          ;; body.  rw-form was always the rewrite-clj node of the 1
+          ;; expression of the function's body, with (rwn/tag rw-form)
+          ;; equal to :fn.  Adding the case below causes this code to
+          ;; recursively compare the function bodies to each other.
+          ;; That combined with the new case that calls
+          ;; rw-form-token-beginning-with-%? inside of
+          ;; compare-one-form-to-rw-form allows these forms to be
+          ;; compared as matching.
+          (#{:fn} (rwn/tag rw-form))
+          {:action :compare-children-recursively,
+           :form (nth form 2), :rw-form rw-form}
+          
+          :else
+          {:action :compare-children-recursively, :form form, :rw-form rw-form})
+
+        ;; Otherwise form could be a set, map, and maybe a few other
+        ;; possibilities I haven't thought of yet.  Given the
+        ;; difficulties of using rewrite-clj to read keywords
+        ;; beginning with ::, try to remove such difficult-to-compare
+        ;; things from the collections before comparing them.  We have
+        ;; already lost all ordering information in form, except
+        ;; perhaps for some metadata with line/column info for
+        ;; sub-collections and symbols, but trying to take advantage
+        ;; of all of that information when comparing collections would
+        ;; be complex.  Do something a little more quick-and-dirty
+        ;; that may catch some miscompares.
+        (if (or (set? form) (map? form))
+          {:action :compare-simplified-sexprs,
+           :form (remove-hard-to-compare-things form),
+           :rw-form (remove-hard-to-compare-things (rwn/sexpr rw-form))}
+          {:action :compare-sexpr, :form form, :rw-form rw-form}))
       
       :else {:action :compare-sexpr, :form form, :rw-form rw-form})))
+
+
+(defn difference-info [form rw-form get-in-stack idx]
+  {:difference :first-non-equal-items
+   :get-in-loc (conj get-in-stack idx)
+   :data {:form form :rw-form rw-form :rw-sexpr (rwn/sexpr rw-form)}
+   :meta [(meta form) (meta rw-form)]
+   :form-class (class form)
+   :rw-form-has-children? (rw-form-has-children? rw-form)
+   :rw-form-tag (rwn/tag rw-form)
+   :rw-form-class (class rw-form)
+   :form-sequential? (sequential? form)
+   :form-set? (set? form)
+   :form-map? (map? form)})
 
 
 (defn compare-one-form-to-rw-form [form rw-form get-in-stack idx]
@@ -719,8 +809,7 @@ curious." eastwood-url))
     
     ;; In Clojure, (= #"a" #"a") is false.  Compare regex's by their
     ;; string value instead.
-    (and (instance? java.util.regex.Pattern form)
-         (= (str form) (str (rwn/sexpr rw-form))))
+    (and (regex? form) (= (str form) (str (rwn/sexpr rw-form))))
     {:difference nil}
 
     ;; TBD: This case should only be valid when inside of a #( ... )
@@ -731,15 +820,7 @@ curious." eastwood-url))
     {:difference nil}
 
     :else
-    {:difference :first-non-equal-items
-     :get-in-loc (conj get-in-stack idx)
-     :data {:form form :rw-form rw-form :rw-sexpr (rwn/sexpr rw-form)}
-     :meta [(meta form) (meta rw-form)]
-     :form-class (class form)
-     :rw-form-has-children? (rw-form-has-children? rw-form)
-     :rw-form-tag (rwn/tag rw-form)
-     :rw-form-class (class rw-form)
-     :form-sequential? (sequential? form)}))
+    (difference-info form rw-form get-in-stack idx)))
 
 
 (defn first-diff-from-forms-to-rw-forms
@@ -790,6 +871,12 @@ curious." eastwood-url))
                       (first-diff-from-forms-to-rw-forms
                        (:form action-info) (rwn/children (:rw-form action-info))
                        (conj get-in-stack idx))
+                      
+                      :compare-simplified-sexprs
+                      (if (= (:form action-info) (:rw-form action-info))
+                        {:difference nil}
+                        (difference-info (first fs) (first rwfs)
+                                         get-in-stack idx))
                       
                       :compare-sexpr
                       (compare-one-form-to-rw-form (:form action-info)

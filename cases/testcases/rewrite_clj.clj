@@ -104,4 +104,15 @@ third line"
     ;; testcases.rewrite-clj is the current namespace, as set by the
     ;; ns form at the top of this file.
     ::id
-    ]])
+    ]
+   ;; The comparison code I have written so far descends into lists
+   ;; and vectors, but not into sets or maps, which causes a
+   ;; miscompare if sets or maps contain things that miscompare, like
+   ;; keywords beginning with ::.  Make test cases for this so I can
+   ;; correct my code.
+   #{::string/foo
+     ::id}
+   {::string/foo 5,
+    ::id 6}
+   {1 #"regex"}
+   ])
