@@ -700,6 +700,22 @@ curious." eastwood-url))
   (cond
     (= form (rwn/sexpr rw-form))
     {:difference nil}
+
+    ;; TBD: The current code uses rewrite-clj in a way that causes
+    ;; keywords beginning with :: to usually have an incorrect
+    ;; namespace.  If such a keyword is read, compare only the (name
+    ;; ...) portions of the keywords to each other, ignoring the
+    ;; namespace part.  If the way we use rewrite-clj is changed so
+    ;; that such keywords are given a correct namespace, this should
+    ;; no longer be necessary, but that sounds challenging to do in
+    ;; general.  The only reason Eastwood's use of tools.reader gets
+    ;; the correct namespace is that it is eval'ing all forms just
+    ;; after reading them, like ns forms an calls to in-ns.
+    (and (keyword? form)
+         (instance? rewrite_clj.node.keyword.KeywordNode rw-form)
+         (:namespaced? rw-form)
+         (= (name form) (name (:k rw-form))))
+    {:difference nil}
     
     ;; In Clojure, (= #"a" #"a") is false.  Compare regex's by their
     ;; string value instead.
@@ -717,9 +733,9 @@ curious." eastwood-url))
     :else
     {:difference :first-non-equal-items
      :get-in-loc (conj get-in-stack idx)
-     :data {:form form :rw-form rw-form :rw-sexpr (rwn/sexpr rw-form)
-            :form-class (class form) :rw-form-class (class rw-form)}
+     :data {:form form :rw-form rw-form :rw-sexpr (rwn/sexpr rw-form)}
      :meta [(meta form) (meta rw-form)]
+     :form-class (class form)
      :rw-form-has-children? (rw-form-has-children? rw-form)
      :rw-form-tag (rwn/tag rw-form)
      :rw-form-class (class rw-form)

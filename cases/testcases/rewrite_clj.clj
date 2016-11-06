@@ -1,5 +1,5 @@
 (ns testcases.rewrite-clj
-  )
+  (:require [clojure.string :as string]))
 
 
 ;; Code for testing rewrite-clj library
@@ -80,3 +80,28 @@ third line"
 
 (defn regex-compare-to-themselves-as-not-=-in-clojure []
   #"b?.*$")
+
+
+(defn namespaced-keyword []
+  [
+   ;; These seem to compare fine with current code, and I think all of
+   ;; them have the namespaced? flag equal to false when read by
+   ;; rewrite-clj, because they all begin with a single colon.
+   [:clojure.pprint/blink :blank :string/bar]
+   ;; These miscompare with current code, between rewrite-clj and
+   ;; tools.reader.  I believe it is because their namespace portion
+   ;; is set to 'user' the way I am reading it with rewrite-clj,
+   ;; because that is what it sees the value of *ns* as while reading.
+   ;; tools.reader does the correct thing, because Eastwood binds *ns*
+   ;; to the current namespace every time an ns or in-ns form is read,
+   ;; _because it is then immediately eval'd_.
+   [
+    ;; tools.reader reads this as :clojure.string/foo, expanding the
+    ;; string alias to clojure.string
+    ::string/foo   
+
+    ;; tools.reader reads this as :testcases.rewrite-clj/id, because
+    ;; testcases.rewrite-clj is the current namespace, as set by the
+    ;; ns form at the top of this file.
+    ::id
+    ]])
