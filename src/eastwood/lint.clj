@@ -631,7 +631,7 @@ curious." eastwood-url))
       ;; TBD: Should probably have a way to prevent looping multiple
       ;; times on this case.  Or would that be correct for a form with
       ;; multiple levels of quoting?
-      (= :quote (rwn/tag rw-form))
+      (#{:quote} (rwn/tag rw-form))
       (let [quoted-form (first (filter (complement rw-form-to-skip?)
                                        (rwn/children rw-form)))]
 ;;        (println)
@@ -699,6 +699,12 @@ curious." eastwood-url))
 (defn compare-one-form-to-rw-form [form rw-form get-in-stack idx]
   (cond
     (= form (rwn/sexpr rw-form))
+    {:difference nil}
+    
+    ;; In Clojure, (= #"a" #"a") is false.  Compare regex's by their
+    ;; string value instead.
+    (and (instance? java.util.regex.Pattern form)
+         (= (str form) (str (rwn/sexpr rw-form))))
     {:difference nil}
 
     ;; TBD: This case should only be valid when inside of a #( ... )

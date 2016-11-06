@@ -68,3 +68,15 @@
 
 (defn var-quoted-symbol [s]
   #'inc)
+
+
+(defn multi-line-string-may-be-special-in-rewrite-clj
+  "first line
+second line
+third line"
+  []
+  (+ 2 3))
+
+
+(defn regex-compare-to-themselves-as-not-=-in-clojure []
+  #"b?.*$")
