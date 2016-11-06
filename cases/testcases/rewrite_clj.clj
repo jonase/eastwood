@@ -14,11 +14,13 @@
 
 
 (defn quote-within-quote []
-  '(1 2 '(3 4 5)))
+  '(1 2 ' (3 4 5)))
 
 
 (defn quoted-vector []
-  '[1 2 3])
+  '
+  ;; comment between quote and quoted expression.  Unusual, but legal.
+  [1 2 3])
 
 
 (defn hasheq-imap [m]
@@ -31,6 +33,14 @@
 (defn standalone-checks [counter]
   @counter)
 
+(defn deref-with-expr [x]
+  (let [a (atom x)
+        m {:a a, :b 2}
+        a2 (atom a)
+        m2 {:a2 a2}]
+    [@(m :a) @@(m2 :a2)  @
+     @   (m2 :a2)   ]))
+
 
 (defn fn-expr-1 [avl-map]
   #(key (nth avl-map %)))
@@ -40,7 +50,7 @@
   #(%2 %1))
 
 
-(defn fn-expr-2 []
+(defn fn-expr-3 []
   #(first %&))
 
 

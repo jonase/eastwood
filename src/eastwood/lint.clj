@@ -617,18 +617,24 @@ curious." eastwood-url))
       (= :syntax-quote (rwn/tag rw-form))
       {:action :skip-compare}
       
-      ;; I would like to compare the following kinds of forms more
-      ;; fully, but for now skip them as they cause miscompares, the way
-      ;; they are represented in the rewrite-clj data structure.
-      ;;(#{:quote :deref :fn} (rwn/tag rw-form))
+      ;; :deref tag is used for expressions beginning with @,
+      ;; which are often just a symbol, but can be any expression.
+      ;; The filter is to skip over any whitespace or comment nodes
+      ;; that can appear if such things occur after the @ but before
+      ;; the expression, which is rare in typical source code, but can
+      ;; happen.
       (#{:deref} (rwn/tag rw-form))
-      {:action :skip-compare}
+      (let [derefed-form (first (filter (complement rw-form-to-skip?)
+                                        (rwn/children rw-form)))]
+        (recur (second form) derefed-form))
 
       ;; TBD: Should probably have a way to prevent looping multiple
       ;; times on this case.  Or would that be correct for a form with
       ;; multiple levels of quoting?
       (= :quote (rwn/tag rw-form))
-      (let [quoted-form (first (rwn/children rw-form))]
+      (let [quoted-form (first (filter (complement rw-form-to-skip?)
+                                       (rwn/children rw-form)))]
+;;        (println)
 ;;        (println (format "  form:"))
 ;;        (pp/pprint form)
 ;;        (println (format "  (second form)=%s" (second form)))
@@ -641,7 +647,7 @@ curious." eastwood-url))
       ;; structures, and how they are handled somewhat
       ;; differently for purposes of comparing.
       
-      ;; rwn/tag is :meta - expressions with metadata,
+      ;; rwn/tag is :meta or :meta* - expressions with metadata,
       ;; e.g. ^Object (first s)
       
       ;; From looking at rewrite-clj source code, it appears that
