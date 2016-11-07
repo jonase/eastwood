@@ -653,10 +653,22 @@ curious." eastwood-url))
     {:keep true, :replace-with obj}))
 
 
+(defn empty-x
+  "A version of empty that returns something reasonable when given an
+  instance of a record type, rather than raising an exception."
+  [set-or-map]
+  (if (map? set-or-map)
+    (try
+      (empty set-or-map)
+      (catch UnsupportedOperationException e
+        {}))
+    (empty set-or-map)))
+
+
 (defn remove-hard-to-compare-things [form]
   (cond
     (or (set? form) (map? form))
-    (into (empty form)
+    (into (empty-x form)
           (->> (seq form)
                (map hard-to-compare-thing)
                (filter :keep)
@@ -679,10 +691,10 @@ curious." eastwood-url))
       ;; that can appear if such things occur after the @ but before
       ;; the expression, which is rare in typical source code, but can
       ;; happen.
-      (#{:deref} (rwn/tag rw-form))
-      (let [derefed-form (first (filter (complement rw-form-to-skip?)
-                                        (rwn/children rw-form)))]
-        (recur (second form) derefed-form))
+      (#{:deref :unquote :unquote-splicing} (rwn/tag rw-form))
+      (let [sub-form (first (filter (complement rw-form-to-skip?)
+                                    (rwn/children rw-form)))]
+        (recur (second form) sub-form))
 
       ;; TBD: Should probably have a way to prevent looping multiple
       ;; times on this case.  Or would that be correct for a form with

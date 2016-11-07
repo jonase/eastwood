@@ -116,3 +116,18 @@ third line"
     ::id 6}
    {1 #"regex"}
    ])
+
+
+;; Sample code inspired by defmacro form->ast1 in namespace
+;; clojure.core.logic.tests that caused miscompare with the
+;; then-current code when I first tested it.
+
+(defmacro test-macro [args body]
+  '(fn ~args))
+
+(defmacro test-macro2 [args body]
+  '(fn ~
+     args))
+
+(defmacro test-macro3 [args body]
+  '(fn ~args ~@ body))
