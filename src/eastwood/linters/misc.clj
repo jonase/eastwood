@@ -3,7 +3,7 @@
             [clojure.pprint :as pp]
             [clojure.set :as set]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [resolve-sym arglist-for-arity]]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [resolve-sym arglist-for-arity dynamic?]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as j]
             [eastwood.util :as util]))
@@ -125,7 +125,7 @@
               s (.sym v)
               loc (:env expr)]
         :when (and (earmuffed? s)
-                   (not (:is-dynamic expr)))]
+                   (not (dynamic? v)))]
     (util/add-loc-info loc
      {:linter :non-dynamic-earmuffs
       :msg (format "%s should be marked dynamic" v)})))
