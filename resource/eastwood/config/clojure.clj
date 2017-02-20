@@ -32,3 +32,8 @@
   :within-depth 3
   :reason "when-some with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
 
+(disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'clojure.core/cond->}
+  :within-depth 2
+  :reason "Allow cond-> to have constant tests without warning"})
