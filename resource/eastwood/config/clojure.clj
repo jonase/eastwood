@@ -34,6 +34,6 @@
 
 (disable-warning
  {:linter :constant-test
-  :if-inside-macroexpansion-of #{'clojure.core/cond->}
+  :if-inside-macroexpansion-of #{'clojure.core/cond-> 'clojure.core/cond->>}
   :within-depth 2
-  :reason "Allow cond-> to have constant tests without warning"})
+  :reason "Allow cond-> and cond->> to have constant tests without warning"})
