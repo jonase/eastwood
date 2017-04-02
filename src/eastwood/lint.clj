@@ -714,7 +714,8 @@ exception."))
                                                (#'dir/find-files [dir-name-str]
                                                                  find/clj))]))
         fd-by-dir (util/map-vals (fn [files]
-                                   (#'file/files-and-deps files find/clj))
+                                   (#'file/files-and-deps files (:read-opts
+                                                                 find/clj)))
                                  files-by-dir)]
     (into
      {}
