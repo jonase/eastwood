@@ -867,14 +867,27 @@
            ;; :require, as :refer can be used for that purpose
            ;; instead.
            :require (merge
-                     {:as :symbol, :refer :symbol-list-or-all}
+                     {:as :symbol, :refer :symbol-list-or-all,
+                      :include-macros :true, :refer-macros :symbol-list}
                      (if (contains? libspec-opts :refer)
                        {:exclude :symbol-list,
                         :rename :map-from-symbol-to-symbol}
                        {}))
+           :require-macros (merge
+                             {:as :symbol, :refer :symbol-list-or-all}
+                             (if (contains? libspec-opts :refer)
+                               {:exclude :symbol-list,
+                                :rename :map-from-symbol-to-symbol}
+                               {}))
            :use {:as :symbol :refer :symbol-list-or-all,
                  :exclude :symbol-list, :rename :map-from-symbol-to-symbol,
-                 :only :symbol-list})
+                 :only :symbol-list}
+           :use-macros {:as :symbol :refer :symbol-list-or-all,
+                        :exclude :symbol-list, :rename :map-from-symbol-to-symbol,
+                        :only :symbol-list}
+           :refer-clojure {:exclude :symbol-list,
+                           :rename :map-from-symbol-to-symbol}
+           :import {})
          bad-option-keys (set/difference (set options)
                                          (set (keys allowed-options)))
          libspec-opts (select-keys libspec-opts
@@ -888,7 +901,8 @@
                            :symbol-list-or-all (or (= :all option-val)
                                                    (symbol-list? option-val))
                            :map-from-symbol-to-symbol
-                           (map-from-symbol-to-symbol? option-val)))
+                           (map-from-symbol-to-symbol? option-val)
+                           :true (= true option-val)))
                        libspec-opts))]
      (concat
       (if (seq bad-option-keys)
