@@ -1,6 +1,28 @@
 # Change log for Eastwood
 
 
+## Changes from version 0.2.3 to 0.2.4
+
+No new linters.  Added initial support for .cljc files and reader
+conditionals.
+
+* Read .cljc files in addition to .clj files when scanning namespaces.
+
+* Handle reader conditionals by always parsing the :clj branch.
+
+* Allow ClojureScript-specific libspec entries, such as `:include-macros
+  true`.
+
+
+Internal enhancements:
+
+* Updated versions of tools.analyzer, tools.reader, tools.namespace,
+  core.memoize, and clojure.java.classpath.
+
+* Updated documentation, cleaned up comments, and removed unused
+  require statements.
+
+
 ## Changes from version 0.2.2 to 0.2.3
 
 No new linters.  The only difference with 0.2.2 is a few bug fixes:
