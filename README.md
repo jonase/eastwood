@@ -49,7 +49,7 @@ thrown -- Leiningen 2.6.1 was released to fix that problem.  Merge the
 following into your `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.3"]] }}
+{:user {:plugins [[jonase/eastwood "0.2.4"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -422,7 +422,7 @@ in a production JVM process.
 Merge this into your project's `project.clj` file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.2.3" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.2.4" :exclusions [org.clojure/clojure]]]}}
 ```
 
 Note: This should work even if you do not use Leiningen for your
@@ -640,7 +640,7 @@ can be used to modify this merging behavior.
 For example, if your user-wide `profiles.clj` file contains this:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.3"]]
+{:user {:plugins [[jonase/eastwood "0.2.4"]]
         :eastwood {:exclude-linters [:unlimited-use]
                    :debug [:time]}
         }}
