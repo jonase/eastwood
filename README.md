@@ -32,8 +32,9 @@ Clojure version compatibility:
 
 * Clojure 1.4.0 - Use Eastwood 0.1.5 or earlier.
 
-The `.cljc` files introduced in Clojure 1.7.0 are _not_ linted yet.
-Their contents are ignored.
+The `.cljc` files introduced in Clojure 1.7.0 are linted, starting
+with Eastwood version 0.2.4.  Earlier Eastwood versions ignore such
+files.
 
 
 ## Installation & Quick usage
