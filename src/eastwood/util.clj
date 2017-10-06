@@ -1,4 +1,5 @@
 (ns eastwood.util
+  (:refer-clojure :exclude [uri?])
   (:import [java.io StringReader]
            [java.net URI]
            [clojure.lang LineNumberingPushbackReader])
