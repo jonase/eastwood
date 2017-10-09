@@ -661,7 +661,12 @@ of these kind."
 
 (defn deftype-for-fieldless-defrecord [ast]
   (and (= :deftype (-> ast :op))
-       (= '(__meta __extmap) (map :form (-> ast :fields)))))
+       (let [flds (map :form (-> ast :fields))]
+         (or (= flds '(__meta __extmap))
+             ;; Clojure 1.9.0 performance improvement change for
+             ;; CLJ-1224 adds "hidden" fields __hash and __hasheq for
+             ;; records.  Before then, it was only __meta and __extmap
+             (= flds '(__meta __extmap __hash __hasheq))))))
 
 (defn inside-fieldless-defrecord [ast]
   (some deftype-for-fieldless-defrecord
