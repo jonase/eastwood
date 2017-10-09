@@ -64,9 +64,6 @@ print-cb is called once for each line of output."
            print-cb))))
 
 
-(defn uri? [obj]
-  (instance? java.net.URI obj))
-
 ;; ordering-map copied under Eclipse Public License v1.0 from useful
 ;; library available at: https://github.com/flatland/useful
 
