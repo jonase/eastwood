@@ -56,7 +56,8 @@
 
 (defmacro defcache
   [type-name fields & specifics]
-  (let [[base-field & _] fields]
+  (let [[base & _] fields
+        base-field (with-meta base {:tag 'clojure.lang.IPersistentMap})]
     `(deftype ~type-name [~@fields]
        ~@specifics
 
@@ -67,6 +68,10 @@
               (if (has? this# key#)
                 (lookup this# key#)
                 not-found#))
+
+       java.lang.Iterable
+       (iterator [_#]
+         (.iterator ~base-field))
 
        clojure.lang.IPersistentMap
        (assoc [this# k# v#]
@@ -123,7 +128,7 @@
     (f (get cache item)))
   (lookup [_ item not-found]
     (let [ret (get cache item not-found)]
-      (if (= ret not-found)
+      (if (= not-found ret)
         not-found
         (f ret))))
   (has? [_ item]
@@ -176,12 +181,11 @@
                   (concat qq [item])
                   limit)))
   (evict [this key]
-    (let [v (get cache key ::miss)]
-      (if (= v ::miss)
-        this
-        (FIFOCache. (dissoc cache key)
-                    (prune-queue q key)
-                    limit))))
+    (if (contains? cache key)
+      (FIFOCache. (dissoc cache key)
+                  (prune-queue q key)
+                  limit)
+      this))
   (seed [_ base]
     (let [{dropping :dropping
            q :queue} (describe-layout base limit)]
@@ -229,13 +233,12 @@
                    tick+
                    limit))))
   (evict [this key]
-    (let [v (get cache key ::miss)]
-      (if (= v ::miss)
-        this
-        (LRUCache. (dissoc cache key)
-                   (dissoc lru key)
-                   (inc tick)
-                   limit))))
+    (if (contains? cache key)
+      (LRUCache. (dissoc cache key)
+                 (dissoc lru key)
+                 (inc tick)
+                 limit)
+      this))
   (seed [_ base]
     (LRUCache. base
                (build-leastness-queue base limit 0)
@@ -256,7 +259,7 @@
   CacheProtocol
   (lookup [this item]
     (let [ret (lookup this item ::nope)]
-      (when-not (= ret ::nope) ret)))
+      (when-not (= ::nope ret) ret)))
   (lookup [this item not-found]
     (if (has? this item)
       (get cache item)
@@ -309,12 +312,11 @@
                 (assoc lu item 0)
                 limit)))
   (evict [this key]
-    (let [v (get cache key ::miss)]
-      (if (= v ::miss)
-        this
-        (LUCache. (dissoc cache key)
-                  (dissoc lu key)
-                  limit))))
+    (if (contains? this key)
+      (LUCache. (dissoc cache key)
+                (dissoc lu key)
+                limit)
+      this))
   (seed [_ base]
     (LUCache. base
               (build-leastness-queue base limit 0)
@@ -590,7 +592,7 @@
   (eastwood.copieddeps.dep4.clojure.core.cache/seed (LRUCache. {} (eastwood.copieddeps.dep5.clojure.data.priority-map/priority-map) 0 threshold) base))
 
 (defn ttl-cache-factory
-  "Returns a TTL cache with the cache and expiration-table initialied to `base` --
+  "Returns a TTL cache with the cache and expiration-table initialized to `base` --
    each with the same time-to-live.
 
    This function also allows an optional `:ttl` argument that defines the default

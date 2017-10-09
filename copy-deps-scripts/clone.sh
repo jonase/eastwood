@@ -7,40 +7,37 @@ cd repos
 
 git clone https://github.com/clojure/tools.analyzer.git
 cd tools.analyzer
-# 0.6.7 is latest as of Jan 15 2016.  Only a few minor changes since
-# previous version that Eastwood used, which was 0.6.6.
-git checkout tools.analyzer-0.6.7
+# This is latest version as of Oct 9 2017.
+git checkout tools.analyzer-0.6.9
 cd ..
 
 git clone https://github.com/clojure/tools.analyzer.jvm.git
 cd tools.analyzer.jvm
-# 0.6.9 is latest as of Jan 15 2016.  Only a few small bug fixes since
-# previous version that Eastwood used, which was 0.6.7.
-git checkout tools.analyzer.jvm-0.6.9
+# This is latest version as of Oct 9 2017.
+git checkout tools.analyzer.jvm-0.7.1
 cd ..
 
 git clone https://github.com/clojure/core.memoize.git
 cd core.memoize
-# 0.5.8 is latest as of Jan 15 2016.  Only a few small bug fixes since
-# previous version that Eastwood used, which was 0.5.7.
-git checkout core.memoize-0.5.8
+# This is latest version as of Oct 9 2017.
+git checkout core.memoize-0.5.9
 cd ..
 
 git clone https://github.com/clojure/core.cache.git
 cd core.cache
-# Latest as of Jan 15 2016 has only doc changes from core.cache-0.6.4
-git checkout core.cache-0.6.4
+# This is latest version as of Oct 9 2017.
+git checkout core.cache-0.6.5
 cd ..
 
 git clone https://github.com/clojure/data.priority-map.git
 cd data.priority-map
-# 0.0.7 is latest as of Jan 15 2016.
+# This is latest version as of Oct 9 2017.
 git checkout data.priority-map-0.0.7
 cd ..
 
 git clone https://github.com/clojure/tools.namespace.git
 cd tools.namespace
-# 0.3.0-alpha3 is latest as of Jan 15 2016.  It has .cljc files, which
+# 0.3.0-alpha3 is latest as of Oct 9 2017.  It has .cljc files, which
 # I will try to simply rename to .clj files and hand-resolve the
 # reader conditionals they contain for the :clj platform, removing the
 # ClojureScript-specific expressions completely.  I am hoping this
@@ -56,16 +53,14 @@ cd ..
 
 git clone https://github.com/clojure/java.classpath.git
 cd java.classpath
-# 0.2.3 is latest as of Jan 15 2016.  java.classpath is a new
-# dependency of tools.namespace starting somewhere near version
-# 0.3.0-alpha3.
+# This is latest version as of Oct 9 2017.
 git checkout java.classpath-0.2.3
 cd ..
 
 git clone https://github.com/clojure/tools.reader.git
 cd tools.reader
-# 1.0.0-alpha3 is latest as of Jan 15 2016.
-git checkout tools.reader-1.0.0-alpha3
+# This is latest version as of Oct 9 2017.
+git checkout tools.reader-1.1.0
 cd ..
 
 git clone https://github.com/sattvik/leinjacker.git
