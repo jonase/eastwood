@@ -12,7 +12,8 @@
   :profiles     {:dev {:resource-paths ["test/resources"]
                        :dependencies [[clj-time "0.9.0" :exclusions [org.clojure/clojure]]]
                        :plugins [[codox           "0.8.12"]
-                                 [jonase/eastwood "0.2.1"]]
+                                 ;;[jonase/eastwood "0.2.1"]
+                                 ]
                        :codox {:sources ["src"]
                                :output-dir "doc/api"}}
                  ;; this version of clj-http depends on HTTPCore 4.2.x which
