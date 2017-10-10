@@ -1,1 +1,1 @@
-https://github.com/Raynes/fs.git
+https://github.com/funcool/fs
