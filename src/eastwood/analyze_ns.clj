@@ -202,9 +202,10 @@ recursing into ASTs with :op equal to :do"
 
 
 (defn remaining-forms [pushback-reader forms]
-  (let [eof (reify)]
+  (let [eof (reify)
+        reader-opts {:read-cond :allow :features #{:clj} :eof eof}]
     (loop [forms forms]
-      (let [form (tr/read pushback-reader nil eof)]
+      (let [form (tr/read reader-opts pushback-reader)]
         (if (identical? form eof)
           forms
           (recur (conj forms form)))))))
@@ -265,7 +266,8 @@ recursing into ASTs with :op equal to :do"
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
   [source-path & {:keys [reader opt]}]
   (let [debug-cb (util/make-msg-cb :debug opt)
-        eof (reify)]
+        eof (reify)
+        reader-opts {:read-cond :allow :features #{:clj} :eof eof}]
     (when (util/debug? :ns opt)
       (debug-cb (format "all-ns before (analyze-file \"%s\") begins:"
                         source-path))
@@ -278,10 +280,7 @@ recursing into ASTs with :op equal to :do"
         (begin-file-debug *file* *ns* opt)
         (loop [forms []
                asts []]
-          (let [form (tr/read {:read-cond :allow
-                               :features #{:clj}
-                               :eof eof}
-                              reader)]
+          (let [form (tr/read reader-opts reader)]
             (if (identical? form eof)
               {:forms forms, :asts asts, :exception nil}
               (let [cur-env (env/deref-env)
