@@ -8,6 +8,8 @@
   :global-vars {*warn-on-reflection* true}
   :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
-             :1.8 {:dependencies [[org.clojure/clojure "1.8.0-master-SNAPSHOT"]]}}
+             :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
+             :1.9 {:dependencies [[org.clojure/clojure "1.9.0-master-SNAPSHOT"]]}
+             }
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [com.datomic/datomic-free "0.9.5067" :scope "provided" :exclusions [joda-time]]])

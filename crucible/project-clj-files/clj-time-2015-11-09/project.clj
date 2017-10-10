@@ -18,6 +18,7 @@
                      :midje-readme {:require "[clj-time.core :as t] [clj-time.predicates :as pr]"}}
              :1.6    {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7    {:dependencies [[org.clojure/clojure "1.7.0"]]}
-             :1.8    {:dependencies [[org.clojure/clojure "1.8.0-master-SNAPSHOT"]]}
+             :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
+             :1.9 {:dependencies [[org.clojure/clojure "1.9.0-master-SNAPSHOT"]]}
             }
   :aliases {"test-all" ["with-profile" "dev,master,default,midje:dev,default,midje:dev,1.6,midje" "test"]})

@@ -34,7 +34,9 @@
                                               [org.clojure/tools.nrepl "0.2.3"]]}]
              :1.7 [:test-libs {:dependencies [[org.clojure/clojure "1.7.0"]
                                               [org.clojure/tools.nrepl "0.2.3"]]}]
-             :1.8 [:test-libs {:dependencies [[org.clojure/clojure "1.8.0-master-SNAPSHOT"]
+             :1.8 [:test-libs {:dependencies [[org.clojure/clojure "1.8.0"]
+                                              [org.clojure/tools.nrepl "0.2.3"]]}]
+             :1.9 [:test-libs {:dependencies [[org.clojure/clojure "1.9.0-master-SNAPSHOT"]
                                               [org.clojure/tools.nrepl "0.2.3"]]}]
              ;; The following profile can be used to check that `lein with-profile`
              ;; profiles are obeyed. Note that profile `:test-paths` *add on* to the
