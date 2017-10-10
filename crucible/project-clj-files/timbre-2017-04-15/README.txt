@@ -1,5 +1,6 @@
-Dec 24 2013: timbre latest version fails 'lein check' because of lack
-of android.util.Log class.  It can run tests with:
+Oct 9 2017: timbre latest version fails 'lein check' because of lack
+of several classes for the 5 namespaces named as exceptions in the
+lint.sh script.  It can run tests with:
 
     lein with-profile +test test
 
