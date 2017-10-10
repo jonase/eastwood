@@ -1,4 +1,4 @@
-(defproject org.clojure/core.logic "0.8.9-SNAPSHOT"
+(defproject org.clojure/core.logic "0.8.11-SNAPSHOT"
   :description "A logic/relational programming library for Clojure"
   :parent [org.clojure/pom.contrib "0.0.25"]
 
@@ -9,8 +9,8 @@
 
   :test-paths ["src/test/clojure"]
 
-  :dependencies [[org.clojure/clojure "1.6.0"]
-                 [org.clojure/clojurescript "0.0-2371" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.7.0" :scope "provided"]
+                 [org.clojure/clojurescript "0.0-3308" :scope "provided"]
                  [org.clojure/tools.macro "0.1.2"]
                  ;[com.datomic/datomic-free "0.8.4270" :scope "provided"]
                  ]
@@ -20,8 +20,10 @@
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0-master-SNAPSHOT"]]}
              }
 
-  :plugins [[lein-cljsbuild "1.0.4-SNAPSHOT"]
-            [cider/cider-nrepl "0.7.0-SNAPSHOT"]]
+  :clean-targets ^{:protect false} ["resources/tests.js" "resources/out"]
+
+  :plugins [[lein-cljsbuild "1.0.6"]
+            [cider/cider-nrepl "0.8.1"]]
 
   :cljsbuild
   {:builds
@@ -30,9 +32,21 @@
      :compiler {:optimizations :none
                 :output-to "resources/tests.js"
                 :output-dir "resources/out-dev"
-                :source-map true}}
+                :source-map true
+                :verbose true
+                :compiler-stats true}}
+    {:id "simp"
+     :source-paths ["src/main/clojure/cljs" "src/test/cljs"]
+     :compiler {:optimizations :simple
+                :static-fns true
+                :output-to "resources/tests.js"
+                :output-dir "resources/out-simp"
+                :verbose true
+                :compiler-stats true}}
     {:id "adv"
      :source-paths ["src/main/clojure/cljs" "src/test/cljs"]
      :compiler {:optimizations :advanced
                 :output-to "resources/tests.js"
-                :output-dir "resources/out-adv"}}]})
+                :output-dir "resources/out-adv"
+                :verbose true
+                :compiler-stats true}}]})
