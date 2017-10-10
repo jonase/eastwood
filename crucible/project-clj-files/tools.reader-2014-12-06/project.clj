@@ -15,7 +15,9 @@
              :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
-             :1.8 {:dependencies [[org.clojure/clojure "1.8.0-master-SNAPSHOT"]]}}
+             :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
+             :1.9 {:dependencies [[org.clojure/clojure "1.9.0-master-SNAPSHOT"]]}
+             }
   :aliases {"test-all" ["with-profile" "test,1.3:test,1.4:test,1.5:test,1.6:test,1.7" "test"]
             "check-all" ["with-profile" "1.3:1.4:1.5:1.6:1.7" "check"]}
   :min-lein-version "2.0.0")
