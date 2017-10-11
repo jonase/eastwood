@@ -1683,6 +1683,22 @@ the next."
    default-opts
    {})
   (lint-test
+   'testcases.unusednss4
+   [:unused-namespaces]
+   default-opts
+   {
+    {:linter :unused-namespaces,
+     :msg "Namespace testcases.unusednss2 is never used in testcases.unusednss4",
+     :file (fname-from-parts "testcases" "unusednss4.clj"),
+     :line 1, :column 1}
+    1,
+    {:linter :unused-namespaces,
+     :msg "Namespace clojure.data is never used in testcases.unusednss4",
+     :file (fname-from-parts "testcases" "unusednss4.clj"),
+     :line 1, :column 1}
+    1,
+    })
+  (lint-test
    'testcases.wrongnsform
    [:wrong-ns-form]
    default-opts

@@ -34,6 +34,14 @@
        (map :var)
        set))
 
+(defn- keywords-used [asts]
+  (->> asts
+       (mapcat ast/nodes)
+       (filter #(and (= :const (:op %))
+                     (= :keyword (:type %))))
+       (map :val)
+       set))
+
 (defn macros-invoked [asts]
   (->> asts
        (mapcat ast/nodes)
@@ -248,20 +256,33 @@ Example: (all-suffixes [1 2 3])
         curr-ns (-> ns-asts first :form second second second)
         required (required-namespaces ns-asts)
         used-vars (vars-used asts)
+        used-keywords (keywords-used asts)
         used-macros (macros-invoked asts)
         used-protocols (protocols-used asts)
-;;        _ (do
-;;            (println "dbg: required namespaces:")
-;;            (pp/pprint required)
-;;            (println "dbg: vars used:")
-;;            (pp/pprint (map (juxt #(.getName (.ns %)) #(.sym %)) used-vars))
-;;            (println "dbg: macros used:")
-;;            (pp/pprint used-macros)
-;;            (println "dbg: protocols used:")
-;;            (pp/pprint used-protocols))
+        _ (do
+            (println "dbg: required namespaces:")
+            (pp/pprint required)
+            (println "dbg: vars used:")
+            (pp/pprint (map (juxt #(.getName (.ns %))
+                                  #(type (.getName (.ns %)))
+                                  #(.sym %))
+                            used-vars))
+            (println "dbg: keywords used:")
+            (pp/pprint (map (juxt identity #(if-let [n (namespace %)]
+                                              (symbol n))
+                                  #(symbol (name %)))
+                            used-keywords))
+            (println "dbg: macros used:")
+            (pp/pprint used-macros)
+            (println "dbg: protocols used:")
+            (pp/pprint used-protocols))
         used-namespaces (set
                          (concat (map #(-> ^clojure.lang.Var % .ns .getName)
                                       used-vars)
+                                 (->> used-keywords
+                                      (map namespace)
+                                      (remove nil?)
+                                      (map symbol))
                                  (keep #(if-let [n (namespace %)] (symbol n))
                                        used-macros)
                                  (map namespace-for used-protocols)))]
