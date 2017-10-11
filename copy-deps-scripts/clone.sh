@@ -65,9 +65,11 @@ cd ..
 
 git clone https://github.com/sattvik/leinjacker.git
 cd leinjacker
-# v0.4.2 is latest as of Jan 15 2016, but I don't want to figure out
-# any potential breakages from upgrading at this time.
-git checkout v0.4.1
+
+# This is an unreleased version of leinjacker that is the latest as of
+# Aug 15 2017.  It adds support for Leiningen managed dependencies.
+# See Eastwood issue #230 for more details.
+git checkout 3f4b0d73170dcd984608c703d80ee4d52dcdac73
 cd ..
 
 git clone https://github.com/clojure/core.contracts
