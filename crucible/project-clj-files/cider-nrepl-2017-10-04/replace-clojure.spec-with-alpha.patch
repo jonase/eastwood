@@ -1,0 +1,11 @@
+diff --git a/test/spec/cider/nrepl/middleware/info_test.clj b/test/spec/cider/nrepl/middleware/info_test.clj
+index 20a9f53..678d34d 100644
+--- a/test/spec/cider/nrepl/middleware/info_test.clj
++++ b/test/spec/cider/nrepl/middleware/info_test.clj
+@@ -1,5 +1,5 @@
+ (ns cider.nrepl.middleware.info-test
+-  (:require [clojure.spec :as s]
++  (:require [clojure.spec.alpha :as s]
+             [cider.nrepl.test-session :as session]
+             [clojure.test :refer :all]))
+ 

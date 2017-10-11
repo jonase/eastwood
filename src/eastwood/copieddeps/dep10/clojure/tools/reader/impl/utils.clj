@@ -13,15 +13,6 @@
   (when x
     (clojure.core/char x)))
 
-;; getColumnNumber and *default-data-reader-fn* are available only since clojure-1.5.0-beta1
-(def >=clojure-1-5-alpha*?
-  (let [{:keys [minor qualifier]} *clojure-version*]
-    (or (and (= minor 5)
-             (not= "alpha"
-                   (when qualifier
-                     (subs qualifier 0 (dec (count qualifier))))))
-        (> minor 5))))
-
 (def <=clojure-1-7-alpha5
   (let [{:keys [minor qualifier]} *clojure-version*]
     (or (< minor 7)
@@ -32,57 +23,55 @@
              (<= (read-string (subs qualifier (dec (count qualifier))))
                 5)))))
 
-(defmacro compile-if [cond then & [else]]
-  (if (eval cond)
-    then
-    else))
+(defmacro compile-when [cond & then]
+  (when (eval cond)
+    `(do ~@then)))
 
 (defn ex-info? [ex]
   (instance? clojure.lang.ExceptionInfo ex))
 
-(compile-if <=clojure-1-7-alpha5
-  (do
-    (defrecord TaggedLiteral [tag form])
+(compile-when <=clojure-1-7-alpha5
+  (defrecord TaggedLiteral [tag form])
 
-    (defn tagged-literal?
-      "Return true if the value is the data representation of a tagged literal"
-      [value]
-      (instance? eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.TaggedLiteral value))
+  (defn tagged-literal?
+    "Return true if the value is the data representation of a tagged literal"
+    [value]
+    (instance? eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.TaggedLiteral value))
 
-    (defn tagged-literal
-      "Construct a data representation of a tagged literal from a
+  (defn tagged-literal
+    "Construct a data representation of a tagged literal from a
        tag symbol and a form."
-      [tag form]
-      (eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.TaggedLiteral. tag form))
+    [tag form]
+    (eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.TaggedLiteral. tag form))
 
-    (ns-unmap *ns* '->TaggedLiteral)
-    (ns-unmap *ns* 'map->TaggedLiteral)
+  (ns-unmap *ns* '->TaggedLiteral)
+  (ns-unmap *ns* 'map->TaggedLiteral)
 
-    (defmethod print-method eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.TaggedLiteral [o ^java.io.Writer w]
-      (.write w "#")
-      (print-method (:tag o) w)
-      (.write w " ")
-      (print-method (:form o) w))
+  (defmethod print-method eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.TaggedLiteral [o ^java.io.Writer w]
+    (.write w "#")
+    (print-method (:tag o) w)
+    (.write w " ")
+    (print-method (:form o) w))
 
-    (defrecord ReaderConditional [splicing? form])
-    (ns-unmap *ns* '->ReaderConditional)
-    (ns-unmap *ns* 'map->ReaderConditional)
+  (defrecord ReaderConditional [splicing? form])
+  (ns-unmap *ns* '->ReaderConditional)
+  (ns-unmap *ns* 'map->ReaderConditional)
 
-    (defn reader-conditional?
-      "Return true if the value is the data representation of a reader conditional"
-      [value]
-      (instance? eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.ReaderConditional value))
+  (defn reader-conditional?
+    "Return true if the value is the data representation of a reader conditional"
+    [value]
+    (instance? eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.ReaderConditional value))
 
-    (defn reader-conditional
-      "Construct a data representation of a reader conditional.
+  (defn reader-conditional
+    "Construct a data representation of a reader conditional.
        If true, splicing? indicates read-cond-splicing."
-      [form splicing?]
-      (eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.ReaderConditional. splicing? form))
+    [form splicing?]
+    (eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.ReaderConditional. splicing? form))
 
-    (defmethod print-method eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.ReaderConditional [o ^java.io.Writer w]
-      (.write w "#?")
-      (when (:splicing? o) (.write w "@"))
-      (print-method (:form o) w))))
+  (defmethod print-method eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.ReaderConditional [o ^java.io.Writer w]
+    (.write w "#?")
+    (when (:splicing? o) (.write w "@"))
+    (print-method (:form o) w)))
 
 (defn whitespace?
   "Checks whether a given character is whitespace"
@@ -116,3 +105,23 @@
   "Returns an anonymous unbound Var"
   []
   (with-local-vars [x nil] x))
+
+(defn namespace-keys [ns keys]
+  (for [key keys]
+    (if (or (symbol? key)
+            (keyword? key))
+      (let [[key-ns key-name] ((juxt namespace name) key)
+            ->key (if (symbol? key) symbol keyword)]
+        (cond
+          (nil? key-ns)
+          (->key ns key-name)
+
+          (= "_" key-ns)
+          (->key key-name)
+
+          :else
+          key))
+      key)))
+
+(defn second' [[a b]]
+  (when-not a b))

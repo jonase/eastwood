@@ -1,0 +1,10 @@
+diff --git a/src/taoensso/timbre/appenders/3rd_party/newrelic.clj b/src/taoensso/timbre/appenders/3rd_party/newrelic.clj
+index 1250694..e18f1de 100644
+--- a/src/taoensso/timbre/appenders/3rd_party/newrelic.clj
++++ b/src/taoensso/timbre/appenders/3rd_party/newrelic.clj
+@@ -1,4 +1,4 @@
+-(ns taoensso.timbre.appenders.3rd-party.appenders.newrelic
++(ns taoensso.timbre.appenders.3rd-party.newrelic
+   "New Relic appender. Requires an appropriate New Relic jar,
+   Ref. https://goo.gl/3Nv0QX."
+   {:author "Camilo Polymeris (@polymeris)"}

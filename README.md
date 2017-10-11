@@ -32,24 +32,28 @@ Clojure version compatibility:
 
 * Clojure 1.4.0 - Use Eastwood 0.1.5 or earlier.
 
-The `.cljc` files introduced in Clojure 1.7.0 are _not_ linted yet.
-Their contents are ignored.
+The `.cljc` files introduced in Clojure 1.7.0 are linted, starting
+with Eastwood version 0.2.4.  Earlier Eastwood versions ignore such
+files.
 
 
 ## Installation & Quick usage
 
-Eastwood can be run from the command line as a
-[Leiningen](http://leiningen.org) plugin, or from within a REPL, even
-if you do not use Leiningen.
+Eastwood can be run from within a REPL, regardless of which build
+tools you may use.  See the [instructions
+here](#running-eastwood-in-a-repl).
 
-As a Leiningen plugin, Eastwood has been tested most with Leiningen
-versions 2.4.x and 2.5.x.  There is a known bug in Leiningen 2.6.0
-where many plugins, including Eastwood, often cause exceptions to be
-thrown -- Leiningen 2.6.1 was released to fix that problem.  Merge the
-following into your `$HOME/.lein/profiles.clj` file:
+Eastwood can be run from the command line as a
+[Leiningen](http://leiningen.org) plugin.  As a Leiningen plugin,
+Eastwood has been tested most with Leiningen versions 2.4 and later.
+There is a known bug in Leiningen 2.6.0 where many plugins, including
+Eastwood, often cause exceptions to be thrown -- Leiningen 2.6.1 was
+released to fix that problem.
+
+Merge the following into your `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.3"]] }}
+{:user {:plugins [[jonase/eastwood "0.2.4"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -398,40 +402,19 @@ from the REPL, anything that can be passed to
 
 ### Running Eastwood in a REPL
 
-This is _experimental_.  Before you try it, note that Eastwood does
-these things:
-
-* Reads and analyzes the source code you specify.
-* Generates _new_ forms from the analysis results.  Note: if there are
-  bugs, these new forms might not be identical to the original source
-  code.
-* Calls `eval` on the generated forms.
-
-Hopefully you can see from this that Eastwood bugs, especially in the
-portion up to generating new forms to be evaluated, could lead to
-incorrect Clojure code being loaded into a running JVM.
-
-If you want to run Eastwood in this way to avoid starting up a new JVM
-every time you lint your code, I recommend doing so in a separate JVM
-process used only for linting purposes.  It would be foolhardy to do
-this in a JVM running a live production system.  Preferably you should
-not even use the same JVM process where you do your ongoing testing
-and development work, but that would be much less risky than doing it
-in a production JVM process.
-
-Merge this into your project's `project.clj` file first:
+If you use Leiningen, merge this into your project's `project.clj`
+file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.2.3" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.2.4" :exclusions [org.clojure/clojure]]]}}
 ```
 
-Note: This should work even if you do not use Leiningen for your
-project.  You will need to add the dependency above in the manner
-appropriate for your build tool.  See
+If you use a different build tool, you will need to add the dependency
+above in the manner appropriate for it.  See
 [Clojars](https://clojars.org/jonase/eastwood) for Gradle and Maven
 syntax.
 
-From within your REPL, there are two different functions you can call,
+From within your REPL, there are two different functions you may call,
 depending upon the kind of results you want.
 
 * `eastwood` prints output similar to when you run Eastwood from the
@@ -459,17 +442,9 @@ depending upon the kind of results you want.
 (e/lint {:source-paths ["src"] :test-paths ["test"]})
 ```
 
-All of the same options that can be given on the command line may be
-used in the map given to the `eastwood` or `lint` functions.
-
-Before reporting problems with Eastwood when run from the REPL, please
-verify that: (a) the problem occurs when Eastwood is run from the
-command line on your project, which starts up a fresh JVM process, or
-(b) you can still see the problem after starting a new JVM process,
-with as few Clojure forms evaluated between starting the JVM and
-running Eastwood as possible.  Please include any such sequence in
-your problem report, if you cannot reproduce the issue running
-Eastwood from the command line.
+All of the same options that can be given on a Leiningen command line
+may be used in the map argument of the `eastwood` and `lint`
+functions.
 
 There is a `:callback` key that can be added to the argument map for
 the `eastwood` function.  Its value is a callback function that gives
@@ -478,16 +453,42 @@ by default these all appear on the writer `*out*`.  This callback
 function should not be overridden for the `lint` function, since
 `lint` uses it in its implementation.
 
-There is no documentation for this callback function yet.  You you are
+There is no documentation for this callback function yet.  You are
 welcome to read Eastwood source code to see examples of how to write
 one, but note that this is alpha-status code that will likely have API
 changes in future Eastwood versions.
 
-Running Eastwood from the REPL requires you to manage your namespaces
-manually.  Eastwood will not force the removal of any namespaces, and
-I would guess if there are any issues from reloading a namespace that
-is already loaded with protocols, `deftype`, etc. then they are yours
-to deal with.
+
+#### Warnings about using Eastwood in a REPL
+
+Eastwood behaves similarly to `clojure.core/require` while performing
+its analysis, in that it loads your code.  In particular, Eastwood
+does these things:
+
+* Reads and analyzes the source code you specify.
+* Generates _new_ forms from the analysis results.  Note: if there are
+  bugs, these new forms might not be identical to the original source
+  code.
+* Calls `eval` on the generated forms.
+
+Hopefully you can see from this that Eastwood bugs, especially in the
+portion up to generating new forms to be evaluated, could lead to
+incorrect Clojure code being loaded into a running JVM.
+
+It would be foolhardy to run Eastwood in a JVM running a live
+production system.  We recommend that you use a different JVM process
+for Eastwood than the one where you do your ongoing testing and
+development work.
+
+When reporting problems with Eastwood when run from the REPL, please
+reproduce it in as few steps as possible after starting a new JVM
+process, and include those steps in your problem report.
+
+Running Eastwood from the REPL more than once in the same JVM process
+requires you to manage your namespaces manually.  Eastwood will not
+force the removal of any namespaces, and I would guess if there are
+any issues from reloading a namespace that is already loaded with
+protocols, `deftype`, etc. then they are yours to deal with.
 
 Stuart Sierra's [component](https://github.com/stuartsierra/component)
 library and workflow might be helpful in automatically removing old
@@ -640,7 +641,7 @@ can be used to modify this merging behavior.
 For example, if your user-wide `profiles.clj` file contains this:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.3"]]
+{:user {:plugins [[jonase/eastwood "0.2.4"]]
         :eastwood {:exclude-linters [:unlimited-use]
                    :debug [:time]}
         }}
@@ -2287,7 +2288,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein install
 
-Then add `[jonase/eastwood "0.2.4-SNAPSHOT"]` (or whatever is the
+Then add `[jonase/eastwood "0.2.5-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `$HOME/.lein/profiles.clj` file.

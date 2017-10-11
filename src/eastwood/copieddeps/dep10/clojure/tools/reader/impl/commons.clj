@@ -8,7 +8,8 @@
 
 (ns eastwood.copieddeps.dep10.clojure.tools.reader.impl.commons
   (:refer-clojure :exclude [char])
-  (:require [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :refer [peek-char read-char reader-error]]
+  (:require [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :refer [peek-char read-char]]
+            [eastwood.copieddeps.dep10.clojure.tools.reader.impl.errors :refer [reader-error]]
             [eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils :refer [numeric? newline? char]])
   (:import (clojure.lang BigInt Numbers)
            (java.util.regex Pattern Matcher)

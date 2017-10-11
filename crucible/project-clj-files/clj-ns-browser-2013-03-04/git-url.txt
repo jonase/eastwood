@@ -1,1 +1,0 @@
-https://github.com/franks42/clj-ns-browser.git

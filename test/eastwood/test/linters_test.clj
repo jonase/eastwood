@@ -87,7 +87,7 @@ the next."
   (lint-test
    'testcases.f01
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity :local-shadows-var :wrong-tag]
+    :wrong-arity :local-shadows-var :wrong-tag :non-dynamic-earmuffs]
    (assoc default-opts
      ;;:debug [:ns :config]
      :config-files
@@ -165,6 +165,11 @@ the next."
      :msg "Function on do no-name called with 3 args, but it is only known to take one of the following args: [coll x]",
      :file (fname-from-parts "testcases" "f01.clj"),
      :line 144, :column 4}
+    1,
+    {:linter :non-dynamic-earmuffs,
+     :msg "#'testcases.f01/*var2* should be marked dynamic",
+     :file (fname-from-parts "testcases" "f01.clj"),
+     :line 152, :column 1}
     1,
     })
 
@@ -1723,12 +1728,12 @@ the next."
      :line 114, :column 3}
     1,
     {:linter :wrong-ns-form,
-     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :refer",
+     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :include-macros :refer :refer-macros",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 150, :column 13}
     1,
     {:linter :wrong-ns-form,
-     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :exclude :refer :rename",
+     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :exclude :include-macros :refer :refer-macros :rename",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 182, :column 13}
     1,

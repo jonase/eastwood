@@ -145,3 +145,12 @@ Tellman is to be credited/blamed for this test case."
      (println "foo")
      (fn [coll x] (disj coll x)))
    #{:a :b} :c :d))
+
+
+(def ^:dynamic *var1* [])
+
+(def *var2* [])
+
+(def ^:dynamic var3 [])
+
+(def var4 [])

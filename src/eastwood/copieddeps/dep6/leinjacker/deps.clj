@@ -3,14 +3,23 @@
   {:author "Daniel Solano Gómez"}
   (:use eastwood.copieddeps.dep6.leinjacker.defconstrainedfn))
 
+(defn modifier?
+  "Returns a value that evaluates to true if the argument appears to
+  be a valid modifier key+value for a dependency."
+  [modifier-pair]
+  (and (= 2 (count modifier-pair))
+       (keyword? (first modifier-pair))))
+
 (defn dep-spec?
   "Returns a value that evaluates to true if the argument appears to be a valid
-  dependency specification."
+  dependency specification. Supports managed dependencies with or without modifiers."
   [dep]
-  (and (vector? dep)
-       (>= (count dep) 2)
-       (symbol? (first dep))
-       (string? (second dep))))
+  (when (vector? dep)
+    (let [[[dep-name version?] modifiers] (split-with (complement keyword?) dep)
+          modifier-pairs (partition-all 2 modifiers)]
+      (and (symbol? dep-name)
+           (or (string? version?) (nil? version?))
+           (every? modifier? modifier-pairs)))))
 
 (defn dep?
   "Returns a value that evaluates to true if the argument appears to be a valid

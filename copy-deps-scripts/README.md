@@ -60,10 +60,10 @@ available:
 
 ### Current dependencies of project deps
 
-As of Jan 15 2016:
+As of Oct 9 2017:
 
     % lein deps :tree
-     [clojure-complete "0.2.3" :exclusions [[org.clojure/clojure]]]
+     [clojure-complete "0.2.4" :exclusions [[org.clojure/clojure]]]
      [jafingerhut/dolly "0.1.0" :scope "test"]
        [rhizome "0.2.1" :scope "test"]
      [leinjacker "0.4.1"]
@@ -71,34 +71,21 @@ As of Jan 15 2016:
          [org.clojure/core.unify "0.5.3"]
      [org.clojars.brenton/google-diff-match-patch "0.1"]
      [org.clojure/clojure "1.6.0"]
-     [org.clojure/tools.analyzer.jvm "0.6.9"]
-       [org.clojure/core.memoize "0.5.8"]
-         [org.clojure/core.cache "0.6.4"]
-           [org.clojure/data.priority-map "0.0.4"]
+     [org.clojure/tools.analyzer.jvm "0.7.1"]
+       [org.clojure/core.memoize "0.5.9"]
+         [org.clojure/core.cache "0.6.5"]
+           [org.clojure/data.priority-map "0.0.7"]
        [org.ow2.asm/asm-all "4.2"]
-     [org.clojure/tools.analyzer "0.6.7"]
+     [org.clojure/tools.analyzer "0.6.9"]
      [org.clojure/tools.macro "0.1.2" :scope "test"]
      [org.clojure/tools.namespace "0.3.0-alpha3"]
        [org.clojure/java.classpath "0.2.3"]
-     [org.clojure/tools.nrepl "0.2.10" :exclusions [[org.clojure/clojure]]]
-     [org.clojure/tools.reader "1.0.0-alpha3"]
+     [org.clojure/tools.nrepl "0.2.12" :exclusions [[org.clojure/clojure]]]
+     [org.clojure/tools.reader "1.1.0"]
 
     % lein ancient
     [leinjacker "0.4.2"] is available but we use "0.4.1"
     [org.clojure/tools.macro "0.1.5"] is available but we use "0.1.2"
-
-    
-Latest versions of some transitive dependencies as of May 29 2014:
-
-core.contracts 0.0.5 > 0.0.1 above, but leave at 0.0.1 since
-  leinjacker has been tested with it
-core.unify 0.5.6 > 0.5.3 above, but leave at 0.5.3 since leinjacker
-  has been tested with it
-core.memoize 0.5.6 = version above, but see patch I applied below
-core.cache 0.6.3 = version above
-data.priority-map 0.0.5 > 0.0.2 above.  See below.
-tools.namespace 0.2.4 = version above
-tools.reader 0.8.4 = version above
 
 
 ### Current versions copied into Eastwood
@@ -134,7 +121,7 @@ for details.
     (def dry-run {:dry-run? true :print? true})
     (def for-real {:dry-run? false :print? true})
 
-    (def e-root "/Users/jafinger/clj/eastwood/latest/eastwood")
+    (def e-root "/Users/jafinger/clj/eastwood/newest/eastwood")
     (def src-path (str e-root "/src"))
     (def staging-path (str e-root "/staging"))
 

@@ -21,7 +21,7 @@
    Setting up the global env is also required, see eastwood.copieddeps.dep1.clojure.tools.analyzer.env
 
    See clojure.tools.analyzer.core-test for an example on how to setup the analyzer."
-  (:refer-clojure :exclude [macroexpand-1 macroexpand var? record?])
+  (:refer-clojure :exclude [macroexpand-1 macroexpand var? record? boolean?])
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer :all]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env])
   (:import (clojure.lang Symbol IPersistentVector IPersistentMap IPersistentSet ISeq IType IRecord)))

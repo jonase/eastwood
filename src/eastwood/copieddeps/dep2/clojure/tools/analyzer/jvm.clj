@@ -67,6 +67,7 @@
 
 (defn global-env []
   (atom {:namespaces     (build-ns-map)
+
          :update-ns-map! (fn update-ns-map! []
                            (swap! *env* assoc-in [:namespaces] (build-ns-map)))}))
 
@@ -268,7 +269,6 @@
 (defn -deftype [name class-name args interfaces]
 
   (doseq [arg [class-name name]]
-    (memo-clear! maybe-class-from-string [(str arg)])
     (memo-clear! members* [arg])
     (memo-clear! members* [(str arg)]))
 
@@ -464,23 +464,36 @@
                             #'*ns*              (the-ns (:ns env))}
                            (:bindings opts))
        (env/ensure (global-env)
-         (env/with-env (swap! env/*env* mmerge
-                              {:passes-opts (get opts :passes-opts default-passes-opts)})
-           (run-passes (-analyze form env)))))))
+         (doto (env/with-env (mmerge (env/deref-env)
+                                     {:passes-opts (get opts :passes-opts default-passes-opts)})
+                 (run-passes (-analyze form env)))
+           (do (update-ns-map!)))))))
 
-(deftype ExceptionThrown [e])
+(deftype ExceptionThrown [e ast])
+
+(defn ^:private throw! [e]
+  (throw (.e ^ExceptionThrown e)))
 
 (defn analyze+eval
   "Like analyze but evals the form after the analysis and attaches the
    returned value in the :result field of the AST node.
+
    If evaluating the form will cause an exception to be thrown, the exception
-   will be caught and the :result field will hold an ExceptionThrown instance
-   with the exception in the \"e\" field.
+   will be caught and wrapped in an ExceptionThrown object, containing the
+   exception in the `e` field and the AST in the `ast` field.
+
+   The ExceptionThrown object is then passed to `handle-evaluation-exception`,
+   which by defaults throws the original exception, but can be used to provide
+   a replacement return value for the evaluation of the AST.
+
+   Unrolls `do` forms to handle the Gilardi scenario.
 
    Useful when analyzing whole files/namespaces."
   ([form] (analyze+eval form (empty-env) {}))
   ([form env] (analyze+eval form env {}))
-  ([form env opts]
+  ([form env {:keys [handle-evaluation-exception]
+              :or {handle-evaluation-exception throw!}
+              :as opts}]
      (env/ensure (global-env)
        (update-ns-map!)
        (let [env (merge env (-source-info form env))
@@ -492,7 +505,7 @@
                                      (if (= mform form)
                                        [mform (seq raw-forms)]
                                        (recur mform (conj raw-forms
-                                                          (if-let [[op & r] (and (seq? form)form )]
+                                                          (if-let [[op & r] (and (seq? form) form)]
                                                             (if (or (u/macro? op  env)
                                                                     (u/inline? op r env))
                                                               (vary-meta form assoc ::ana/resolved-op (resolve-sym op env))
@@ -520,7 +533,7 @@
                  frm (emit-form a)
                  result (try (eval frm) ;; eval the emitted form rather than directly the form to avoid double macroexpansion
                              (catch Exception e
-                               (ExceptionThrown. e)))]
+                               (handle-evaluation-exception (ExceptionThrown. e a))))]
              (merge a {:result    result
                        :raw-forms raw-forms})))))))
 
