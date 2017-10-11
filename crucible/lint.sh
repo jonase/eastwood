@@ -22,8 +22,9 @@
 # Use PROFILE="" to test with Clojure 1.5.1
 #PROFILE=""
 #PROFILE="+1.6"
-PROFILE="+1.7"
+#PROFILE="+1.7"
 #PROFILE="+1.8"
+PROFILE="+1.9"
 
 do_eastwood()
 {
