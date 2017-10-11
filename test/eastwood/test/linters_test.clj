@@ -27,6 +27,11 @@
                [1 8])
       0))
 
+(def clojure-1-9-or-later
+  (>= (compare ((juxt :major :minor) *clojure-version*)
+               [1 9])
+      0))
+
 (def lint-warning-map-keys-for-testing-in-order
   [:linter
    :msg
@@ -1852,4 +1857,14 @@ the next."
 ;;   [:redefd-vars :unlimited-use]
 ;;   default-opts
 ;;   {})
+  )
+
+
+(deftest test2
+  (when clojure-1-9-or-later
+    (lint-test
+     'testcases.wrongprepost2
+     @#'eastwood.lint/default-linters
+     default-opts
+     {}))
   )
