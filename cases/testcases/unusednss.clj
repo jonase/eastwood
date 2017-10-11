@@ -11,10 +11,8 @@
   (r/doc x))
 
 
-;; TBD: Should clojure.data be considered used because of the function
-;; call d/diff in macro foo2?  In a way, it is merely a _potential_
-;; use of cljoure.data/diff, depending upon whether the macro is
-;; invoked.
+;; clojure.data _should_ be considered used because of the function
+;; call d/diff in macro foo2.
 
 (defmacro foo2 [x y]
   `(d/diff ~x ~y))

@@ -23,3 +23,9 @@
 (defmacro foo2 [x y]
   `(let [x2# ~x y2# ~y z# :clojure.repl/bar]
      (list x2# y2# z#)))
+
+(defmacro macro1
+  [options]
+  (if (map? options)
+    `(str (d/diff (:x options) (:y options)))
+    `(str (d/diff (first options) (second options)))))

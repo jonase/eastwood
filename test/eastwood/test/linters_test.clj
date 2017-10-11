@@ -1667,11 +1667,6 @@ the next."
    default-opts
    {
     {:linter :unused-namespaces,
-     :msg "Namespace clojure.data is never used in testcases.unusednss",
-     :file (fname-from-parts "testcases" "unusednss.clj"),
-     :line 1, :column 1}
-    1,
-    {:linter :unused-namespaces,
      :msg "Namespace clojure.string is never used in testcases.unusednss",
      :file (fname-from-parts "testcases" "unusednss.clj"),
      :line 1, :column 1}
@@ -1689,11 +1684,6 @@ the next."
    {
     {:linter :unused-namespaces,
      :msg "Namespace testcases.unusednss2 is never used in testcases.unusednss4",
-     :file (fname-from-parts "testcases" "unusednss4.clj"),
-     :line 1, :column 1}
-    1,
-    {:linter :unused-namespaces,
-     :msg "Namespace clojure.data is never used in testcases.unusednss4",
      :file (fname-from-parts "testcases" "unusednss4.clj"),
      :line 1, :column 1}
     1,
