@@ -24,6 +24,11 @@ Clojure version compatibility:
 * Eastwood supports only Clojure on Java, not ClojureScript or
   Clojure/CLR.
 
+* Clojure 1.9.0 - Use Eastwood 0.2.5 or later.  This is necessary if
+  you want to lint projects that use the new [map namespace
+  syntax](https://clojure.org/reference/reader#map_namespace_syntax),
+  for example.
+
 * Clojure 1.8.0 - Use Eastwood 0.2.2 or later.  There are known
   problems using Eastwood 0.2.1 and earlier with Clojure 1.8.0.
 
@@ -53,7 +58,7 @@ released to fix that problem.
 Merge the following into your `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.4"]] }}
+{:user {:plugins [[jonase/eastwood "0.2.5"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -138,7 +143,7 @@ enabled by default unless they have '(disabled)' after their name.
 | `:unused-fn-args` (disabled) | Unused function arguments. | [[more]](#unused-fn-args) |
 | `:unused-locals` (disabled) | Symbols bound with `let` or `loop` that are never used (added 0.2.0). | [[more]](#unused-locals) |
 | `:unused-meta-on-macro` | Metadata on a macro invocation is ignored by Clojure (added 0.2.0). | [[more]](#unused-meta-on-macro) |
-| `:unused-namespaces` (disabled) | Warn if a namespace is given in an `ns` form after `:use` or `:require`, but no Vars within the namespace are ever mentioned. | [[more]](#unused-namespaces) |
+| `:unused-namespaces` (disabled) | Warn if a namespace is given in an `ns` form after `:use` or `:require`, but the namespace is not actually used. | [[more]](#unused-namespaces) |
 | `:unused-private-vars` (disabled) | Unused private vars (updated in version 0.2.0). | [[more]](#unused-private-vars) |
 | `:unused-ret-vals` and `:unused-ret-vals-in-try` | Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value. | [[more]](#unused-ret-vals) |
 | `:wrong-arity` | Function calls that seem to have the wrong number of arguments. | [[more]](#wrong-arity) |
@@ -406,7 +411,7 @@ If you use Leiningen, merge this into your project's `project.clj`
 file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.2.4" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.2.5" :exclusions [org.clojure/clojure]]]}}
 ```
 
 If you use a different build tool, you will need to add the dependency
@@ -641,7 +646,7 @@ can be used to modify this merging behavior.
 For example, if your user-wide `profiles.clj` file contains this:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.4"]]
+{:user {:plugins [[jonase/eastwood "0.2.5"]]
         :eastwood {:exclude-linters [:unlimited-use]
                    :debug [:time]}
         }}
@@ -2115,30 +2120,20 @@ from the list of keywords completely.
 
 #### A namespace you use/require could be removed
 
+Significant bug fixes made in version 0.2.5.
+
 This linter is disabled by default, because it can be fairly noisy.
 You must explicitly enable it if you wish to see these warnings.
 
 Warn if a namespace is given in an `ns` form after `:use` or
-`:require`, but no Vars within the namespace are ever mentioned within
-the namespace.  Thus the namespace could be eliminated.
+`:require`, but the namespace is not actually used.  Thus the
+namespace could be eliminated.
 
-Currently this linter also warns if the only place a namespace is used
-is inside of syntax-quoted expressions, as shown in the example below.
-Eastwood will unfortunately warn about `clojure.repl` being unused,
-even though it clearly is used by the reference to `repl/doc`.  Issue
-[#113](https://github.com/jonase/eastwood/issues/113) has been created
-to track this.
+This linter is known to give false positives in a few cases.  See
+these issues:
 
-```clojure
-(ns my.name.space
-  (:require [clojure.repl :as repl]))
-
-(defmacro cdoc [name]
-  `(do
-     (repl/doc ~name)
-     ;; other stuff here
-     ))
-```
+* Issue [#192](https://github.com/jonase/eastwood/issues/192)
+* Issue [#210](https://github.com/jonase/eastwood/issues/210)
 
 
 ### `:unused-private-vars`
@@ -2288,7 +2283,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein install
 
-Then add `[jonase/eastwood "0.2.5-SNAPSHOT"]` (or whatever is the
+Then add `[jonase/eastwood "0.2.6-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `$HOME/.lein/profiles.clj` file.
