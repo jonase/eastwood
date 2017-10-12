@@ -13,18 +13,17 @@ Corrin, and Reid McKenzie.
 No new linters.
 
 * Updated version of tools.reader adds support for new syntax in
-  Clojure 1.9.0-beta2, e.g. namespaced key maps.
+  Clojure 1.9.0-beta2, e.g. [map namespace
+  syntax](https://clojure.org/reference/reader#map_namespace_syntax),
   Issue [#228](https://github.com/jonase/eastwood/issues/228)
   [#201](https://github.com/jonase/eastwood/issues/201)
 
 * Eliminate some common `:suspicious-expression` warnings due to how
   some `clojure.spec` macros such as `every` and `and` are
-  implemented.
-  Issue [#227](https://github.com/jonase/eastwood/issues/227)
-
-* Eliminate some unwanted debug messages when `clojure.spec/assert` is
-  used inside of function preconditions.
-  Issue [#219](https://github.com/jonase/eastwood/issues/219)
+  implemented.  Issue
+  [#227](https://github.com/jonase/eastwood/issues/227).  There are
+  likely further improvements that can be made in this area in the
+  future.
 
 * `:unused-namespaces` linter has been significantly improved, in that
   it gives far fewer false positive warnings.
@@ -37,9 +36,6 @@ No new linters.
   Issue [#232](https://github.com/jonase/eastwood/issues/232)
   [#233](https://github.com/jonase/eastwood/pull/233)
 
-* Eliminate some false `:non-dynamic-earmuffs` warnings.
-  Issue [#213](https://github.com/jonase/eastwood/pull/213)
-
 * Eliminate new warnings that appeared with Clojure 1.9.0 defrecord
   performance improvement, because Eastwood was using internal details
   that changed.
@@ -49,6 +45,13 @@ No new linters.
   command line for Leiningen projects that use [managed
   dependencies](https://github.com/technomancy/leiningen/blob/master/doc/MANAGED_DEPS.md).
   Issue [#230](https://github.com/jonase/eastwood/issues/230)
+
+* Eliminate some unwanted debug messages when `clojure.spec/assert` is
+  used inside of function preconditions.
+  Issue [#219](https://github.com/jonase/eastwood/issues/219)
+
+* Eliminate some false `:non-dynamic-earmuffs` warnings.
+  Issue [#213](https://github.com/jonase/eastwood/pull/213)
 
 
 ## Changes from version 0.2.3 to 0.2.4
