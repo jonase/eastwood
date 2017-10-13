@@ -34,11 +34,40 @@
        (map :var)
        set))
 
+(defn- symbols-used [asts]
+  (->> asts
+       (mapcat ast/nodes)
+       (filter #(and (= :const (:op %))
+                     (= :symbol (:type %))))
+       (map :val)
+       set))
+
+(defn- keywords-used [asts]
+  (->> asts
+       (mapcat ast/nodes)
+       (filter #(and (= :const (:op %))
+                     (= :keyword (:type %))))
+       (map :val)
+       set))
+
 (defn macros-invoked [asts]
   (->> asts
        (mapcat ast/nodes)
        (mapcat :raw-forms)
        (map util/fqsym-of-raw-form)
+       (remove nil?)
+       set))
+
+(defn namespace-for [^Class klass]
+  (-> (.getCanonicalName klass)
+      (str/replace "_" "-")
+      (str/replace #"\.[^\.]+$" "")
+      symbol))
+
+(defn protocols-used [asts]
+  (->> asts
+       (mapcat ast/nodes)
+       (mapcat :interfaces)
        (remove nil?)
        set))
 
@@ -235,19 +264,46 @@ Example: (all-suffixes [1 2 3])
         curr-ns (-> ns-asts first :form second second second)
         required (required-namespaces ns-asts)
         used-vars (vars-used asts)
+        used-symbols (symbols-used asts)
+        used-keywords (keywords-used asts)
         used-macros (macros-invoked asts)
+        used-protocols (protocols-used asts)
 ;;        _ (do
 ;;            (println "dbg: required namespaces:")
 ;;            (pp/pprint required)
 ;;            (println "dbg: vars used:")
-;;            (pp/pprint (map (juxt #(.getName (.ns %)) #(.sym %)) used-vars))
+;;            (pp/pprint (map (juxt #(.getName (.ns %))
+;;                                  #(type (.getName (.ns %)))
+;;                                  #(.sym %))
+;;                            used-vars))
+;;            (println "dbg: symbols used:")
+;;            (pp/pprint (map (juxt identity #(if-let [n (namespace %)]
+;;                                              (symbol n))
+;;                                  #(symbol (name %)))
+;;                            used-symbols))
+;;            (println "dbg: keywords used:")
+;;            (pp/pprint (map (juxt identity #(if-let [n (namespace %)]
+;;                                              (symbol n))
+;;                                  #(symbol (name %)))
+;;                            used-keywords))
 ;;            (println "dbg: macros used:")
-;;            (pp/pprint used-macros))
+;;            (pp/pprint used-macros)
+;;            (println "dbg: protocols used:")
+;;            (pp/pprint used-protocols))
         used-namespaces (set
                          (concat (map #(-> ^clojure.lang.Var % .ns .getName)
                                       used-vars)
+                                 (->> used-symbols
+                                      (map namespace)
+                                      (remove nil?)
+                                      (map symbol))
+                                 (->> used-keywords
+                                      (map namespace)
+                                      (remove nil?)
+                                      (map symbol))
                                  (keep #(if-let [n (namespace %)] (symbol n))
-                                       used-macros)))]
+                                       used-macros)
+                                 (map namespace-for used-protocols)))]
     (for [ns (set/difference required used-namespaces)]
       (util/add-loc-info loc
        {:linter :unused-namespaces

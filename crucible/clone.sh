@@ -18,6 +18,10 @@ REPOS_DIR="${PWD}"
 
 for script_relative_dir in ../project-clj-files/*
 do
+    if [ ! -d "${REPOS_DIR}/${script_relative_dir}" ]
+    then
+        continue
+    fi
     clone_relative_dir=`basename ${script_relative_dir}`
     clone_fullpath_dir="${REPOS_DIR}/${clone_relative_dir}"
     cd "${REPOS_DIR}"

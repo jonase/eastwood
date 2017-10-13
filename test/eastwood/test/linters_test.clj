@@ -27,6 +27,11 @@
                [1 8])
       0))
 
+(def clojure-1-9-or-later
+  (>= (compare ((juxt :major :minor) *clojure-version*)
+               [1 9])
+      0))
+
 (def lint-warning-map-keys-for-testing-in-order
   [:linter
    :msg
@@ -87,7 +92,7 @@ the next."
   (lint-test
    'testcases.f01
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity :local-shadows-var :wrong-tag]
+    :wrong-arity :local-shadows-var :wrong-tag :non-dynamic-earmuffs]
    (assoc default-opts
      ;;:debug [:ns :config]
      :config-files
@@ -165,6 +170,11 @@ the next."
      :msg "Function on do no-name called with 3 args, but it is only known to take one of the following args: [coll x]",
      :file (fname-from-parts "testcases" "f01.clj"),
      :line 144, :column 4}
+    1,
+    {:linter :non-dynamic-earmuffs,
+     :msg "#'testcases.f01/*var2* should be marked dynamic",
+     :file (fname-from-parts "testcases" "f01.clj"),
+     :line 152, :column 1}
     1,
     })
 
@@ -1657,13 +1667,24 @@ the next."
    default-opts
    {
     {:linter :unused-namespaces,
-     :msg "Namespace clojure.data is never used in testcases.unusednss",
+     :msg "Namespace clojure.string is never used in testcases.unusednss",
      :file (fname-from-parts "testcases" "unusednss.clj"),
      :line 1, :column 1}
     1,
+    })
+  (lint-test
+   'testcases.unusednss3
+   [:unused-namespaces]
+   default-opts
+   {})
+  (lint-test
+   'testcases.unusednss4
+   [:unused-namespaces]
+   default-opts
+   {
     {:linter :unused-namespaces,
-     :msg "Namespace clojure.string is never used in testcases.unusednss",
-     :file (fname-from-parts "testcases" "unusednss.clj"),
+     :msg "Namespace testcases.unusednss2 is never used in testcases.unusednss4",
+     :file (fname-from-parts "testcases" "unusednss4.clj"),
      :line 1, :column 1}
     1,
     })
@@ -1718,12 +1739,12 @@ the next."
      :line 114, :column 3}
     1,
     {:linter :wrong-ns-form,
-     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :refer",
+     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :include-macros :refer :refer-macros",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 150, :column 13}
     1,
     {:linter :wrong-ns-form,
-     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :exclude :refer :rename",
+     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :exclude :include-macros :refer :refer-macros :rename",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 182, :column 13}
     1,
@@ -1842,4 +1863,14 @@ the next."
 ;;   [:redefd-vars :unlimited-use]
 ;;   default-opts
 ;;   {})
+  )
+
+
+(deftest test2
+  (when clojure-1-9-or-later
+    (lint-test
+     'testcases.wrongprepost2
+     @#'eastwood.lint/default-linters
+     default-opts
+     {}))
   )

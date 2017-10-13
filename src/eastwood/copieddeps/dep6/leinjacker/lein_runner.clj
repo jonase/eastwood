@@ -22,19 +22,20 @@
 (defn- find-lein-cmd*
   "Does the work of looking up the lein command without any memoization options."
   [generation]
-  (if-let [cmd (some
-                (fn [cmd]
-                  (try
-                    (if (.contains (:out (shell/sh cmd "version" :env (clean-lein-env)))
-                                   (str "Leiningen " generation "."))
-                      cmd)
-                    (catch java.io.IOException _)))
-                ["lein" (str "lein" generation)])]
+  (if-let [cmd (System/getenv (str "LEIN" generation "_CMD"))]
     cmd
-    (throw (IllegalStateException.
-            (str "Unable to find Leiningen " generation
-                 " in the path as lein or lein" generation
-                 ". Please make sure it is installed and in your path under one of those names.")))))
+    (if-let [cmd (some
+                  (fn [cmd]
+                    (try
+                      (if (.contains (:out (shell/sh cmd "version" :env (clean-lein-env)))
+                                     (str "Leiningen " generation "."))
+                        cmd)
+                      (catch java.io.IOException _)))
+                  ["lein" (str "lein" generation)])]
+      cmd
+      (throw (IllegalStateException.
+              (format "Unable to find Leiningen %s in the path as lein or lein %s. Please make sure it is installed and in your path under one of those names, or set LEIN%s_CMD."
+                      generation generation generation))))))
 
 (defn find-lein-cmd
   "Attempts to locate the lein command for the given command on the path.

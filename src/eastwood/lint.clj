@@ -23,7 +23,7 @@
 (def eastwood-url "https://github.com/jonase/eastwood")
 
 (def ^:dynamic *eastwood-version*
-  {:major 0, :minor 2, :incremental 4, :qualifier "SNAPSHOT"})
+  {:major 0, :minor 2, :incremental 6, :qualifier "SNAPSHOT"})
 
 (defn eastwood-version []
   (let [{:keys [major minor incremental qualifier]} *eastwood-version*]
@@ -714,7 +714,8 @@ exception."))
                                                (#'dir/find-files [dir-name-str]
                                                                  find/clj))]))
         fd-by-dir (util/map-vals (fn [files]
-                                   (#'file/files-and-deps files find/clj))
+                                   (#'file/files-and-deps files (:read-opts
+                                                                 find/clj)))
                                  files-by-dir)]
     (into
      {}

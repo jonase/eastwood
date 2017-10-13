@@ -1,6 +1,81 @@
 # Change log for Eastwood
 
 
+## Changes from version 0.2.4 to 0.2.5
+
+The main changes with version 0.2.5 are for improving how Eastwood
+works with Clojure 1.9.0, and eliminating false positives when using
+the `:unused-namespaces` linter.
+
+Thanks to contributions from Daniel Compton, Derek Passen, Emlyn
+Corrin, and Reid McKenzie.
+
+No new linters.
+
+* Updated version of tools.reader adds support for new syntax in
+  Clojure 1.9.0-beta2, e.g. [map namespace
+  syntax](https://clojure.org/reference/reader#map_namespace_syntax),
+  Issue [#228](https://github.com/jonase/eastwood/issues/228)
+  [#201](https://github.com/jonase/eastwood/issues/201)
+
+* Eliminate some common `:suspicious-expression` warnings due to how
+  some `clojure.spec` macros such as `every` and `and` are
+  implemented.  Issue
+  [#227](https://github.com/jonase/eastwood/issues/227).  There are
+  likely further improvements that can be made in this area in the
+  future.
+
+* `:unused-namespaces` linter has been significantly improved, in that
+  it gives far fewer false positive warnings.
+  Issue [#200](https://github.com/jonase/eastwood/issues/200)
+  [#211](https://github.com/jonase/eastwood/issues/211)
+  [#186](https://github.com/jonase/eastwood/pull/186)
+
+* Eliminate warnings when running with Clojure 1.9.0 for conflict with
+  new functions in core like boolean? and uri?
+  Issue [#232](https://github.com/jonase/eastwood/issues/232)
+  [#233](https://github.com/jonase/eastwood/pull/233)
+
+* Eliminate new warnings that appeared with Clojure 1.9.0 defrecord
+  performance improvement, because Eastwood was using internal details
+  that changed.
+  Issue [#231](https://github.com/jonase/eastwood/issues/231)
+
+* New version of leinjacker allows Eastwood to be invoked via `lein`
+  command line for Leiningen projects that use [managed
+  dependencies](https://github.com/technomancy/leiningen/blob/master/doc/MANAGED_DEPS.md).
+  Issue [#230](https://github.com/jonase/eastwood/issues/230)
+
+* Eliminate some unwanted debug messages when `clojure.spec/assert` is
+  used inside of function preconditions.
+  Issue [#219](https://github.com/jonase/eastwood/issues/219)
+
+* Eliminate some false `:non-dynamic-earmuffs` warnings.
+  Issue [#213](https://github.com/jonase/eastwood/pull/213)
+
+
+## Changes from version 0.2.3 to 0.2.4
+
+No new linters.  Added initial support for .cljc files and reader
+conditionals.
+
+* Read .cljc files in addition to .clj files when scanning namespaces.
+
+* Handle reader conditionals by always parsing the :clj branch.
+
+* Allow ClojureScript-specific libspec entries, such as `:include-macros
+  true`.
+
+
+Internal enhancements:
+
+* Updated versions of tools.analyzer, tools.reader, tools.namespace,
+  core.memoize, and clojure.java.classpath.
+
+* Updated documentation, cleaned up comments, and removed unused
+  require statements.
+
+
 ## Changes from version 0.2.2 to 0.2.3
 
 No new linters.  The only difference with 0.2.2 is a few bug fixes:

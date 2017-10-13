@@ -33,6 +33,14 @@
   :reason "when-some with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
 
 (disable-warning
+  {:linter :suspicious-expression
+   :for-macro 'clojure.core/and
+   :if-inside-macroexpansion-of #{'clojure.spec/every 'clojure.spec.alpha/every
+                                  'clojure.spec/and 'clojure.spec.alpha/and}
+   :within-depth 6
+   :reason "clojure.spec's macros `every` and `and` often contain `clojure.core/and` invocations with only one argument."})
+
+(disable-warning
  {:linter :constant-test
   :if-inside-macroexpansion-of #{'clojure.core/cond-> 'clojure.core/cond->>}
   :within-depth 2
