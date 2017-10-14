@@ -777,8 +777,12 @@ versions 1.5.1 and 1.6.0).
 Code that uses the **values of `&env`** feature of the Clojure
 compiler will cause errors when being analyzed.  Some known examples
 are the libraries
-[`immutable-bitset`](https://github.com/ztellman/immutable-bitset) and
-[`flatland/useful`](https://github.com/flatland/useful).
+[`immutable-bitset`](https://github.com/ztellman/immutable-bitset),
+[`flatland/useful`](https://github.com/flatland/useful),
+and in some cases [`riddley`](https://github.com/ztellman/riddley) and
+libraries that use it, such as
+[`specter`](https://github.com/nathanmarz/specter) (e.g. see one example at
+[TANAL-124](https://dev.clojure.org/jira/browse/TANAL-124)).
 
 Note that if a library uses simply `(keys &env)` it will be analyzed with
 no problems, however because the values of `&env` are `Compiler$LocalBinding`s,
