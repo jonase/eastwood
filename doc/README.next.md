@@ -1503,10 +1503,10 @@ macro expansions.  Search those config files for `:constant-test` to
 find examples.
 
 It is common across Clojure projects tested to use `:else` as the last
-'always do this case' at the end of a `cond` form.  It is also fairly
-common to use `true` or `:default` for this purpose, and Eastwood will
-not warn about these.  If you use some other constant in that
-position, Eastwood will warn.
+'always do this case' at the end of a `cond` form.  Other common
+constant true expressions seen in this place are `true`, `:default`,
+and `:otherwise`, and Eastwood will not warn about these.  If you use
+some other constant in that position, Eastwood will warn.
 
 It is somewhat common to use `(assert false "msg")` to throw
 exceptions in Clojure code.  This linter has a special check never to
