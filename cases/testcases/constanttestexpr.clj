@@ -43,8 +43,8 @@
 ;; variable, and does not know the behavior of seq.
 (if (seq {:a (/ 84 2)}) 1 2)
 
-;; No warning for :else in this one, or in general for any constant in
-;; the 2nd-to-last arg of cond
+;; No warning for :else in this one, or for several other
+;; commonly-used constant true values in the 2nd-to-last position.
 (cond (>= (count [1 2 3]) 2) 8
       :else 9)
 (cond :x 8
@@ -129,6 +129,9 @@
 ;; It can detect this, too.
 (let [x (map? (list [:p "a"] [:p "b"]))]
   (if x 1 2))
+
+(cond (>= (count [1 2 3]) 2) 8
+      :otherwise 9)
 
 ;; TBD: Why is it not able to issue a warning for a line like this in
 ;; test/hiccup/test/core.clj ?

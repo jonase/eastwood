@@ -855,7 +855,7 @@ warning, that contains the constant value."
 (defn default-case-at-end-of-cond? [ast]
   ;; I have seen true and :default used in several projects rather
   ;; than :else
-  (and (#{:else :default true} (-> ast :test :form))
+  (and (#{:else :default :otherwise true} (-> ast :test :form))
        (seq (:raw-forms ast))
        (= 'clojure.core/cond
           (-> ast :raw-forms first util/fqsym-of-raw-form))))

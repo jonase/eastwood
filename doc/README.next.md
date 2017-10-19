@@ -777,8 +777,12 @@ versions 1.5.1 and 1.6.0).
 Code that uses the **values of `&env`** feature of the Clojure
 compiler will cause errors when being analyzed.  Some known examples
 are the libraries
-[`immutable-bitset`](https://github.com/ztellman/immutable-bitset) and
-[`flatland/useful`](https://github.com/flatland/useful).
+[`immutable-bitset`](https://github.com/ztellman/immutable-bitset),
+[`flatland/useful`](https://github.com/flatland/useful),
+and in some cases [`riddley`](https://github.com/ztellman/riddley) and
+libraries that use it, such as
+[`specter`](https://github.com/nathanmarz/specter) (e.g. see one example at
+[TANAL-124](https://dev.clojure.org/jira/browse/TANAL-124)).
 
 Note that if a library uses simply `(keys &env)` it will be analyzed with
 no problems, however because the values of `&env` are `Compiler$LocalBinding`s,
@@ -1503,10 +1507,10 @@ macro expansions.  Search those config files for `:constant-test` to
 find examples.
 
 It is common across Clojure projects tested to use `:else` as the last
-'always do this case' at the end of a `cond` form.  It is also fairly
-common to use `true` or `:default` for this purpose, and Eastwood will
-not warn about these.  If you use some other constant in that
-position, Eastwood will warn.
+'always do this case' at the end of a `cond` form.  Other common
+constant true expressions seen in this place are `true`, `:default`,
+and `:otherwise`, and Eastwood will not warn about these.  If you use
+some other constant in that position, Eastwood will warn.
 
 It is somewhat common to use `(assert false "msg")` to throw
 exceptions in Clojure code.  This linter has a special check never to
