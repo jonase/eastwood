@@ -3,7 +3,7 @@
             [eastwood.copieddeps.dep6.leinjacker.eval :as leval]
             [eastwood.copieddeps.dep6.leinjacker.deps :refer [add-if-missing]]))
 
-(def eastwood-version-string "0.2.6-SNAPSHOT")
+(def eastwood-version-string "0.2.6-beta1")
 
 ;; 'lein help' prints only the first line of the string returned by
 ;; help.  'lein help eastwood' prints all of it, plus the arg vectors
@@ -34,6 +34,57 @@ For other options, see the full documentation on-line here:
     https://github.com/jonase/eastwood")))
 
 
+;; Everything from here down to, and including, pprint-meta is a copy
+;; of some functions from namespace eastwood.util, specifically to
+;; allow more visibility of metadata in the Leiningen project map when
+;; running with a command line like "lein eastwood lein-project"
+
+(defn has-keys? [m key-seq]
+  (every? #(contains? m %) key-seq))
+
+(defn sorted-map-with-non-keyword-keys? [x]
+  (and (map? x)
+       (sorted? x)
+       (some (fn [o] (not (keyword? o))) (keys x))))
+
+(defn protocol?
+  "Make a good guess as to whether p is an object created via defprotocol."
+  [p]
+  (and (map? p)
+       ;; Don't even try to do has-keys? on a sorted map with
+       ;; non-keyword keys, since it will most likely cause compare to
+       ;; throw an exception.
+       (not (sorted-map-with-non-keyword-keys? p))
+       (has-keys? p [:on :on-interface :sigs :var :method-map
+                     :method-builders])))
+
+(defn pprint-meta
+  "A version of pprint that prints all metadata on the object,
+wherever it appears.  (binding [*print-meta* true] (pprint obj))
+prints metadata on symbols, but not on collection, at least with
+Clojure 1.6.0 and probably earlier versions.  Clojure ticket CLJ-1445
+may improve upon this in the future.
+
+http://dev.clojure.org/jira/browse/CLJ-1445"
+  [obj]
+  (binding [*print-meta* false]
+    (let [orig-dispatch pp/*print-pprint-dispatch*]
+      (pp/with-pprint-dispatch
+        (fn pm [o]
+          (let [o (if (protocol? o)
+                    (assoc o
+                      :var :true-value-replaced-to-avoid-pprint-infinite-loop
+                      :method-builders :true-value-replaced-to-avoid-pprint-infinite-loop)
+                    o)]
+            (when (meta o)
+              (print "^")
+              (pm (meta o))
+              (.write ^java.io.Writer *out* " ")
+              (pp/pprint-newline :fill))
+            (orig-dispatch o)))
+        (pp/pprint obj)))))
+
+
 (defn eastwood
   ([project] (eastwood project "{}"))
   ([project opts]
@@ -42,9 +93,9 @@ For other options, see the full documentation on-line here:
 
       (= opts "lein-project")
       (do
-        (pp/pprint (into (sorted-map) project))
+        (pprint-meta (into (sorted-map) project))
         (println "\nValue of :eastwood key in project map:")
-        (pp/pprint (into (sorted-map) (:eastwood project))))
+        (pprint-meta (into (sorted-map) (:eastwood project))))
 
       :else
       (let [leiningen-paths (select-keys project [:source-paths
@@ -54,14 +105,17 @@ For other options, see the full documentation on-line here:
             opts (merge leiningen-paths leiningen-opts cmdline-opts)]
         (when (some #{:options} (:debug opts))
           (println "\nLeiningen paths:")
-          (pp/pprint (into (sorted-map) leiningen-paths))
+          (pprint-meta (into (sorted-map) leiningen-paths))
           (println "\nLeiningen options map:")
-          (pp/pprint (into (sorted-map) leiningen-opts))
+          (pprint-meta (into (sorted-map) leiningen-opts))
           (println "\nCommand line options map:")
-          (pp/pprint (into (sorted-map) cmdline-opts))
+          (pprint-meta (into (sorted-map) cmdline-opts))
           (println "\nMerged options map:")
-          (pp/pprint (into (sorted-map) opts))
-          (println))
+          (pprint-meta (into (sorted-map) opts))
+          (println "\nLeininge project map:")
+          (pprint-meta (into (sorted-map) project))
+          (println)
+          (flush))
         (leval/eval-in-project
          (add-if-missing project ['jonase/eastwood eastwood-version-string])
          `(eastwood.versioncheck/run-eastwood '~opts)
