@@ -1179,8 +1179,11 @@ Return value:
 
         ;; Changes below override anything in the caller-provided
         ;; options map.
-        opts (assoc opts :warning-enable-config
-                    (util/init-warning-enable-config opts))]
+        opts (assoc opts
+                    :warning-enable-config
+                    (util/init-warning-enable-config opts)
+                    :custom-linters-config
+                    (util/init-custom-linter-config opts))]
     opts))
 
 

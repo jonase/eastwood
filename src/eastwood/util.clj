@@ -840,6 +840,23 @@ StringWriter."
           {} warning-enable-config))
 
 
+(def ^:private custom-linter-atom (atom []))
+
+
+(defn add-linter [m]
+  (swap! custom-linter-atom conj m))
+
+
+(defn process-custom-linters [custom-linters-list]
+  (reduce (fn [config-acc m]
+            (assert-keys m [:name :fn])
+            ;;; Disabled for now because the atom is stateful
+            ;;; Goal was to enforce uniqueness in linter names
+            ;;(assert (not (get config-acc (:name m))))
+            (assoc config-acc (:name m) (:fn m)))
+          {} custom-linters-list))
+
+
 (defn builtin-config-to-resource [name]
   (io/resource (str "eastwood/config/" name)))
 
@@ -862,6 +879,22 @@ StringWriter."
           (error-cb (format "Exception while attempting to load config file: %s" config-file))
           (pst e nil error-cb))))
     (process-configs @warning-enable-config-atom)))
+
+
+(defn init-custom-linter-config [opt]
+  (let [config-files (get opt :lint-files [])
+        error-cb (make-msg-cb :error opt)
+        debug-cb (make-msg-cb :debug opt)]
+    (doseq [config-file config-files]
+      (when (debug? :config opt)
+        (debug-cb (format "Loading config file: %s" config-file)))
+      (try
+        (binding [*ns* (the-ns 'eastwood.util)]
+          (load-reader (io/reader config-file)))
+        (catch Exception e
+          (error-cb (format "Exception while attempting to load config file: %s" config-file))
+          (pst e nil error-cb))))
+    (process-custom-linters @custom-linter-atom)))
 
 
 (defn meets-suppress-condition [ast enclosing-macros condition]
