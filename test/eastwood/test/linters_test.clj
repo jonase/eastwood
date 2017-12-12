@@ -1881,7 +1881,7 @@ the next."
    'testcases.custom
    []
    (assoc default-opts
-          :lint-files [(io/resource "custom_lints.clj")])
+          :lint-files ["cases/custom_lints.clj"])
    {{:linter :custom-linter,
      :msg
      "#'testcases.custom/custom-fn shouldn't have the word 'custom'",
