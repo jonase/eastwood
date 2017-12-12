@@ -1882,9 +1882,10 @@ the next."
    []
    (assoc default-opts
           :lint-files [(io/resource "custom_lints.clj")])
-   {{:linter :thing-linter,
-     :msg "we linted something at testcases/custom.clj:1:1",
+   {{:linter :custom-linter,
+     :msg
+     "#'testcases.custom/custom-fn shouldn't have the word 'custom'",
      :file "testcases/custom.clj",
-     :line 1,
+     :line 4,
      :column 1}
     1}))

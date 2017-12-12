@@ -1,13 +1,15 @@
-(ns custom-lints)
-
-(defn fake-linter
+(defn custom-linter
   [analyze-results opts]
-  [{:linter :thing-linter
-    :msg "we linted something at testcases/custom.clj:1:1"
-    :file "testcases/custom.clj"
-    :line 1
-    :column 1}])
+  (for [expr (mapcat ast/nodes (:asts analyze-results))
+        :when (= (:op expr) :def)
+        :let [^clojure.lang.Var v (:var expr)
+              s (.sym v)
+              loc (:env expr)]
+        :when (re-find #"custom" (name s))]
+    (add-loc-info loc
+                  {:linter :custom-linter
+                   :msg (format "%s shouldn't have the word 'custom'" v)})))
 
 (add-linter
- {:name :thing-linter
-  :fn fake-linter})
+ {:name :custom-linter
+  :fn custom-linter})
