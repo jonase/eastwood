@@ -1874,3 +1874,17 @@ the next."
      default-opts
      {}))
   )
+
+
+(deftest custom-linters-test
+  (lint-test
+   'testcases.custom
+   []
+   (assoc default-opts
+          :lint-files [(io/resource "custom_lints.clj")])
+   {{:linter :thing-linter,
+     :msg "we linted something at testcases/custom.clj:1:1",
+     :file "testcases/custom.clj",
+     :line 1,
+     :column 1}
+    1}))
