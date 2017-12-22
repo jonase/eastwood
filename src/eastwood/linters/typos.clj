@@ -852,10 +852,16 @@ warning, that contains the constant value."
         (logical-true-test (-> ast :test)))))
 
 
+(defn transform-ns-keyword [kw]
+  (if (and (keyword? kw) (some? (namespace kw)))
+    (keyword (name kw))
+    kw))
+
 (defn default-case-at-end-of-cond? [ast]
   ;; I have seen true and :default used in several projects rather
   ;; than :else
-  (and (#{:else :default :otherwise true} (-> ast :test :form))
+  (and (#{:else :default :otherwise true} (transform-ns-keyword
+                                           (-> ast :test :form)))
        (seq (:raw-forms ast))
        (= 'clojure.core/cond
           (-> ast :raw-forms first util/fqsym-of-raw-form))))
