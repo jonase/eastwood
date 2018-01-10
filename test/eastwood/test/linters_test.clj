@@ -12,26 +12,6 @@
 ;; expedient thing and make a couple of tests expect different values
 ;; depending on the Clojure version.
 
-(def clojure-1-6-or-later
-  (>= (compare ((juxt :major :minor) *clojure-version*)
-               [1 6])
-      0))
-
-(def clojure-1-7-or-later
-  (>= (compare ((juxt :major :minor) *clojure-version*)
-               [1 7])
-      0))
-
-(def clojure-1-8-or-later
-  (>= (compare ((juxt :major :minor) *clojure-version*)
-               [1 8])
-      0))
-
-(def clojure-1-9-or-later
-  (>= (compare ((juxt :major :minor) *clojure-version*)
-               [1 9])
-      0))
-
 (def lint-warning-map-keys-for-testing-in-order
   [:linter
    :msg
@@ -246,7 +226,7 @@ the next."
   ;; protocol method names that begin with "-".  See
   ;; http://dev.clojure.org/jira/browse/TANAL-17 and
   ;; http://dev.clojure.org/jira/browse/CLJ-1202
-  (when clojure-1-6-or-later
+  (when (util/clojure-1-6-or-later)
     (lint-test
      'testcases.f05
      [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
@@ -375,7 +355,7 @@ the next."
     {:line 35, :column 3,
      :file (fname-from-parts "testcases" "f07.clj"),
      :linter :unused-ret-vals,
-     :msg (if clojure-1-6-or-later
+     :msg (if (util/clojure-1-6-or-later)
             "Should use return value of function call, but it is discarded: (disj! (transient #{:b :a}) :a)"
             "Should use return value of function call, but it is discarded: (disj! (transient #{:a :b}) :a)")}
     1,
@@ -489,10 +469,10 @@ the next."
       :local-shadows-var :wrong-tag]
      default-opts
      (merge common-expected-warnings
-            (if clojure-1-6-or-later
+            (if (util/clojure-1-6-or-later)
               clojure-1-6-or-later-additional-expected-warnings
               clojure-1-5-additional-expected-warnings)
-            (if clojure-1-8-or-later
+            (if (util/clojure-1-8-or-later)
               clojure-1-8-or-later-additional-expected-warnings))))
   (lint-test
    'testcases.deprecated
@@ -1147,7 +1127,7 @@ the next."
          }
         expected-warnings
         (merge common-expected-warnings
-               (if clojure-1-6-or-later
+               (if (util/clojure-1-6-or-later)
                  clojure-1-6-or-later-additional-expected-warnings
                  nil))]
   (lint-test
@@ -1259,16 +1239,6 @@ the next."
      :line 85, :column 1}
     1,
     {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 87, :column 28}
-    1,
-    {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 88, :column 25}
-    1,
-    {:linter :wrong-tag,
      :msg "Wrong tag: Set on form: b",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 125, :column 14}
@@ -1304,28 +1274,51 @@ the next."
      :line 211, :column 23}
     1,
     }
-        clojure-1-6-or-earlier-expected-warnings
-        common-expected-warnings
 
-        clojure-1-7-or-later-expected-warnings
-        (assoc common-expected-warnings
+        ;; These warnings are not needed after CLJ-1232 was fixed in
+        ;; Clojure 1.8.0.
+        clojure-1-7-or-earlier-expected-warnings
+        {
     {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of function on arg vector: [& p__<num>] should be fully qualified Java class name, or else it may cause exception if used from another namespace",
+     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 87, :column 28}
+    1,
+    {:linter :wrong-tag,
+     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 88, :column 25}
+    1,
+         }
+
+        clojure-1-6-or-earlier-expected-warnings
+        (merge common-expected-warnings
+               clojure-1-7-or-earlier-expected-warnings)
+
+        clojure-1-7-only-expected-warnings
+        (merge common-expected-warnings
+               clojure-1-7-or-earlier-expected-warnings
+               {
+    {:linter :wrong-tag,
+     :msg "Tag: LinkedList for return type of function on arg vector: [& p__<num>] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 93, :column 26}
-    1)]
+                1,
+                })]
     (lint-test
      'testcases.wrongtag
      @#'eastwood.lint/default-linters
      default-opts
-     (if clojure-1-7-or-later
-       ;; This is actually the expected result only for 1.7.0-alpha2
-       ;; or later, because the behavior changed with the fix for
-       ;; CLJ-887, so it will fail if you run the test with
-       ;; 1.7.0-alpha1.  I won't bother checking the version that
-       ;; precisely, though.
-       clojure-1-7-or-later-expected-warnings
-       clojure-1-6-or-earlier-expected-warnings)))
+     (cond (util/clojure-1-8-or-later) common-expected-warnings
+
+           ;; This is actually the expected result only for 1.7.0-alpha2
+           ;; or later, because the behavior changed with the fix for
+           ;; CLJ-887, so it will fail if you run the test with
+           ;; 1.7.0-alpha1.  I won't bother checking the version that
+           ;; precisely, though.
+           (util/clojure-1-7-or-later) clojure-1-7-only-expected-warnings
+
+           :else clojure-1-6-or-earlier-expected-warnings)))
   (lint-test
    'testcases.macrometa
    [:unlimited-use :local-shadows-var :wrong-tag :unused-meta-on-macro]
@@ -1591,7 +1584,7 @@ the next."
          }
         expected-warnings
         (merge common-expected-warnings
-               (if clojure-1-6-or-later
+               (if (util/clojure-1-6-or-later)
                  clojure-1-6-or-later-additional-expected-warnings
                  nil))]
     (lint-test
@@ -1867,7 +1860,7 @@ the next."
 
 
 (deftest test2
-  (when clojure-1-9-or-later
+  (when (util/clojure-1-9-or-later)
     (lint-test
      'testcases.wrongprepost2
      @#'eastwood.lint/default-linters

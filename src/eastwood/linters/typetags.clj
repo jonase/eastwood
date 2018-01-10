@@ -218,9 +218,12 @@ significance needed by the user."
                    (nil? (fq-classname-to-class (str tag))))]
     (util/add-loc-info loc
      {:linter :wrong-tag
-      :msg (format "Tag: %s for return type of function on arg vector: %s should be fully qualified Java class name, or else it may cause exception if used from another namespace"
+      :msg (format "Tag: %s for return type of function on arg vector: %s should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232)."
                    tag (-> form first))})))
 
 (defn wrong-tag [& args]
   (concat (apply wrong-tag-from-analyzer args)
-          (apply wrong-tag-clj-1232 args)))
+          ;; CLJ-1232 was fixed in Clojure 1.8.0
+          (if (util/clojure-1-8-or-later)
+            []
+            (apply wrong-tag-clj-1232 args))))

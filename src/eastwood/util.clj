@@ -14,6 +14,23 @@
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rdr-types]))
 
 
+(defn min-clojure-version [min-version-vector]
+  (>= (compare ((juxt :major :minor) *clojure-version*)
+               min-version-vector)
+      0))
+
+(defn clojure-1-6-or-later []
+  (min-clojure-version [1 6]))
+
+(defn clojure-1-7-or-later []
+  (min-clojure-version [1 7]))
+
+(defn clojure-1-8-or-later []
+  (min-clojure-version [1 8]))
+
+(defn clojure-1-9-or-later []
+  (min-clojure-version [1 9]))
+
 ;; Before Clojure 1.8.0, an :op :def node resulting from a defn form would
 ;; have its :init value equal to an AST node with :op :fn
 
