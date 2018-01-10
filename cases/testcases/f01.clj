@@ -81,7 +81,7 @@
   (let [foo-before def-in-def1]
     (def def-in-def1 (dec x))
     {:x x
-     :def-in-def1-before def-in-def1
+     :def-in-def1-before foo-before
      :def-in-def1-now def-in-def1}))
 
 

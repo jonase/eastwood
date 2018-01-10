@@ -72,7 +72,8 @@ the next."
   (lint-test
    'testcases.f01
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity :local-shadows-var :wrong-tag :non-dynamic-earmuffs]
+    :wrong-arity :local-shadows-var :wrong-tag :non-dynamic-earmuffs
+    :unused-locals]
    (assoc default-opts
      ;;:debug [:ns :config]
      :config-files
@@ -163,7 +164,7 @@ the next."
   (lint-test
    'testcases.f02
    [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity
-    :local-shadows-var :wrong-tag]
+    :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :redefd-vars,
@@ -192,13 +193,13 @@ the next."
    'testcases.f03
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try :wrong-arity
-    :wrong-tag]
+    :wrong-tag :unused-locals]
    default-opts
    {})
   (lint-test
    'testcases.f04
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity :local-shadows-var :wrong-tag]
+    :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :local-shadows-var,
@@ -230,13 +231,13 @@ the next."
     (lint-test
      'testcases.f05
      [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-      :wrong-arity :local-shadows-var :wrong-tag]
+      :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
      default-opts
      {}))
   (lint-test
    'testcases.f06
    [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity :local-shadows-var :wrong-tag]
+    :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :unused-fn-args,
@@ -466,7 +467,7 @@ the next."
     (lint-test
      'testcases.f07
      [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
-      :local-shadows-var :wrong-tag]
+      :local-shadows-var :wrong-tag :unused-locals]
      default-opts
      (merge common-expected-warnings
             (if (util/clojure-1-6-or-later)
@@ -476,7 +477,7 @@ the next."
               clojure-1-8-or-later-additional-expected-warnings))))
   (lint-test
    'testcases.deprecated
-   [:deprecations :wrong-arity :local-shadows-var :wrong-tag]
+   [:deprecations :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :deprecations,
@@ -507,7 +508,7 @@ the next."
    'testcases.tanal-9
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
-    :local-shadows-var :wrong-tag]
+    :local-shadows-var :wrong-tag :unused-locals]
 ;;   [:misplaced-docstrings]
    default-opts  ;(merge default-opts {:debug #{:all}})
    {})
@@ -515,13 +516,13 @@ the next."
    'testcases.tanal-27
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
-    :local-shadows-var :wrong-tag]
+    :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {})
   (lint-test
    'testcases.keyword-typos
    [:keyword-typos :unused-ret-vals :unused-ret-vals-in-try
-    :deprecations :wrong-arity :local-shadows-var :wrong-tag]
+    :deprecations :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :keyword-typos,
@@ -530,7 +531,8 @@ the next."
     })
   (lint-test
    'testcases.isformsok
-   [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
+   [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag
+    :unused-locals]
    default-opts
    {})
   (lint-test
@@ -1141,7 +1143,7 @@ the next."
   ;; command line.  What is going on here?
   (lint-test
    'testcases.unlimiteduse
-   [:unlimited-use :local-shadows-var :wrong-tag]
+   [:unlimited-use :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :unlimited-use,
@@ -1157,7 +1159,7 @@ the next."
     })
   (lint-test
    'testcases.in-ns-switching
-   [:unlimited-use :local-shadows-var :wrong-tag]
+   [:unlimited-use :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :unlimited-use,
@@ -1307,7 +1309,7 @@ the next."
                 })]
     (lint-test
      'testcases.wrongtag
-     @#'eastwood.lint/default-linters
+     (concat @#'eastwood.lint/default-linters [:unused-locals])
      default-opts
      (cond (util/clojure-1-8-or-later) common-expected-warnings
 
@@ -1321,7 +1323,8 @@ the next."
            :else clojure-1-6-or-earlier-expected-warnings)))
   (lint-test
    'testcases.macrometa
-   [:unlimited-use :local-shadows-var :wrong-tag :unused-meta-on-macro]
+   [:unlimited-use :local-shadows-var :wrong-tag :unused-meta-on-macro
+    :unused-locals]
    default-opts
    {
     {:linter :unused-meta-on-macro,
@@ -1578,6 +1581,36 @@ the next."
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 131, :column 3}
     1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/constanttestexpr.clj",
+     :line 67,
+     :column 10}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/constanttestexpr.clj",
+     :line 68,
+     :column 12}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/constanttestexpr.clj",
+     :line 69,
+     :column 14}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/constanttestexpr.clj",
+     :line 74,
+     :column 55}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/constanttestexpr.clj",
+     :line 75,
+     :column 59}
+    1,
     }
         clojure-1-6-or-later-additional-expected-warnings
         {
@@ -1589,7 +1622,7 @@ the next."
                  nil))]
     (lint-test
      'testcases.constanttestexpr
-     [:constant-test]
+     [:constant-test :unused-locals]
      default-opts
      expected-warnings))
   
@@ -1656,7 +1689,7 @@ the next."
     })
   (lint-test
    'testcases.unusednss
-   [:unused-namespaces]
+   [:unused-namespaces :unused-locals]
    default-opts
    {
     {:linter :unused-namespaces,
@@ -1667,12 +1700,12 @@ the next."
     })
   (lint-test
    'testcases.unusednss3
-   [:unused-namespaces]
+   [:unused-namespaces :unused-locals]
    default-opts
    {})
   (lint-test
    'testcases.unusednss4
-   [:unused-namespaces]
+   [:unused-namespaces :unused-locals]
    default-opts
    {
     {:linter :unused-namespaces,
@@ -1683,7 +1716,7 @@ the next."
     })
   (lint-test
    'testcases.wrongnsform
-   [:wrong-ns-form]
+   [:wrong-ns-form :unused-locals]
    default-opts
    {
     {:linter :wrong-ns-form,
@@ -1744,7 +1777,7 @@ the next."
     })
   (lint-test
    'testcases.wrongprepost
-   @#'eastwood.lint/default-linters
+   (concat @#'eastwood.lint/default-linters [:unused-locals])
    default-opts
    {
     {:linter :wrong-pre-post,
@@ -1827,10 +1860,34 @@ the next."
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 111, :column 9}
     1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'tqname' never used",
+     :file "testcases/wrongprepost.clj",
+     :line 88,
+     :column 25}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'tqname' never used",
+     :file "testcases/wrongprepost.clj",
+     :line 100,
+     :column 25}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'tqname' never used",
+     :file "testcases/wrongprepost.clj",
+     :line 109,
+     :column 25}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'redis-ttl-ms' never used",
+     :file "testcases/wrongprepost.clj",
+     :line 109,
+     :column 40}
+    1,
     })
   (lint-test
    'testcases.arglists
-   @#'eastwood.lint/default-linters
+   (concat @#'eastwood.lint/default-linters [:unused-locals])
    default-opts
    {
     {:linter :bad-arglists,
@@ -1863,7 +1920,7 @@ the next."
   (when (util/clojure-1-9-or-later)
     (lint-test
      'testcases.wrongprepost2
-     @#'eastwood.lint/default-linters
+     (concat @#'eastwood.lint/default-linters [:unused-locals])
      default-opts
      {}))
   )

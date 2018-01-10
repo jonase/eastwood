@@ -153,7 +153,7 @@
   (comment nil)
   (defn bar2 [y]
     (comment 1)
-    (- 5 y))
+    (- 5 y x))
   (comment "flamtacious")
   7)
 
