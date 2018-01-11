@@ -141,13 +141,13 @@ significance needed by the user."
      {:linter :wrong-tag
       :msg
       (case typ
-        :wrong-tag-on-var (format "Wrong tag: %s in def of Var: %s"
+        :wrong-tag-on-var (format "Wrong tag: %s in def of Var: %s."
                                   (replace-variable-tag-part (eval tag))
                                   name)
-        :tag (format "Wrong tag: %s on form: %s"
+        :tag (format "Wrong tag: %s on form: %s."
                      (replace-variable-tag-part tag)
                      form)
-        :var (format "Wrong tag: %s for form: %s, probably where the Var %s was def'd in namespace %s"
+        :var (format "Wrong tag: %s for form: %s, probably where the Var %s was def'd in namespace %s."
                      (replace-variable-tag-part tag)
                      form
                      (-> ast :var meta :name)
@@ -155,7 +155,7 @@ significance needed by the user."
         :invoke (format "Tag: %s for return type of function %s should be Java class name (fully qualified if not in java.lang package).  It may be defined in another namespace."
                         (replace-variable-tag-part tag)
                         (-> form first))
-        :fn-method (format "Tag: %s for return type of function method: %s should be Java class name (fully qualified if not in java.lang package)"
+        :fn-method (format "Tag: %s for return type of function method: %s should be Java class name (fully qualified if not in java.lang package)."
                            (replace-variable-tag-part tag)
                            form))})))
 

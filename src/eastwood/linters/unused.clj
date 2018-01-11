@@ -79,7 +79,7 @@
           :let [loc (meta pvar)]]
       (util/add-loc-info loc
        {:linter :unused-private-vars
-        :msg (format "Private var '%s' is never used"
+        :msg (format "Private var '%s' is never used."
                      (-> pvar util/var-to-fqsym name))}))))
 
 ;; Unused fn args
@@ -125,7 +125,7 @@ selectively disable such warnings if they wish."
           :let [loc (-> unused-sym meta)]]
       (util/add-loc-info loc
        {:linter :unused-fn-args
-        :msg (format "Function arg %s never used" unused-sym)}))))
+        :msg (format "Function arg %s never used." unused-sym)}))))
 
 
 ;; Symbols in let or loop bindings that are unused
@@ -232,7 +232,7 @@ Example: (all-suffixes [1 2 3])
                         (pass/code-loc (pass/nearest-ast-with-loc expr)))]]
       (util/add-loc-info loc
        {:linter :unused-locals
-        :msg (format "%s bound symbol '%s' never used"
+        :msg (format "%s bound symbol '%s' never used."
                      (-> expr :op name)
                      unused-sym)}))))
 
@@ -307,7 +307,7 @@ Example: (all-suffixes [1 2 3])
     (for [ns (set/difference required used-namespaces)]
       (util/add-loc-info loc
        {:linter :unused-namespaces
-        :msg (format "Namespace %s is never used in %s" ns curr-ns)}))))
+        :msg (format "Namespace %s is never used in %s." ns curr-ns)}))))
 
 
 ;; Unused return values
@@ -473,16 +473,16 @@ discarded inside null: null'."
           :msg
           (case action
             :lazy-fn
-            (format "Lazy %s return value is discarded%s: %s"
+            (format "Lazy %s return value is discarded%s: %s."
                     stmt-desc-str extra-msg form)
             :pure-fn
-            (format "Pure %s return value is discarded%s: %s"
+            (format "Pure %s return value is discarded%s: %s."
                     stmt-desc-str extra-msg form)
             :pure-fn-if-fn-args-pure
-            (format "Return value is discarded for a %s that only has side effects if the functions passed to it as args have side effects%s: %s"
+            (format "Return value is discarded for a %s that only has side effects if the functions passed to it as args have side effects%s: %s."
                     stmt-desc-str extra-msg form)
             :warn-if-ret-val-unused
-            (format "Should use return value of %s, but it is discarded%s: %s"
+            (format "Should use return value of %s, but it is discarded%s: %s."
                     stmt-desc-str extra-msg form))})
 
         ;; default case, where we have no information about the type
@@ -562,7 +562,7 @@ discarded inside null: null'."
             (util/add-loc-info loc
              {:linter :unused-ret-vals
               :unused-ret-vals {:kind (:op stmt), :ast stmt}
-              :msg (format "%s value is discarded%s: %s"
+              :msg (format "%s value is discarded%s: %s."
                            (op-desc (:op stmt))
                            (if name-found?
                              (str " inside " (-> stmt :env :name))

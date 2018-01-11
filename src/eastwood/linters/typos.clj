@@ -105,7 +105,7 @@
                      (< 3 (count s1))
                      (< (levenshtein s1 s2) 2))]
       {:linter :keyword-typos
-       :msg (format "Possible keyword typo: %s instead of %s ?" kw1 kw2)})))
+       :msg (format "Possible keyword typo: '%s' instead of '%s'?" kw1 kw2)})))
 
 
 ;; Wrong args to clojure.test/is macro invocations
@@ -199,36 +199,36 @@
         (and (= n 2) (string? is-arg1))
         [(util/add-loc-info is-loc
           {:linter :suspicious-test,
-           :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test")})]
-        
+           :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.")})]
+
         (and (constant-expr-logical-true? is-arg1)
              (not (list? is-arg1)))
         [(util/add-loc-info is-loc
           {:linter :suspicious-test,
-           :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test")})]
-        
+           :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test.")})]
+
         (and (= n 2)
              (not= message-tag java.lang.String))
         [(util/add-loc-info is-loc
           {:linter :suspicious-test,
-           :msg (format "'is' form has non-string as second arg (inferred type is %s).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning."
+           :msg (format "'is' form has non-string as second arg '(inferred type is %s)'.  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning."
                         message-tag)})]
-        
+
         (and thrown? (util/regex? thrown-arg2))
         [(util/add-loc-info is-loc
           {:linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")})]
-        
+           :msg (format "'(is (thrown? ...))' form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of 'thrown?'?")})]
+
         (and thrown? (string? thrown-arg2))
         [(util/add-loc-info is-loc
           {:linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")})]
-        
+           :msg (format "'(is (thrown? ...))' form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")})]
+
         (and thrown? (some string? thrown-args))
         [(util/add-loc-info is-loc
           {:linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")})]
-        
+           :msg (format "'(is (thrown? ...))' form has a string inside '(thrown? ...)'.  This string is ignored.  Did you mean it to be a message shown if the test fails, like '(is (thrown? ...) \"message\")'?")})]
+
         :else nil)))))
 
 
@@ -257,7 +257,7 @@
                                 (string? f) (str " \"" f "\"")
                                 :else (str " " f))
                           (if f (.getName (class f)) "nil") form-type)}))]
-        
+
         (sequential? f)
         (let [ff (first f)
               cc-sym (and ff
@@ -273,13 +273,13 @@
              {:linter :suspicious-test,
               :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
                            ff form-type ff)})]
-           
+
            (and var-info (get var-info :pure-fn))
            [(util/add-loc-info loc
              {:linter :suspicious-test,
               :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
                            ff form-type)})]
-           
+
            :else nil))
         :else nil)))))
 
@@ -878,7 +878,7 @@ warning, that contains the constant value."
                    {:linter :constant-test
                     :constant-test {:kind :the-only-kind
                                     :ast ast}
-                    :msg (format "Test expression is always logical true or always logical false: %s in form %s"
+                    :msg (format "Test expression is always logical true or always logical false: '%s' in form '%s'."
                                  (pr-str test-form) (pr-str form))})
                 allow? (util/allow-warning w opt)]
           :when allow?]
@@ -979,7 +979,7 @@ warning, that contains the constant value."
       ;; matching ASTs.
       (if (= 1 (count matching-assert-asts))
         (:test (first matching-assert-asts))
-        (println (format "dbg wrong-pre-post: found %d ASTs with :raw-forms containing assert of condition %s"
+        (println (format "dbg wrong-pre-post: found %d ASTs with :raw-forms containing assert of condition %s."
                          (count matching-assert-asts)
                          (pr-str condition-form)))))))
 
@@ -1015,13 +1015,13 @@ warning, that contains the constant value."
         (= :var (:op test-ast))
         (format "%s found that is probably always logical true or always logical false.  Should be changed to function call?  %s"
                 condition-desc-begin (pr-str condition))
-        
+
         ;; In this case, probably the developer wanted to assert that
         ;; a function arg was logical true, i.e. neither nil nor
         ;; false.
         (= :local (:op test-ast))
         nil
-        
+
         ;; The following kinds of things are 'complex' enough that we
         ;; will not try to do any fancy calculation to determine
         ;; whether their results are constant or not.
