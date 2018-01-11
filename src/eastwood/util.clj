@@ -852,8 +852,10 @@ StringWriter."
                          conj (dissoc m :linter :for-macro))
               :wrong-arity
               (assoc-in configs [linter (:function-symbol m)]
-                         (dissoc m :linter :function-symbol))
-              ))
+                        (dissoc m :linter :function-symbol))
+              :deprecations
+              (update-in configs [linter :symbol-matches]
+                         into (:symbol-matches m))))
           {} warning-enable-config))
 
 
@@ -924,7 +926,6 @@ StringWriter."
            ))))
     ;; allow the warning if there was no match
     (not match)))
-
 
 (defn allow-warning [w opt]
   (let [linter (:linter w)]

@@ -171,7 +171,7 @@ linter can be selectively disabled via Eastwood config files.  See
 | `:bad-arglists`          |  |  |
 | `:constant-test`         | yes | yes |
 | `:def-in-def`            |  |  |
-| `:deprecations`          |  |  |
+| `:deprecations`          |  | yes |
 | `:keyword-typos`         |  |  |
 | `:local-shadows-var`     |  |  |
 | `:misplaced-docstrings`  |  |  |
@@ -376,6 +376,16 @@ this expression from config file `clojure.clj`:
   :if-inside-macroexpansion-of #{'clojure.core/when-first}
   :within-depth 6
   :reason "when-first with an empty body is warned about, so warning about let with an empty body in its macroexpansion is redundant."})
+```
+
+The `:deprecations` linter accepts a set of symbols which are marked as ok to be deprecated.
+This is useful for when you're working on an old project and want to mark stuff
+as deprecated without breaking the build.
+
+```clojure
+(disable-warning
+  {:linter :deprecations
+   :symbol-matches #{#"^#'my\.old\.project\.*}})
 ```
 
 Eastwood would normally report a `:suspicious-expression` warning if
