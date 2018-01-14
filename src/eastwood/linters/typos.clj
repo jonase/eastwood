@@ -2,6 +2,7 @@
   (:require [clojure.pprint :as pp])
   (:require [eastwood.util :as util]
             [eastwood.passes :as pass]
+            [clojure.set :as set]
             [clojure.string :as str]
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
@@ -1066,3 +1067,331 @@ warning, that contains the constant value."
                      :wrong-pre-post {:kind :post, :ast ast}
                      :msg msg})]]
        w))))
+
+
+
+(defn arg-vecs-of-fn-raw-form [fn-raw-form]
+;;  (println "fn-raw-form -> " fn-raw-form)
+;;  (flush)
+  (if (and (sequential? fn-raw-form)
+           (#{'fn 'clojure.core/fn} (first fn-raw-form)))
+    (let [fn-bodies (rest fn-raw-form)
+          ;; remove symbol fn name if present
+          fn-bodies (if (symbol? (first fn-bodies))
+                      (rest fn-bodies)
+                      fn-bodies)
+          ;; If there is only one fn body, put it in a list so it is
+          ;; more uniform with the case where there are multiple fn
+          ;; bodies.
+          fn-bodies (if (vector? (first fn-bodies))
+                      (list fn-bodies)
+                      fn-bodies)]
+;;      (do
+;;        (println "   fn-bodies -> " fn-bodies)
+;;        (println "   (map first fn-bodies) -> " (map first fn-bodies))
+;;        (flush)
+        (map first fn-bodies)
+;;        )
+      )))
+
+
+(defn arg-vecs-of-ast [ast]
+  (if (and (contains? ast :raw-forms)
+           (sequential? (:raw-forms ast)))
+    (mapcat arg-vecs-of-fn-raw-form (:raw-forms ast))))
+
+
+;; Copied a few functions from Clojure 1.9.0, and renamed with 'my-'
+;; prefix.  That enables running this code with earlier Clojure
+;; versions, and not have name conflicts when running with Clojure
+;; 1.9.0.
+
+(defn my-ident? [x]
+  (or (keyword? x) (symbol? x)))
+
+(defn my-simple-symbol? [x]
+  (and (symbol? x) (nil? (namespace x))))
+
+(defn my-qualified-keyword? [x]
+  (boolean (and (keyword? x) (namespace x) true)))
+
+
+;; Adapted from core.spec.alpha spec ::local-name
+(defn my-local-name? [x]
+  (and (my-simple-symbol? x) (not= '& x)))
+
+
+(def non-matching-info {:result false :local-names []})
+(declare binding-form-info)
+
+
+;; x might be a symbol with a namespace, or without a namespace.
+;; x might also be a keyword with or without a namespace.
+
+;; In all cases, return a simple symbol, the one that will be locally
+;; bound a value when x is used in a vector after :keys during
+;; associative/map destructuring.
+
+(defn symbol-or-kw-to-local-name [x]
+  (symbol nil (name x)))
+
+
+(defn better-loc [cur-loc maybe-better-loc-in-meta-of-this-obj]
+  (let [m (meta maybe-better-loc-in-meta-of-this-obj)]
+    (if (util/contains-loc-info? m)
+      m
+      cur-loc)))
+
+(defn local-name-with-loc [x loc]
+  {:source-name x
+   :local-name (symbol-or-kw-to-local-name x)
+   :loc (better-loc loc x)})
+
+
+(defn local-name-info [x loc]
+  (if (my-local-name? x)
+    {:result true
+     :kind :local-name
+     :local-names [(local-name-with-loc x loc)]}
+    ;; else
+    non-matching-info))
+
+
+;; Adapted from core.spec.alpha spec ::seq-binding-form
+(defn seq-binding-form-info [x loc top-level-arg-vector?]
+  (if (vector? x)
+    (let [n (count x)
+          ;; Do not allow :as in top level arg vector of a fn
+          has-as? (and (not top-level-arg-vector?)
+                       (>= n 2)
+                       (= :as (x (- n 2)))
+                       (my-local-name? (x (- n 1))))
+          as-form-info (if has-as?
+                         (local-name-info (x (- n 1)) loc)
+                         {})
+          x (if has-as?
+              (subvec x 0 (- n 2))
+              x)
+          n (count x)
+          ;; _Do_ allow & in top level arg vector of a fn
+          has-amp? (and (>= n 2)
+                        (= '& (x (- n 2))))
+          amp-form-info (if has-amp?
+                          (let [amp-form (x (- n 1))]
+                            (binding-form-info amp-form
+                                               (better-loc loc amp-form)))
+                          {})
+          x (if has-amp?
+              (subvec x 0 (- n 2))
+              x)
+          initial-forms (map #(binding-form-info % (better-loc loc %)) x)
+          all-good? (every? :result initial-forms)
+
+          all-forms (concat initial-forms [amp-form-info as-form-info])
+          local-names (mapcat #(if (:nested-info %)
+                                 (-> % :nested-info :local-names)
+                                 (-> % :local-names))
+                              all-forms)
+          warnings (mapcat #(if (:nested-info %)
+                              (-> % :nested-info :warnings)
+                              (-> % :warnings))
+                           all-forms)]
+      {:result all-good?
+       :kind :seq-binding-form
+       :has-amp? has-amp?
+       :has-as? has-as?
+       :local-names local-names
+       :warnings warnings})
+    ;; else
+    non-matching-info))
+
+
+(defn map-binding-value-for-keys-syms-strs [v pred loc]
+  (if (and (vector? v) (every? pred v))
+    {:result true, :local-names (map #(local-name-with-loc % loc) v),
+     :kind :map-keys-syms-strs}
+    non-matching-info))
+
+
+(defn one-map-binding-form-info [[k v] loc]
+  (cond
+    (= k :keys) (map-binding-value-for-keys-syms-strs v my-ident? loc)
+    (= k :syms) (map-binding-value-for-keys-syms-strs v symbol? loc)
+    (= k :strs) (map-binding-value-for-keys-syms-strs v my-simple-symbol? loc)
+    (and (my-qualified-keyword? k)
+         (-> k name #{"keys" "syms"})) (map-binding-value-for-keys-syms-strs
+                                        v my-simple-symbol? loc)
+
+    (= k :or) (if (and (map? v) (every? my-simple-symbol? (keys v)))
+                {:result true, :or-map v, :kind :map-or}
+                non-matching-info)
+
+    (= k :as) (if (my-local-name? v)
+                {:result true, :as-name v, :kind :map-as}
+                non-matching-info)
+
+    (my-local-name? k) {:result true,
+                        :local-names [(local-name-with-loc k loc)],
+                        :kind :map-bind-local-name}
+
+    :else (let [info (binding-form-info k (better-loc loc k))]
+            (if (:result info)
+              ;; Return a value with the original info on
+              ;; key :nested-info, to signal to the caller that any
+              ;; local names or other data is inside of a nested
+              ;; destructuring form, either sequential or
+              ;; associative/map, since some Eastwood warnings need
+              ;; this distinction.
+              {:result (:result info), :nested-info info,
+               :kind :map-sub-destructure}
+              info))))
+
+
+(defn map-binding-form-info [x loc]
+  (let [ret
+
+  (if (map? x)
+    (let [infos (map #(one-map-binding-form-info % (better-loc loc %)) x)]
+      (if (every? :result infos)
+        ;; Check for warnings to issue for this one associative/map
+        ;; destructuring form, independent of any destructuring forms
+        ;; that might be nested within it, or what this destructuring
+        ;; form might be nested within.
+        (let [{:keys [map-bind-local-name map-keys-syms-strs
+                      map-sub-destructure map-or map-as]}
+              (group-by :kind infos)
+              as-local-name (if map-as (-> map-as first :as-name))
+              or-names (if map-or
+                         (-> map-or first :or-map keys)
+                         [])
+              or-names-set (set or-names)
+              bound-local-names (->> (concat map-bind-local-name
+                                             map-keys-syms-strs)
+                                     (mapcat :local-names)
+                                     (map :local-name))
+              as-or-warning
+              (if (and as-local-name
+                       (contains? or-names-set as-local-name))
+                [(util/add-loc-info
+                  (better-loc loc as-local-name)
+                  {:linter :unused-or-default
+                   :unused-or-default {}
+                   :msg (format "Name %s after :as is also in :or map of associative destructuring.  The default value in the :or will never be used."
+                                as-local-name)})])
+
+              ;; Warn about any keys in an :or map that are not
+              ;; elsewhere in the _same_ map binding form's map.  For
+              ;; this purpose, ignore any symbol associated with
+              ;; the :as key.
+;              _ (do
+;                  (println "dbg or-names-set " or-names-set)
+;                  (println "    bound-local-names " bound-local-names)
+;                  (println "    as-local-name " as-local-name)
+;                  (flush))
+              unused-or-names (set/difference or-names-set
+                                              (conj (set bound-local-names)
+                                                    as-local-name))
+              unused-or-name-warnings
+              (map (fn [unused-or-name]
+                     (util/add-loc-info
+                      (better-loc loc unused-or-name)
+                      {:linter :unused-or-default
+                       :unused-or-default {}
+                       :msg (format "Name %s with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used."
+                                    unused-or-name)}))
+                   unused-or-names)
+              sub-infos (map :nested-info map-sub-destructure)]
+          {:result true,
+           :local-names (concat (mapcat :local-names infos)
+                                (mapcat :local-names sub-infos)
+                                (if as-local-name
+                                  [(local-name-with-loc as-local-name loc)]
+                                  [])),
+           :warnings (concat as-or-warning unused-or-name-warnings
+                             (mapcat :warnings sub-infos))
+           :kind :map-binding-form})
+        ;; else
+        non-matching-info))
+    ;; else
+    non-matching-info)
+
+        ]
+;;    (println "dbg map-binding-form-info x " x)
+;;    (println "     ret " ret)
+;;    (flush)
+    ret))
+
+
+(defn binding-form-info [x loc]
+  (let [info (local-name-info x loc)]
+    (if (:result info)
+      info
+      (let [info (seq-binding-form-info x (better-loc loc x) false)]
+        (if (:result info)
+          info
+          (map-binding-form-info x (better-loc loc x)))))))
+
+
+(defn dont-warn-for-symbol?
+  "Return logical true for symbols in arg vectors that should never be
+warned about as duplicates.
+
+By convention, _ is a parameter intended to be ignored, and often
+occurs multiple times in the same arg vector when it is used.  Also do
+not warn about any other symbols that begin with _.  This gives
+Eastwood users a way to selectively disable such warnings if they
+wish."
+  [sym]
+  (.startsWith (name sym) "_"))
+
+
+(defn duplicate-local-names [symbols]
+  (->> symbols
+       (group-by :local-name)
+       (util/filter-vals #(> (count %) 1))
+       vals
+       ;; Prefer to keep the second symbol among any duplicates, so
+       ;; that we get the line/column metadata for that one instead of
+       ;; the first.
+       (map second)))
+
+
+(defn duplicate-params [{:keys [asts]} opt]
+  (let [arg-vecs (->> asts
+                      (mapcat ast/nodes)
+                      (mapcat arg-vecs-of-ast))]
+    (doall
+    (apply concat
+     (for [arg-vec arg-vecs
+           :let [loc (meta arg-vec)]]
+       (let [{:keys [result local-names warnings] :as info}
+             (seq-binding-form-info arg-vec loc true)]
+         (if result
+           (let [
+;                 _ (do
+;                     (println "dbg arg-vec " arg-vec)
+;                     (println "dbg (type local-names):" (type local-names))
+;                     (pp/pprint local-names)
+;                     (flush))
+                 dups (->> (duplicate-local-names local-names)
+                           (remove #(dont-warn-for-symbol? (:local-name %))))]
+             (concat
+              (map (fn [dup]
+                     (util/add-loc-info
+                      (:loc dup)
+                      {:linter :duplicate-params
+                       :duplicate-params {}
+                       :msg (if (= (:source-name dup) (:local-name dup))
+                              (format "Local name %s occurs multiple times in the same argument vector"
+                                      (:source-name dup))
+                              (format "Local name %s (part of full name %s) occurs multiple times in the same argument vector"
+                                      (:local-name dup) (:source-name dup)))}))
+                   dups)
+              warnings))
+           ;; else
+           [(util/add-loc-info
+             loc
+             {:linter :duplicate-params
+              :duplicate-params {}
+              :msg (format "Unrecognized argument vector syntax %s" arg-vec)})]
+           )))))))

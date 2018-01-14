@@ -1901,6 +1901,232 @@ the next."
      :line 22, :column 7}
     1,
     })
+  (lint-test
+   'testcases.duplicateparams
+   (concat @#'eastwood.lint/default-linters [:unused-locals])
+   default-opts
+   {{:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 7,
+     :column 18}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name y occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 17,
+     :column 30}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'y' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 27,
+     :column 16}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name y occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 27,
+     :column 20}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name y occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 36,
+     :column 25}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'y' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 49,
+     :column 17}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name y occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 49,
+     :column 23}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 59,
+     :column 14}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name x occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 59,
+     :column 22}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'z' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 65,
+     :column 23}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name z occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 65,
+     :column 33}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'z' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 75,
+     :column 21}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name z occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 75,
+     :column 27}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name b occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 84,
+     :column 35}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name c occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 84,
+     :column 49}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name d occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 84,
+     :column 51}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 95,
+     :column 25}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 107,
+     :column 16}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 113,
+     :column 16}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 121,
+     :column 16}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 129,
+     :column 17}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a (part of full name :g/a) occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     :column 14}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name b (part of full name :i.j/b) occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     :column 14}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'b' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     :column 22}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'a' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     :column 28}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name f occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     :column 54}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'f' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     :column 54}
+    1,
+    {:linter :unused-or-default,
+     :msg
+     "Name f with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used.",
+     :file "testcases/duplicateparams.clj",
+     :line 217,
+     :column 46}
+    1,
+    {:linter :unused-or-default,
+     :msg
+     "Name f with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used.",
+     :file "testcases/duplicateparams.clj",
+     :line 231,
+     :column 20}
+    1,
+    {:linter :unused-or-default,
+     :msg
+     "Name h with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used.",
+     :file "testcases/duplicateparams.clj",
+     :line 231,
+     :column 24}
+    1,
+    {:linter :unused-or-default,
+     :msg
+     "Name c after :as is also in :or map of associative destructuring.  The default value in the :or will never be used.",
+     :file "testcases/duplicateparams.clj",
+     :line 252,
+     :column 31}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'tqname' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 257,
+     :column 25}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'redis-ttl-ms' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 257,
+     :column 40}
+    1})
+
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace
   ;; before lint-test does, and thus the namespace is already there
@@ -1922,5 +2148,16 @@ the next."
      'testcases.wrongprepost2
      (concat @#'eastwood.lint/default-linters [:unused-locals])
      default-opts
-     {}))
-  )
+     {})
+    (lint-test
+     'testcases.duplicateparams2
+     (concat @#'eastwood.lint/default-linters [:unused-locals])
+     default-opts
+     {{:linter :duplicate-params,
+       :msg
+       "Local name a occurs multiple times in the same argument vector",
+       :file "testcases/duplicateparams2.clj",
+       :line 7,
+       :column 48}
+      1})
+    ))

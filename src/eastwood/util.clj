@@ -309,6 +309,11 @@ location."
   (merge warn-map
          (select-keys loc #{:file :line :column})))
 
+(defn contains-loc-info?
+  [x]
+  (and (map? x)
+       (has-keys? x [:file :line :column])))
+
 (defn walk
   "Traverses form, an arbitrary data structure.  inner and outer are
   functions.  Applies inner to each element of form, building up a
