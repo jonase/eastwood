@@ -96,6 +96,7 @@
  {:class java.lang.Long, :method parseLong} {:lazy false, :warn-if-ret-val-unused true},
  {:class java.lang.Short, :method parseShort} {:lazy false, :warn-if-ret-val-unused true},
  {:class java.lang.System, :method arraycopy} {:side-effect true},
+ {:class java.lang.System, :method clearProperty} {:side-effect true},
  {:class java.lang.System, :method gc} {:side-effect true},
  {:class java.lang.System, :method runFinalization} {:side-effect true},
  {:class java.lang.System, :method setIn} {:side-effect true},
