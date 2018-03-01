@@ -36,7 +36,7 @@
 (defn pprint-matrix []
   (doseq [[i row] (map (fn [i] [i 1]) [5 6 7])]
     (doseq [p (take i (range))]
-      (print p))
+      (print p row))
     (print i)))
 
 

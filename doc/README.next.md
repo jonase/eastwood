@@ -1879,7 +1879,7 @@ way.
 You can also type hint function arguments and return values with Java
 class names.
 
-Such type hints on function arguments can help avoid reflection in
+Type hints on function arguments can help avoid reflection in
 Java interop calls within the function body, and it does not matter
 whether such type hints use fully qualified Java class names
 (e.g. `java.util.LinkedList`) or not (e.g. `LinkedList`), although
@@ -1887,48 +1887,16 @@ using the version that is not fully qualified only works if it is in
 the `java.lang` package, or you have imported the package into the
 Clojure namespace.
 
-Such type hints on function return values can also help avoid
-reflection in Java interop calls, but in this case the places where it
-can help are wherever the function is called, and its return value is
-used in a Java interop call.  If that is in the same namespace where
-the function is defined, then the same rules apply as for function
-arguments.  Note: You should consider putting the type hint on the Var
-name rather than on the argument vector if it is a Java class, as
-shown above, since this avoids the problems described below.
+Type hints on function return values, placed immediately before the
+argument vector of the function, can also help avoid reflection in
+Java interop calls, but in this case the places where it can help are
+where the function is _called_, and its return value is used in a Java
+interop call.  With Clojure 1.8 and later, it does not matter whether
+such type hints use fully qualified Java class names or not.
 
-If:
-
-* the Java class type tag is on the argument vector, and
-* the class name is not fully qualified, i.e. it is `LinkedList`
-  rather than `java.util.LinkedList`, and
-* the function is called in a different namespace where you have not
-  imported the class, and
-* the Java class is not imported by default by Clojure, i.e. it is
-  outside the `java.lang` package,
-
-then Clojure will give an error (see Clojure ticket
-[CLJ-1232](http://dev.clojure.org/jira/browse/CLJ-1232)).  For this
-reason, Eastwood will give a warning for function definitions that
-have a type tag on the argument vector that is not in `java.lang`, and
-is not fully qualified.
-
-```clojure
-;; Eastwood issues a warning for this
-(defn linklist1 ^LinkedList [coll] (java.util.LinkedList. coll))
-
-;; no warning for this because the tag is on the Var name, not the
-;; argument vector, and the CLJ-1232 behavior does not apply
-(defn ^LinkedList linklist2 [coll] (java.util.LinkedList. coll))
-
-;; no warning for this since it is fully qualified
-(defn linklist3 ^java.util.LinkedList [coll] (java.util.LinkedList. coll))
-
-;; no warning for this because it is private
-(defn ^:private linklist4 ^LinkedList [coll] (java.util.LinkedList. coll))
-
-;; no warning for this because Class is in java.lang package
-(defn cls ^Class [obj] (class obj))
-```
+See [[below]](#historical-wrong-tag-note-for-clojure-1-7-and-earlier)
+for the behavior with Clojure 1.7 and earlier, which Eastwood will
+only warn about if you are using one of those versions of Clojure.
 
 
 #### `:wrong-tag` warnings in uses of `extend-type` and `extend-protocol` macro
@@ -2037,6 +2005,49 @@ See Clojure ticket
 [CLJ-1308](http://dev.clojure.org/jira/browse/CLJ-1308).  Vote on it
 if you are interested in Clojure changing its implementation and/or
 make its documentation more explicit.
+
+
+#### Historical `:wrong-tag` note for Clojure 1.7 and earlier
+
+If a type hint on a function's return value is placed just before the
+argument vector, and calls to this function are in the same namespace
+where the function is defined, then the same rules apply as for
+function arguments.
+
+If:
+
+* you are using Clojure 1.7 or earlier, and
+* the Java class type tag is on the argument vector, and
+* the class name is not fully qualified, i.e. it is `LinkedList`
+  rather than `java.util.LinkedList`, and
+* the function is called in a different namespace where you have not
+  imported the class, and
+* the Java class is not imported by default by Clojure, i.e. it is
+  outside the `java.lang` package,
+
+then Clojure will give an error (see Clojure ticket
+[CLJ-1232](http://dev.clojure.org/jira/browse/CLJ-1232)).  For this
+reason, Eastwood will give a warning for function definitions that
+have a type tag on the argument vector that is not in `java.lang`, and
+is not fully qualified.
+
+```clojure
+;; Eastwood issues a warning for this
+(defn linklist1 ^LinkedList [coll] (java.util.LinkedList. coll))
+
+;; no warning for this because the tag is on the Var name, not the
+;; argument vector, and the CLJ-1232 behavior does not apply
+(defn ^LinkedList linklist2 [coll] (java.util.LinkedList. coll))
+
+;; no warning for this since it is fully qualified
+(defn linklist3 ^java.util.LinkedList [coll] (java.util.LinkedList. coll))
+
+;; no warning for this because it is private
+(defn ^:private linklist4 ^LinkedList [coll] (java.util.LinkedList. coll))
+
+;; no warning for this because Class is in java.lang package
+(defn cls ^Class [obj] (class obj))
+```
 
 
 ### `:unused-fn-args`

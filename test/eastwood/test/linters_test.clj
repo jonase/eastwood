@@ -12,26 +12,6 @@
 ;; expedient thing and make a couple of tests expect different values
 ;; depending on the Clojure version.
 
-(def clojure-1-6-or-later
-  (>= (compare ((juxt :major :minor) *clojure-version*)
-               [1 6])
-      0))
-
-(def clojure-1-7-or-later
-  (>= (compare ((juxt :major :minor) *clojure-version*)
-               [1 7])
-      0))
-
-(def clojure-1-8-or-later
-  (>= (compare ((juxt :major :minor) *clojure-version*)
-               [1 8])
-      0))
-
-(def clojure-1-9-or-later
-  (>= (compare ((juxt :major :minor) *clojure-version*)
-               [1 9])
-      0))
-
 (def lint-warning-map-keys-for-testing-in-order
   [:linter
    :msg
@@ -92,7 +72,8 @@ the next."
   (lint-test
    'testcases.f01
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity :local-shadows-var :wrong-tag :non-dynamic-earmuffs]
+    :wrong-arity :local-shadows-var :wrong-tag :non-dynamic-earmuffs
+    :unused-locals]
    (assoc default-opts
      ;;:debug [:ns :config]
      :config-files
@@ -183,7 +164,7 @@ the next."
   (lint-test
    'testcases.f02
    [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity
-    :local-shadows-var :wrong-tag]
+    :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :redefd-vars,
@@ -212,13 +193,13 @@ the next."
    'testcases.f03
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try :wrong-arity
-    :wrong-tag]
+    :wrong-tag :unused-locals]
    default-opts
    {})
   (lint-test
    'testcases.f04
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity :local-shadows-var :wrong-tag]
+    :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :local-shadows-var,
@@ -246,17 +227,17 @@ the next."
   ;; protocol method names that begin with "-".  See
   ;; http://dev.clojure.org/jira/browse/TANAL-17 and
   ;; http://dev.clojure.org/jira/browse/CLJ-1202
-  (when clojure-1-6-or-later
+  (when (util/clojure-1-6-or-later)
     (lint-test
      'testcases.f05
      [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
-      :wrong-arity :local-shadows-var :wrong-tag]
+      :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
      default-opts
      {}))
   (lint-test
    'testcases.f06
    [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars :deprecations
-    :wrong-arity :local-shadows-var :wrong-tag]
+    :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :unused-fn-args,
@@ -375,7 +356,7 @@ the next."
     {:line 35, :column 3,
      :file (fname-from-parts "testcases" "f07.clj"),
      :linter :unused-ret-vals,
-     :msg (if clojure-1-6-or-later
+     :msg (if (util/clojure-1-6-or-later)
             "Should use return value of function call, but it is discarded: (disj! (transient #{:b :a}) :a)"
             "Should use return value of function call, but it is discarded: (disj! (transient #{:a :b}) :a)")}
     1,
@@ -486,17 +467,17 @@ the next."
     (lint-test
      'testcases.f07
      [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
-      :local-shadows-var :wrong-tag]
+      :local-shadows-var :wrong-tag :unused-locals]
      default-opts
      (merge common-expected-warnings
-            (if clojure-1-6-or-later
+            (if (util/clojure-1-6-or-later)
               clojure-1-6-or-later-additional-expected-warnings
               clojure-1-5-additional-expected-warnings)
-            (if clojure-1-8-or-later
+            (if (util/clojure-1-8-or-later)
               clojure-1-8-or-later-additional-expected-warnings))))
   (lint-test
    'testcases.deprecated
-   [:deprecations :wrong-arity :local-shadows-var :wrong-tag]
+   [:deprecations :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :deprecations,
@@ -527,7 +508,7 @@ the next."
    'testcases.tanal-9
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
-    :local-shadows-var :wrong-tag]
+    :local-shadows-var :wrong-tag :unused-locals]
 ;;   [:misplaced-docstrings]
    default-opts  ;(merge default-opts {:debug #{:all}})
    {})
@@ -535,13 +516,13 @@ the next."
    'testcases.tanal-27
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
-    :local-shadows-var :wrong-tag]
+    :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {})
   (lint-test
    'testcases.keyword-typos
    [:keyword-typos :unused-ret-vals :unused-ret-vals-in-try
-    :deprecations :wrong-arity :local-shadows-var :wrong-tag]
+    :deprecations :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :keyword-typos,
@@ -550,7 +531,8 @@ the next."
     })
   (lint-test
    'testcases.isformsok
-   [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
+   [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag
+    :unused-locals]
    default-opts
    {})
   (lint-test
@@ -1147,7 +1129,7 @@ the next."
          }
         expected-warnings
         (merge common-expected-warnings
-               (if clojure-1-6-or-later
+               (if (util/clojure-1-6-or-later)
                  clojure-1-6-or-later-additional-expected-warnings
                  nil))]
   (lint-test
@@ -1161,7 +1143,7 @@ the next."
   ;; command line.  What is going on here?
   (lint-test
    'testcases.unlimiteduse
-   [:unlimited-use :local-shadows-var :wrong-tag]
+   [:unlimited-use :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :unlimited-use,
@@ -1177,7 +1159,7 @@ the next."
     })
   (lint-test
    'testcases.in-ns-switching
-   [:unlimited-use :local-shadows-var :wrong-tag]
+   [:unlimited-use :local-shadows-var :wrong-tag :unused-locals]
    default-opts
    {
     {:linter :unlimited-use,
@@ -1259,16 +1241,6 @@ the next."
      :line 85, :column 1}
     1,
     {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 87, :column 28}
-    1,
-    {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 88, :column 25}
-    1,
-    {:linter :wrong-tag,
      :msg "Wrong tag: Set on form: b",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 125, :column 14}
@@ -1304,31 +1276,55 @@ the next."
      :line 211, :column 23}
     1,
     }
-        clojure-1-6-or-earlier-expected-warnings
-        common-expected-warnings
 
-        clojure-1-7-or-later-expected-warnings
-        (assoc common-expected-warnings
+        ;; These warnings are not needed after CLJ-1232 was fixed in
+        ;; Clojure 1.8.0.
+        clojure-1-7-or-earlier-expected-warnings
+        {
     {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of function on arg vector: [& p__<num>] should be fully qualified Java class name, or else it may cause exception if used from another namespace",
+     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 87, :column 28}
+    1,
+    {:linter :wrong-tag,
+     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
+     :file (fname-from-parts "testcases" "wrongtag.clj"),
+     :line 88, :column 25}
+    1,
+         }
+
+        clojure-1-6-or-earlier-expected-warnings
+        (merge common-expected-warnings
+               clojure-1-7-or-earlier-expected-warnings)
+
+        clojure-1-7-only-expected-warnings
+        (merge common-expected-warnings
+               clojure-1-7-or-earlier-expected-warnings
+               {
+    {:linter :wrong-tag,
+     :msg "Tag: LinkedList for return type of function on arg vector: [& p__<num>] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
      :file (fname-from-parts "testcases" "wrongtag.clj"),
      :line 93, :column 26}
-    1)]
+                1,
+                })]
     (lint-test
      'testcases.wrongtag
-     @#'eastwood.lint/default-linters
+     (concat @#'eastwood.lint/default-linters [:unused-locals])
      default-opts
-     (if clojure-1-7-or-later
-       ;; This is actually the expected result only for 1.7.0-alpha2
-       ;; or later, because the behavior changed with the fix for
-       ;; CLJ-887, so it will fail if you run the test with
-       ;; 1.7.0-alpha1.  I won't bother checking the version that
-       ;; precisely, though.
-       clojure-1-7-or-later-expected-warnings
-       clojure-1-6-or-earlier-expected-warnings)))
+     (cond (util/clojure-1-8-or-later) common-expected-warnings
+
+           ;; This is actually the expected result only for 1.7.0-alpha2
+           ;; or later, because the behavior changed with the fix for
+           ;; CLJ-887, so it will fail if you run the test with
+           ;; 1.7.0-alpha1.  I won't bother checking the version that
+           ;; precisely, though.
+           (util/clojure-1-7-or-later) clojure-1-7-only-expected-warnings
+
+           :else clojure-1-6-or-earlier-expected-warnings)))
   (lint-test
    'testcases.macrometa
-   [:unlimited-use :local-shadows-var :wrong-tag :unused-meta-on-macro]
+   [:unlimited-use :local-shadows-var :wrong-tag :unused-meta-on-macro
+    :unused-locals]
    default-opts
    {
     {:linter :unused-meta-on-macro,
@@ -1585,18 +1581,48 @@ the next."
      :file (fname-from-parts "testcases" "constanttestexpr.clj"),
      :line 131, :column 3}
     1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/constanttestexpr.clj",
+     :line 67,
+     :column 10}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/constanttestexpr.clj",
+     :line 68,
+     :column 12}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/constanttestexpr.clj",
+     :line 69,
+     :column 14}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/constanttestexpr.clj",
+     :line 74,
+     :column 55}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/constanttestexpr.clj",
+     :line 75,
+     :column 59}
+    1,
     }
         clojure-1-6-or-later-additional-expected-warnings
         {
          }
         expected-warnings
         (merge common-expected-warnings
-               (if clojure-1-6-or-later
+               (if (util/clojure-1-6-or-later)
                  clojure-1-6-or-later-additional-expected-warnings
                  nil))]
     (lint-test
      'testcases.constanttestexpr
-     [:constant-test]
+     [:constant-test :unused-locals]
      default-opts
      expected-warnings))
   
@@ -1663,7 +1689,7 @@ the next."
     })
   (lint-test
    'testcases.unusednss
-   [:unused-namespaces]
+   [:unused-namespaces :unused-locals]
    default-opts
    {
     {:linter :unused-namespaces,
@@ -1674,12 +1700,12 @@ the next."
     })
   (lint-test
    'testcases.unusednss3
-   [:unused-namespaces]
+   [:unused-namespaces :unused-locals]
    default-opts
    {})
   (lint-test
    'testcases.unusednss4
-   [:unused-namespaces]
+   [:unused-namespaces :unused-locals]
    default-opts
    {
     {:linter :unused-namespaces,
@@ -1690,7 +1716,7 @@ the next."
     })
   (lint-test
    'testcases.wrongnsform
-   [:wrong-ns-form]
+   [:wrong-ns-form :unused-locals]
    default-opts
    {
     {:linter :wrong-ns-form,
@@ -1751,7 +1777,7 @@ the next."
     })
   (lint-test
    'testcases.wrongprepost
-   @#'eastwood.lint/default-linters
+   (concat @#'eastwood.lint/default-linters [:unused-locals])
    default-opts
    {
     {:linter :wrong-pre-post,
@@ -1834,10 +1860,34 @@ the next."
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 111, :column 9}
     1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'tqname' never used",
+     :file "testcases/wrongprepost.clj",
+     :line 88,
+     :column 25}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'tqname' never used",
+     :file "testcases/wrongprepost.clj",
+     :line 100,
+     :column 25}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'tqname' never used",
+     :file "testcases/wrongprepost.clj",
+     :line 109,
+     :column 25}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'redis-ttl-ms' never used",
+     :file "testcases/wrongprepost.clj",
+     :line 109,
+     :column 40}
+    1,
     })
   (lint-test
    'testcases.arglists
-   @#'eastwood.lint/default-linters
+   (concat @#'eastwood.lint/default-linters [:unused-locals])
    default-opts
    {
     {:linter :bad-arglists,
@@ -1851,6 +1901,236 @@ the next."
      :line 22, :column 7}
     1,
     })
+  (lint-test
+   'testcases.duplicateparams
+   (concat @#'eastwood.lint/default-linters [:unused-locals])
+   default-opts
+   {{:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 7,
+     :column 18}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name y occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 17,
+     :column 30}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'y' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 27,
+     :column 16}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name y occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 27,
+     :column 20}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name y occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 36,
+     :column 25}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'y' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 49,
+     :column 17}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name y occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 49,
+     :column 23}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'x' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 59,
+     :column 14}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name x occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 59,
+     :column 22}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'z' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 65,
+     :column 23}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name z occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 65,
+     :column 33}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'z' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 75,
+     :column 21}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name z occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 75,
+     :column 27}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name b occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 84,
+     :column 35}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name c occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 84,
+     :column 49}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name d occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 84,
+     :column 51}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 95,
+     :column 25}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 107,
+     :column 16}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 113,
+     :column 16}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 121,
+     :column 16}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 129,
+     :column 17}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name a (part of full name :g/a) occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     :column 14}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name b (part of full name :i.j/b) occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     :column 14}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'b' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     ;; I do not yet know _why_, but on both macOS and Linux I have
+     ;; seen that the column number for this warning and the next one
+     ;; is always 1 unless you are running Clojure 1.9.  Weird.  Just
+     ;; expect that difference for now (and maybe always).
+     :column (if (util/clojure-1-9-or-later) 22 1)}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'a' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     :column (if (util/clojure-1-9-or-later) 28 1)}
+    1,
+    {:linter :duplicate-params,
+     :msg
+     "Local name f occurs multiple times in the same argument vector",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     :column 54}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'f' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 194,
+     :column 54}
+    1,
+    {:linter :unused-or-default,
+     :msg
+     "Name f with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used.",
+     :file "testcases/duplicateparams.clj",
+     :line 217,
+     :column 46}
+    1,
+    {:linter :unused-or-default,
+     :msg
+     "Name f with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used.",
+     :file "testcases/duplicateparams.clj",
+     :line 231,
+     :column 20}
+    1,
+    {:linter :unused-or-default,
+     :msg
+     "Name h with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used.",
+     :file "testcases/duplicateparams.clj",
+     :line 231,
+     :column 24}
+    1,
+    {:linter :unused-or-default,
+     :msg
+     "Name c after :as is also in :or map of associative destructuring.  The default value in the :or will never be used.",
+     :file "testcases/duplicateparams.clj",
+     :line 252,
+     :column 31}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'tqname' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 257,
+     :column 25}
+    1,
+    {:linter :unused-locals,
+     :msg "let bound symbol 'redis-ttl-ms' never used",
+     :file "testcases/duplicateparams.clj",
+     :line 257,
+     :column 40}
+    1})
+
   ;; I would prefer if this threw an exception, but I think it does
   ;; not because Clojure reads, analyzes, and evaluates the namespace
   ;; before lint-test does, and thus the namespace is already there
@@ -1867,14 +2147,24 @@ the next."
 
 
 (deftest test2
-  (when clojure-1-9-or-later
+  (when (util/clojure-1-9-or-later)
     (lint-test
      'testcases.wrongprepost2
-     @#'eastwood.lint/default-linters
+     (concat @#'eastwood.lint/default-linters [:unused-locals])
      default-opts
-     {}))
-  )
-
+     {})
+    (lint-test
+     'testcases.duplicateparams2
+     (concat @#'eastwood.lint/default-linters [:unused-locals])
+     default-opts
+     {{:linter :duplicate-params,
+       :msg
+       "Local name a occurs multiple times in the same argument vector",
+       :file "testcases/duplicateparams2.clj",
+       :line 7,
+       :column 48}
+      1})
+    ))
 
 (deftest custom-linters-test
   (lint-test

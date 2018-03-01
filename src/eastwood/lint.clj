@@ -23,7 +23,7 @@
 (def eastwood-url "https://github.com/jonase/eastwood")
 
 (def ^:dynamic *eastwood-version*
-  {:major 0, :minor 2, :incremental 6, :qualifier "beta2"})
+  {:major 0, :minor 2, :incremental 6, :qualifier "SNAPSHOT"})
 
 (defn eastwood-version []
   (let [{:keys [major minor incremental qualifier]} *eastwood-version*]
@@ -240,6 +240,9 @@ return value followed by the time it took to evaluate in millisec."
    {:name :deprecations,              :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#deprecations",
     :fn deprecated/deprecations}
+   {:name :duplicate-params,          :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#duplicate-params",
+    :fn typos/duplicate-params}
    {:name :redefd-vars,               :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#redefd-vars",
     :fn misc/redefd-vars}

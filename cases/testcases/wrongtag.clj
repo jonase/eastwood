@@ -124,7 +124,7 @@
   (let [a 5
         ^Set b (set [1 2 3])
         c (count b)]
-    (+ x c)))
+    (+ x c a)))
 
 ;; Copied and adapted from Seesaw namespace seesaw.widgets.log-window
 
