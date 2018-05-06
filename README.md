@@ -1,6 +1,9 @@
 # eastwood - a Clojure lint tool
 
 [![Dependencies Status](https://versions.deps.co/jonase/eastwood/status.svg)](https://versions.deps.co/jonase/eastwood)
+[![Build Status](https://circleci.com/gh/slipset/eastwood/tree/master.svg?style=shield&circle-token=7165f5ae39880814d70602d9dde1c355ba3f1b90)](https://circleci.com/gh/slipset/eastwood)
+
+
 
 <img src="doc/Clint_Eastwood_-_1960s_small.jpg"
  alt="Picture of Clint Eastwood in 'A Fistful of Dollars' (1964)" title="Clint Eastwood in 'A Fistful of Dollars' (1964)"
