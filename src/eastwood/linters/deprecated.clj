@@ -81,7 +81,7 @@
   [(:reflected-ctor expr) "Constructor"])
 
 (defmethod deprecated-var :instance-call [expr]
-  [(:reflected-method expr) "Instance"])
+  [(:reflected-method expr) "Instance method"])
 
 (defmethod deprecated-var :instance-field [expr]
   [(:reflected-field expr) "Instance field"])
@@ -90,7 +90,7 @@
   [(:reflected-method expr) "Static method"])
 
 (defmethod deprecated-var :static-field [expr]
-  [(:reflected-field expr) "Static-field"])
+  [(:reflected-field expr) "Static field"])
 
 (defn msg [expr]
   (let [[var type] (deprecated-var expr)]
@@ -99,7 +99,7 @@
 (defn allow-warning [w opt]
   (when-let [regexes (get-in opt [:warning-enable-config :deprecations :symbol-matches])]
     (let [offending-var (-> w :var first str)]
-        (some #(re-matches % offending-var) regexes))))
+      (some #(re-matches % offending-var) regexes))))
 
 (defn deprecations [{:keys [asts]} opt]
   (for [ast (map #(ast/postwalk % pass/reflect-validated) asts)
