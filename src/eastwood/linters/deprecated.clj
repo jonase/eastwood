@@ -72,30 +72,44 @@
       (do (no-method-found :static method)
           false))))
 
-(defmulti msg :op)
+(defmulti deprecated-var :op)
 
-(defmethod msg :var [expr]
-  (format "Var '%s' is deprecated." (:var expr)))
+(defmethod deprecated-var :var [expr]
+  [(:var expr) "Var"])
 
-(defmethod msg :new [expr]
-  (format "Constructor '%s' is deprecated." (:reflected-ctor expr)))
+(defmethod deprecated-var :new [expr]
+  [(:reflected-ctor expr) "Constructor"])
 
-(defmethod msg :instance-call [expr]
-  (format "Instance method '%s' is deprecated." (:reflected-method expr)))
+(defmethod deprecated-var :instance-call [expr]
+  [(:reflected-method expr) "Instance"])
 
-(defmethod msg :instance-field [expr]
-  (format "Instance field '%s' is deprecated." (:reflected-field expr)))
+(defmethod deprecated-var :instance-field [expr]
+  [(:reflected-field expr) "Instance field"])
 
-(defmethod msg :static-call [expr]
-  (format "Static method '%s' is deprecated." (:reflected-method expr)))
+(defmethod deprecated-var :static-call [expr]
+  [(:reflected-method expr) "Static method"])
 
-(defmethod msg :static-field [expr]
-  (format "Static field '%s' is deprecated." (:reflected-field expr)))
+(defmethod deprecated-var :static-field [expr]
+  [(:reflected-field expr) "Static-field"])
+
+(defn msg [expr]
+  (let [[var type] (deprecated-var expr)]
+    (format "%s '%s' is deprecated." type var)))
+
+(defn allow-warning [w opt]
+  (when-let [regexes (get-in opt [:warning-enable-config :deprecations :symbol-matches])]
+    (let [offending-var (-> w :var first str)]
+        (some #(re-matches % offending-var) regexes))))
 
 (defn deprecations [{:keys [asts]} opt]
   (for [ast (map #(ast/postwalk % pass/reflect-validated) asts)
         dexpr (filter deprecated (ast/nodes ast))
-        :let [loc (pass/code-loc (pass/nearest-ast-with-loc dexpr))]]
-    (util/add-loc-info loc
-     {:linter :deprecations
-      :msg (msg dexpr)})))
+        :let [loc (pass/code-loc (pass/nearest-ast-with-loc dexpr))
+              w (util/add-loc-info loc
+                                   {:linter :deprecations
+                                    :msg (msg dexpr)
+                                    :var (deprecated-var dexpr)})
+              allow? (not (allow-warning w opt))]
+        :when allow?]
+    w
+))
