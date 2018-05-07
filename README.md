@@ -60,7 +60,7 @@ released to fix that problem.
 Merge the following into your `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.5"]] }}
+{:user {:plugins [[jonase/eastwood "0.2.6"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -423,7 +423,7 @@ If you use Leiningen, merge this into your project's `project.clj`
 file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.2.5" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.2.6" :exclusions [org.clojure/clojure]]]}}
 ```
 
 If you use a different build tool, you will need to add the dependency
@@ -658,7 +658,7 @@ can be used to modify this merging behavior.
 For example, if your user-wide `profiles.clj` file contains this:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.5"]]
+{:user {:plugins [[jonase/eastwood "0.2.6"]]
         :eastwood {:exclude-linters [:unlimited-use]
                    :debug [:time]}
         }}
