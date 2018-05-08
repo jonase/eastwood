@@ -323,7 +323,8 @@ return value followed by the time it took to evaluate in millisec."
 
 
 (defn- lint-analyze-results [analyze-results linter-kw opt]
-  (if-let [lint-fn (get-in linter-name->info [linter-kw :fn])]
+  (if-let [lint-fn (or (get-in linter-name->info [linter-kw :fn])
+                       (get-in opt [:custom-linters-config linter-kw]))]
     (try
       (doall (lint-fn analyze-results opt))
       (catch Throwable e
@@ -656,8 +657,9 @@ exception."))
   (let [lint-warnings (atom [])
         warning-count (atom 0)
         exception-count (atom 0)
-        opts (assoc opts :linters linters)
         opts (last-options-map-adjustments opts)
+        linters (into linters (keys (:custom-linters-config opts)))
+        opts (assoc opts :linters linters)
         cb (fn cb [info]
              (case (:kind info)
                :lint-warning (swap! lint-warnings conj (:warn-data info))
@@ -1089,7 +1091,10 @@ Return value:
          (loop [namespaces namespaces]
            (when-first [namespace namespaces]
              (let [e (try
-                       (lint-ns namespace (:enabled-linters opts) opts
+                       (lint-ns namespace
+                                (into (:enabled-linters opts)
+                                      (keys (:custom-linters-config opts)))
+                                opts
                                 warning-count exception-count)
                        (catch RuntimeException e
                          (error-cb "Linting failed:")
@@ -1182,8 +1187,11 @@ Return value:
 
         ;; Changes below override anything in the caller-provided
         ;; options map.
-        opts (assoc opts :warning-enable-config
-                    (util/init-warning-enable-config opts))]
+        opts (assoc opts
+                    :warning-enable-config
+                    (util/init-warning-enable-config opts)
+                    :custom-linters-config
+                    (util/init-custom-linter-config opts))]
     opts))
 
 

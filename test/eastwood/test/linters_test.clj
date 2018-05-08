@@ -2165,3 +2165,17 @@ the next."
        :column 48}
       1})
     ))
+
+(deftest custom-linters-test
+  (lint-test
+   'testcases.custom
+   []
+   (assoc default-opts
+          :lint-files ["cases/custom_lints.clj"])
+   {{:linter :custom-linter,
+     :msg
+     "#'testcases.custom/custom-fn shouldn't have the word 'custom'",
+     :file "testcases/custom.clj",
+     :line 4,
+     :column 1}
+    1}))

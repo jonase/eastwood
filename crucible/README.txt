@@ -6,8 +6,8 @@ This will also copy project.clj files from the directory
 project-clj-files into some of the cloned repositories, in order to
 make running Eastwood on them possible.  It will also overwrite some
 existing project.clj files, so that they should all consistently use
-Clojure 1.5.1 by default, and have profiles named 1.5, 1.6, 1.7, and
-1.8, where 1.8 uses Clojure 1.8.0-master-SNAPSHOT.
+Clojure 1.5.1 by default, and have profiles named 1.5, 1.6, 1.7, 1.8,
+1.9, and 1.10, where 1.10 uses Clojure 1.10.0-master-SNAPSHOT.
 
 To build and install a copy of Clojure x.y.0-master-SNAPSHOT in your
 local $HOME/.m2 Maven repository, do this:
