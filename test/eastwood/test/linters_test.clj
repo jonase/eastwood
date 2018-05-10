@@ -67,7 +67,6 @@ the next."
 (defn fname-from-parts [& parts]
   (str/join File/separator parts))
 
-
 (deftest test1
   (lint-test
    'testcases.f01
@@ -1907,14 +1906,14 @@ the next."
    default-opts
    {{:linter :duplicate-params,
      :msg
-     "Local name a occurs multiple times in the same argument vector",
+     "Local name `a` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 7,
      :column 18}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name y occurs multiple times in the same argument vector",
+     "Local name `y` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 17,
      :column 30}
@@ -1927,14 +1926,14 @@ the next."
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name y occurs multiple times in the same argument vector",
+     "Local name `y` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 27,
      :column 20}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name y occurs multiple times in the same argument vector",
+     "Local name `y` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 36,
      :column 25}
@@ -1947,7 +1946,7 @@ the next."
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name y occurs multiple times in the same argument vector",
+     "Local name `y` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 49,
      :column 23}
@@ -1960,7 +1959,7 @@ the next."
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name x occurs multiple times in the same argument vector",
+     "Local name `x` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 59,
      :column 22}
@@ -1973,7 +1972,7 @@ the next."
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name z occurs multiple times in the same argument vector",
+     "Local name `z` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 65,
      :column 33}
@@ -1986,77 +1985,77 @@ the next."
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name z occurs multiple times in the same argument vector",
+     "Local name `z` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 75,
      :column 27}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name b occurs multiple times in the same argument vector",
+     "Local name `b` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 84,
      :column 35}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name c occurs multiple times in the same argument vector",
+     "Local name `c` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 84,
      :column 49}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name d occurs multiple times in the same argument vector",
+     "Local name `d` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 84,
      :column 51}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name a occurs multiple times in the same argument vector",
+     "Local name `a` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 95,
      :column 25}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name a occurs multiple times in the same argument vector",
+     "Local name `a` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 107,
      :column 16}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name a occurs multiple times in the same argument vector",
+     "Local name `a` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 113,
      :column 16}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name a occurs multiple times in the same argument vector",
+     "Local name `a` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 121,
      :column 16}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name a occurs multiple times in the same argument vector",
+     "Local name `a` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 129,
      :column 17}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name a (part of full name :g/a) occurs multiple times in the same argument vector",
+     "Local name `a` (part of full name `:g/a`) occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 194,
      :column 14}
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name b (part of full name :i.j/b) occurs multiple times in the same argument vector",
+     "Local name `b` (part of full name `:i.j/b`) occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 194,
      :column 14}
@@ -2079,7 +2078,7 @@ the next."
     1,
     {:linter :duplicate-params,
      :msg
-     "Local name f occurs multiple times in the same argument vector",
+     "Local name `f` occurs multiple times in the same argument vector",
      :file "testcases/duplicateparams.clj",
      :line 194,
      :column 54}

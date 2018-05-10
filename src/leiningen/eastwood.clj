@@ -3,7 +3,7 @@
             [eastwood.copieddeps.dep6.leinjacker.eval :as leval]
             [eastwood.copieddeps.dep6.leinjacker.deps :refer [add-if-missing]]))
 
-(def eastwood-version-string "0.2.6")
+(def eastwood-version-string "0.2.7-SNAPSHOT")
 
 ;; 'lein help' prints only the first line of the string returned by
 ;; help.  'lein help eastwood' prints all of it, plus the arg vectors

@@ -1388,9 +1388,9 @@ wish."
                       {:linter :duplicate-params
                        :duplicate-params {}
                        :msg (if (= (:source-name dup) (:local-name dup))
-                              (format "Local name %s occurs multiple times in the same argument vector"
+                              (format "Local name `%s` occurs multiple times in the same argument vector"
                                       (:source-name dup))
-                              (format "Local name %s (part of full name %s) occurs multiple times in the same argument vector"
+                              (format "Local name `%s` (part of full name `%s`) occurs multiple times in the same argument vector"
                                       (:local-name dup) (:source-name dup)))}))
                    dups)
               warnings))

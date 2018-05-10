@@ -375,13 +375,12 @@
     (for [nested-var-ast nested-vars
           :let [loc (-> nested-var-ast var-of-ast meta)]]
       (util/add-loc-info loc
-       {:linter :def-in-def
-        :msg (format "There is a def of %s nested inside def %s"
-                     (var-of-ast nested-var-ast)
-                     (-> nested-var-ast
-                         :eastwood/enclosing-def-ast
-                         var-of-ast))}))))
-
+                         {:linter :def-in-def
+                          :msg (format "There is a def of %s nested inside def %s"
+                                       (var-of-ast nested-var-ast)
+                                       (-> nested-var-ast
+                                           :eastwood/enclosing-def-ast
+                                           var-of-ast))}))))
 
 ;; Helpers for wrong arity and bad :arglists
 
