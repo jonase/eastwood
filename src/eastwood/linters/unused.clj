@@ -77,10 +77,10 @@
     (for [pvar pdefs
           :when (not (vars-used-set pvar))
           :let [loc (meta pvar)]]
-      (util/add-loc-info loc
-       {:linter :unused-private-vars
-        :msg (format "Private var '%s' is never used"
-                     (-> pvar util/var-to-fqsym name))}))))
+      {:loc loc
+       :linter :unused-private-vars
+       :msg (format "Private var '%s' is never used"
+                    (-> pvar util/var-to-fqsym name))})))
 
 ;; Unused fn args
 
@@ -123,9 +123,9 @@ selectively disable such warnings if they wish."
                             set)]
           unused-sym unused
           :let [loc (-> unused-sym meta)]]
-      (util/add-loc-info loc
-       {:linter :unused-fn-args
-        :msg (format "Function arg %s never used" unused-sym)}))))
+      {:loc loc
+       :linter :unused-fn-args
+       :msg (format "Function arg %s never used" unused-sym)})))
 
 
 ;; Symbols in let or loop bindings that are unused
@@ -230,11 +230,11 @@ Example: (all-suffixes [1 2 3])
           unused-sym unused
           :let [loc (or (pass/has-code-loc? (-> unused-sym meta))
                         (pass/code-loc (pass/nearest-ast-with-loc expr)))]]
-      (util/add-loc-info loc
-       {:linter :unused-locals
-        :msg (format "%s bound symbol '%s' never used"
-                     (-> expr :op name)
-                     unused-sym)}))))
+      {:loc loc
+       :linter :unused-locals
+       :msg (format "%s bound symbol '%s' never used"
+                    (-> expr :op name)
+                    unused-sym)})))
 
 
 ;; Unused namespaces
@@ -305,9 +305,9 @@ Example: (all-suffixes [1 2 3])
                                        used-macros)
                                  (map namespace-for used-protocols)))]
     (for [ns (set/difference required used-namespaces)]
-      (util/add-loc-info loc
-       {:linter :unused-namespaces
-        :msg (format "Namespace %s is never used in %s" ns curr-ns)}))))
+      {:loc loc
+       :linter :unused-namespaces
+       :msg (format "Namespace %s is never used in %s" ns curr-ns)})))
 
 
 ;; Unused return values
@@ -467,23 +467,23 @@ discarded inside null: null'."
         nil
 
         (:lazy-fn :pure-fn :pure-fn-if-fn-args-pure :warn-if-ret-val-unused)
-        (util/add-loc-info loc
-         {:linter linter
-          linter {:kind (:op stmt), :action action, :ast stmt}
-          :msg
-          (case action
-            :lazy-fn
-            (format "Lazy %s return value is discarded%s: %s"
-                    stmt-desc-str extra-msg form)
-            :pure-fn
-            (format "Pure %s return value is discarded%s: %s"
-                    stmt-desc-str extra-msg form)
-            :pure-fn-if-fn-args-pure
-            (format "Return value is discarded for a %s that only has side effects if the functions passed to it as args have side effects%s: %s"
-                    stmt-desc-str extra-msg form)
-            :warn-if-ret-val-unused
-            (format "Should use return value of %s, but it is discarded%s: %s"
-                    stmt-desc-str extra-msg form))})
+        {:loc loc
+         :linter linter
+         linter {:kind (:op stmt), :action action, :ast stmt}
+         :msg
+         (case action
+           :lazy-fn
+           (format "Lazy %s return value is discarded%s: %s"
+                   stmt-desc-str extra-msg form)
+           :pure-fn
+           (format "Pure %s return value is discarded%s: %s"
+                   stmt-desc-str extra-msg form)
+           :pure-fn-if-fn-args-pure
+           (format "Return value is discarded for a %s that only has side effects if the functions passed to it as args have side effects%s: %s"
+                   stmt-desc-str extra-msg form)
+           :warn-if-ret-val-unused
+           (format "Should use return value of %s, but it is discarded%s: %s"
+                   stmt-desc-str extra-msg form))}
 
         ;; default case, where we have no information about the type
         ;; of function or method it is.  Note that for Clojure
@@ -559,20 +559,20 @@ discarded inside null: null'."
                      (if name-found?
                        (-> stmt :env :name meta)
                        (pass/code-loc (pass/nearest-ast-with-loc stmt))))]
-            (util/add-loc-info loc
-             {:linter :unused-ret-vals
-              :unused-ret-vals {:kind (:op stmt), :ast stmt}
-              :msg (format "%s value is discarded%s: %s"
-                           (op-desc (:op stmt))
-                           (if name-found?
-                             (str " inside " (-> stmt :env :name))
-                             "")
-                           (if (nil? (:form stmt))
-                             "nil"
-                             (str/trim-newline
-                              (with-out-str
-                                (binding [pp/*print-right-margin* nil]
-                                  (pp/pprint (:form stmt)))))))})))
+            {:loc loc
+             :linter :unused-ret-vals
+             :unused-ret-vals {:kind (:op stmt), :ast stmt}
+             :msg (format "%s value is discarded%s: %s"
+                          (op-desc (:op stmt))
+                          (if name-found?
+                            (str " inside " (-> stmt :env :name))
+                            "")
+                          (if (nil? (:form stmt))
+                            "nil"
+                            (str/trim-newline
+                             (with-out-str
+                               (binding [pp/*print-right-margin* nil]
+                                 (pp/pprint (:form stmt)))))))}))
         
         (util/static-call? stmt)
         (let [m (select-keys stmt [:class :method])
@@ -654,15 +654,15 @@ discarded inside null: null'."
                 sorted-removed-meta-keys (sort removed-meta-keys)]
           :when (seq removed-meta-keys)]
 
-      (util/add-loc-info loc
-       {:linter :unused-meta-on-macro
-        :msg
-        (cond
+      {:loc loc
+       :linter :unused-meta-on-macro
+       :msg
+       (cond
          (= :new (:op ast))
          (format "Java constructor call '%s' has metadata with keys %s.  All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure."
                  (first orig-form)
                  sorted-removed-meta-keys)
-         
+
          (#{:instance-call :static-call :instance-field :static-field
             :host-interop} (:op ast))
          (format "Java %s '%s' has metadata with keys %s.  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure."
@@ -678,4 +678,4 @@ discarded inside null: null'."
          :else
          (format "Macro invocation of '%s' has metadata with keys %s that are almost certainly ignored."
                  (first orig-form)
-                 sorted-removed-meta-keys))}))))
+                 sorted-removed-meta-keys))})))

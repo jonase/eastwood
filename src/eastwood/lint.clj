@@ -349,11 +349,12 @@ describing the error."
                                (:uri-or-file-name inf))}
                  inf))})
 
-(defn- handle-lint-result [linter ns-info {:keys [linter msg] :as result}]
+(defn- handle-lint-result [linter ns-info {:keys [linter msg loc] :as result}]
   {:kind :lint-warning,
-   :warn-data (merge result ns-info
-                     (if-let [url (get-in linter-name->info
-                                          [(:name linter) :url])]
+   :warn-data (merge result
+                     ns-info
+                     (select-keys loc #{:file :line :column})
+                     (when-let [url (:url linter)]
                        {"warning-details-url" url}))})
 
 (defn- run-linter [linter analyze-results ns-sym opts]
@@ -369,12 +370,6 @@ describing the error."
   (swap! warning-count + (count warnings))
   (doseq [warning warnings]
     (cb warnings)))
-
-(defn report-exceptions [ns-sym opts exception-count errors]
-  (swap! exception-count + (count errors))
-  (->> errors
-       (map (partial msgs/format-exception ns-sym))
-       (map :msgs)))
 
 (defn- report-analyzer-exception [exception exception-phase exception-form ns-sym]
   (let [[strings error-cb] (msgs/string-builder)]

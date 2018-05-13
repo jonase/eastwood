@@ -105,10 +105,10 @@
   (for [ast (map #(ast/postwalk % pass/reflect-validated) asts)
         dexpr (filter deprecated (ast/nodes ast))
         :let [loc (pass/code-loc (pass/nearest-ast-with-loc dexpr))
-              w (util/add-loc-info loc
-                                   {:linter :deprecations
-                                    :msg (msg dexpr)
-                                    :var (deprecated-var dexpr)})
+              w {:loc loc
+                 :linter :deprecations
+                 :msg (msg dexpr)
+                 :var (deprecated-var dexpr)}
               allow? (not (allow-warning w opt))]
         :when allow?]
     w

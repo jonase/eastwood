@@ -198,37 +198,37 @@
 ;;         (println (format "Found (is (thrown? ...)) with thrown-arg2=%s: %s" thrown-arg2 isf)))
        (cond
         (and (= n 2) (string? is-arg1))
-        [(util/add-loc-info is-loc
-          {:linter :suspicious-test,
-           :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test")})]
+        [{:loc is-loc
+          :linter :suspicious-test,
+          :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test")}]
         
         (and (constant-expr-logical-true? is-arg1)
              (not (list? is-arg1)))
-        [(util/add-loc-info is-loc
-          {:linter :suspicious-test,
-           :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test")})]
+        [{:loc is-loc
+          :linter :suspicious-test,
+          :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test")}]
         
         (and (= n 2)
              (not= message-tag java.lang.String))
-        [(util/add-loc-info is-loc
-          {:linter :suspicious-test,
-           :msg (format "'is' form has non-string as second arg (inferred type is %s).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning."
-                        message-tag)})]
+        [{:loc is-loc
+          :linter :suspicious-test,
+          :msg (format "'is' form has non-string as second arg (inferred type is %s).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a string during test time, and you intended this, then ignore this warning."
+                       message-tag)}]
         
         (and thrown? (util/regex? thrown-arg2))
-        [(util/add-loc-info is-loc
-          {:linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")})]
+        [{:loc is-loc
+          :linter :suspicious-test,
+          :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")}]
         
         (and thrown? (string? thrown-arg2))
-        [(util/add-loc-info is-loc
-          {:linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")})]
+        [{:loc is-loc
+          :linter :suspicious-test,
+          :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")}]
         
         (and thrown? (some string? thrown-args))
-        [(util/add-loc-info is-loc
-          {:linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")})]
+        [{:loc is-loc
+          :linter :suspicious-test,
+          :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")}]
         
         :else nil)))))
 
@@ -251,13 +251,12 @@
         [(let [meta-loc (-> f meta)
                loc (or (pass/has-code-loc? meta-loc)
                        (pass/code-loc (pass/nearest-ast-with-loc ast)))]
-           (util/add-loc-info loc
-            {:linter :suspicious-test,
-             :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
-                          (cond (-> meta-loc :line) ""
-                                (string? f) (str " \"" f "\"")
-                                :else (str " " f))
-                          (if f (.getName (class f)) "nil") form-type)}))]
+           {:loc loc :linter :suspicious-test,
+            :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
+                         (cond (-> meta-loc :line) ""
+                               (string? f) (str " \"" f "\"")
+                               :else (str " " f))
+                         (if f (.getName (class f)) "nil") form-type)})]
         
         (sequential? f)
         (let [ff (first f)
@@ -270,16 +269,16 @@
               loc (-> ff meta)]
           (cond
            (and var-info (get var-info :predicate))
-           [(util/add-loc-info loc
-             {:linter :suspicious-test,
-              :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
-                           ff form-type ff)})]
+           [{:loc loc
+             :linter :suspicious-test,
+             :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
+                          ff form-type ff)}]
            
            (and var-info (get var-info :pure-fn))
-           [(util/add-loc-info loc
-             {:linter :suspicious-test,
-              :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
-                           ff form-type)})]
+           [{:loc loc
+             :linter :suspicious-test,
+             :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
+                          ff form-type)}]
            
            :else nil))
         :else nil)))))
@@ -574,20 +573,19 @@
 ;;;;                  (println "  parent ast=")
 ;;;;                  (util/pprint-ast-node (util/nth-last (-> ast :eastwood/ancestors) 1))
 ;;                  )]
-          :let [w (util/add-loc-info
-                   loc
-                   {:linter :suspicious-expression
-                    :suspicious-expression {:kind :macro-invocation
-                                            :ast ast
-                                            :macro-symbol macro-sym}
-                    :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
-                                 (name macro-sym) num-args (name macro-sym)
-                                 (if (> num-args 0)
-                                   (str " " (str/join " " (:args info)))
-                                   "")
-                                 (if (= "" (:ret-val info))
-                                   "\"\""
-                                   (print-str (:ret-val info))))})
+          :let [w {:loc loc
+                   :linter :suspicious-expression
+                   :suspicious-expression {:kind :macro-invocation
+                                           :ast ast
+                                           :macro-symbol macro-sym}
+                   :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
+                                (name macro-sym) num-args (name macro-sym)
+                                (if (> num-args 0)
+                                  (str " " (str/join " " (:args info)))
+                                  "")
+                                (if (= "" (:ret-val info))
+                                  "\"\""
+                                  (print-str (:ret-val info))))}
                 allow? (util/allow-warning w opt)]
           :when allow?]
       (do
@@ -662,16 +660,16 @@
               suspicious-args (core-fns-that-do-little fn-fqsym)
               info (get suspicious-args num-args)]
           (if (contains? suspicious-args num-args)
-            (util/add-loc-info loc
-             {:linter :suspicious-expression,
-              :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
-                           fn-sym num-args fn-sym
-                           (if (> num-args 0)
-                             (str " " (str/join " " (:args info)))
-                             "")
-                           (if (= "" (:ret-val info))
-                             "\"\""
-                             (print-str (:ret-val info))))}))))))))
+            {:loc loc
+             :linter :suspicious-expression,
+             :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
+                          fn-sym num-args fn-sym
+                          (if (> num-args 0)
+                            (str " " (str/join " " (:args info)))
+                            "")
+                          (if (= "" (:ret-val info))
+                            "\"\""
+                            (print-str (:ret-val info))))})))))))
 
 
 ;; This code may get a bit hackish, trying to recognize exactly the
@@ -735,17 +733,16 @@
 ;;                    )
                 ]
           :when (contains? suspicious-args num-args)]
-      (util/add-loc-info
-       loc
-       {:linter :suspicious-expression
-        :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
-                     (name fn-sym) num-args (name fn-sym)
-                     (if (> num-args 0)
-                       (str " " (str/join " " (:args info)))
-                       "")
-                     (if (= "" (:ret-val info))
-                       "\"\""
-                       (print-str (:ret-val info))))}))))
+      {:loc loc
+       :linter :suspicious-expression
+       :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
+                    (name fn-sym) num-args (name fn-sym)
+                    (if (> num-args 0)
+                      (str " " (str/join " " (:args info)))
+                      "")
+                    (if (= "" (:ret-val info))
+                      "\"\""
+                      (print-str (:ret-val info))))})))
 
 
 (defn suspicious-expression [& args]
@@ -880,13 +877,12 @@ warning, that contains the constant value."
                 form (-> ast :form)
                 loc (or (pass/has-code-loc? (-> ast :form meta))
                         (pass/code-loc (pass/nearest-ast-with-loc ast)))
-                w (util/add-loc-info
-                   loc
-                   {:linter :constant-test
-                    :constant-test {:kind :the-only-kind
-                                    :ast ast}
-                    :msg (format "Test expression is always logical true or always logical false: %s in form %s"
-                                 (pr-str test-form) (pr-str form))})
+                w {:loc loc
+                   :linter :constant-test
+                   :constant-test {:kind :the-only-kind
+                                   :ast ast}
+                   :msg (format "Test expression is always logical true or always logical false: %s in form %s"
+                                (pr-str test-form) (pr-str form))}
                 allow? (util/allow-warning w opt)]
           :when allow?]
       (do
@@ -1055,10 +1051,9 @@ warning, that contains the constant value."
                                                "Precondition"
                                                "preconditions")]
            msg msgs
-           :let [w (util/add-loc-info loc
-                    {:linter :wrong-pre-post
-                     :wrong-pre-post {:kind :pre, :ast ast}
-                     :msg msg})]]
+           :let [w {:loc loc :linter :wrong-pre-post
+                    :wrong-pre-post {:kind :pre, :ast ast}
+                    :msg msg}]]
        w)
      (for [{:keys [ast form name post method-num]} fns-with-pre-post
            :when post
@@ -1068,10 +1063,10 @@ warning, that contains the constant value."
                                                "Postcondition"
                                                "postconditions")]
            msg msgs
-           :let [w (util/add-loc-info loc
-                    {:linter :wrong-pre-post
-                     :wrong-pre-post {:kind :post, :ast ast}
-                     :msg msg})]]
+           :let [w {:loc loc
+                    :linter :wrong-pre-post
+                    :wrong-pre-post {:kind :post, :ast ast}
+                    :msg msg}]]
        w))))
 
 
@@ -1278,12 +1273,11 @@ warning, that contains the constant value."
               as-or-warning
               (if (and as-local-name
                        (contains? or-names-set as-local-name))
-                [(util/add-loc-info
-                  (better-loc loc as-local-name)
-                  {:linter :unused-or-default
-                   :unused-or-default {}
-                   :msg (format "Name %s after :as is also in :or map of associative destructuring.  The default value in the :or will never be used."
-                                as-local-name)})])
+                [{:loc (better-loc loc as-local-name)
+                  :linter :unused-or-default
+                  :unused-or-default {}
+                  :msg (format "Name %s after :as is also in :or map of associative destructuring.  The default value in the :or will never be used."
+                               as-local-name)}])
 
               ;; Warn about any keys in an :or map that are not
               ;; elsewhere in the _same_ map binding form's map.  For
@@ -1299,12 +1293,11 @@ warning, that contains the constant value."
                                                     as-local-name))
               unused-or-name-warnings
               (map (fn [unused-or-name]
-                     (util/add-loc-info
-                      (better-loc loc unused-or-name)
-                      {:linter :unused-or-default
-                       :unused-or-default {}
-                       :msg (format "Name %s with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used."
-                                    unused-or-name)}))
+                     {:loc (better-loc loc unused-or-name)
+                      :linter :unused-or-default
+                      :unused-or-default {}
+                      :msg (format "Name %s with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used."
+                                   unused-or-name)})
                    unused-or-names)
               sub-infos (map :nested-info map-sub-destructure)]
           {:result true,
@@ -1383,21 +1376,18 @@ wish."
                            (remove #(dont-warn-for-symbol? (:local-name %))))]
              (concat
               (map (fn [dup]
-                     (util/add-loc-info
-                      (:loc dup)
-                      {:linter :duplicate-params
-                       :duplicate-params {}
-                       :msg (if (= (:source-name dup) (:local-name dup))
-                              (format "Local name `%s` occurs multiple times in the same argument vector"
-                                      (:source-name dup))
-                              (format "Local name `%s` (part of full name `%s`) occurs multiple times in the same argument vector"
-                                      (:local-name dup) (:source-name dup)))}))
+                     {:loc (:loc dup)
+                      :linter :duplicate-params
+                      :duplicate-params {}
+                      :msg (if (= (:source-name dup) (:local-name dup))
+                             (format "Local name `%s` occurs multiple times in the same argument vector"
+                                     (:source-name dup))
+                             (format "Local name `%s` (part of full name `%s`) occurs multiple times in the same argument vector"
+                                     (:local-name dup) (:source-name dup)))})
                    dups)
               warnings))
            ;; else
-           [(util/add-loc-info
-             loc
-             {:linter :duplicate-params
-              :duplicate-params {}
-              :msg (format "Unrecognized argument vector syntax %s" arg-vec)})]
-           )))))))
+           [{:loc loc
+             :linter :duplicate-params
+             :duplicate-params {}
+             :msg (format "Unrecognized argument vector syntax %s" arg-vec)}])))))))

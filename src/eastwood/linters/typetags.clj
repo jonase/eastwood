@@ -137,27 +137,27 @@ significance needed by the user."
 ;;                  )
               ]
         :when typ]
-    (util/add-loc-info loc
-     {:linter :wrong-tag
-      :msg
-      (case typ
-        :wrong-tag-on-var (format "Wrong tag: %s in def of Var: %s"
-                                  (replace-variable-tag-part (eval tag))
-                                  name)
-        :tag (format "Wrong tag: %s on form: %s"
-                     (replace-variable-tag-part tag)
-                     form)
-        :var (format "Wrong tag: %s for form: %s, probably where the Var %s was def'd in namespace %s"
-                     (replace-variable-tag-part tag)
-                     form
-                     (-> ast :var meta :name)
-                     (-> ast :var meta :ns))
-        :invoke (format "Tag: %s for return type of function %s should be Java class name (fully qualified if not in java.lang package).  It may be defined in another namespace."
-                        (replace-variable-tag-part tag)
-                        (-> form first))
-        :fn-method (format "Tag: %s for return type of function method: %s should be Java class name (fully qualified if not in java.lang package)"
-                           (replace-variable-tag-part tag)
-                           form))})))
+    {:loc loc
+     :linter :wrong-tag
+     :msg
+     (case typ
+       :wrong-tag-on-var (format "Wrong tag: %s in def of Var: %s"
+                                 (replace-variable-tag-part (eval tag))
+                                 name)
+       :tag (format "Wrong tag: %s on form: %s"
+                    (replace-variable-tag-part tag)
+                    form)
+       :var (format "Wrong tag: %s for form: %s, probably where the Var %s was def'd in namespace %s"
+                    (replace-variable-tag-part tag)
+                    form
+                    (-> ast :var meta :name)
+                    (-> ast :var meta :ns))
+       :invoke (format "Tag: %s for return type of function %s should be Java class name (fully qualified if not in java.lang package).  It may be defined in another namespace."
+                       (replace-variable-tag-part tag)
+                       (-> form first))
+       :fn-method (format "Tag: %s for return type of function method: %s should be Java class name (fully qualified if not in java.lang package)"
+                          (replace-variable-tag-part tag)
+                          form))}))
 
 (defn fq-classname-to-class [cname-str]
   (try
@@ -216,10 +216,10 @@ significance needed by the user."
                    (symbol? tag)
                    (not (contains? default-classname-mapping tag))
                    (nil? (fq-classname-to-class (str tag))))]
-    (util/add-loc-info loc
-     {:linter :wrong-tag
-      :msg (format "Tag: %s for return type of function on arg vector: %s should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232)."
-                   tag (-> form first))})))
+    {:loc loc
+     :linter :wrong-tag
+     :msg (format "Tag: %s for return type of function on arg vector: %s should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232)."
+                  tag (-> form first))}))
 
 (defn wrong-tag [& args]
   (concat (apply wrong-tag-from-analyzer args)
