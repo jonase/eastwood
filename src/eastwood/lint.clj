@@ -6,6 +6,7 @@
             [clojure.set :as set]
             [clojure.string :as str]
             [clojure.pprint :as pp]
+            [eastwood.error-messages :as msgs]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
@@ -18,9 +19,6 @@
             [eastwood.linters.typos :as typos])
   (:import [java.io File PushbackReader]
            [clojure.lang LineNumberingPushbackReader]))
-
-
-(def eastwood-url "https://github.com/jonase/eastwood")
 
 (def ^:dynamic *eastwood-version*
   {:major 0, :minor 2, :incremental 7, :qualifier "SNAPSHOT"})
@@ -39,7 +37,6 @@ always have at least the keys :err and :err-data, return a string
 describing the error."
   :err)
 
-
 (declare file-warn-info)
 
 (defn replace-path-in-compiler-error
@@ -54,13 +51,11 @@ describing the error."
       (str (:uri-or-file-name inf) line-col ": " pre post)
       msg)))
 
-
 (defn make-default-msg-cb [wrtr]
   (fn default-msg-cb [info]
     (binding [*out* wrtr]
       (println (:msg info))
       (flush))))
-
 
 (defn make-default-eval-msg-cb
   ([wrtr]
@@ -174,7 +169,7 @@ describing the error."
   (case (:kind info)
     :error     (util/assert-keys info [:msg :opt])
     :dirs-scanned (util/assert-keys info [:dirs-scanned :opt])
-    :lint-warning (util/assert-keys info [:warn-data :opt])
+    :lint-warning (util/assert-keys info [:warn-data])
     :note      (util/assert-keys info [:msg :opt])
     :eval-out  (util/assert-keys info [:msg :opt])
     :eval-err  (util/assert-keys info [:msg :opt])
@@ -209,16 +204,6 @@ describing the error."
                              (debug-form-emitted info)))))
 
 
-(defmacro timeit
-  "Evaluates expr and returns a vector containing the expression's
-return value followed by the time it took to evaluate in millisec."
-  [expr]
-  `(let [start# (. System (nanoTime))
-         ret# ~expr
-         elapsed-msec# (/ (double (- (. System (nanoTime)) start#)) 1000000.0)]
-     [ret# elapsed-msec#]))
-
-
 ;; Note: Linters below with nil for the value of the key :fn,
 ;; e.g. :no-ns-form-found, can be enabled/disabled from the opt map
 ;; like other linters, but they are a bit different in their
@@ -230,10 +215,10 @@ return value followed by the time it took to evaluate in millisec."
   [
    {:name :no-ns-form-found,          :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#no-ns-form-found",
-    :fn nil}
+    :fn (constantly nil)}
    {:name :non-clojure-file,          :enabled-by-default false,
     :url "https://github.com/jonase/eastwood#non-clojure-file",
-    :fn nil}
+    :fn (constantly nil)}
    {:name :misplaced-docstrings,      :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#misplaced-docstrings",
     :fn misc/misplaced-docstrings}
@@ -321,244 +306,7 @@ return value followed by the time it took to evaluate in millisec."
   (->> linter-info
        (map :name)))
 
-
-(defn- lint-analyze-results [analyze-results linter-kw opt]
-  (if-let [lint-fn (get-in linter-name->info [linter-kw :fn])]
-    (try
-      (doall (lint-fn analyze-results opt))
-      (catch Throwable e
-        [e]))))
-
-
-(defn maybe-unqualified-java-class-name? [x]
-  (if-not (or (symbol? x) (string? x))
-    false
-    (let [^String x (if (symbol? x) (str x) x)]
-      (and (>= (count x) 1)
-           (== (.indexOf x ".") -1)   ; no dots
-           (Character/isJavaIdentifierStart ^Character (nth x 0))
-           (= (subs x 0 1)
-              (str/upper-case (subs x 0 1))))))) ; first char is upper-case
-
-(defn misplaced-primitive-tag? [x]
-  (condp = x
-   clojure.core/byte    {:prim-name "byte",    :supported-as-ret-hint false}
-   clojure.core/short   {:prim-name "short",   :supported-as-ret-hint false}
-   clojure.core/int     {:prim-name "int",     :supported-as-ret-hint false}
-   clojure.core/long    {:prim-name "long",    :supported-as-ret-hint true}
-   clojure.core/boolean {:prim-name "boolean", :supported-as-ret-hint false}
-   clojure.core/char    {:prim-name "char",    :supported-as-ret-hint false}
-   clojure.core/float   {:prim-name "float",   :supported-as-ret-hint false}
-   clojure.core/double  {:prim-name "double",  :supported-as-ret-hint true}
-   nil))
-
-(defn print-ex-data-details [ns-sym opts ^Throwable exc]
-  (let [error-cb (util/make-msg-cb :error opts)
-        dat (ex-data exc)
-        msg (.getMessage exc)]
-    ;; Print useful info about the exception so we might more
-    ;; quickly learn how to enhance it.
-    (error-cb (format "Got exception with extra ex-data:"))
-    (error-cb (format "    msg='%s'" msg))
-    (error-cb (format "    (keys dat)=%s" (keys dat)))
-    (when (contains? dat :ast)
-      (error-cb (format "     (:op ast)=%s" (-> dat :ast :op)))
-      (when (contains? (:ast dat) :form)
-        (error-cb (format "    (class (-> dat :ast :form))=%s (-> dat :ast :form)="
-                         (class (-> dat :ast :form))))
-        (error-cb (with-out-str (util/pprint-form (-> dat :ast :form)))))
-      (error-cb (with-out-str (util/pprint-form (-> dat :ast)))))
-    (when (contains? dat :form)
-      (error-cb (format "    (:form dat)="))
-      (error-cb (with-out-str (util/pprint-form (:form dat)))))
-    (util/pst exc nil error-cb)))
-
-(defn handle-values-of-env [ns-sym opts ^Throwable exc]
-  (let [error-cb (util/make-msg-cb :error opts)
-        dat (ex-data exc)
-        {:keys [form]} dat]
-    (error-cb (format "Eastwood cannot analyze code that uses the values of &env in a macro expansion."))
-    (error-cb (format "See https://github.com/jonase/eastwood#explicit-use-of-clojure-environment-env"))
-    :show-more-details))
-
-(defn handle-bad-dot-form [ns-sym opts ^Throwable exc]
-  (let [error-cb (util/make-msg-cb :error opts)
-        dat (ex-data exc)
-        {:keys [form]} dat]
-    (error-cb (format "Java interop calls should be of the form TBD, but found this instead (line %s):"
-                      (-> form first meta :line)))
-    (error-cb (with-out-str
-                ;; TBD: Replace this binding with util/pprint-form call?
-                (binding [*print-level* 7
-                          *print-length* 50]
-                  (pp/pprint form))))
-    :no-more-details-needed))
-
-(defn handle-bad-tag [ns-sym opts ^Throwable exc]
-  (let [error-cb (util/make-msg-cb :error opts)
-        dat (ex-data exc)
-        ast (:ast dat)]
-    (cond
-     (#{:var :invoke :const} (:op ast))
-     (let [form (:form ast)
-           form (if (= (:op ast) :invoke)
-                  (first form)
-                  form)
-           tag (or (-> form meta :tag)
-                   (:tag ast))]
-       (error-cb (format "A function, macro, protocol method, var, etc. named %s has been used here:"
-                         form))
-       (error-cb (with-out-str (util/pprint-form (meta form))))
-       (error-cb (format "Wherever it is defined, or where it is called, it has a type of %s"
-                         tag))
-       (cond
-        (maybe-unqualified-java-class-name? tag)
-        (do
-          (error-cb (format
-"This appears to be a Java class name with no package path.
-Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
-If this definition is easy for you to change, we recommend you prepend it with
-a full package path name, e.g. java.net.URI
-Otherwise import the class by adding a line like this to your ns statement:
-    (:import (java.net URI))"))
-          :no-more-details-needed)
-
-        (misplaced-primitive-tag? tag)
-        (let [{:keys [prim-name supported-as-ret-hint]} (misplaced-primitive-tag? tag)
-              form (if (var? form)
-                     (name (.sym ^clojure.lang.Var form))
-                     form)
-              good-prim-name (if supported-as-ret-hint
-                               prim-name
-                               "long")]
-          (error-cb (format
-"It has probably been defined with a primitive return type tag on the var name,
-like this:
-    (defn ^%s %s [args] ...)" prim-name form))
-          (error-cb (format
-"Clojure 1.5.1 and 1.6.0 do not handle such tags as you probably expect.
-They silently treat this as a tag of the *function* named clojure.core/%s"
-prim-name))
-          (when-not supported-as-ret-hint
-            (error-cb (format
-"Also, it only supports return type hints of long and double, not %s" prim-name)))
-          (error-cb (format
-"Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
-If you wish the function to have a primitive return type, this is only
-supported for types long and double, and the type tag must be given just
-before the argument vector, like this:
-    (defn %s ^%s [args] ...)" form good-prim-name))
-          (error-cb (format
-"or if there are multiple arities defined, like this:
-    (defn %s (^%s [arg1] ...) (^%s [arg1 arg2] ...))" form good-prim-name good-prim-name))
-          (error-cb (format
-"If you wish to use a primitive type tag on the Var name, Clojure will
-only use that if the function is called and its return value is used
-as an argument in a Java interop call.  In such situations, the type
-tag can help choose a Java method and often avoid reflection.  If that
-is what you want, you must specify the tag like so:
-    (defn ^{:tag '%s} %s [args] ...)" prim-name form))
-          :no-more-details-needed)
-        
-        :else
-        (do
-          (error-cb (format "dbgx tag=%s (class tag)=%s (str tag)='%s' boolean?=%s long?=%s"
-                           tag
-                           (class tag)
-                           (str tag)
-                           (= tag clojure.core/boolean)
-                           (= tag clojure.core/long)))
-          :show-more-details)))
-     
-     (#{:local :binding} (:op ast))
-     (let [form (:form ast)
-           tag (-> form meta :tag)]
-       (error-cb (format "Local name '%s' has been given a type tag '%s' here:"
-                         form tag))
-       (error-cb (with-out-str (util/pprint-form (meta tag))))
-       (cond
-        (maybe-unqualified-java-class-name? tag)
-        (do
-          (error-cb (format
-"This appears to be a Java class name with no package path.
-Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
-Either prepend it with a full package path name, e.g. java.net.URI
-Otherwise, import the Java class, e.g. add a line like this to the ns statement:
-    (:import (java.net URI))"))
-          :no-more-details-needed)
-
-        (symbol? tag)
-        (do
-          (error-cb (format
-"This is a symbol, but does not appear to be a Java class.  Whatever it
-is, library tools.analyzer, on which Eastwood relies, cannot analyze
-such files.
-
-Cases like this have been seen in some Clojure code that used the
-library test.generative.  That library uses tag metadata in an unusual
-way that might be changed to avoid this.  See
-http://dev.clojure.org/jira/browse/TGEN-5 for details if you are
-curious.
-
-If you are not using test.generative, and are able to provide the code
-that you used that gives this error to the Eastwood developers for
-further investigation, please file an issue on the Eastwood Github
-page at %s"
-          eastwood-url))
-          :no-more-details-needed)
-
-        (sequential? tag)
-        (do
-          (error-cb (format
-"This appears to be a Clojure form to be evaluated.
-Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
-
-If you have this expression in your source code, it is recommended to
-replace it with a constant type tag if you can, or create an issue on
-the Eastwood project Github page with details of your situation for
-possible future enhancement to Eastwood: %s
-
-If you do not see any expression like this in your source code, cases
-like this have been seen in programs that used the library
-test.generative.  That library uses tag metadata in an unusual way
-that might be changed to avoid this.  See
-http://dev.clojure.org/jira/browse/TGEN-5 for details if you are
-curious." eastwood-url))
-          :no-more-details-needed)
-
-        :else
-        (do
-          (error-cb (format "dbgx for case :op %s tag=%s (class form)=%s (sequential? form)=%s form="
-                           (:op ast) tag (class form) (sequential? form)))
-          (error-cb (with-out-str (util/pprint-form form)))
-          :show-more-details)))
-
-     :else
-     (do
-       (print-ex-data-details ns-sym opts exc)
-       :show-more-details))))
-
-(defn show-exception [ns-sym opts ^Throwable exc]
-  (let [dat (ex-data exc)
-        msg (or (.getMessage exc) "")]
-    (cond
-     (re-find #" cannot be cast to clojure\.lang\.Compiler\$LocalBinding" msg)
-     (handle-values-of-env ns-sym opts exc)
-
-     (and (re-find #"method name must be a symbol, had:" msg)
-          (contains? dat :form))
-     (handle-bad-dot-form ns-sym opts exc)
-     
-     (re-find #"Class not found: " msg)
-     (handle-bad-tag ns-sym opts exc)
-
-     :else
-     (do
-       (if dat
-         (print-ex-data-details ns-sym opts exc)
-         (util/pst exc nil (util/make-msg-cb :error opts)))
-       :show-more-details))))
-
+ ; first char is upper-case
 
 (defn ^java.net.URI to-uri [x]
   (cond (instance? java.net.URI x) x
@@ -592,60 +340,82 @@ curious." eastwood-url))
      {:namespace-sym ns-sym}
      (file-warn-info uri cwd-file))))
 
+(defn make-lint-warning [kw msg opts file]
+  {:kind :lint-warning,
+   :warn-data (let [inf (file-warn-info file (:cwd opts))]
+                (merge
+                 {:linter kw
+                  :msg (format (str msg " '%s'.  It will not be linted.")
+                               (:uri-or-file-name inf))}
+                 inf))})
 
-(defn lint-ns [ns-sym linters opts warning-count exception-count]
-  (let [cb (:callback opts)
-        error-cb (util/make-msg-cb :error opts)
-        note-cb (util/make-msg-cb :note opts)
-        ns-info (namespace-info ns-sym (:cwd opts))]
-    (note-cb (str "== Linting " ns-sym " =="))
-    (let [[{:keys [analyze-results exception exception-phase exception-form]}
-           analyze-time-msec]
-          (timeit (analyze/analyze-ns ns-sym :opt opts))
-          print-time? (util/debug? :time opts)]
-      (when print-time?
-        (note-cb (format "Analysis took %.1f millisec" analyze-time-msec)))
-      (doseq [linter linters]
-        (let [[results time-msec] (timeit (lint-analyze-results analyze-results
-                                                                linter opts))]
-          (doseq [result results]
-            (if (instance? Throwable result)
-              (do
-                (error-cb (format "Exception thrown by linter %s on namespace %s"
-                                  linter ns-sym))
-                (swap! exception-count inc)
-                (show-exception ns-sym opts result))
-              (do
-                (swap! warning-count inc)
-                (cb {:kind :lint-warning,
-                     :warn-data (merge result ns-info
-                                       (if-let [url (get-in linter-name->info
-                                                            [linter :url])]
-                                         {:warning-details-url url}))
-                     :opt opts}))))
-          (when print-time?
-            (note-cb (format "Linter %s took %.1f millisec"
-                             linter time-msec)))))
-      (when exception
-        (swap! exception-count inc)
-        (error-cb (str "Exception thrown during phase " exception-phase
-                       " of linting namespace " ns-sym))
-        (when (= (show-exception ns-sym opts exception) :show-more-details)
-          (error-cb "\nThe following form was being processed during the exception:")
-          ;; TBD: Replace this binding with util/pprint-form variation
-          ;; that does not print metadata?
-          (error-cb (with-out-str (binding [*print-level* 7
-                                            *print-length* 50]
-                                    (pp/pprint exception-form))))
-          (error-cb "\nShown again with metadata for debugging (some metadata elided for brevity):")
-          (error-cb (with-out-str (util/pprint-form exception-form))))
-        (error-cb
-         (str "\nAn exception was thrown while analyzing namespace " ns-sym " 
+(defn- handle-lint-result [linter ns-info {:keys [linter msg] :as result}]
+  {:kind :lint-warning,
+   :warn-data (merge result ns-info
+                     (if-let [url (get-in linter-name->info
+                                          [(:name linter) :url])]
+                       {"warning-details-url" url}))})
+
+(defn- run-linter [linter analyze-results ns-sym opts]
+  (let [ns-info (namespace-info ns-sym (:cwd opts))]
+    (try
+      (doall (->> ((:fn linter) analyze-results opts)
+                  (map (partial handle-lint-result linter ns-info))))
+      (catch Throwable e
+        [{:kind :lint-error
+          :warn-data (format "Exception thrown by linter %s on namespace %s" (:name linter) ns-sym)}]))))
+
+(defn report-warnings [cb warning-count warnings]
+  (swap! warning-count + (count warnings))
+  (doseq [warning warnings]
+    (cb warnings)))
+
+(defn report-exceptions [ns-sym opts exception-count errors]
+  (swap! exception-count + (count errors))
+  (->> errors
+       (map (partial msgs/format-exception ns-sym))
+       (map :msgs)))
+
+(defn- report-analyzer-exception [exception exception-phase exception-form ns-sym]
+  (let [[strings error-cb] (msgs/string-builder)]
+    (error-cb (str "Exception thrown during phase " exception-phase
+                   " of linting namespace " ns-sym))
+    (let [{:keys [msgs info]} (msgs/format-exception ns-sym exception)]
+      (swap! strings into msgs)
+      (when (= info :show-more-details)
+        (error-cb "\nThe following form was being processed during the exception:")
+        ;; TBD: Replace this binding with util/pprint-form variation
+        ;; that does not print metadata?
+        (error-cb (with-out-str (binding [*print-level* 7
+                                          *print-length* 50]
+                                  (pp/pprint exception-form))))
+        (error-cb "\nShown again with metadata for debugging (some metadata elided for brevity):")
+        (error-cb (with-out-str (util/pprint-form exception-form)))))
+    (error-cb
+     (str "\nAn exception was thrown while analyzing namespace " ns-sym "
 Lint results may be incomplete.  If there are compilation errors in
 your code, try fixing those.  If not, check above for info on the
 exception."))
-        exception))))
+    {:exception exception
+     :msgs @strings}))
 
+(defn lint-ns* [ns-sym analyze-results opts linter]
+  (let [[results elapsed] (util/timeit (run-linter linter analyze-results ns-sym opts))]
+    (->> results
+         (group-by :kind)
+         (merge {:elapsed elapsed
+                 :linter linter}))))
+
+(defn lint-ns [ns-sym linters opts]
+  (let [[result elapsed] (util/timeit (analyze/analyze-ns ns-sym :opt opts))
+        {:keys [analyze-results exception exception-phase exception-form]} result]
+    {:ns ns-sym
+     :analysis-time elapsed
+     :lint-results (some->> linters
+                            (keep linter-name->info)
+                            (map (partial lint-ns* ns-sym analyze-results opts)))
+     :exception (when exception
+                  (report-analyzer-exception exception exception-phase exception-form ns-sym))}))
 
 (declare last-options-map-adjustments)
 
@@ -653,24 +423,21 @@ exception."))
 ;; cause any test written that calls lint-ns-noprint to fail, unless
 ;; it expects the exception.
 (defn lint-ns-noprint [ns-sym linters opts]
-  (let [lint-warnings (atom [])
-        warning-count (atom 0)
-        exception-count (atom 0)
-        opts (assoc opts :linters linters)
+  (let [opts (assoc opts :linters linters)
         opts (last-options-map-adjustments opts)
         cb (fn cb [info]
              (case (:kind info)
-               :lint-warning (swap! lint-warnings conj (:warn-data info))
                (:eval-out :eval-err) (println (:msg info))
                :default-do-nothing
                ;;((:callback opts) info)
                ))
         opts (assoc opts :callback cb)
-        exception (lint-ns ns-sym linters opts warning-count exception-count)]
-    (if exception
-      (throw exception)
-      @lint-warnings)))
-
+        {:keys [exception lint-results]} (lint-ns ns-sym linters opts)]
+    (if-not exception
+      (->> lint-results
+           (mapcat :lint-warning)
+           (map :warn-data))
+      (throw exception))))
 
 (defn unknown-ns-keywords [namespaces known-ns-keywords desc]
   (let [keyword-set (set (filter keyword? namespaces))
@@ -681,7 +448,6 @@ exception."))
        :err-data {:for-option desc
                   :unknown-ns-keywords unknown-ns-keywords
                   :allowed-ns-keywords known-ns-keywords}})))
-
 
 (defmethod error-msg :unknown-ns-keywords [err-info]
   (let [{:keys [for-option unknown-ns-keywords allowed-ns-keywords]}
@@ -1004,7 +770,6 @@ Exception thrown while analyzing last namespace.
 "
       )))
 
-
 (defn eastwood-core
   "Lint a sequence of namespaces using a specified collection of linters.
 
@@ -1045,35 +810,25 @@ Return value:
     (when (seq dirs)
       (cb {:kind :dirs-scanned, :dirs-scanned dirs, :opt opts}))
     (when (some #{:no-ns-form-found} (:enabled-linters opts))
-      (doseq [f no-ns-form-found-files]
-        (swap! warning-count inc)
-        (cb {:kind :lint-warning,
-             :warn-data (let [inf (file-warn-info f (:cwd opts))]
-                          (merge
-                           {:linter :no-ns-form-found
-                            :msg (format "No ns form was found in file '%s'.  It will not be linted."
-                                         (:uri-or-file-name inf))}
-                           inf))
-             :opt opts})))
+      (->> no-ns-form-found-files
+           (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" opts))
+           (map (fn [m] (assoc :opt opts)))
+           (report-warnings cb warning-count)))
     (when (some #{:non-clojure-file} (:enabled-linters opts))
-      (doseq [f non-clojure-files]
-        (swap! warning-count inc)
-        (cb {:kind :lint-warning,
-             :warn-data (let [inf (file-warn-info f (:cwd opts))]
-                          (merge
-                           {:linter :non-clojure-file
-                            :msg (format "Non-Clojure file '%s'.  It will not be linted."
-                                         (:uri-or-file-name inf))}
-                           inf))
-             :opt opts})))
+      (->> non-clojure-files
+           (map (partial make-lint-warning :non-clojure-file "Non-Clojure file" opts))
+           (map (fn [m] (assoc :opt opts)))
+           (report-warnings cb warning-count)))
     (cond
      (:err m1) m1
      (:err m2) m2
      :else
      (let [error-cb (util/make-msg-cb :error opts)
            debug-cb (util/make-msg-cb :debug opts)
+           note-cb (util/make-msg-cb :note opts)
            continue-on-exception? (:continue-on-exception opts)
-           stopped-on-exc (atom false)]
+           stopped-on-exc (atom false)
+           print-time? (util/debug? :time opts)]
        (when (util/debug? :ns opts)
          (debug-cb (format "Namespaces to be linted:"))
          (doseq [n namespaces]
@@ -1089,12 +844,24 @@ Return value:
          (loop [namespaces namespaces]
            (when-first [namespace namespaces]
              (let [e (try
-                       (lint-ns namespace (:enabled-linters opts) opts
-                                warning-count exception-count)
+                       (note-cb (str "== Linting " namespace " =="))
+                       (let [{:keys [exception lint-results analysis-time]} (lint-ns namespace (:enabled-linters opts) opts)]
+                         (when print-time?
+                           (note-cb (format "Analysis took %.1f millisec" analysis-time)))
+                         (doseq [{:keys [lint-warning lint-error elapsed linter]} lint-results]
+                           (when print-time?
+                             (note-cb (format "Linter %s took %.1f millisec"
+                                              (:name linter) elapsed)))
+                           (swap! warning-count + (count lint-warning))
+                           (swap! exception-count + (count lint-error))
+                           (doseq [error lint-error]
+                             (error-cb (:warn-data error)))
+                           (doseq [warning lint-warning]
+                             (cb (assoc warning :opt opts)))))
                        (catch RuntimeException e
-                         (error-cb "Linting failed:")
-                         (util/pst e nil error-cb)
-                         e))]
+                           (error-cb "Linting failed:")
+                           (util/pst e nil error-cb)
+                           e))]
                (if (or continue-on-exception?
                        (not (instance? Throwable e)))
                  (recur (next namespaces))
@@ -1109,7 +876,6 @@ Return value:
         (if @stopped-on-exc
           {:err :exception-thrown
            :err-data @stopped-on-exc}))))))
-
 
 ;; Test Eastwood for a while with messages being written to file
 ;; "east-out.txt", to see if I catch everything that was going to
@@ -1129,7 +895,7 @@ Return value:
         default-dirs-scanned-cb (make-default-dirs-scanned-cb wrtr)
         default-lint-warning-cb (make-default-lint-warning-cb warn-wrtr)
         default-debug-ast-cb (make-default-debug-ast-cb wrtr)
-        
+
         [form-read-cb form-analyzed-cb form-emitted-cb]
         (if (util/debug? :compare-forms opts)
           [ (make-default-form-cb (io/writer "forms-read.txt"))

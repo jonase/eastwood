@@ -13,6 +13,14 @@
             [clojure.repl :as repl]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rdr-types]))
 
+(defmacro timeit
+  "Evaluates expr and returns a vector containing the expression's
+return value followed by the time it took to evaluate in millisec."
+  [expr]
+  `(let [start# (. System (nanoTime))
+         ret# ~expr
+         elapsed-msec# (/ (double (- (. System (nanoTime)) start#)) 1000000.0)]
+     [ret# elapsed-msec#]))
 
 (defn min-clojure-version [min-version-vector]
   (>= (compare ((juxt :major :minor) *clojure-version*)

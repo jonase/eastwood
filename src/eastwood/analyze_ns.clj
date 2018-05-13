@@ -277,14 +277,16 @@ recursing into ASTs with :op equal to :do"
     (binding [*ns* *ns*
               *file* (str source-path)]
       (env/with-env (ana.jvm/global-env)
-        (begin-file-debug *file* *ns* opt)
+        (when (util/debug? :ns opt)
+          (begin-file-debug *file* *ns* opt))
         (loop [forms []
                asts []]
           (let [form (tr/read reader-opts reader)]
             (if (identical? form eof)
               {:forms forms, :asts asts, :exception nil}
               (let [cur-env (env/deref-env)
-                    _ (pre-analyze-debug asts form cur-env *ns* opt)
+                    _ (when (util/debug? :ns opt)
+                        (pre-analyze-debug asts form cur-env *ns* opt))
                     [exc ast]
                     (try
                       (let [{:keys [val out err]}
@@ -310,7 +312,8 @@ recursing into ASTs with :op equal to :do"
                                        f
                                        (:form first-exc-ast))}
                     (do
-                      (post-analyze-debug asts form ast *ns* opt)
+                      (when (util/debug? :ns opt)
+                        (post-analyze-debug asts form ast *ns* opt))
                       (recur (conj forms form)
                              (conj asts
                                    (eastwood-ast-additions
@@ -341,7 +344,7 @@ recursing into ASTs with :op equal to :do"
   (let [source-path (#'move/ns-file-name source-nsym)
         m (analyze-file source-path :reader reader :opt opt)]
     (assoc (dissoc m :forms :asts)
-      :analyze-results {:source (slurp (uri-for-ns source-nsym))
-                        :namespace source-nsym
-                        :forms (:forms m)
-                        :asts (:asts m)})))
+           :analyze-results {:source (slurp (uri-for-ns source-nsym))
+                             :namespace source-nsym
+                             :forms (:forms m)
+                             :asts (:asts m)})))
