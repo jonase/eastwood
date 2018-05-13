@@ -85,9 +85,9 @@
                               first-bad-use
                               (first first-bad-use))
           loc (meta first-bad-use-sym)]
-      (util/add-loc-info loc
-       {:linter :unlimited-use
-        :msg (format "Unlimited use of %s in %s" (seq s) (-> ast :env :ns))}))))
+      {:loc loc
+       :linter :unlimited-use
+       :msg (format "Unlimited use of %s in %s" (seq s) (-> ast :env :ns))})))
 
 ;; Misplaced docstring
 
@@ -106,9 +106,9 @@
         :when (and (= (:op ast) :def)
                    (misplaced-docstring? ast))
         :let [loc (-> ast var-of-ast meta)]]
-    (util/add-loc-info loc
-     {:linter :misplaced-docstrings
-      :msg (format "Possibly misplaced docstring, %s" (var-of-ast ast))})))
+    {:loc loc
+     :linter :misplaced-docstrings
+     :msg (format "Possibly misplaced docstring, %s" (var-of-ast ast))}))
 
 ;; Nondynamic earmuffed var
 
@@ -126,9 +126,9 @@
               loc (:env expr)]
         :when (and (earmuffed? s)
                    (not (dynamic? v)))]
-    (util/add-loc-info loc
-     {:linter :non-dynamic-earmuffs
-      :msg (format "%s should be marked dynamic" v)})))
+    {:loc loc
+     :linter :non-dynamic-earmuffs
+     :msg (format "%s should be marked dynamic" v)}))
 
 
 
@@ -331,13 +331,13 @@
                 loc2 (redefd-var-loc ast2)
                 redefd-var (var-of-ast ast2)
                 num-defs (count ast-list)
-                w (util/add-loc-info loc2
-                   {:linter :redefd-vars
-                    :msg (format "Var %s def'd %d times at line:col locations: %s"
-                                 redefd-var num-defs
-                                 (string/join
-                                  " "
-                                  (map redefd-var-loc-desc ast-list)))})
+                w {:loc loc2
+                   :linter :redefd-vars
+                   :msg (format "Var %s def'd %d times at line:col locations: %s"
+                                redefd-var num-defs
+                                (string/join
+                                 " "
+                                 (map redefd-var-loc-desc ast-list)))}
                 ;; TBD: true is placeholder for some configurable
                 ;; method of disabling redefd-var warnings
                 allow? true]
@@ -374,13 +374,13 @@
   (let [nested-vars (def-in-def-vars asts)]
     (for [nested-var-ast nested-vars
           :let [loc (-> nested-var-ast var-of-ast meta)]]
-      (util/add-loc-info loc
-                         {:linter :def-in-def
-                          :msg (format "There is a def of %s nested inside def %s"
-                                       (var-of-ast nested-var-ast)
-                                       (-> nested-var-ast
-                                           :eastwood/enclosing-def-ast
-                                           var-of-ast))}))))
+      {:loc loc
+       :linter :def-in-def
+       :msg (format "There is a def of %s nested inside def %s"
+                    (var-of-ast nested-var-ast)
+                    (-> nested-var-ast
+                        :eastwood/enclosing-def-ast
+                        var-of-ast))})))
 
 ;; Helpers for wrong arity and bad :arglists
 
@@ -499,17 +499,16 @@
                 ]
           :when (not (arg-count-compatible-with-arglists (count args)
                                                          lint-arglists))
-          :let [w (util/add-loc-info
-                   loc
-                   {:linter :wrong-arity
-                    :wrong-arity {:kind :the-only-kind
-                                  :fn-var fn-var
-                                  :call-args args}
-                    :msg (format "Function on %s %s called with %s args, but it is only known to take one of the following args: %s"
-                                 (name fn-kind)
-                                 (if (= :var fn-kind) fn-var fn-sym)
-                                 (count args)
-                                 (string/join "  " lint-arglists))})]]
+          :let [w {:loc loc
+                   :linter :wrong-arity
+                   :wrong-arity {:kind :the-only-kind
+                                 :fn-var fn-var
+                                 :call-args args}
+                   :msg (format "Function on %s %s called with %s args, but it is only known to take one of the following args: %s"
+                                (name fn-kind)
+                                (if (= :var fn-kind) fn-var fn-sym)
+                                (count args)
+                                (string/join "  " lint-arglists))}]]
       (do
         (util/debug-warning w ast opt #{:enclosing-macros}
          (fn []
@@ -737,13 +736,13 @@
              loc (-> a var-of-ast meta)]
          (if (and (not (nil? meta-arglists))
                   (not (more-restrictive-sigs? meta-sigs fn-sigs)))
-           [(util/add-loc-info loc
-             {:linter :bad-arglists
-              :msg (format "%s on var %s defined taking # args %s but :arglists metadata has # args %s"
-                           (if macro? "Macro" "Function")
-                           (-> a :name)
-                           fn-sigs
-                           meta-sigs)})]))))))
+           [{:loc loc
+             :linter :bad-arglists
+             :msg (format "%s on var %s defined taking # args %s but :arglists metadata has # args %s"
+                          (if macro? "Macro" "Function")
+                          (-> a :name)
+                          fn-sigs
+                          meta-sigs)}]))))))
 
 ;; TBD: Consider also looking for local symbols in positions of forms
 ;; where they appeared to be used as functions, e.g. as the second arg
@@ -758,9 +757,9 @@
                    (contains? (:locals env) (:form fn)))
         :let [v (env/ensure (j/global-env) (resolve-sym (:form fn) env))]
         :when v]
-    (util/add-loc-info env
-     {:linter :local-shadows-var
-      :msg (str "local: " (:form fn) " invoked as function shadows var: " v)})))
+    {:loc env
+     :linter :local-shadows-var
+     :msg (str "local: " (:form fn) " invoked as function shadows var: " v)}))
 
 
 ;; Wrong ns form
@@ -827,18 +826,17 @@
    ;; libspec, so it might not be possible to make a test hitting this
    ;; case if done after eval.
    (not (symbol? (first libspec)))
-   [(util/add-loc-info loc
-     {:linter :wrong-ns-form
-      :msg (format "%s has a vector libspec that begins with a non-symbol: %s"
-                   kw (first libspec))})]
+   [{:loc loc
+     :linter :wrong-ns-form
+     :msg (format "%s has a vector libspec that begins with a non-symbol: %s"
+                  kw (first libspec))}]
 
    ;; See above for checking for namespace-qualified symbols naming
    ;; namespaces.
 ;;   (not (nil? (namespace (first libspec))))
-;;   [(util/add-loc-info loc
-;;     {:linter :wrong-ns-form
+;;   [{:loc loc :linter :wrong-ns-form
 ;;      :msg (format "%s has a vector libspec beginning with a namespace-qualified symbol: %s"
-;;                   kw (first libspec))})]
+;;                   kw (first libspec))}]
 
    ;; Some of these checks are already preconditions to calling this
    ;; function from warnings-for-libspec-or-prefix-list, but not if it
@@ -847,11 +845,11 @@
    []   ; nothing more to check
 
    (even? (count libspec))
-   [(util/add-loc-info loc
-     {:linter :wrong-ns-form
-      :msg (format "%s has a vector libspec with an even number of items.  It should always be a symbol followed by keyword / value pairs: %s"
-                   kw libspec)})]
-   
+   [{:loc loc
+     :linter :wrong-ns-form
+     :msg (format "%s has a vector libspec with an even number of items.  It should always be a symbol followed by keyword / value pairs: %s"
+                  kw libspec)}]
+
    :else
    (let [libspec-opts (apply hash-map (rest libspec))
          options (keys libspec-opts)
@@ -905,24 +903,24 @@
                        libspec-opts))]
      (concat
       (if (seq bad-option-keys)
-        [(util/add-loc-info loc
-          {:linter :wrong-ns-form
-           :msg (format "%s has a libspec with wrong option keys: %s - option keys for %s should only include the following: %s"
-                        kw (string/join " " (sort bad-option-keys))
-                        kw (string/join " " (sort (keys allowed-options))))})]
+        [{:loc loc
+          :linter :wrong-ns-form
+          :msg (format "%s has a libspec with wrong option keys: %s - option keys for %s should only include the following: %s"
+                       kw (string/join " " (sort bad-option-keys))
+                       kw (string/join " " (sort (keys allowed-options))))}]
         [])
       (for [[option-key bad-option-val] bad-option-val-map]
-        (util/add-loc-info loc
-         {:linter :wrong-ns-form
-          :msg (format "%s has a libspec with option key %s that should have a value that is a %s, but instead it is: %s"
-                       kw option-key
-                       (case (allowed-options option-key)
-                         :symbol "symbol"
-                         :symbol-list "list of symbols"
-                         :symbol-list-or-all "list of symbols, or :all"
-                         :map-from-symbol-to-symbol
-                         "map from symbols to symbols")
-                       bad-option-val)}))))))
+        {:loc loc
+         :linter :wrong-ns-form
+         :msg (format "%s has a libspec with option key %s that should have a value that is a %s, but instead it is: %s"
+                      kw option-key
+                      (case (allowed-options option-key)
+                        :symbol "symbol"
+                        :symbol-list "list of symbols"
+                        :symbol-list-or-all "list of symbols, or :all"
+                        :map-from-symbol-to-symbol
+                        "map from symbols to symbols")
+                      bad-option-val)})))))
 
 
 ;; Note: The arg named 'arg' can contain a libspec _or_ a prefix list.
@@ -944,10 +942,10 @@
       ;; This case can occur, with no exception from Clojure.  There is a
       ;; test case for it in testcases.wrongnsform
       (and (list? arg) (= 1 (count arg)))
-      [(util/add-loc-info loc
-        {:linter :wrong-ns-form
-         :msg (format "%s has an arg that is a 1-item list.  Clojure silently does nothing with this.  To %s it as a namespace, it should be a symbol on its own or it should be inside of a vector, not a list.  To use it as the first part of a prefix list, there should be libspecs after it in the list: %s"
-                      kw (name kw) arg)})]
+      [{:loc loc
+        :linter :wrong-ns-form
+        :msg (format "%s has an arg that is a 1-item list.  Clojure silently does nothing with this.  To %s it as a namespace, it should be a symbol on its own or it should be inside of a vector, not a list.  To use it as the first part of a prefix list, there should be libspecs after it in the list: %s"
+                     kw (name kw) arg)}]
       
       :else
       (mapcat #(warnings-for-libspec % kw loc) (rest arg)))
@@ -955,10 +953,10 @@
      :else
      ;; Not sure if there is a test for this case, where Clojure 1.6.0
      ;; will not throw an exception during eval.
-     [(util/add-loc-info loc
-       {:linter :wrong-ns-form
-        :msg (format "%s has an arg that is none of the allowed things of: a keyword, symbol naming a namespace, a libspec (in a vector), a prefix list (in a list or vector): %s"
-                     kw arg)})])))
+     [{:loc loc
+       :linter :wrong-ns-form
+       :msg (format "%s has an arg that is none of the allowed things of: a keyword, symbol naming a namespace, a libspec (in a vector), a prefix list (in a list or vector): %s"
+                    kw arg)}])))
 
 
 (defn warnings-for-one-ns-form [ns-ast]
@@ -977,16 +975,16 @@
         references (filter good-kw? references)]
     (concat
      (for [non-list non-lists]
-       (util/add-loc-info (most-specific-loc loc non-list)
-        {:linter :wrong-ns-form
-         :msg (format "ns references should be lists.  This is not: %s"
-                      non-list)}))
+       {:loc (most-specific-loc loc non-list)
+        :linter :wrong-ns-form
+        :msg (format "ns references should be lists.  This is not: %s"
+                     non-list)})
      (for [wrong-kw wrong-kws]
-       (util/add-loc-info (most-specific-loc loc wrong-kw)
-        {:linter :wrong-ns-form
-         :msg (format "ns reference starts with '%s' - should be one one of the keywords: %s"
-                      (first wrong-kw)
-                      (string/join " " (sort allowed-ns-reference-keywords)))}))
+       {:loc (most-specific-loc loc wrong-kw)
+        :linter :wrong-ns-form
+        :msg (format "ns reference starts with '%s' - should be one one of the keywords: %s"
+                     (first wrong-kw)
+                     (string/join " " (sort allowed-ns-reference-keywords)))})
      (apply concat
       (for [reference references
             :let [[kw & reference-args] reference]]
@@ -999,17 +997,17 @@
                 libspecs-or-prefix-lists (remove keyword? reference-args)]
             (concat
              (if (seq invalid-flags)
-               [(util/add-loc-info (most-specific-loc loc reference)
-                 {:linter :wrong-ns-form
-                  :msg (format "%s contains unknown flags: %s - flags should only be the following: %s"
-                               kw (string/join " " (sort invalid-flags))
-                               (string/join " " (sort valid-flags)))})])
+               [{:loc (most-specific-loc loc reference)
+                 :linter :wrong-ns-form
+                 :msg (format "%s contains unknown flags: %s - flags should only be the following: %s"
+                              kw (string/join " " (sort invalid-flags))
+                              (string/join " " (sort valid-flags)))}])
              (if (seq valid-but-unusual-flags)
-               [(util/add-loc-info (most-specific-loc loc reference)
-                 {:linter :wrong-ns-form
-                  :msg (format "%s contains the following valid flags, but it is most common to use them interactively, not in ns forms: %s"
-                               kw (string/join
-                                   " " (sort valid-but-unusual-flags)))})])
+               [{:loc (most-specific-loc loc reference)
+                 :linter :wrong-ns-form
+                 :msg (format "%s contains the following valid flags, but it is most common to use them interactively, not in ns forms: %s"
+                              kw (string/join
+                                  " " (sort valid-but-unusual-flags)))}])
              (mapcat #(warnings-for-libspec-or-prefix-list % kw loc)
                      libspecs-or-prefix-lists)))
           :import [] ; tbd: no checking yet
@@ -1023,8 +1021,8 @@
   (let [ns-asts (util/ns-form-asts asts)
         warnings (mapcat warnings-for-one-ns-form ns-asts)]
     (if (> (count ns-asts) 1)
-      (cons (util/add-loc-info (-> ns-asts second :env)
-             {:linter :wrong-ns-form
-              :msg "More than one ns form found in same file"})
+      (cons {:loc (-> ns-asts second :env)
+             :linter :wrong-ns-form
+             :msg "More than one ns form found in same file"}
             warnings)
       warnings)))
