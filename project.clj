@@ -39,6 +39,7 @@
   :aliases {"test-all" ["with-profile"
                         "dev,test,1.6:dev,test,1.7:dev,test,1.8:dev,test,1.9"
                         "test"]}
+  :plugins [[com.ebaxt.lein-ver "1.2.0"]]
   ;; Note: comment out the following line if you want to do 'lein
   ;; test' and get a Clojure version later than 1.5.1, even if you
   ;; have an explicit org.clojure/clojure in the :dependencies

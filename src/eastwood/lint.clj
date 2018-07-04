@@ -2,6 +2,7 @@
   (:require [clojure.java.io :as io]
             [eastwood.analyze-ns :as analyze]
             [eastwood.util :as util]
+            [eastwood.version :as version]
             [clojure.inspector :as inspector]
             [clojure.set :as set]
             [clojure.string :as str]
@@ -21,15 +22,9 @@
            [clojure.lang LineNumberingPushbackReader]))
 
 (def ^:dynamic *eastwood-version*
-  {:major 0, :minor 2, :incremental 8, :qualifier "SNAPSHOT"})
+  {:major version/major, :minor version/minor, :incremental version/patch, :qualifier version/pre-release})
 
-(defn eastwood-version []
-  (let [{:keys [major minor incremental qualifier]} *eastwood-version*]
-    (str major "." minor "." incremental
-         (if (and qualifier (not= qualifier ""))
-           (str "-" qualifier)
-           ""))))
-
+(defn eastwood-version [] version/string)
 
 (defmulti error-msg
   "Given a map describing an Eastwood error result, which should
