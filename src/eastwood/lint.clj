@@ -21,7 +21,7 @@
            [clojure.lang LineNumberingPushbackReader]))
 
 (def ^:dynamic *eastwood-version*
-  {:major 0, :minor 2, :incremental 7, :qualifier "SNAPSHOT"})
+  {:major 0, :minor 2, :incremental 7})
 
 (defn eastwood-version []
   (let [{:keys [major minor incremental qualifier]} *eastwood-version*]

@@ -1,5 +1,8 @@
 # Change log for Eastwood
 
+## Changes from version 0.2.6 to 0.2.7
+
+* Fix warnings on clojure macro expansions for `as->` and `coll-of`
 
 ## Changes from version 0.2.4 to 0.2.5
 
