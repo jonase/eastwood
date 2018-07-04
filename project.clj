@@ -13,8 +13,8 @@
                  [org.clojure/clojure "1.8.0"]
                  ;[org.clojure/clojure "1.9.0-master-SNAPSHOT"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
-                 [org.ow2.asm/asm-all "4.2"]]
-  :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.2"]
+                 [org.ow2.asm/asm-all "5.2"]]
+  :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.5"]
                                   [jafingerhut/dolly "0.1.0"]]
                    ;; I want the namespaces defined in files in
                    ;; "cases" and its subdirectories to be accessible
