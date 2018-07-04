@@ -1,6 +1,7 @@
 # eastwood - a Clojure lint tool
 
 [![Dependencies Status](https://versions.deps.co/jonase/eastwood/status.svg)](https://versions.deps.co/jonase/eastwood)
+[![Downloads](https://versions.deps.co/jonase/eastwood/downloads.svg)](https://versions.deps.co/jonase/eastwood)
 [![Build Status](https://circleci.com/gh/jonase/eastwood/tree/master.svg?style=shield&circle-token=26d8d2fa593675196734ac6c28ee16e0a9183806)](https://circleci.com/gh/jonase/eastwood)
 [![Clojars Project](https://img.shields.io/clojars/v/jonase/eastwood.svg)](https://clojars.org/jonase/eastwood) [![Join the chat at https://gitter.im/eastwood-linter/Lobby](https://badges.gitter.im/eastwood-linter/Lobby.svg)](https://gitter.im/eastwood-linter/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
