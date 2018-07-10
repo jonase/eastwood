@@ -802,12 +802,12 @@ Return value:
     (when (some #{:no-ns-form-found} (:enabled-linters opts))
       (->> no-ns-form-found-files
            (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" opts))
-           (map (fn [m] (assoc :opt opts)))
+           (map (fn [m] (assoc m :opt opts)))
            (report-warnings cb warning-count)))
     (when (some #{:non-clojure-file} (:enabled-linters opts))
       (->> non-clojure-files
            (map (partial make-lint-warning :non-clojure-file "Non-Clojure file" opts))
-           (map (fn [m] (assoc :opt opts)))
+           (map (fn [m] (assoc m :opt opts)))
            (report-warnings cb warning-count)))
     (cond
      (:err m1) m1
