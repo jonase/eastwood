@@ -2,7 +2,7 @@
   (:require [clojure.java.io :refer [reader resource]]
             [clojure.string :refer [join]])
   (:import java.io.PushbackReader))
-(let [version-file (resource "VERSION")]
+(let [version-file (resource "EASTWOOD_VERSION")]
   (when version-file
     (with-open [rdr (reader version-file)]
       (binding [*read-eval* false]
