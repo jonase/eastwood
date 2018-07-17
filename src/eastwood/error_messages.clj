@@ -228,7 +228,7 @@ curious." eastwood-url))
        {:info :show-more-details
         :msgs (print-ex-data-details ns-sym exc)}))))
 
-(defn format-exception [ns-sym opts ^Throwable exc]
+(defn format-exception [ns-sym ^Throwable exc]
   (let [dat (ex-data exc)
         msg (or (.getMessage exc) "")]
     (cond
