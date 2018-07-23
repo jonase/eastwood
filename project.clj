@@ -1,4 +1,4 @@
-(defproject jonase/eastwood "0.2.8"
+(defproject jonase/eastwood "0.2.9-SNAPSHOT"
   :description "A Clojure lint tool"
   :url "https://github.com/jonase/eastwood"
   :license {:name "Eclipse Public License"
@@ -39,7 +39,8 @@
   :aliases {"test-all" ["with-profile"
                         "dev,test,1.6:dev,test,1.7:dev,test,1.8:dev,test,1.9"
                         "test"]}
-  :plugins [[com.ebaxt.lein-ver "1.2.0"]]
+  :plugins [[net.assum/lein-ver "1.2.0"]]
+  :lein-ver {:version-file "resources/EASTWOOD_VERSION"}
   ;; Note: comment out the following line if you want to do 'lein
   ;; test' and get a Clojure version later than 1.5.1, even if you
   ;; have an explicit org.clojure/clojure in the :dependencies
