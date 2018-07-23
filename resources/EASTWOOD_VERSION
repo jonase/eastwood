@@ -2,7 +2,7 @@
  :major 0
  :minor 2
  :patch 9
- :pre-release "SNAPSHOT"
+ :pre-release nil
  :build nil
- :sha "a3b19a4133f90bd7547c3361d7e345aca0a42988"
+ :sha "c986f00421ef791a6e9b15edc9b3fb6b6a9731b1"
 }
