@@ -344,7 +344,7 @@ describing the error."
                                (:uri-or-file-name inf))}
                  inf))})
 
-(defn- handle-lint-result [linter ns-info {:keys [linter msg loc] :as result}]
+(defn- handle-lint-result [linter ns-info {:keys [msg loc] :as result}]
   {:kind :lint-warning,
    :warn-data (merge result
                      ns-info
@@ -536,7 +536,7 @@ user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
       {:err :namespace-filename-mismatch
        :err-data {:mismatches mismatches}}
       (let [tracker (if (seq dir-name-strs)
-                      (apply dir/scan-all (track/tracker) dir-name-strs)
+                      (dir/scan-dirs (track/tracker) dir-name-strs)
                       ;; Use empty tracker if dir-name-strs is empty.
                       ;; Calling dir/scan-all will use complete Java
                       ;; classpath if called with an empty sequence.

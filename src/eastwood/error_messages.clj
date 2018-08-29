@@ -56,7 +56,7 @@
     (util/pst exc nil error-cb)
     @strings))
 
-(defn handle-values-of-env [ns-sym opts ^Throwable exc]
+(defn handle-values-of-env [ns-sym ^Throwable exc]
   (let [[strings error-cb] (string-builder)
         dat (ex-data exc)
         {:keys [form]} dat]

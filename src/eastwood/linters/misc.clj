@@ -340,8 +340,7 @@
                                  (map redefd-var-loc-desc ast-list)))}
                 ;; TBD: true is placeholder for some configurable
                 ;; method of disabling redefd-var warnings
-                allow? true]
-          :when allow?]
+                ]]
       (do
         (util/debug-warning w nil opt #{}
          (fn []
