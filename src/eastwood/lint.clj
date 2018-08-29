@@ -1087,5 +1087,5 @@ clojure.inspector/inspect-tree on it.  Example in REPL:
 
 (defn dogfood []
   (eastwood {:source-paths ["src"]
-             :test-paths []
+             :test-paths ["test"]
              :debug #{}}))
