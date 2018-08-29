@@ -5,7 +5,8 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :global-vars {*warn-on-reflection* true
                 ;;*unchecked-math* :warn-on-boxed
-               }
+                }
+  :source-paths ["src" "copied-deps"]
   :dependencies [
                  ;[org.clojure/clojure "1.5.1"]
                  ;[org.clojure/clojure "1.6.0"]
@@ -38,7 +39,8 @@
              :1.10 {:dependencies [[org.clojure/clojure "1.10.0-master-SNAPSHOT"]]}}
   :aliases {"test-all" ["with-profile"
                         "dev,test,1.6:dev,test,1.7:dev,test,1.8:dev,test,1.9"
-                        "test"]}
+                        "test"]
+            "eastwood" ["run" "-m" "eastwood.lint/dogfood"]}
   :plugins [[net.assum/lein-ver "1.2.0"]]
   :lein-ver {:version-file "resources/EASTWOOD_VERSION"}
   ;; Note: comment out the following line if you want to do 'lein
