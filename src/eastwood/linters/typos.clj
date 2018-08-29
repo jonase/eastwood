@@ -1028,7 +1028,7 @@ warning, that contains the constant value."
         ;; The following kinds of things are 'complex' enough that we
         ;; will not try to do any fancy calculation to determine
         ;; whether their results are constant or not.
-        (#{:invoke :static-call :let :if :instance?} (:op test-ast))
+        (#{:invoke :static-call :let :if :instance? :keyword-invoke} (:op test-ast))
         nil
 
         :else
