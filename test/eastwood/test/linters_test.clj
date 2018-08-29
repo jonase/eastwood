@@ -1,10 +1,10 @@
 (ns eastwood.test.linters-test
   (:use [clojure.test])
-  (:use [eastwood.lint])
   (:require [clojure.data :as data]
             [clojure.string :as str]
             [clojure.pprint :as pp]
-            [eastwood.util :as util])
+            [eastwood.util :as util]
+            [eastwood.lint :refer :all])
   (:import (java.io File)))
 
 ;; TBD: It would be cleaner to make Eastwood's error reporting code
