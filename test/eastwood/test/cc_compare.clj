@@ -89,7 +89,7 @@ works for vectors."
 comparator cmpf to compare elements from x and y to each other.  As a
 comparator function, cmp-array-lexi returns a negative, 0, or positive
 integer if x is less than, equal to, or greater than y."
-  [cmpf x y]
+  [cmpf ^"[J" x ^"[J" y]
   (let [x-len (alength x)
         y-len (alength y)
         len (min x-len y-len)]
@@ -97,7 +97,7 @@ integer if x is less than, equal to, or greater than y."
       (if (== i len)
         ;; If all elements 0..(len-1) are same, shorter array comes
         ;; first.
-        (compare x-len y-len) 
+        (compare x-len y-len)
         (let [c (cmpf (aget x i) (aget y i))]
           (if (zero? c)
             (recur (inc i))
