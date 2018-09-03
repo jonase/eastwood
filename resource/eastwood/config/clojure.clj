@@ -53,3 +53,10 @@
    :if-inside-macroexpansion-of #{'clojure.core/as->}
    :within-depth 2
    :reason "Allow as-> to have constant tests without warning"})
+
+(disable-warning
+  {:linter :wrong-arity
+   :function-symbol 'clojure.core/eduction
+   :arglists-for-linting '([& xform])
+   :reason "eduction takes a sequence of transducer with a collection as the last item"})
+
