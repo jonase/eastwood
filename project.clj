@@ -16,7 +16,8 @@
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
                  [org.ow2.asm/asm-all "5.2"]]
   :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.5"]
-                                  [jafingerhut/dolly "0.1.0"]]
+                                  [jafingerhut/dolly "0.1.0"]
+                                  [leiningen-core "2.7.1"]]
                    ;; I want the namespaces defined in files in
                    ;; "cases" and its subdirectories to be accessible
                    ;; during 'lein test' in the classpath, but they
@@ -57,5 +58,4 @@
   ;; Eastwood may work with earlier Leiningen versions, but this is
   ;; close to the earliest version that it was most tested with.
   :min-lein-version "2.3.0"
-  :resource-paths ["resource" "resources"]
-  :eval-in-leiningen true)
+  :resource-paths ["resource" "resources"])
