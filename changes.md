@@ -1,5 +1,9 @@
 # Change log for Eastwood
 
+## Changes from version 0.2.x to 0.3.0
+
+* Eastwood now drops support for leiningen 1.x
+
 ## Changes from version 0.2.6 to 0.2.7
 
 * Fix warnings on clojure macro expansions for `as->` and `coll-of`

@@ -1,4 +1,4 @@
-(defproject jonase/eastwood "0.2.10-SNAPSHOT"
+(defproject jonase/eastwood "0.3.0-SNAPSHOT"
   :description "A Clojure lint tool"
   :url "https://github.com/jonase/eastwood"
   :license {:name "Eclipse Public License"
@@ -55,4 +55,5 @@
   ;; Eastwood may work with earlier Leiningen versions, but this is
   ;; close to the earliest version that it was most tested with.
   :min-lein-version "2.3.0"
-  :resource-paths ["resource" "resources"])
+  :resource-paths ["resource" "resources"]
+  :eval-in-leiningen true)

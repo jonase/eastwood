@@ -1,9 +1,9 @@
 (ns leiningen.eastwood
   (:require [clojure.pprint :as pp]
-            [eastwood.copieddeps.dep6.leinjacker.eval :as leval]
-            [eastwood.copieddeps.dep6.leinjacker.deps :refer [add-if-missing]]))
+            [leiningen.core.eval :as leval]
+            [leiningen.core.main :as lein]))
 
-(def eastwood-version-string "0.2.8")
+(def eastwood-version-string "0.3.0-SNAPSHOT")
 
 ;; 'lein help' prints only the first line of the string returned by
 ;; help.  'lein help eastwood' prints all of it, plus the arg vectors
@@ -84,39 +84,59 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
             (orig-dispatch o)))
         (pp/pprint obj)))))
 
+(defn- missing-eastwood-dependency? [project]
+  (not (some->> project
+                :dependencies
+                (some (comp (partial = 'jonase/eastwood) first)))))
+
+(defn- add-eastwood [project]
+  (let [eastwood-dep (->> project
+                          :plugins
+                          (filter (comp (partial = 'jonase/eastwood) first))
+                          first)]
+    (update project :dependencies (comp vec conj) eastwood-dep)))
+
+;; The rationale for this function is as follows:
+;; In order for this code to be run, eastwood has to be present in some
+;; :plugin - vector, either in a `project.clj` or in `~/.lein/profiles.clj`.
+;; The Eastwood readme does not mandate that you also put eastwood in the
+;; `:dependencies` vector if you put it in a `~/.lein/profiles.clj` `:plugin`
+;; vector. If this is the case, we need to manually add it here:
+;; So being here, we know at least that we have eastwood defined as a plugin.
+
+(defn- maybe-add-eastwood [project]
+  (cond-> project
+    (missing-eastwood-dependency? project) add-eastwood))
 
 (defn eastwood
   ([project] (eastwood project "{}"))
   ([project opts]
-     (cond
-      (= opts "help") (println (help))
+   (cond
+     (= opts "help") (lein/info (help))
+     (= opts "lein-project")
+     (do
+       (lein/info (with-out-str (pprint-meta (into (sorted-map) project))))
+       (lein/info "\nValue of :eastwood key in project map:")
+       (lein/info (with-out-str (pprint-meta (into (sorted-map) (:eastwood project))))))
 
-      (= opts "lein-project")
-      (do
-        (pprint-meta (into (sorted-map) project))
-        (println "\nValue of :eastwood key in project map:")
-        (pprint-meta (into (sorted-map) (:eastwood project))))
-
-      :else
-      (let [leiningen-paths (select-keys project [:source-paths
-                                                  :test-paths])
-            leiningen-opts (:eastwood project)
-            cmdline-opts (read-string opts)
-            opts (merge leiningen-paths leiningen-opts cmdline-opts)]
-        (when (some #{:options} (:debug opts))
-          (println "\nLeiningen paths:")
-          (pprint-meta (into (sorted-map) leiningen-paths))
-          (println "\nLeiningen options map:")
-          (pprint-meta (into (sorted-map) leiningen-opts))
-          (println "\nCommand line options map:")
-          (pprint-meta (into (sorted-map) cmdline-opts))
-          (println "\nMerged options map:")
-          (pprint-meta (into (sorted-map) opts))
-          (println "\nLeininge project map:")
-          (pprint-meta (into (sorted-map) project))
-          (println)
-          (flush))
-        (leval/eval-in-project
-         (add-if-missing project ['jonase/eastwood eastwood-version-string])
-         `(eastwood.versioncheck/run-eastwood '~opts)
-         '(require 'eastwood.versioncheck))))))
+     :else
+     (let [leiningen-paths (select-keys project [:source-paths
+                                                 :test-paths])
+           leiningen-opts (:eastwood project)
+           cmdline-opts (read-string opts)
+           opts (merge leiningen-paths leiningen-opts cmdline-opts)]
+       (lein/debug "\nLeiningen paths:")
+       (lein/debug (with-out-str (pprint-meta (into (sorted-map) leiningen-paths))))
+       (lein/debug "\nLeiningen options map:")
+       (lein/debug (with-out-str (pprint-meta (into (sorted-map) leiningen-opts))))
+       (lein/debug "\nCommand line options map:")
+       (lein/debug (with-out-str (pprint-meta (into (sorted-map) cmdline-opts))))
+       (lein/debug "\nMerged options map:")
+       (lein/debug (with-out-str (pprint-meta (into (sorted-map) opts))))
+       (lein/debug "\nLeiningen project map:")
+       (lein/debug (with-out-str (pprint-meta (into (sorted-map) project))))
+       (lein/debug)
+       (leval/eval-in-project
+        (maybe-add-eastwood project)
+        `(eastwood.versioncheck/run-eastwood '~opts)
+        '(require 'eastwood.versioncheck))))))

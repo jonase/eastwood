@@ -54,6 +54,7 @@ here](#running-eastwood-in-a-repl).
 Eastwood can be run from the command line as a
 [Leiningen](http://leiningen.org) plugin.  As a Leiningen plugin,
 Eastwood has been tested most with Leiningen versions 2.4 and later.
+Eastwoods support for Leiningen 1.x was dropped at version 0.3.0.
 There is a known bug in Leiningen 2.6.0 where many plugins, including
 Eastwood, often cause exceptions to be thrown -- Leiningen 2.6.1 was
 released to fix that problem.
