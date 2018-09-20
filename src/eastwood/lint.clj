@@ -1084,8 +1084,3 @@ clojure.inspector/inspect-tree on it.  Example in REPL:
   (let [a (analyze/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}})]
     (update-in a [:analyze-results :asts]
                (fn [ast] (mapv util/clean-ast ast)))))
-
-(defn dogfood []
-  (eastwood {:source-paths ["src"]
-             :test-paths ["test"]
-             :debug #{}}))
