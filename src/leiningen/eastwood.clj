@@ -3,17 +3,15 @@
             [leiningen.core.eval :as leval]
             [leiningen.core.main :as lein]))
 
-(def eastwood-version-string "0.3.0-SNAPSHOT")
-
 ;; 'lein help' prints only the first line of the string returned by
 ;; help.  'lein help eastwood' prints all of it, plus the arg vectors
 ;; taken by the eastwood function below.
 
-(defn help []
+(defn help [version]
   (with-out-str
     (println "Lint your Clojure code.")
-    (println (format "== Eastwood %s Clojure %s JVM %s"
-                     eastwood-version-string
+    (println (format "== Eastwood %s, Clojure %s, JVM %s"
+                     version
                      (clojure-version)
                      (get (System/getProperties) "java.version")))
     (println "
@@ -89,12 +87,11 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
                 :dependencies
                 (some (comp (partial = 'jonase/eastwood) first)))))
 
-(defn- add-eastwood [project]
-  (let [eastwood-dep (->> project
-                          :plugins
-                          (filter (comp (partial = 'jonase/eastwood) first))
-                          first)]
-    (update project :dependencies (comp vec conj) eastwood-dep)))
+(defn- eastwood-plugin [project]
+  (->> project
+       :plugins
+       (filter (comp (partial = 'jonase/eastwood) first))
+       first))
 
 ;; The rationale for this function is as follows:
 ;; In order for this code to be run, eastwood has to be present in some
@@ -106,13 +103,17 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
 
 (defn- maybe-add-eastwood [project]
   (cond-> project
-    (missing-eastwood-dependency? project) add-eastwood))
+    (and (eastwood-plugin project) ;; if we're dog-fooding, no plugin is present
+                                   ;; in project.clj, and we don't need to fix the vector
+         (missing-eastwood-dependency? project))
+    (update :dependencies (comp vec conj) (eastwood-plugin project))))
 
 (defn eastwood
   ([project] (eastwood project "{}"))
   ([project opts]
    (cond
-     (= opts "help") (lein/info (help))
+     (= opts "help") (lein/info (help (or (second (eastwood-plugin project))
+                                          "Bleading Edge"))) ;; when dog-fooding
      (= opts "lein-project")
      (do
        (lein/info (with-out-str (pprint-meta (into (sorted-map) project))))
