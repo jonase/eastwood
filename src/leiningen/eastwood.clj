@@ -101,7 +101,7 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
 ;; The Eastwood readme does not mandate that you also put eastwood in the
 ;; `:dependencies` vector if you put it in a `~/.lein/profiles.clj` `:plugin`
 ;; vector. If this is the case, we need to manually add it here:
-;; So being here, we know at least htat we have eastwood defined as a plugin.
+;; So being here, we know at least that we have eastwood defined as a plugin.
 
 (defn- maybe-add-eastwood [project]
   (cond-> project
@@ -134,7 +134,7 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
          (pprint-meta (into (sorted-map) cmdline-opts))
          (println "\nMerged options map:")
          (pprint-meta (into (sorted-map) opts))
-         (println "\nLeininge project map:")
+         (println "\nLeiningen project map:")
          (pprint-meta (into (sorted-map) project))
          (println)
          (flush))
