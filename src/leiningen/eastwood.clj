@@ -1,6 +1,7 @@
 (ns leiningen.eastwood
   (:require [clojure.pprint :as pp]
-            [leiningen.core.eval :as leval]))
+            [leiningen.core.eval :as leval]
+            [leiningen.core.main :as lein]))
 
 (def eastwood-version-string "0.3.0-SNAPSHOT")
 
@@ -111,12 +112,12 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
   ([project] (eastwood project "{}"))
   ([project opts]
    (cond
-     (= opts "help") (println (help))
+     (= opts "help") (lein/info (help))
      (= opts "lein-project")
      (do
-       (pprint-meta (into (sorted-map) project))
-       (println "\nValue of :eastwood key in project map:")
-       (pprint-meta (into (sorted-map) (:eastwood project))))
+       (lein/info (with-out-str (pprint-meta (into (sorted-map) project))))
+       (lein/info "\nValue of :eastwood key in project map:")
+       (lein/info (with-out-str (pprint-meta (into (sorted-map) (:eastwood project))))))
 
      :else
      (let [leiningen-paths (select-keys project [:source-paths
@@ -125,18 +126,18 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
            cmdline-opts (read-string opts)
            opts (merge leiningen-paths leiningen-opts cmdline-opts)
            debug? (some #{:options} (:debug opts))]
-       (when debug?
-         (println "\nLeiningen paths:")
-         (pprint-meta (into (sorted-map) leiningen-paths))
-         (println "\nLeiningen options map:")
-         (pprint-meta (into (sorted-map) leiningen-opts))
-         (println "\nCommand line options map:")
-         (pprint-meta (into (sorted-map) cmdline-opts))
-         (println "\nMerged options map:")
-         (pprint-meta (into (sorted-map) opts))
-         (println "\nLeiningen project map:")
-         (pprint-meta (into (sorted-map) project))
-         (println)
+       (when true
+         (lein/info "\nLeiningen paths:")
+         (lein/info (with-out-str (pprint-meta (into (sorted-map) leiningen-paths))))
+         (lein/info "\nLeiningen options map:")
+         (lein/info (with-out-str (pprint-meta (into (sorted-map) leiningen-opts))))
+         (lein/info "\nCommand line options map:")
+         (lein/info (with-out-str (pprint-meta (into (sorted-map) cmdline-opts))))
+         (lein/info "\nMerged options map:")
+         (lein/info (with-out-str (pprint-meta (into (sorted-map) opts))))
+         (lein/info "\nLeiningen project map:")
+         (lein/info (with-out-str (pprint-meta (into (sorted-map) project))))
+         (lein/info)
          (flush))
        (leval/eval-in-project
         (maybe-add-eastwood project)
