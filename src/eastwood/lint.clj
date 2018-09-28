@@ -427,7 +427,7 @@ exception."))
       (->> lint-results
            (mapcat :lint-warning)
            (map :warn-data))
-      (throw exception))))
+      (throw (:exception exception)))))
 
 (defn unknown-ns-keywords [namespaces known-ns-keywords desc]
   (let [keyword-set (set (filter keyword? namespaces))
@@ -847,7 +847,9 @@ Return value:
                            (doseq [error lint-error]
                              (error-cb (:warn-data error)))
                            (doseq [warning lint-warning]
-                             (cb (assoc warning :opt opts)))))
+                             (cb (assoc warning :opt opts))))
+                         (when exception
+                           (error-cb (str/join "\n" (:msgs exception)))))
                        (catch RuntimeException e
                            (error-cb "Linting failed:")
                            (util/pst e nil error-cb)
