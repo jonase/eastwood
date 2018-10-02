@@ -1,4 +1,4 @@
 {:paths ["src" "copied-deps"]
  :deps {org.clojure/clojure {:mvn/version "1.8.0"}
         org.clojars.brenton/google-diff-match-patch {:mvn/version "0.1"}
-        org.ow2.asm/asm-all {:mvn/version "5.2"}}
+        org.ow2.asm/asm-all {:mvn/version "5.2"}}}
