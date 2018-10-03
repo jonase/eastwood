@@ -58,4 +58,5 @@
   ;; Eastwood may work with earlier Leiningen versions, but this is
   ;; close to the earliest version that it was most tested with.
   :min-lein-version "2.3.0"
-  :resource-paths ["resource" "resources"])
+  :resource-paths ["resource" "resources"]
+  :eval-in-leiningen true)
