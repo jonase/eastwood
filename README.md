@@ -62,7 +62,7 @@ released to fix that problem.
 Merge the following into your `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.9"]] }}
+{:user {:plugins [[jonase/eastwood "0.3.0"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
