@@ -838,6 +838,8 @@ Return value:
                        (let [{:keys [exception lint-results analysis-time]} (lint-ns namespace (:enabled-linters opts) opts)]
                          (when print-time?
                            (note-cb (format "Analysis took %.1f millisec" analysis-time)))
+                         (when exception
+                           (swap! exception-count inc))
                          (doseq [{:keys [lint-warning lint-error elapsed linter]} lint-results]
                            (when print-time?
                              (note-cb (format "Linter %s took %.1f millisec"
