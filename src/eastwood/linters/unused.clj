@@ -306,6 +306,7 @@ Example: (all-suffixes [1 2 3])
                                  (map namespace-for used-protocols)))]
     (for [ns (set/difference required used-namespaces)]
       {:loc loc
+       :unused-namespace-sym ns
        :linter :unused-namespaces
        :msg (format "Namespace %s is never used in %s" ns curr-ns)})))
 
