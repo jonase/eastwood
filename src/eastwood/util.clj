@@ -179,13 +179,6 @@ more interesting keys earlier."
   (every? #(contains? m %) key-seq))
 
 
-(defn safe-first [f]
-  (try
-    (first f)
-    (catch Exception e
-      nil)))
-
-
 (defn nil-safe-rseq [s]
   (if (nil? s)
     nil

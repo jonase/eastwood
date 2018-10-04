@@ -507,14 +507,6 @@
 ;; (is (-> 1 (= 1)))    This case is warning as desired already, no warning
 ;; (is (-> 1 (=)))      Also warning as desired now, warn for (= x) not (=)
 
-
-(defn safe-first [x]
-  (try
-    (first x)
-    (catch Exception e
-      nil)))
-
-
 (defn raw-form-of-interest? [raw-form core-macros-that-do-little]
   (get core-macros-that-do-little (util/fqsym-of-raw-form raw-form)))
 
