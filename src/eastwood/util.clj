@@ -275,17 +275,6 @@ twice."
     s))
 
 
-(defn remove-longest-prefix
-  "If string s starts with any of the strings in the sequence
-  prefixes, return s with the longest of these prefixes removed.
-  Otherwise, return s."
-  [^String s prefixes]
-  (if-let [matching-prefixes (seq (filter #(.startsWith s %) prefixes))]
-    (let [longest-match (apply max-key count matching-prefixes)]
-      (subs s (count longest-match)))
-    s))
-
-
 (defn nth-last
   "Return the nth-last element of a vector v, where n=1 means the last
 element, n=2 is the second-to-last, etc.  Returns nil if there are
