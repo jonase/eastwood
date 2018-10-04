@@ -135,6 +135,7 @@ enabled by default unless they have '(disabled)' after their name.
 | `:constant-test` | A test expression always evaluates as true, or always false (added 0.2.0). | [[more]](#constant-test) |
 | `:def-in-def` | def's nested inside other def's. | [[more]](#def-in-def) |
 | `:deprecations` | Deprecated Clojure Vars, and deprecated Java constructors, methods, and fields. | [[more]](#deprecations) |
+| `:implicit-dependencies` | A fully-qualified var refers to a namespace that hasn't been listed in `:require`. | [[more]](#implicit-dependencies) |
 | `:keyword-typos` (disabled) | Keyword names that may be typos because they occur only once in the source code and are slight variations on other keywords. | [[more]](#keyword-typos) |
 | `:local-shadows-var` | A local name, e.g. a function arg or let binding, has the same name as a global Var, and is called as a function (added 0.1.5). | [[more]](#local-shadows-var) |
 | `:misplaced-docstrings` | Function or macro doc strings placed after the argument vector, instead of before the argument vector where they belong. | [[more]](#misplaced-docstrings) |
@@ -1003,6 +1004,32 @@ below.
    :deprecated "1.3"}
   [n x] (take n (repeat x)))
 ```
+
+### `:implicit-dependencies`
+
+#### Implicit dependencies
+
+A qualified var like `some-namespace/foo` will resolve if `some-namespace`
+has been loaded, regardless of whether or not `some-namespace` has been
+explicitly required in the current namespace.
+That is,
+
+```clojure
+(ns a)
+
+(some-namespace/foo)
+```
+
+may work by accident, depending on load order.
+
+This linter raises a warning in these cases, so you can list the dependency explicitly:
+```clojure
+(ns a
+  (:require some-namespace)
+
+(some-namespace/foo)
+```
+
 
 
 ### `:redefd-vars`
