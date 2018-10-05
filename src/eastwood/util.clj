@@ -1,17 +1,16 @@
 (ns eastwood.util
-  (:import [java.io StringReader]
-           [java.net URI]
-           [clojure.lang LineNumberingPushbackReader])
-  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
-            [eastwood.copieddeps.dep10.clojure.tools.reader :as trdr]
-            [clojure.set :as set]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
             [clojure.pprint :as pp]
             [clojure.repl :as repl]
-            [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rdr-types]))
+            [clojure.set :as set]
+            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
+            [eastwood.copieddeps.dep10.clojure.tools.reader :as trdr]
+            [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types
+             :as
+             rdr-types])
+  (:import clojure.lang.LineNumberingPushbackReader
+           [java.io File StringReader]
+           java.net.URI))
 
 (defmacro timeit
   "Evaluates expr and returns a vector containing the expression's
@@ -61,6 +60,45 @@ return value followed by the time it took to evaluate in millisec."
                      init-expr
                      nil))
       nil)))
+
+ ; first char is upper-case
+
+(defn ^java.net.URI to-uri [x]
+  (cond (instance? java.net.URI x) x
+        (instance? java.io.File x) (.toURI ^java.io.File x)
+        (instance? java.net.URL x) (.toURI ^java.net.URL x)
+        (string? x) (.toURI (File. ^String x))
+        :else (assert false)))
+
+
+(defn remove-prefix
+  "If string s starts with the string prefix, return s with that
+  prefix removed.  Otherwise, return s."
+  [^String s ^String prefix]
+  (if (.startsWith s prefix)
+    (subs s (count prefix))
+    s))
+
+
+(defn file-warn-info [f cwd-file]
+  (let [uri (to-uri f)
+        ;; file-or-nil will be nil if uri is a URI like the following,
+        ;; which cannot be converted to a File:
+        ;; #<URI jar:file:/Users/jafinger/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar!/clojure/test/junit.clj>
+        file-or-nil (try (File. uri)
+                         (catch IllegalArgumentException e
+                           nil))
+        uri-or-rel-file-str
+        (if (nil? file-or-nil)
+          uri
+          (let [file-str (str file-or-nil)
+                cwd-str (if cwd-file (str cwd-file File/separator) "")]
+            (remove-prefix file-str cwd-str)))]
+    {:uri uri
+     :uri-or-file-name uri-or-rel-file-str}))
+
+
+
 
 ;; Copied from clojure.repl/pst then modified to 'print' using a
 ;; callback function, and to use depth nil to print all stack frames.
@@ -199,10 +237,6 @@ element of key-set is a key of m."
       keys-in-m)))
 
 
-(defn assert-keys [m key-seq]
-  (assert (has-keys? m key-seq)))
-
-
 (defn sorted-map-with-non-keyword-keys? [x]
   (and (map? x)
        (sorted? x)
@@ -264,15 +298,6 @@ twice."
   [^String s suffixes]
   (if-let [suffix (some #(if (.endsWith s %) %) suffixes)]
     [(subs s 0 (- (count s) (count suffix))) suffix]))
-
-
-(defn remove-prefix
-  "If string s starts with the string prefix, return s with that
-  prefix removed.  Otherwise, return s."
-  [^String s ^String prefix]
-  (if (.startsWith s prefix)
-    (subs s (count prefix))
-    s))
 
 
 (defn nth-last
