@@ -300,7 +300,7 @@ recursing into ASTs with :op equal to :do"
                       (catch Exception e
                         [e nil]))]
                 (if exc
-                  {:forms (remaining-forms reader (conj forms form)),
+                  {:forms nil
                    :asts asts, :exception exc, :exception-phase :analyze+eval,
                    :exception-form form}
                   (if-let [first-exc-ast (first (asts-with-eval-exception ast))]
@@ -346,5 +346,6 @@ recursing into ASTs with :op equal to :do"
     (assoc (dissoc m :forms :asts)
            :analyze-results {:source (slurp (uri-for-ns source-nsym))
                              :namespace source-nsym
+                             :exeption-form (:exception-form m)
                              :forms (:forms m)
                              :asts (:asts m)})))
