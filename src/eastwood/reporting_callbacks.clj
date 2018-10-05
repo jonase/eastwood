@@ -1,7 +1,8 @@
 (ns eastwood.reporting-callbacks
   (:require [clojure.java.io :as io]
             [clojure.pprint :as pp]
-            [eastwood.util :as util]))
+            [eastwood.util :as util]
+            [clojure.string :as str]))
 
 (defn assert-keys [m key-seq]
   (assert (util/has-keys? m key-seq)))
@@ -39,17 +40,15 @@
            (flush))))))
 
 
-(defn make-default-dirs-scanned-cb [wrtr]
-  (fn default-dirs-scanned-cb [info]
-    (binding [*out* wrtr]
-      (println "Directories scanned for source files:")
-      (print " ")
-      (doseq [d (:dirs-scanned info)]
-        (print " ")
-        (print (:uri-or-file-name d)))
-      (println)
-      (flush))))
-
+(defn dirs-scanned [dirs]
+  (when dirs
+    (println "Directories scanned for source files:")
+    (print " ")
+    (->> dirs
+         (map :uri-or-file-name)
+         (str/join " ")
+         (println))
+    (flush)))
 
 ;; Use the option :warning-format :map-v1 to get linter warning maps
 ;; as they were generated in Eastwood 0.1.0 thru 0.1.4, intended only
@@ -136,7 +135,6 @@
 (defn assert-cb-has-proper-keys [info]
   (case (:kind info)
     :error     (assert-keys info [:msg :opt])
-    :dirs-scanned (assert-keys info [:dirs-scanned :opt])
     :lint-warning (assert-keys info [:warn-data])
     :note      (assert-keys info [:msg :opt])
     :eval-out  (assert-keys info [:msg :opt])
@@ -148,7 +146,7 @@
     :debug-form-emitted  (assert-debug-form-cb-has-proper-keys info)))
 
 
-(defn make-eastwood-cb [{:keys [error dirs-scanned lint-warning note
+(defn make-eastwood-cb [{:keys [error lint-warning note
                                 eval-out eval-err
                                 debug debug-ast
                                 debug-form-read debug-form-analyzed
@@ -157,7 +155,6 @@
     (assert-cb-has-proper-keys info)
     (case (:kind info)
       :error     (error info)
-      :dirs-scanned (dirs-scanned info)
       :lint-warning (lint-warning info)
       :note      (note info)
       :eval-out  (eval-out info)
@@ -179,7 +176,6 @@
                     wrtr)
         default-msg-cb (make-default-msg-cb wrtr)
         eval-out-err-msg-cb (make-default-eval-msg-cb wrtr opts)
-        default-dirs-scanned-cb (make-default-dirs-scanned-cb wrtr)
         default-lint-warning-cb (make-default-lint-warning-cb warn-wrtr)
         default-debug-ast-cb (make-default-debug-ast-cb wrtr)
 
@@ -190,7 +186,6 @@
             (make-default-form-cb (io/writer "forms-emitted.txt")) ]
           [])]
     (make-eastwood-cb {:error default-msg-cb
-                       :dirs-scanned default-dirs-scanned-cb
                        :lint-warning default-lint-warning-cb
                        :note default-msg-cb
                        :eval-out eval-out-err-msg-cb
@@ -200,4 +195,6 @@
                        :debug-form-read form-read-cb
                        :debug-form-analyzed form-analyzed-cb
                        :debug-form-emitted form-emitted-cb})))
+
+
 

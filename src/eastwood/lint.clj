@@ -599,12 +599,10 @@ Return value:
         {:keys [linters] :as m1} (opts->linters opts linter-name->info
                                                 default-linters)
         opts (assoc opts :enabled-linters linters)
-
         {:keys [namespaces dirs no-ns-form-found-files
                 non-clojure-files] :as m2}
-          (opts->namespaces opts warning-count)]
-    (when (seq dirs)
-      (cb {:kind :dirs-scanned, :dirs-scanned dirs, :opt opts}))
+        (opts->namespaces opts warning-count)]
+    (reporting/dirs-scanned dirs)
     (when (some #{:no-ns-form-found} (:enabled-linters opts))
       (->> no-ns-form-found-files
            (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" opts))
