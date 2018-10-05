@@ -215,25 +215,6 @@ exception."))
 
 (declare last-options-map-adjustments)
 
-;; If an exception occurs during analyze, re-throw it.  This will
-;; cause any test written that calls lint-ns-noprint to fail, unless
-;; it expects the exception.
-(defn lint-ns-noprint [ns-sym linters opts]
-  (let [opts (assoc opts :linters linters)
-        opts (last-options-map-adjustments opts)
-        cb (fn cb [info]
-             (case (:kind info)
-               (:eval-out :eval-err) (println (:msg info))
-               :default-do-nothing
-               ;;((:callback opts) info)
-               ))
-        opts (assoc opts :callback cb)
-        {:keys [exception lint-results]} (lint-ns ns-sym linters opts)]
-    (if-not exception
-      (->> lint-results
-           (mapcat :lint-warning)
-           (map :warn-data))
-      (throw (:exception exception)))))
 
 (defn unknown-ns-keywords [namespaces known-ns-keywords desc]
   (let [keyword-set (set (filter keyword? namespaces))
