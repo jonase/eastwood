@@ -95,9 +95,15 @@ the value of File/separator for the platform."
               (debug-cb (with-out-str (util/pprint-meta-elided exp))))))
         (debug-cb "\n    --------------------")))))
 
-(def ^:dynamic *forms-read-writer* (io/writer "forms-read.txt"))
-(def ^:dynamic *forms-analyzed-writer* (io/writer "forms-analyzed.txt"))
-(def ^:dynamic *forms-emitted-writer* (io/writer "forms-emitted.txt"))
+(def ^:dynamic *forms-read-writer* nil)
+(def ^:dynamic *forms-analyzed-writer* nil)
+(def ^:dynamic *forms-emitted-writer* nil)
+
+(defn- initialize-debug-forms! [opt]
+  (when (util/debug? :compare-forms opt)
+    (set! *forms-read-writer* (io/writer "forms-read.txt"))
+    (set! *forms-analyzed-writer* (io/writer "forms-analyzed.txt"))
+    (set! *forms-emitted-writer* (io/writer "forms-emitted.txt"))))
 
 (defn- debug-forms [form ast]
   (binding [*out* *forms-read-writer*]
@@ -348,7 +354,6 @@ recursing into ASTs with :op equal to :do"
                                    (eastwood-ast-additions
                                     ast (count asts)))))))))))))))
 
-
 (defn analyze-ns
   "Takes an IndexingReader and a namespace symbol.
   Returns a map of results of analyzing the namespace.  The map
@@ -372,6 +377,7 @@ recursing into ASTs with :op equal to :do"
   [source-nsym & {:keys [reader opt] :or {reader (pb-reader-for-ns source-nsym)}}]
   (let [source-path (#'move/ns-file-name source-nsym)
         m (analyze-file source-path :reader reader :opt opt)]
+    (initialize-debug-forms! opt)
     (assoc (dissoc m :forms :asts)
            :analyze-results {:source (slurp (uri-for-ns source-nsym))
                              :namespace source-nsym
