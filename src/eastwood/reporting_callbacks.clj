@@ -7,37 +7,12 @@
 (defn assert-keys [m key-seq]
   (assert (util/has-keys? m key-seq)))
 
-(defn replace-path-in-compiler-error
-  [msg opt]
-  (let [[match pre _ path
-         line-col post] (re-matches #"((Reflection|Boxed math) warning), (.*?)(:\d+:\d+)(.*)"
-                                    msg)
-        url (and match (io/resource path))
-        inf (and url (util/file-warn-info url (:cwd opt)))]
-    (if inf
-      ;; The filename:line:col should be first in the output
-      (str (:uri-or-file-name inf) line-col ": " pre post)
-      msg)))
-
 
 (defn make-default-msg-cb [wrtr]
   (fn default-msg-cb [info]
     (binding [*out* wrtr]
       (println (:msg info))
       (flush))))
-
-(defn make-default-eval-msg-cb
-  ([wrtr]
-     (make-default-eval-msg-cb wrtr {}))
-  ([wrtr opt]
-     (fn default-msg-cb [info]
-       (let [orig-msg (:msg info)
-             msg (if (= :eval-err (:kind info))
-                   (replace-path-in-compiler-error orig-msg opt)
-                   orig-msg)]
-         (binding [*out* wrtr]
-           (println msg)
-           (flush))))))
 
 
 (defn dirs-scanned [dirs]
@@ -111,40 +86,12 @@
             (println)
             (flush)))))))
 
-(defn make-default-debug-ast-cb [wrtr]
-  (fn default-debug-ast-cb [info]
-    (binding [*out* wrtr]
-      (util/pprint-ast-node (:ast info))
-      (flush))))
-
-(defn make-default-form-cb [wrtr]
-  (fn [{:keys [event form]}]
-    (binding [*out* wrtr]
-      (case event
-        :begin-file (println (format "\n\n== Analyzing file '%s'\n" form))
-        :form (util/pprint-form form)))))
-
-
-(defn assert-debug-form-cb-has-proper-keys [info]
-  (assert-keys info [:event :opt])
-  (case (:event info)
-    :form (assert-keys info [:form])
-    :begin-file (assert-keys info [:filename])))
-
-
 (defn assert-cb-has-proper-keys [info]
   (case (:kind info)
     :error     (assert-keys info [:msg :opt])
     :lint-warning (assert-keys info [:warn-data])
     :note      (assert-keys info [:msg :opt])
-    :eval-out  (assert-keys info [:msg :opt])
-    :eval-err  (assert-keys info [:msg :opt])
-    :debug     (assert-keys info [:msg :opt])
-    :debug-ast (assert-keys info [:ast :opt])
-    :debug-form-read     (assert-debug-form-cb-has-proper-keys info)
-    :debug-form-analyzed (assert-debug-form-cb-has-proper-keys info)
-    :debug-form-emitted  (assert-debug-form-cb-has-proper-keys info)))
-
+    :debug     (assert-keys info [:msg :opt])))
 
 (defn make-eastwood-cb [{:keys [error lint-warning note
                                 eval-out eval-err
@@ -157,16 +104,7 @@
       :error     (error info)
       :lint-warning (lint-warning info)
       :note      (note info)
-      :eval-out  (eval-out info)
-      :eval-err  (eval-err info)
-      :debug     (debug info)
-      :debug-ast (debug-ast info)
-      :debug-form-read     (when debug-form-read
-                             (debug-form-read info))
-      :debug-form-analyzed (when debug-form-analyzed
-                             (debug-form-analyzed info))
-      :debug-form-emitted  (when debug-form-emitted
-                             (debug-form-emitted info)))))
+      :debug     (debug info))))
 
 (defn make-default-cb [opts]
   (let [;;wrtr (io/writer "east-out.txt")   ; see comment above
@@ -175,26 +113,8 @@
                     (io/writer (:out opts))
                     wrtr)
         default-msg-cb (make-default-msg-cb wrtr)
-        eval-out-err-msg-cb (make-default-eval-msg-cb wrtr opts)
-        default-lint-warning-cb (make-default-lint-warning-cb warn-wrtr)
-        default-debug-ast-cb (make-default-debug-ast-cb wrtr)
-
-        [form-read-cb form-analyzed-cb form-emitted-cb]
-        (if (util/debug? :compare-forms opts)
-          [ (make-default-form-cb (io/writer "forms-read.txt"))
-            (make-default-form-cb (io/writer "forms-analyzed.txt"))
-            (make-default-form-cb (io/writer "forms-emitted.txt")) ]
-          [])]
+        default-lint-warning-cb (make-default-lint-warning-cb warn-wrtr)]
     (make-eastwood-cb {:error default-msg-cb
                        :lint-warning default-lint-warning-cb
                        :note default-msg-cb
-                       :eval-out eval-out-err-msg-cb
-                       :eval-err eval-out-err-msg-cb
-                       :debug default-msg-cb
-                       :debug-ast default-debug-ast-cb
-                       :debug-form-read form-read-cb
-                       :debug-form-analyzed form-analyzed-cb
-                       :debug-form-emitted form-emitted-cb})))
-
-
-
+                       :debug default-msg-cb})))
