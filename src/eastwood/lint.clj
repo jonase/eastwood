@@ -15,6 +15,7 @@
             [eastwood.linters.typetags :as typetags]
             [eastwood.linters.typos :as typos]
             [eastwood.linters.unused :as unused]
+            [eastwood.linters.implicit-dependencies :as implicit-dependencies]
             [eastwood.reporting-callbacks :as reporting]
             [eastwood.util :as util]
             [eastwood.version :as version])
