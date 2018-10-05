@@ -547,6 +547,16 @@ Exception thrown while analyzing last namespace.
 "
       )))
 
+(defn- dirs-scanned [dirs]
+  (when dirs
+    (println "Directories scanned for source files:")
+    (print " ")
+    (->> dirs
+         (map :uri-or-file-name)
+         (str/join " ")
+         (println))
+    (flush)))
+
 (defn eastwood-core
   "Lint a sequence of namespaces using a specified collection of linters.
 
@@ -583,7 +593,7 @@ Return value:
         {:keys [namespaces dirs no-ns-form-found-files
                 non-clojure-files] :as m2}
         (opts->namespaces opts warning-count)]
-    (reporting/dirs-scanned dirs)
+    (dirs-scanned dirs)
     (when (some #{:no-ns-form-found} (:enabled-linters opts))
       (->> no-ns-form-found-files
            (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" opts))

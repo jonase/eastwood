@@ -15,16 +15,6 @@
       (flush))))
 
 
-(defn dirs-scanned [dirs]
-  (when dirs
-    (println "Directories scanned for source files:")
-    (print " ")
-    (->> dirs
-         (map :uri-or-file-name)
-         (str/join " ")
-         (println))
-    (flush)))
-
 ;; Use the option :warning-format :map-v1 to get linter warning maps
 ;; as they were generated in Eastwood 0.1.0 thru 0.1.4, intended only
 ;; for comparing output from later versions against those versions
