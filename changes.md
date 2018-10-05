@@ -1,5 +1,9 @@
 # Change log for Eastwood
 
+## Changes from 0.3.1 to 0.3.2
+
+* Add `:implicit-dependencies` linter
+
 ## Changes from version 0.2.x to 0.3.0
 
 * Eastwood now drops support for leiningen 1.x

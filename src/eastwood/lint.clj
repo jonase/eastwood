@@ -17,7 +17,8 @@
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.unused :as unused]
             [eastwood.linters.typetags :as typetags]
-            [eastwood.linters.typos :as typos])
+            [eastwood.linters.typos :as typos]
+            [eastwood.linters.implicit-dependencies :as implicit-dependencies])
   (:import [java.io File PushbackReader]
            [clojure.lang LineNumberingPushbackReader]))
 
@@ -286,7 +287,9 @@ describing the error."
    {:name :non-dynamic-earmuffs,      :enabled-by-default false,
     :url nil,
     :fn misc/non-dynamic-earmuffs}
-   ])
+   {:name :implicit-dependencies,     :enabled-by-default true,
+    :url nil,
+    :fn implicit-dependencies/implicit-dependencies}])
 
 
 (def linter-name->info (into {} (for [{:keys [name] :as info} linter-info]
