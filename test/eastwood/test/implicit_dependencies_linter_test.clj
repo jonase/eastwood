@@ -1,6 +1,8 @@
 (ns eastwood.test.implicit-dependencies-linter-test
   (:use [clojure.test])
-  (:require [eastwood.test.linters-test :as linters-test])
+  (:require [eastwood.test.linters-test :as linters-test]
+            [clojure.data :as data]
+            [clojure.pprint :as pp])
   (:import (java.io File)))
 
 

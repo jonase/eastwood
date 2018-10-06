@@ -1,6 +1,7 @@
 (ns eastwood.analyze-ns
   (:refer-clojure :exclude [macroexpand-1])
-  (:import (java.net URL))
+  (:import (java.net URL)
+           (java.io File))
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
@@ -18,7 +19,8 @@
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
              [emit-form :refer [emit-form]]
-             [warn-on-reflection :refer [warn-on-reflection]]]))
+             [warn-on-reflection :refer [warn-on-reflection]]]
+            [eastwood.reporting-callbacks :as reporting]))
 
 ;; uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer, then later probably diverged from each other.
@@ -67,58 +69,86 @@ the value of File/separator for the platform."
   (gen-interface-form? form))
 
 (defn pre-analyze-debug [asts form _env ns opt]
-  (let [print-normally? (util/debug? :forms opt)
-        pprint? (util/debug? :forms-pprint opt)
-        debug-cb (util/make-msg-cb :debug opt)]
-    (when (or print-normally? pprint?)
-      (debug-cb (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
-                        (count asts) (str ns) (meta ns)))
-      (when pprint?
-        (debug-cb "    form before macroexpand:")
-        (debug-cb (with-out-str (pp/pprint form))))
-      (when print-normally?
-        (debug-cb "    form before macroexpand, with metadata (some elided for brevity):")
-        (debug-cb (with-out-str (util/pprint-meta-elided form))))
-      (debug-cb "\n    --------------------")
-      (if (dont-expand-twice? form)
+  (when (util/debug? :ns opt)
+    (let [print-normally? (util/debug? :forms opt)
+          pprint? (util/debug? :forms-pprint opt)
+          debug-cb (util/make-msg-cb :debug opt)]
+      (when (or print-normally? pprint?)
+        (debug-cb (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
+                          (count asts) (str ns) (meta ns)))
+        (when pprint?
+          (debug-cb "    form before macroexpand:")
+          (debug-cb (with-out-str (pp/pprint form))))
         (when print-normally?
-          (debug-cb "    form is gen-interface, so avoiding macroexpand on it"))
-        (let [exp (macroexpand form)]
-          (when pprint?
-            (debug-cb "    form after macroexpand:")
-            (debug-cb (with-out-str (pp/pprint exp))))
+          (debug-cb "    form before macroexpand, with metadata (some elided for brevity):")
+          (debug-cb (with-out-str (util/pprint-meta-elided form))))
+        (debug-cb "\n    --------------------")
+        (if (dont-expand-twice? form)
           (when print-normally?
-            (debug-cb "    form after macroexpand, with metadata (some elided for brevity):")
-            (debug-cb (with-out-str (util/pprint-meta-elided exp))))))
-      (debug-cb "\n    --------------------"))))
+            (debug-cb "    form is gen-interface, so avoiding macroexpand on it"))
+          (let [exp (macroexpand form)]
+            (when pprint?
+              (debug-cb "    form after macroexpand:")
+              (debug-cb (with-out-str (pp/pprint exp))))
+            (when print-normally?
+              (debug-cb "    form after macroexpand, with metadata (some elided for brevity):")
+              (debug-cb (with-out-str (util/pprint-meta-elided exp))))))
+        (debug-cb "\n    --------------------")))))
 
-(defn post-analyze-debug [asts form ast ns opt]
-  (let [show-ast? (util/debug? :ast opt)
-        cb (:callback opt)
-        debug-cb (util/make-msg-cb :debug opt)]
-    (when (or show-ast? (util/debug? :progress opt))
-      (debug-cb (format "dbg anal'd %d ns=%s%s"
-                        (count asts) (str ns)
-                        (if show-ast? " ast=" ""))))
-    (when show-ast?
-      (cb {:kind :debug-ast, :ast ast, :opt opt}))
-    ;; TBD: Change this to macroexpand form, at least if
-    ;; dont-expand-twice? returns false.
-    (cb {:kind :debug-form-read, :event :form, :form form,
-         :opt opt})
-    (cb {:kind :debug-form-analyzed, :event :form, :form (:form ast),
-         :opt opt})
-    (cb {:kind :debug-form-emitted, :event :form, :form (emit-form ast),
-         :opt opt})))
+(def ^:dynamic *forms-read-writer* nil)
+(def ^:dynamic *forms-analyzed-writer* nil)
+(def ^:dynamic *forms-emitted-writer* nil)
+
+(defn- initialize-debug-forms! [opt]
+  (when (util/debug? :compare-forms opt)
+    (set! *forms-read-writer* (io/writer "forms-read.txt"))
+    (set! *forms-analyzed-writer* (io/writer "forms-analyzed.txt"))
+    (set! *forms-emitted-writer* (io/writer "forms-emitted.txt"))))
+
+(defn- debug-forms [form ast]
+  (binding [*out* *forms-read-writer*]
+    (util/pprint-form form))
+  (binding [*out* *forms-analyzed-writer*]
+    (util/pprint-form (:form ast)))
+  (binding [*out* *forms-emitted-writer*]
+    (util/pprint-form (emit-form ast))))
+
+(defn- debug-forms-new-file [filename]
+  (let [s (format "\n\n== Analyzing file '%s'\n" filename)]
+    (binding [*out* *forms-read-writer*]
+      (println s))
+    (binding [*out* *forms-analyzed-writer*]
+      (println s))
+    (binding [*out* *forms-emitted-writer*]
+      (println s))))
+
+(defn post-analyze-debug [filename asts form ast ns opt]
+  (when (util/debug? :ns opt)
+    (let [show-ast? (util/debug? :ast opt)
+          cb (:callback opt)
+          debug-cb (util/make-msg-cb :debug opt)]
+      (when (or show-ast? (util/debug? :progress opt))
+        (debug-cb (format "dbg anal'd %d ns=%s%s"
+                          (count asts) (str ns)
+                          (if show-ast? " ast=" ""))))
+      (when show-ast?
+         (util/pprint-ast-node ast))
+      ;; TBD: Change this to macroexpand form, at least if
+      ;; dont-expand-twice? returns false.
+      (when (util/debug? :compare-forms opt)
+        (debug-forms form ast)))))
 
 (defn begin-file-debug [filename ns opt]
-  (let [cb (:callback opt)]
-    (cb {:kind :debug-form-read, :event :begin-file, :filename filename,
-         :opt opt})
-    (cb {:kind :debug-form-analyzed, :event :begin-file, :filename filename,
-         :opt opt})
-    (cb {:kind :debug-form-emitted, :event :begin-file, :filename filename,
-         :opt opt})))
+  (when (and (util/debug? :ns opt)
+             (util/debug? :compare-forms opt))
+    (debug-forms-new-file filename)))
+
+(defn before-analyze-file-debug [source-path opt]
+  (when (util/debug? :ns opt)
+    (let [debug-cb (util/make-msg-cb :debug opt)]
+      (debug-cb (format "all-ns before (analyze-file \"%s\") begins:"
+                        source-path))
+      (debug-cb (with-out-str (pp/pprint (sort (all-ns-names-set))))))))
 
 (defn eastwood-wrong-tag-handler [t ast]
   (let [tag (if (= t :name/tag)
@@ -210,14 +240,25 @@ recursing into ASTs with :op equal to :do"
           forms
           (recur (conj forms form)))))))
 
+(defn- replace-path-in-compiler-error
+  [msg cwd]
+  (let [[match pre _ path
+         line-col post] (re-matches #"((Reflection|Boxed math) warning), (.*?)(:\d+:\d+)(.*)"
+                                    msg)
+        url (and match (io/resource path))
+        inf (and url (util/file-warn-info url cwd))]
+    (if inf
+      ;; The filename:line:col should be first in the output
+      (str (:uri-or-file-name inf) line-col ": " pre post)
+      msg)))
 
-(defn do-eval-output-callbacks [out-msgs-str err-msgs-str opt]
+(defn- do-eval-output-callbacks [out-msgs-str err-msgs-str cwd]
   (when (not= out-msgs-str "")
     (doseq [s (string/split-lines out-msgs-str)]
-      ((:callback opt) {:kind :eval-out, :msg s, :opt opt})))
+      (println s)))
   (when (not= err-msgs-str "")
     (doseq [s (string/split-lines err-msgs-str)]
-      ((:callback opt) {:kind :eval-err, :msg s, :opt opt}))))
+      (println (replace-path-in-compiler-error s cwd)))))
 
 
 (defn analyze-file
@@ -265,28 +306,23 @@ recursing into ASTs with :op equal to :do"
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
   [source-path & {:keys [reader opt]}]
-  (let [debug-cb (util/make-msg-cb :debug opt)
-        eof (reify)
+  (let [eof (reify)
         reader-opts {:read-cond :allow :features #{:clj} :eof eof}]
-    (when (util/debug? :ns opt)
-      (debug-cb (format "all-ns before (analyze-file \"%s\") begins:"
-                        source-path))
-      (debug-cb (with-out-str (pp/pprint (sort (all-ns-names-set))))))
+    (before-analyze-file-debug source-path opt)
+
     ;; If we eval a form that changes *ns*, I want it to go back to
     ;; the original before returning.
     (binding [*ns* *ns*
               *file* (str source-path)]
       (env/with-env (ana.jvm/global-env)
-        (when (util/debug? :ns opt)
-          (begin-file-debug *file* *ns* opt))
+        (begin-file-debug *file* *ns* opt)
         (loop [forms []
                asts []]
           (let [form (tr/read reader-opts reader)]
             (if (identical? form eof)
               {:forms forms, :asts asts, :exception nil}
               (let [cur-env (env/deref-env)
-                    _ (when (util/debug? :ns opt)
-                        (pre-analyze-debug asts form cur-env *ns* opt))
+                    _ (pre-analyze-debug asts form cur-env *ns* opt)
                     [exc ast]
                     (try
                       (let [{:keys [val out err]}
@@ -295,7 +331,7 @@ recursing into ASTs with :op equal to :do"
                                 (ana.jvm/analyze+eval
                                  form (ana.jvm/empty-env)
                                  {:passes-opts eastwood-passes-opts})))]
-                        (do-eval-output-callbacks out err opt)
+                        (do-eval-output-callbacks out err (:cwd opt))
                         [nil val])
                       (catch Exception e
                         [e nil]))]
@@ -312,13 +348,11 @@ recursing into ASTs with :op equal to :do"
                                        f
                                        (:form first-exc-ast))}
                     (do
-                      (when (util/debug? :ns opt)
-                        (post-analyze-debug asts form ast *ns* opt))
+                      (post-analyze-debug source-path asts form ast *ns* opt)
                       (recur (conj forms form)
                              (conj asts
                                    (eastwood-ast-additions
                                     ast (count asts)))))))))))))))
-
 
 (defn analyze-ns
   "Takes an IndexingReader and a namespace symbol.
@@ -343,6 +377,7 @@ recursing into ASTs with :op equal to :do"
   [source-nsym & {:keys [reader opt] :or {reader (pb-reader-for-ns source-nsym)}}]
   (let [source-path (#'move/ns-file-name source-nsym)
         m (analyze-file source-path :reader reader :opt opt)]
+    (initialize-debug-forms! opt)
     (assoc (dissoc m :forms :asts)
            :analyze-results {:source (slurp (uri-for-ns source-nsym))
                              :namespace source-nsym

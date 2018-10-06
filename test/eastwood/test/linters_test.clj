@@ -45,6 +45,26 @@ the next."
 
 (def default-opts {})
 
+;; If an exception occurs during analyze, re-throw it.  This will
+;; cause any test written that calls lint-ns-noprint to fail, unless
+;; it expects the exception.
+(defn lint-ns-noprint [ns-sym linters opts]
+  (let [opts (assoc opts :linters linters)
+        opts (last-options-map-adjustments opts)
+        cb (fn cb [info]
+             (case (:kind info)
+               (:eval-out :eval-err) (println (:msg info))
+               :default-do-nothing
+               ;;((:callback opts) info)
+               ))
+        opts (assoc opts :callback cb)
+        {:keys [exception lint-results]} (lint-ns ns-sym linters opts)]
+    (if-not exception
+      (->> lint-results
+           (mapcat :lint-warning)
+           (map :warn-data))
+      (throw (:exception exception)))))
+
 
 (defmacro lint-test [ns-sym linters opts expected-lint-result]
   `(let [lint-result# (lint-ns-noprint ~ns-sym ~linters ~opts)

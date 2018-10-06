@@ -1,26 +1,25 @@
 (ns eastwood.lint
   (:require [clojure.java.io :as io]
-            [eastwood.analyze-ns :as analyze]
-            [eastwood.util :as util]
-            [eastwood.version :as version]
-            [clojure.inspector :as inspector]
+            [clojure.pprint :as pp]
             [clojure.set :as set]
             [clojure.string :as str]
-            [clojure.pprint :as pp]
-            [eastwood.error-messages :as msgs]
+            [eastwood.analyze-ns :as analyze]
+            [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
+            [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
-            [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
-            [eastwood.linters.misc :as misc]
+            [eastwood.error-messages :as msgs]
             [eastwood.linters.deprecated :as deprecated]
-            [eastwood.linters.unused :as unused]
+            [eastwood.linters.misc :as misc]
             [eastwood.linters.typetags :as typetags]
             [eastwood.linters.typos :as typos]
-            [eastwood.linters.implicit-dependencies :as implicit-dependencies])
-  (:import [java.io File PushbackReader]
-           [clojure.lang LineNumberingPushbackReader]))
+            [eastwood.linters.unused :as unused]
+            [eastwood.linters.implicit-dependencies :as implicit-dependencies]
+            [eastwood.reporting-callbacks :as reporting]
+            [eastwood.util :as util]
+            [eastwood.version :as version])
+  (:import java.io.File))
 
 (def ^:dynamic *eastwood-version*
   {:major version/major, :minor version/minor, :incremental version/patch, :qualifier version/pre-release})
@@ -32,173 +31,6 @@
 always have at least the keys :err and :err-data, return a string
 describing the error."
   :err)
-
-(declare file-warn-info)
-
-(defn replace-path-in-compiler-error
-  [msg opt]
-  (let [[match pre _ path
-         line-col post] (re-matches #"((Reflection|Boxed math) warning), (.*?)(:\d+:\d+)(.*)"
-                                    msg)
-        url (and match (io/resource path))
-        inf (and url (file-warn-info url (:cwd opt)))]
-    (if inf
-      ;; The filename:line:col should be first in the output
-      (str (:uri-or-file-name inf) line-col ": " pre post)
-      msg)))
-
-(defn make-default-msg-cb [wrtr]
-  (fn default-msg-cb [info]
-    (binding [*out* wrtr]
-      (println (:msg info))
-      (flush))))
-
-(defn make-default-eval-msg-cb
-  ([wrtr]
-     (make-default-eval-msg-cb wrtr {}))
-  ([wrtr opt]
-     (fn default-msg-cb [info]
-       (let [orig-msg (:msg info)
-             msg (if (= :eval-err (:kind info))
-                   (replace-path-in-compiler-error orig-msg opt)
-                   orig-msg)]
-         (binding [*out* wrtr]
-           (println msg)
-           (flush))))))
-
-
-(defn make-default-dirs-scanned-cb [wrtr]
-  (fn default-dirs-scanned-cb [info]
-    (binding [*out* wrtr]
-      (println "Directories scanned for source files:")
-      (print " ")
-      (doseq [d (:dirs-scanned info)]
-        (print " ")
-        (print (:uri-or-file-name d)))
-      (println)
-      (flush))))
-
-
-(def empty-ordered-lint-warning-map-v1
-  (util/ordering-map [:linter
-                      :msg
-                      :file
-                      :line
-                      :column]))
-
-(def empty-ordered-lint-warning-map-v2
-  (util/ordering-map [:file
-                      :line
-                      :column
-                      :linter
-                      :msg
-                      :uri-or-file-name]))
-
-;; Use the option :warning-format :map-v1 to get linter warning maps
-;; as they were generated in Eastwood 0.1.0 thru 0.1.4, intended only
-;; for comparing output from later versions against those versions
-;; more easily.
-
-(def last-cwd-shown (atom nil))
-
-(defn make-default-lint-warning-cb [wrtr]
-  (fn default-lint-warning-cb [info]
-    (binding [*out* wrtr]
-      (let [warning-format (or (-> info :opt :warning-format)
-                               :location-list-v1)
-            i (case warning-format
-                :map-v1 (into empty-ordered-lint-warning-map-v1
-                              (select-keys (:warn-data info)
-                                           [:linter :msg :file :line :column]))
-                :map-v2 (into empty-ordered-lint-warning-map-v2
-                              (select-keys (:warn-data info)
-                                           [:linter :msg :file :line :column
-                                            :uri-or-file-name
-                                            ;; :uri
-                                            ;; :namespace-sym
-                                            ]))
-                :location-list-v1 (:warn-data info))]
-        (if (= warning-format :location-list-v1)
-          (do
-            (let [cwd (-> info :opt :cwd)]
-              (when (not= cwd @last-cwd-shown)
-                (reset! last-cwd-shown cwd)
-                (println (format "Entering directory `%s'" cwd))))
-            (println (format "%s:%s:%s: %s: %s"
-                             (-> i :uri-or-file-name str)
-                             ;; Emacs compilation-mode default regex's
-                             ;; do not recognize warning lines with
-                             ;; nil instead of decimal numbers for
-                             ;; line/col number.  Make up values if we
-                             ;; don't know them.
-                             (or (-> i :line) "1")
-                             (or (-> i :column) "1")
-                             (name (-> i :linter))
-                             (-> i :msg))))
-          (do
-            (pp/pprint i)
-            (println)
-            (flush)))))))
-
-(defn make-default-debug-ast-cb [wrtr]
-  (fn default-debug-ast-cb [info]
-    (binding [*out* wrtr]
-      (util/pprint-ast-node (:ast info))
-      (flush))))
-
-(defn make-default-form-cb [wrtr]
-  (fn [{:keys [event form]}]
-    (binding [*out* wrtr]
-      (case event
-        :begin-file (println (format "\n\n== Analyzing file '%s'\n" form))
-        :form (util/pprint-form form)))))
-
-
-(defn assert-debug-form-cb-has-proper-keys [info]
-  (util/assert-keys info [:event :opt])
-  (case (:event info)
-    :form (util/assert-keys info [:form])
-    :begin-file (util/assert-keys info [:filename])))
-
-
-(defn assert-cb-has-proper-keys [info]
-  (case (:kind info)
-    :error     (util/assert-keys info [:msg :opt])
-    :dirs-scanned (util/assert-keys info [:dirs-scanned :opt])
-    :lint-warning (util/assert-keys info [:warn-data])
-    :note      (util/assert-keys info [:msg :opt])
-    :eval-out  (util/assert-keys info [:msg :opt])
-    :eval-err  (util/assert-keys info [:msg :opt])
-    :debug     (util/assert-keys info [:msg :opt])
-    :debug-ast (util/assert-keys info [:ast :opt])
-    :debug-form-read     (assert-debug-form-cb-has-proper-keys info)
-    :debug-form-analyzed (assert-debug-form-cb-has-proper-keys info)
-    :debug-form-emitted  (assert-debug-form-cb-has-proper-keys info)))
-
-
-(defn make-eastwood-cb [{:keys [error dirs-scanned lint-warning note
-                                eval-out eval-err
-                                debug debug-ast
-                                debug-form-read debug-form-analyzed
-                                debug-form-emitted]}]
-  (fn eastwood-cb [info]
-    (assert-cb-has-proper-keys info)
-    (case (:kind info)
-      :error     (error info)
-      :dirs-scanned (dirs-scanned info)
-      :lint-warning (lint-warning info)
-      :note      (note info)
-      :eval-out  (eval-out info)
-      :eval-err  (eval-err info)
-      :debug     (debug info)
-      :debug-ast (debug-ast info)
-      :debug-form-read     (when debug-form-read
-                             (debug-form-read info))
-      :debug-form-analyzed (when debug-form-analyzed
-                             (debug-form-analyzed info))
-      :debug-form-emitted  (when debug-form-emitted
-                             (debug-form-emitted info)))))
-
 
 ;; Note: Linters below with nil for the value of the key :fn,
 ;; e.g. :no-ns-form-found, can be enabled/disabled from the opt map
@@ -304,43 +136,15 @@ describing the error."
   (->> linter-info
        (map :name)))
 
- ; first char is upper-case
-
-(defn ^java.net.URI to-uri [x]
-  (cond (instance? java.net.URI x) x
-        (instance? java.io.File x) (.toURI ^java.io.File x)
-        (instance? java.net.URL x) (.toURI ^java.net.URL x)
-        (string? x) (.toURI (File. ^String x))
-        :else (assert false)))
-
-
-(defn file-warn-info [f cwd-file]
-  (let [uri (to-uri f)
-        ;; file-or-nil will be nil if uri is a URI like the following,
-        ;; which cannot be converted to a File:
-        ;; #<URI jar:file:/Users/jafinger/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar!/clojure/test/junit.clj>
-        file-or-nil (try (File. uri)
-                         (catch IllegalArgumentException e
-                           nil))
-        uri-or-rel-file-str
-        (if (nil? file-or-nil)
-          uri
-          (let [file-str (str file-or-nil)
-                cwd-str (if cwd-file (str cwd-file File/separator) "")]
-            (util/remove-prefix file-str cwd-str)))]
-    {:uri uri
-     :uri-or-file-name uri-or-rel-file-str}))
-
-
 (defn namespace-info [ns-sym cwd-file]
-  (let [uri (to-uri (analyze/uri-for-ns ns-sym))]
+  (let [uri (util/to-uri (analyze/uri-for-ns ns-sym))]
     (merge
      {:namespace-sym ns-sym}
-     (file-warn-info uri cwd-file))))
+     (util/file-warn-info uri cwd-file))))
 
 (defn make-lint-warning [kw msg opts file]
   {:kind :lint-warning,
-   :warn-data (let [inf (file-warn-info file (:cwd opts))]
+   :warn-data (let [inf (util/file-warn-info file (:cwd opts))]
                 (merge
                  {:linter kw
                   :msg (format (str msg " '%s'.  It will not be linted.")
@@ -412,25 +216,6 @@ exception."))
 
 (declare last-options-map-adjustments)
 
-;; If an exception occurs during analyze, re-throw it.  This will
-;; cause any test written that calls lint-ns-noprint to fail, unless
-;; it expects the exception.
-(defn lint-ns-noprint [ns-sym linters opts]
-  (let [opts (assoc opts :linters linters)
-        opts (last-options-map-adjustments opts)
-        cb (fn cb [info]
-             (case (:kind info)
-               (:eval-out :eval-err) (println (:msg info))
-               :default-do-nothing
-               ;;((:callback opts) info)
-               ))
-        opts (assoc opts :callback cb)
-        {:keys [exception lint-results]} (lint-ns ns-sym linters opts)]
-    (if-not exception
-      (->> lint-results
-           (mapcat :lint-warning)
-           (map :warn-data))
-      (throw (:exception exception)))))
 
 (defn unknown-ns-keywords [namespaces known-ns-keywords desc]
   (let [keyword-set (set (filter keyword? namespaces))
@@ -560,7 +345,7 @@ user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
                                             set)]
                 (set/difference tfiles tfilemap maybe-data-readers)))]
         {:err nil
-         :dirs (map #(file-warn-info % (:cwd opt)) dir-name-strs)
+         :dirs (map #(util/file-warn-info % (:cwd opt)) dir-name-strs)
          :non-clojure-files
          (:eastwood.copieddeps.dep9.clojure.tools.namespace.dir/non-clojure-files
           tracker)
@@ -763,6 +548,16 @@ Exception thrown while analyzing last namespace.
 "
       )))
 
+(defn- dirs-scanned [dirs]
+  (when dirs
+    (println "Directories scanned for source files:")
+    (print " ")
+    (->> dirs
+         (map :uri-or-file-name)
+         (str/join " ")
+         (println))
+    (flush)))
+
 (defn eastwood-core
   "Lint a sequence of namespaces using a specified collection of linters.
 
@@ -796,12 +591,10 @@ Return value:
         {:keys [linters] :as m1} (opts->linters opts linter-name->info
                                                 default-linters)
         opts (assoc opts :enabled-linters linters)
-
         {:keys [namespaces dirs no-ns-form-found-files
                 non-clojure-files] :as m2}
-          (opts->namespaces opts warning-count)]
-    (when (seq dirs)
-      (cb {:kind :dirs-scanned, :dirs-scanned dirs, :opt opts}))
+        (opts->namespaces opts warning-count)]
+    (dirs-scanned dirs)
     (when (some #{:no-ns-form-found} (:enabled-linters opts))
       (->> no-ns-form-found-files
            (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" opts))
@@ -881,36 +674,6 @@ Return value:
 ;; Use the java.io.PrintWriter shown below to write messages to the
 ;; same place as Eastwood does in version 0.1.4.
 
-(defn make-default-cb [opts]
-  (let [;;wrtr (io/writer "east-out.txt")   ; see comment above
-        wrtr (java.io.PrintWriter. *out* true)
-        warn-wrtr (if (contains? opts :out)
-                    (io/writer (:out opts))
-                    wrtr)
-        default-msg-cb (make-default-msg-cb wrtr)
-        eval-out-err-msg-cb (make-default-eval-msg-cb wrtr opts)
-        default-dirs-scanned-cb (make-default-dirs-scanned-cb wrtr)
-        default-lint-warning-cb (make-default-lint-warning-cb warn-wrtr)
-        default-debug-ast-cb (make-default-debug-ast-cb wrtr)
-
-        [form-read-cb form-analyzed-cb form-emitted-cb]
-        (if (util/debug? :compare-forms opts)
-          [ (make-default-form-cb (io/writer "forms-read.txt"))
-            (make-default-form-cb (io/writer "forms-analyzed.txt"))
-            (make-default-form-cb (io/writer "forms-emitted.txt")) ]
-          [])]
-    (make-eastwood-cb {:error default-msg-cb
-                       :dirs-scanned default-dirs-scanned-cb
-                       :lint-warning default-lint-warning-cb
-                       :note default-msg-cb
-                       :eval-out eval-out-err-msg-cb
-                       :eval-err eval-out-err-msg-cb
-                       :debug default-msg-cb
-                       :debug-ast default-debug-ast-cb
-                       :debug-form-read form-read-cb
-                       :debug-form-analyzed form-analyzed-cb
-                       :debug-form-emitted form-emitted-cb})))
-
 
 (def default-builtin-config-files
   ["clojure.clj"
@@ -941,7 +704,7 @@ Return value:
         ;; opts), but it does not calculate the value unless needed.
         opts (if (contains? opts :callback)
                opts
-               (assoc opts :callback (make-default-cb opts)))
+               (assoc opts :callback (reporting/make-default-cb opts)))
 
         ;; Changes below override anything in the caller-provided
         ;; options map.
