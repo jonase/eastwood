@@ -3,7 +3,8 @@
 # (0) You need a Clojure jar file.  Edit as needed for your situation.
 
 # "mvn package" creates target/clojure-<version>.jar
-CLOJURE_JAR="target/clojure-1.7.0-master-SNAPSHOT.jar"
+#CLOJURE_JAR="target/clojure-1.7.0-master-SNAPSHOT.jar"
+CLOJURE_JAR="target/clojure-1.10.0-master-SNAPSHOT.jar"
 
 # "./antsetup.sh ; ant jar" creates clojure.jar in Clojure source tree
 # root directory.
@@ -21,9 +22,14 @@ MVN_CP=`cat maven-classpath`
 # directory is to run 'lein eastwood' in a Leiningen project.
 
 M2="$HOME/.m2/repository"
+# Eastwood 0.2.6 uses asm-all-4.2
 A="${M2}/org/ow2/asm/asm-all/4.2/asm-all-4.2.jar"
+# Eastwood 0.3.0-SNAPSHOT uses asm-all-5.2
+#A="${M2}/org/ow2/asm/asm-all/5.2/asm-all-5.2.jar"
 G="${M2}/org/clojars/brenton/google-diff-match-patch/0.1/google-diff-match-patch-0.1.jar"
-E="${M2}/jonase/eastwood/0.2.1/eastwood-0.2.1.jar"
+#E="${M2}/jonase/eastwood/0.2.1/eastwood-0.2.1.jar"
+E="${M2}/jonase/eastwood/0.2.6/eastwood-0.2.6.jar"
+#E="${M2}/jonase/eastwood/0.3.0-SNAPSHOT/eastwood-0.3.0-SNAPSHOT.jar"
 
 # (3) After running this script in the root of the Clojure source tree
 # to start the REPL, eval the expressions below.  The exc-nss is a
@@ -43,12 +49,16 @@ E="${M2}/jonase/eastwood/0.2.1/eastwood-0.2.1.jar"
 
 rlwrap java -cp "${MVN_CP}:${CLOJURE_JAR}:${A}:${G}:${E}:test" clojure.main
 
+exit 0
 
 ######################################################################
 # Details of exceptions thrown by some namespaces, found iteratively
 # by excluding one namespace at a time until there were no more
 # exceptions..
 ######################################################################
+
+# (require '[eastwood.lint :as e])
+# (e/eastwood {:source-paths [] :test-paths ["test"]})
 
 # This namespace: # clojure.test-clojure.try-catch
 
@@ -174,3 +184,32 @@ rlwrap java -cp "${MVN_CP}:${CLOJURE_JAR}:${A}:${G}:${E}:test" clojure.main
 # Finally!  The form below evaluates with no exceptions.
 
 # (e/eastwood {:source-paths [] :test-paths ["test"] :exclude-linters [:unlimited-use] :exclude-namespaces '[clojure.test-clojure.try-catch clojure.test-clojure.compilation.line-number-examples clojure.test-clojure.compilation clojure.test-clojure.genclass clojure.test-clojure.ns-libs clojure.test-clojure.protocols]})
+
+
+# 2018-Sep-26 trying Eastwood 0.2.6 on Clojure 1.10.0-alpha8 source:
+
+# Got some kind of exception on namespace clojure.test-clojure.java-interop
+
+(e/eastwood {:source-paths [] :test-paths ["test"]
+	     :exclude-linters [:unlimited-use]
+	     :exclude-namespaces
+'[clojure.test-clojure.try-catch
+ clojure.test-clojure.compilation.line-number-examples
+ clojure.test-clojure.java-interop
+ clojure.test-clojure.compilation
+ clojure.test-clojure.genclass
+ clojure.test-clojure.ns-libs
+ clojure.test-clojure.reflect
+]})
+
+
+;; Try linting Clojure source, not tests
+
+(require '[eastwood.lint :as e])
+(e/eastwood {:source-paths ["src/clj"] :test-paths []
+	     :exclude-linters [:unlimited-use]
+	     :exclude-namespaces
+'[
+clojure.reflect
+clojure.parallel
+]})
