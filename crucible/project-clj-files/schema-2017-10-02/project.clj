@@ -26,7 +26,8 @@
                                     :output-path "target/generated/test/cljs"
                                     :rules :cljs}]}}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"] [org.clojure/clojurescript "0.0-3308"]]}
-             :1.9 {:dependencies [[org.clojure/clojure "1.9.0-master-SNAPSHOT"] [org.clojure/clojurescript "0.0-3308"]]}
+             :1.9 {:dependencies [[org.clojure/clojure "1.9.0"] [org.clojure/clojurescript "0.0-3308"]]}
+             :1.10 {:dependencies [[org.clojure/clojure "1.10.0-master-SNAPSHOT"] [org.clojure/clojurescript "0.0-3308"]]}
              }
 
   :aliases {"all" ["with-profile" "dev:dev,1.8:dev,1.9"]

@@ -41,7 +41,11 @@
                                    [org.clojure/test.check "0.9.0"]
                                    [collection-check "0.1.7"]]
                     :test-paths ["src/test_local/cljc"]}
-             :1.9  {:dependencies [[org.clojure/clojure "1.9.0-master-SNAPSHOT"]
+             :1.9  {:dependencies [[org.clojure/clojure "1.9.0"]
+                                   [org.clojure/test.check "0.9.0"]
+                                   [collection-check "0.1.7"]]
+                    :test-paths ["src/test_local/cljc"]}
+             :1.10  {:dependencies [[org.clojure/clojure "1.10.0-master-SNAPSHOT"]
                                    [org.clojure/test.check "0.9.0"]
                                    [collection-check "0.1.7"]]
                     :test-paths ["src/test_local/cljc"]}})

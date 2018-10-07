@@ -16,7 +16,9 @@
                                   [org.clojure/clojurescript "1.7.28"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]
                                   [org.clojure/clojurescript "1.8.34"]]}
-             :1.9 {:dependencies [[org.clojure/clojure "1.9.0-master-SNAPSHOT"]
+             :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]
+                                  [org.clojure/clojurescript "1.8.34"]]}
+             :1.10 {:dependencies [[org.clojure/clojure "1.10.0-master-SNAPSHOT"]
                                   [org.clojure/clojurescript "1.9.908"]
                                   [org.clojure/tools.reader "1.0.3"]]}
              }
