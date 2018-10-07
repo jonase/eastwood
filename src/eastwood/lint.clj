@@ -171,7 +171,7 @@ describing the error."
 (defn report-warnings [cb warning-count warnings]
   (swap! warning-count + (count warnings))
   (doseq [warning warnings]
-    (cb warnings)))
+    (cb warning)))
 
 (defn- report-analyzer-exception [exception exception-phase exception-form ns-sym]
   (let [[strings error-cb] (msgs/string-builder)]
