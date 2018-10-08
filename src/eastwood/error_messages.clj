@@ -246,5 +246,6 @@ curious." eastwood-url))
      {:msgs (if dat
               (print-ex-data-details ns-sym exc)
               (let [[strings sb] (string-builder)]
-                (util/pst exc nil sb)))
+                (util/pst exc nil sb)
+                @strings))
       :info :show-more-details})))
