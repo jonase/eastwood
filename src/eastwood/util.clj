@@ -97,7 +97,44 @@ return value followed by the time it took to evaluate in millisec."
     {:uri uri
      :uri-or-file-name uri-or-rel-file-str}))
 
+(defn canonical-filename
+  "Returns the canonical file name for the given file name.  A
+canonical file name is platform dependent, but is both absolute and
+unique.  See the Java docs for getCanonicalPath for some more details,
+and the examples below.
 
+    http://docs.oracle.com/javase/7/docs/api/java/io/File.html#getCanonicalPath%28%29
+
+Examples:
+
+Context: A Linux or Mac OS X system, where the current working
+directory is /Users/jafinger/clj/dolly
+
+user=> (canonical-filename \"README.md\")
+\"/Users/jafinger/clj/dolly/README.md\"
+
+user=> (canonical-filename \"../../Documents/\")
+\"/Users/jafinger/Documents\"
+
+user=> (canonical-filename \"../.././clj/../Documents/././\")
+\"/Users/jafinger/Documents\"
+
+Context: A Windows 7 system, where the current working directory is
+C:\\Users\\jafinger\\clj\\dolly
+
+user=> (canonical-filename \"README.md\")
+\"C:\\Users\\jafinger\\clj\\dolly\\README.md\"
+
+user=> (canonical-filename \"..\\..\\Documents\\\")
+\"C:\\Users\\jafinger\\Documents\"
+
+user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
+\"C:\\Users\\jafinger\\Documents\""
+  [fname]
+  (let [^java.io.File f (if (instance? java.io.File fname)
+                          fname
+                          (java.io.File. ^String fname))]
+    (.getCanonicalPath f)))
 
 
 ;; Copied from clojure.repl/pst then modified to 'print' using a
@@ -105,26 +142,22 @@ return value followed by the time it took to evaluate in millisec."
 
 (defn pst
   "'Prints' a stack trace of the exception,  to the depth requested (the
-entire stack trace if depth is nil).  Does not print ex-data.
-
-No actual printing is done in this function.  The callback function
-print-cb is called once for each line of output."
-  [^Throwable e depth print-cb]
-  (print-cb (str (-> e class .getSimpleName) " "
+entire stack trace if depth is nil).  Does not print ex-data."
+  [^Throwable e depth]
+  (println (str (-> e class .getSimpleName) " "
                  (.getMessage e)))
   (let [st (.getStackTrace e)
         cause (.getCause e)]
     (doseq [el (remove #(#{"clojure.lang.RestFn" "clojure.lang.AFn"}
                          (.getClassName ^StackTraceElement %))
                        st)]
-      (print-cb (str \tab (repl/stack-element-str el))))
+      (println (str \tab (repl/stack-element-str el))))
     (when cause
-      (print-cb "Caused by:")
+      (println "Caused by:")
       (pst cause (if depth
                    (min depth
                         (+ 2 (- (count (.getStackTrace cause))
-                                (count st)))))
-           print-cb))))
+                                (count st)))))))))
 
 
 ;; ordering-map copied under Eclipse Public License v1.0 from useful
@@ -880,18 +913,16 @@ StringWriter."
         other-config-files (get opt :config-files [])
         config-files (concat (map builtin-config-to-resource
                                   builtin-config-files)
-                             other-config-files)
-        error-cb (make-msg-cb :error opt)
-        debug-cb (make-msg-cb :debug opt)]
+                             other-config-files)]
     (doseq [config-file config-files]
       (when (debug? :config opt)
-        (debug-cb (format "Loading config file: %s" config-file)))
+        (println (format "Loading config file: %s" config-file)))
       (try
         (binding [*ns* (the-ns 'eastwood.util)]
           (load-reader (io/reader config-file)))
         (catch Exception e
-          (error-cb (format "Exception while attempting to load config file: %s" config-file))
-          (pst e nil error-cb))))
+          (println (format "Exception while attempting to load config file: %s" config-file))
+          (pst e nil))))
     (process-configs @warning-enable-config-atom)))
 
 

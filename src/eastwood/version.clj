@@ -16,3 +16,22 @@
         (def string (str (join "." (filter identity [major minor patch]))
                          (when pre-release (str "-" pre-release))
                          (when build (str "+" build))))))))
+
+(def ^:dynamic *eastwood-version*
+  {:major major, :minor minor, :incremental patch, :qualifier pre-release})
+
+(defn eastwood-version [] string)
+
+(defn versions []
+  {:eastwood-version-map *eastwood-version*
+   :eastwood-version-string (eastwood-version)
+   :clojure-version-map *clojure-version*
+   :clojure-version-string (clojure-version)
+   :jvm-version-string (get (System/getProperties) "java.version")})
+
+(defn version-string []
+  (let [versions (versions)]
+    (format "== Eastwood %s Clojure %s JVM %s =="
+            (:eastwood-version-string versions)
+            (:clojure-version-string versions)
+            (:jvm-version-string versions))))

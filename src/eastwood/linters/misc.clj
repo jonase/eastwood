@@ -265,23 +265,23 @@
 ;;                )
             match (some #(util/meets-suppress-condition lca-ast encl-macros %)
                         suppress-conditions)]
-        (if (and match (:debug-suppression opt))
-          ((util/make-msg-cb :debug opt)
-           (with-out-str
-             (let [c (:matching-condition match)
-                   depth (:within-depth c)]
-               (println (format "Ignoring def of Var %s while checking for :redefd-vars warning" defd-var))
-               (println (format "because it is within%s an expansion of macro"
-                                (if (number? depth)
-                                  (format " %d steps of" depth)
-                                  "")))
-               (println (format "'%s'" (:matching-macro match)))
-               (println "Reason suppression rule was created:" (:reason c))
-               (pp/pprint (map #(dissoc % :ast :index)
-                               (if depth
-                                 (take depth encl-macros)
-                                 encl-macros)))
-               ))))
+        ;; (if (and match (:debug-suppression opt))
+        ;;   ((util/make-msg-cb :debug opt)
+        ;;    (with-out-str
+        ;;      (let [c (:matching-condition match)
+        ;;            depth (:within-depth c)]
+        ;;        (println (format "Ignoring def of Var %s while checking for :redefd-vars warning" defd-var))
+        ;;        (println (format "because it is within%s an expansion of macro"
+        ;;                         (if (number? depth)
+        ;;                           (format " %d steps of" depth)
+        ;;                           "")))
+        ;;        (println (format "'%s'" (:matching-macro match)))
+        ;;        (println "Reason suppression rule was created:" (:reason c))
+        ;;        (pp/pprint (map #(dissoc % :ast :index)
+        ;;                        (if depth
+        ;;                          (take depth encl-macros)
+        ;;                          encl-macros)))
+        ;;        ))))
         (not match)))))
 
 

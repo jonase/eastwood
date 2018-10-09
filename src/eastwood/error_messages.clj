@@ -53,7 +53,7 @@
     (when (contains? dat :form)
       (error-cb (format "    (:form dat)="))
       (error-cb (with-out-str (util/pprint-form (:form dat)))))
-    (util/pst exc nil error-cb)
+    (error-cb (with-out-str (util/pst exc nil)))
     @strings))
 
 (defn handle-values-of-env [ns-sym ^Throwable exc]
@@ -245,7 +245,28 @@ curious." eastwood-url))
      :else
      {:msgs (if dat
               (print-ex-data-details ns-sym exc)
-              (let [[strings sb] (string-builder)]
-                (util/pst exc nil sb)
-                @strings))
+              [(with-out-str (util/pst exc nil))])
       :info :show-more-details})))
+
+(defn report-analyzer-exception [exception exception-phase exception-form ns-sym]
+  (let [[strings error-cb] (string-builder)]
+    (error-cb (str "Exception thrown during phase " exception-phase
+                   " of linting namespace " ns-sym))
+    (let [{:keys [msgs info]} (format-exception ns-sym exception)]
+      (swap! strings into msgs)
+      (when (= info :show-more-details)
+        (error-cb "\nThe following form was being processed during the exception:")
+        ;; TBD: Replace this binding with util/pprint-form variation
+        ;; that does not print metadata?
+        (error-cb (with-out-str (binding [*print-level* 7
+                                                *print-length* 50]
+                                        (pp/pprint exception-form))))
+        (error-cb "\nShown again with metadata for debugging (some metadata elided for brevity):")
+        (error-cb (with-out-str (util/pprint-form exception-form)))))
+    (error-cb
+     (str "\nAn exception was thrown while analyzing namespace " ns-sym "
+Lint results may be incomplete.  If there are compilation errors in
+your code, try fixing those.  If not, check above for info on the
+exception."))
+    {:exception exception
+     :msgs @strings}))

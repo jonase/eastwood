@@ -11,20 +11,15 @@
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
             [eastwood.error-messages :as msgs]
             [eastwood.linters.deprecated :as deprecated]
+            [eastwood.linters.implicit-dependencies :as implicit-dependencies]
             [eastwood.linters.misc :as misc]
             [eastwood.linters.typetags :as typetags]
             [eastwood.linters.typos :as typos]
             [eastwood.linters.unused :as unused]
-            [eastwood.linters.implicit-dependencies :as implicit-dependencies]
             [eastwood.reporting-callbacks :as reporting]
             [eastwood.util :as util]
             [eastwood.version :as version])
   (:import java.io.File))
-
-(def ^:dynamic *eastwood-version*
-  {:major version/major, :minor version/minor, :incremental version/patch, :qualifier version/pre-release})
-
-(defn eastwood-version [] version/string)
 
 (defmulti error-msg
   "Given a map describing an Eastwood error result, which should
@@ -142,9 +137,9 @@ describing the error."
      {:namespace-sym ns-sym}
      (util/file-warn-info uri cwd-file))))
 
-(defn make-lint-warning [kw msg opts file]
+(defn make-lint-warning [kw msg cwd file]
   {:kind :lint-warning,
-   :warn-data (let [inf (util/file-warn-info file (:cwd opts))]
+   :warn-data (let [inf (util/file-warn-info file cwd)]
                 (merge
                  {:linter kw
                   :msg (format (str msg " '%s'.  It will not be linted.")
@@ -169,6 +164,7 @@ describing the error."
           :warn-data (format "Exception thrown by linter %s on namespace %s" (:name linter) ns-sym)
           :exception e}]))))
 
+<<<<<<< HEAD
 (defn report-warnings [cb warning-count warnings]
   (swap! warning-count + (count warnings))
   (doseq [warning warnings]
@@ -197,6 +193,8 @@ exception."))
     {:exception exception
      :msgs @strings}))
 
+=======
+>>>>>>> Remove callbacks + cleanups
 (defn lint-ns* [ns-sym analyze-results opts linter]
   (let [[results elapsed] (util/timeit (run-linter linter analyze-results ns-sym opts))]
     (->> results
@@ -212,11 +210,8 @@ exception."))
      :lint-results (some->> linters
                             (keep linter-name->info)
                             (map (partial lint-ns* ns-sym analyze-results opts)))
-     :exception (when exception
-                  (report-analyzer-exception exception exception-phase exception-form ns-sym))}))
-
-(declare last-options-map-adjustments)
-
+     :analyzer-exception (when exception
+                           (msgs/report-analyzer-exception exception exception-phase exception-form ns-sym))}))
 
 (defn unknown-ns-keywords [namespaces known-ns-keywords desc]
   (let [keyword-set (set (filter keyword? namespaces))
@@ -279,47 +274,9 @@ exception."))
                :recommended-fnames desired-fname-set,
                :recommended-namespace desired-ns}]))))
 
-(defn canonical-filename
-  "Returns the canonical file name for the given file name.  A
-canonical file name is platform dependent, but is both absolute and
-unique.  See the Java docs for getCanonicalPath for some more details,
-and the examples below.
 
-    http://docs.oracle.com/javase/7/docs/api/java/io/File.html#getCanonicalPath%28%29
-
-Examples:
-
-Context: A Linux or Mac OS X system, where the current working
-directory is /Users/jafinger/clj/dolly
-
-user=> (canonical-filename \"README.md\")
-\"/Users/jafinger/clj/dolly/README.md\"
-
-user=> (canonical-filename \"../../Documents/\")
-\"/Users/jafinger/Documents\"
-
-user=> (canonical-filename \"../.././clj/../Documents/././\")
-\"/Users/jafinger/Documents\"
-
-Context: A Windows 7 system, where the current working directory is
-C:\\Users\\jafinger\\clj\\dolly
-
-user=> (canonical-filename \"README.md\")
-\"C:\\Users\\jafinger\\clj\\dolly\\README.md\"
-
-user=> (canonical-filename \"..\\..\\Documents\\\")
-\"C:\\Users\\jafinger\\Documents\"
-
-user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
-\"C:\\Users\\jafinger\\Documents\""
-  [fname]
-  (let [^java.io.File f (if (instance? java.io.File fname)
-                          fname
-                          (java.io.File. ^String fname))]
-    (.getCanonicalPath f)))
-
-(defn nss-in-dirs [dir-name-strs opt warning-count]
-  (let [dir-name-strs (map canonical-filename dir-name-strs)
+(defn nss-in-dirs [dir-name-strs linters]
+  (let [dir-name-strs (map util/canonical-filename dir-name-strs)
         mismatches (filename-namespace-mismatches dir-name-strs)]
     (if (seq mismatches)
       {:err :namespace-filename-mismatch
@@ -331,7 +288,7 @@ user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
                       ;; classpath if called with an empty sequence.
                       (track/tracker))
             files-no-ns-form-found
-            (when (some #{:no-ns-form-found} (:enabled-linters opt))
+            (when (some #{:no-ns-form-found} linters)
               (let [tfiles (-> tracker
                                :eastwood.copieddeps.dep9.clojure.tools.namespace.dir/files
                                set)
@@ -346,7 +303,7 @@ user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
                                             set)]
                 (set/difference tfiles tfilemap maybe-data-readers)))]
         {:err nil
-         :dirs (map #(util/file-warn-info % (:cwd opt)) dir-name-strs)
+         :dirs dir-name-strs
          :non-clojure-files
          (:eastwood.copieddeps.dep9.clojure.tools.namespace.dir/non-clojure-files
           tracker)
@@ -415,7 +372,7 @@ file and namespace to avoid name collisions."))))
 ;; TBD: Abort with an easily understood error message if a namespace
 ;; is given that cannot be found.
 
-(defn opts->namespaces [opts warning-count]
+(defn opts->namespaces [opts]
   (let [namespaces1 (distinct (:namespaces opts))
         sp-included? (some #{:source-paths} namespaces1)
         tp-included? (some #{:test-paths} namespaces1)
@@ -435,10 +392,12 @@ file and namespace to avoid name collisions."))))
      ;; once for each of :source-paths and :test-paths, and only if
      ;; needed.
      (let [all-ns (concat namespaces1 excluded-namespaces)
+           cwd (:cwd opts)
+           linters (:enabled-liters opts)
            sp (if (some #{:source-paths} all-ns)
-                (nss-in-dirs (:source-paths opts) opts warning-count))
+                (nss-in-dirs (:source-paths opts) linters))
            tp (if (some #{:test-paths} all-ns)
-                (nss-in-dirs (:test-paths opts) opts warning-count))]
+                (nss-in-dirs (:test-paths opts) linters))]
        (cond
         (:err sp) sp
         (:err tp) tp
@@ -489,19 +448,18 @@ file and namespace to avoid name collisions."))))
                                         known-linters)
         linters (set/intersection linters-requested known-linters)]
     (when (util/debug? :options opts)
-      (let [debug-cb (util/make-msg-cb :debug opts)]
-        (debug-cb "Calculation of final list of linters:")
-        (debug-cb (format "    :linters"))
-        (debug-cb (format "      before keyword substitution: %s" (vec (:linters opts))))
-        (debug-cb (format "      after  keyword substitution: %s" (vec (sort linters-orig))))
-        (debug-cb (format "    :exclude-linters"))
-        (debug-cb (format "      before keyword substitution: %s" (vec (:exclude-linters opts))))
-        (debug-cb (format "      after  keyword substitution: %s" (vec (sort excluded-linters))))
-        (debug-cb (format "    :add-linters"))
-        (debug-cb (format "      before keyword substitution: %s" (vec (:add-linters opts))))
-        (debug-cb (format "      after  keyword substitution: %s" (vec (sort add-linters))))
-        (debug-cb (format "    final effective linter set: linters - exclude + add:"))
-        (debug-cb (format "      %s" (vec (sort linters))))))
+      (println "Calculation of final list of linters:")
+      (println (format "    :linters"))
+      (println (format "      before keyword substitution: %s" (vec (:linters opts))))
+      (println (format "      after  keyword substitution: %s" (vec (sort linters-orig))))
+      (println (format "    :exclude-linters"))
+      (println (format "      before keyword substitution: %s" (vec (:exclude-linters opts))))
+      (println (format "      after  keyword substitution: %s" (vec (sort excluded-linters))))
+      (println (format "    :add-linters"))
+      (println (format "      before keyword substitution: %s" (vec (:add-linters opts))))
+      (println (format "      after  keyword substitution: %s" (vec (sort add-linters))))
+      (println (format "    final effective linter set: linters - exclude + add:"))
+      (println (format "      %s" (vec (sort linters)))))
     (if (and (seq unknown-linters)
              (not (:disable-linter-name-checks opts)))
       {:err :unknown-linter,
@@ -549,15 +507,33 @@ Exception thrown while analyzing last namespace.
 "
       )))
 
-(defn- dirs-scanned [dirs]
+(defn- dirs-scanned [reporter cwd dirs]
   (when dirs
-    (println "Directories scanned for source files:")
-    (print " ")
+    (reporting/note reporter "Directories scanned for source files:")
+    (reporting/note reporter " ")
     (->> dirs
+         (map #(util/file-warn-info % cwd))
          (map :uri-or-file-name)
          (str/join " ")
-         (println))
-    (flush)))
+         (reporting/note reporter))))
+
+(defn- lint-namespace [reporter namespace linters opts]
+  (try
+    (reporting/note reporter (str "== Linting " namespace " =="))
+    (let [{:keys [analyzer-exception lint-results analysis-time]} (lint-ns namespace linters opts)]
+      (reporting/debug reporter :time (format "Analysis took %.1f millisec" analysis-time))
+      (when analyzer-exception
+        (reporting/analyzer-exception reporter analyzer-exception))
+      (doseq [{:keys [lint-warning lint-error elapsed linter]} lint-results]
+        (reporting/debug reporter :time (format "Linter %s took %.1f millisec"
+                                                (:name linter) elapsed))
+        (reporting/add-warnings reporter lint-warning)
+        (reporting/add-exceptions reporter lint-error)
+        (->> lint-error
+             (map :warn-data)
+             (reporting/add-errors reporter))))
+    (catch RuntimeException e
+      (reporting/error reporter e))))
 
 (defn eastwood-core
   "Lint a sequence of namespaces using a specified collection of linters.
@@ -585,79 +561,41 @@ Side effects:
 Return value:
 + TBD
 "
-  [opts]
-  (let [warning-count (atom 0)
-        exception-count (atom 0)
-        cb (:callback opts)
-        {:keys [linters] :as m1} (opts->linters opts linter-name->info
+  [reporter opts]
+  (let [{:keys [linters] :as m1} (opts->linters opts linter-name->info
                                                 default-linters)
         opts (assoc opts :enabled-linters linters)
         {:keys [namespaces dirs no-ns-form-found-files
                 non-clojure-files] :as m2}
-        (opts->namespaces opts warning-count)]
-    (dirs-scanned dirs)
+        (opts->namespaces opts)]
+    (dirs-scanned reporter (:cwd opts) dirs)
     (when (some #{:no-ns-form-found} (:enabled-linters opts))
       (->> no-ns-form-found-files
-           (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" opts))
-           (map (fn [m] (assoc m :opt opts)))
-           (report-warnings cb warning-count)))
+           (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" (:cwd opts)))
+           (reporting/add-warnings reporter)))
     (when (some #{:non-clojure-file} (:enabled-linters opts))
       (->> non-clojure-files
-           (map (partial make-lint-warning :non-clojure-file "Non-Clojure file" opts))
-           (map (fn [m] (assoc m :opt opts)))
-           (report-warnings cb warning-count)))
+           (map (partial make-lint-warning :non-clojure-file "Non-Clojure file" (:cwd opts)))
+           (reporting/add-warnings reporter)))
     (cond
      (:err m1) m1
      (:err m2) m2
      :else
-     (let [error-cb (util/make-msg-cb :error opts)
-           debug-cb (util/make-msg-cb :debug opts)
-           note-cb (util/make-msg-cb :note opts)
-           continue-on-exception? (:continue-on-exception opts)
-           stopped-on-exc (atom false)
-           print-time? (util/debug? :time opts)]
-       (when (util/debug? :ns opts)
-         (debug-cb (format "Namespaces to be linted:"))
-         (doseq [n namespaces]
-           (debug-cb (format "    %s" n))))
+     (let [continue-on-exception? (:continue-on-exception opts)
+           stopped-on-exc (atom false)]
+       (reporting/debug reporter :ns (format "Namespaces to be linted:"))
+       (doseq [n namespaces]
+         (reporting/debug reporter :ns (format "    %s" n)))
        ;; Create all namespaces to be analyzed.  This can help in some
        ;; (unusual) situations, such as when namespace A requires B,
        ;; so Eastwood analyzes B first, but eval'ing B assumes that
        ;; A's namespace has been created first because B contains
        ;; (alias 'x 'A)
-       (doseq [n namespaces]
-         (create-ns n))
+       (doseq [n namespaces] (create-ns n))
        (when (seq (:enabled-linters opts))
          (loop [namespaces namespaces]
            (when-first [namespace namespaces]
-             (let [e (try
-                       (note-cb (str "== Linting " namespace " =="))
-                       (let [{:keys [exception lint-results analysis-time]} (lint-ns namespace (:enabled-linters opts) opts)]
-                         (when print-time?
-                           (note-cb (format "Analysis took %.1f millisec" analysis-time)))
-                         (when exception
-                           (swap! exception-count inc))
-                         (doseq [{:keys [lint-warning lint-error elapsed linter]} lint-results]
-                           (when print-time?
-                             (note-cb (format "Linter %s took %.1f millisec"
-                                              (:name linter) elapsed)))
-                           (swap! warning-count + (count lint-warning))
-                           (swap! exception-count + (count lint-error))
-                           (doseq [error lint-error]
-                             (error-cb (:warn-data error))
-                             (when (contains? error :exception)
-                               (let [{:keys [msgs]}
-                                     (msgs/format-exception namespace
-                                                            (:exception error))]
-                                 (doseq [msg msgs] (error-cb msg)))))
-                           (doseq [warning lint-warning]
-                             (cb (assoc warning :opt opts))))
-                         (when exception
-                           (error-cb (str/join "\n" (:msgs exception)))))
-                       (catch RuntimeException e
-                           (error-cb "Linting failed:")
-                           (util/pst e nil error-cb)
-                           e))]
+             (let [e (lint-namespace reporter namespace (:enabled-linters opts) opts)]
                (if (or continue-on-exception?
                        (not (instance? Throwable e)))
                  (recur (next namespaces))
@@ -666,12 +604,11 @@ Return value:
                           :last-namespace namespace
                           :unanalyzed-namespaces (next namespaces)}))))))
        (merge
-        {:err nil
-         :warning-count @warning-count
-         :exception-count @exception-count}
+        {:warning-count (count (reporting/warnings reporter))
+         :exception-count (count (reporting/analyzer-exceptions reporter))}
         (if @stopped-on-exc
-          {:err :exception-thrown
-           :err-data @stopped-on-exc}))))))
+          {:error {:err :exception-thrown
+                   :err-data @stopped-on-exc}}))))))
 
 ;; Test Eastwood for a while with messages being written to file
 ;; "east-out.txt", to see if I catch everything that was going to
@@ -687,7 +624,7 @@ Return value:
    "third-party-libs.clj"])
 
 
-(defn last-options-map-adjustments [opts]
+(defn last-options-map-adjustments [opts reporter]
   (let [opts (update-in opts [:debug] set)
         opts (merge {:cwd (.getCanonicalFile (io/file "."))
                      :linters default-linters
@@ -706,49 +643,39 @@ Return value:
                opts
                (assoc opts :source-paths
                       (classpath/classpath-directories)))
-        ;; The following value is equivalent to (merge {:callback ...}
-        ;; opts), but it does not calculate the value unless needed.
-        opts (if (contains? opts :callback)
-               opts
-               (assoc opts :callback (reporting/make-default-cb opts)))
 
         ;; Changes below override anything in the caller-provided
         ;; options map.
         opts (assoc opts :warning-enable-config
                     (util/init-warning-enable-config opts))]
+    (reporting/debug reporter :options (with-out-str
+                                         (println "\nOptions map after filling in defaults:")
+                                         (pp/pprint (into (sorted-map) opts))))
     opts))
 
+(defn eastwood
+  ([opts] (eastwood opts (reporting/printing-reporter opts)))
+  ([opts reporter]
+   ;; Use caller-provided :cwd and :callback values if provided
+   (let [opts (last-options-map-adjustments opts reporter)]
+     (reporting/debug reporter :var-info (with-out-str
+                                           (util/print-var-info-summary @typos/var-info-map-delayed opts)))
+     (reporting/note reporter (version/version-string))
+     (reporting/debug reporter :compare-forms
+                      "Writing files forms-read.txt and forms-emitted.txt")
+     (let [{:keys [error warning-count exception-count]}
+           (eastwood-core reporter opts)]
 
-(defn eastwood [opts]
-  ;; Use caller-provided :cwd and :callback values if provided
-  (let [opts (last-options-map-adjustments opts)
-        _ (when (util/debug? :options opts)
-            (println "\nOptions map after filling in defaults:")
-            (pp/pprint (into (sorted-map) opts)))
-        _ (when (util/debug? :var-info opts)
-            (util/print-var-info-summary @typos/var-info-map-delayed opts))
-        error-cb (util/make-msg-cb :error opts)
-        note-cb (util/make-msg-cb :note opts)
-        debug-cb (util/make-msg-cb :debug opts)
-        _ (do
-            (note-cb (format "== Eastwood %s Clojure %s JVM %s"
-                             (eastwood-version)
-                             (clojure-version)
-                             (get (System/getProperties) "java.version")))
-            (when (util/debug? :compare-forms opts)
-              (debug-cb "Writing files forms-read.txt and forms-emitted.txt")))
-        {:keys [err warning-count exception-count] :as ret}
-        (eastwood-core opts)]
-    (when err
-      (error-cb (error-msg ret)))
-    (when (number? warning-count)
-      (note-cb (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
-                       warning-count exception-count)))
-    (if (or err (and (number? warning-count)
-                     (or (> warning-count 0) (> exception-count 0))))
-      {:some-warnings true}
-      {:some-warnings false})))
-
+       (when error
+         (reporting/error reporter (-> error :err-data :exception)))
+       (reporting/note reporter (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
+                                        (count (reporting/warnings reporter))
+                                        (count (reporting/analyzer-exceptions reporter))))
+       (if (or error
+               (> (count (reporting/warnings reporter)) 0)
+               (> (count (reporting/analyzer-exceptions reporter)) 0))
+         {:some-warnings true}
+         {:some-warnings false})))))
 
 (defn eastwood-from-cmdline [opts]
   (let [ret (eastwood opts)]
@@ -821,32 +748,14 @@ Keys in a warning map:
   :file - string containing resource name, relative to some
       unspecified path in the Java classpath,
       e.g. \"testcases/f02.clj\""
-  [opts]
-  (let [lint-warnings (atom [])
-        cb (fn cb [info]
-             (case (:kind info)
-               :lint-warning (swap! lint-warnings conj (:warn-data info))
-               :default))  ; do nothing with other kinds of callbacks
-        opts (if (contains? opts :callback)
-               opts
-               (assoc opts :callback cb))
-
-        opts (last-options-map-adjustments opts)
-        _ (when (util/debug? :options opts)
-            (println "\nOptions map after filling in defaults:")
-            (pp/pprint (into (sorted-map) opts)))
-
-        {:keys [err err-data] :as ret} (eastwood-core opts)]
-    {:warnings @lint-warnings
-     :err err
-     :err-data err-data
-     :versions
-     {:eastwood-version-map *eastwood-version*
-      :eastwood-version-string (eastwood-version)
-      :clojure-version-map *clojure-version*
-      :clojure-version-string (clojure-version)
-      :jvm-version-string (get (System/getProperties) "java.version")}}))
-
+  ([opts] (lint opts (reporting/silent-reporter opts)))
+  ([opts reporter]
+   (let [opts (last-options-map-adjustments opts reporter)
+         {:keys [err err-data] :as ret} (eastwood-core reporter opts)]
+     {:warnings (reporting/warnings reporter)
+      :err err
+      :err-data err-data
+      :versions (version/versions)})))
 
 (defn insp
   "Read, analyze, and eval a file specified by namespace as a symbol,

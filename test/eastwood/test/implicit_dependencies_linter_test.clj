@@ -2,7 +2,6 @@
   (:require [clojure.test :refer :all]
             [eastwood.test.linters-test :as linters-test]))
 
-
 (deftest implicit-dependency-linter
   (linters-test/lint-test
    'testcases.implicit_dependencies
