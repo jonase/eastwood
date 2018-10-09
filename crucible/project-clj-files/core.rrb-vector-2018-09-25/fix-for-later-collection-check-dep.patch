@@ -1,0 +1,13 @@
+diff --git a/src/test_local/clojure/clojure/core/rrb_vector_check.clj b/src/test_local/clojure/clojure/core/rrb_vector_check.clj
+index 76b606a..e89cfcd 100644
+--- a/src/test_local/clojure/clojure/core/rrb_vector_check.clj
++++ b/src/test_local/clojure/clojure/core/rrb_vector_check.clj
+@@ -1,7 +1,7 @@
+ (ns clojure.core.rrb-vector-check
+   (:require [clojure.core.rrb-vector :as fv]
+             [clojure.test.check.generators :as gen]
+-            [collection-check :refer [assert-vector-like]])
++            [collection-check.core :refer [assert-vector-like]])
+   (:use clojure.test))
+ 
+ (deftest collection-check
