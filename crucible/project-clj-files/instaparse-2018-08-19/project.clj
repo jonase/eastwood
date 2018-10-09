@@ -1,30 +1,29 @@
-(defproject instaparse "1.4.8"
+(defproject instaparse "1.4.9"
   :description "Instaparse: No grammar left behind"
   :url "https://github.com/Engelberg/instaparse"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.8.0"]]
-  :global-vars {*warn-on-reflection* true}
   :profiles {:dev {:dependencies
                    [[org.clojure/clojurescript "1.8.40"]
                     [org.clojure/tools.trace "0.7.9"]
                     [criterium "0.4.4"]
                     [rhizome "0.2.9"]]}
-             :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]
                                   [org.clojure/clojurescript "1.7.28"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]
                                   [org.clojure/clojurescript "1.8.34"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]
-                                  [org.clojure/clojurescript "1.8.34"]]}
+                                  [org.clojure/clojurescript "1.10.238"]
+                                  [org.clojure/tools.reader "1.2.1"]]}
              :1.10 {:dependencies [[org.clojure/clojure "1.10.0-master-SNAPSHOT"]
-                                  [org.clojure/clojurescript "1.9.908"]
-                                  [org.clojure/tools.reader "1.0.3"]]}
+                                  [org.clojure/clojurescript "1.10.238"]
+                                  [org.clojure/tools.reader "1.2.1"]]}
              }
-  :aliases {"test-all" ["with-profile" "+1.5:+1.6:+1.7:+1.8:+1.9" "test"]
+  :aliases {"test-all" ["with-profile" "+1.5:+1.6:+1.7:+1.8:+1.9:+1.10" "test"]
             "test-cljs" ["cljsbuild" "test" "unit-tests"]
-            "test-cljs-all" ["with-profile" "+1.7:+1.8:+1.9" "do" "clean," "test-cljs"]}
+            "test-cljs-all" ["with-profile" "+1.7:+1.8:+1.9:+1.10" "do" "clean," "test-cljs"]}
   :test-paths ["test/" "target/generated/test/clj"]
   :source-paths ["src/" "target/generated/src/clj"]
   :cljsee {:builds [{:source-paths ["src/"]
