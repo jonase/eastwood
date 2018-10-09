@@ -1,12 +1,12 @@
-(defproject org.clojure/core.async "0.1.0-SNAPSHOT"
+(defproject org.clojure/core.async "0.4.475-SNAPSHOT"
   :description "Facilities for async programming and communication in Clojure"
   :url "https://github.com/clojure/core.async"
   :license {:name "Eclipse Public License"
             :url "https://www.eclipse.org/legal/epl-v10.html"}
-  :parent [org.clojure/pom.contrib "0.1.2"]
+  :parent [org.clojure/pom.contrib "0.2.2"]
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/tools.analyzer.jvm "0.7.0"]
-                 [org.clojure/clojurescript "1.7.170" :scope "provided"]]
+                 [org.clojure/clojurescript "0.0-2311" :scope "provided"]]
   :global-vars {*warn-on-reflection* true}
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
