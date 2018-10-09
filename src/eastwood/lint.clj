@@ -166,7 +166,8 @@ describing the error."
                   (map (partial handle-lint-result linter ns-info))))
       (catch Throwable e
         [{:kind :lint-error
-          :warn-data (format "Exception thrown by linter %s on namespace %s" (:name linter) ns-sym)}]))))
+          :warn-data (format "Exception thrown by linter %s on namespace %s" (:name linter) ns-sym)
+          :exception e}]))))
 
 (defn report-warnings [cb warning-count warnings]
   (swap! warning-count + (count warnings))
@@ -643,7 +644,12 @@ Return value:
                            (swap! warning-count + (count lint-warning))
                            (swap! exception-count + (count lint-error))
                            (doseq [error lint-error]
-                             (error-cb (:warn-data error)))
+                             (error-cb (:warn-data error))
+                             (when (contains? error :exception)
+                               (let [{:keys [msgs]}
+                                     (msgs/format-exception namespace
+                                                            (:exception error))]
+                                 (doseq [msg msgs] (error-cb msg)))))
                            (doseq [warning lint-warning]
                              (cb (assoc warning :opt opts))))
                          (when exception
