@@ -2,7 +2,7 @@
   :description "Clojure codec implementations."
   :url "https://github.com/clojure/data.codec"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
   :dependencies [[org.clojure/clojure "1.8.0"]]

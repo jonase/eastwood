@@ -2,7 +2,7 @@
   :description "Prismatic's Clojure utility belt."
   :url "https://github.com/Prismatic/plumbing"
   :license {:name "Eclipse Public License - v 1.0"
-            :url "http://www.eclipse.org/legal/epl-v10.html"
+            :url "https://www.eclipse.org/legal/epl-v10.html"
             :distribution :repo}
 
   :global-vars {*warn-on-reflection* true}
@@ -76,7 +76,7 @@
                                  :pretty-print true}}}}
 
   :codox {:src-uri-mapping {#"target/generated/src/clj" #(str "src/" % "x")}
-          :src-dir-uri "http://github.com/prismatic/plumbing/blob/master/"
+          :src-dir-uri "https://github.com/prismatic/plumbing/blob/master/"
           :src-linenum-anchor-prefix "L"}
 
   :jvm-opts ^:replace [])

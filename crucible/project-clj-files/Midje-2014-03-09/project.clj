@@ -46,7 +46,7 @@
              :test-test-paths {:test-paths ["test-test-paths"]}}
   :resource-paths ["test-resources"]
   :license {:name "The MIT License (MIT)"
-            :url "http://opensource.org/licenses/mit-license.php"
+            :url "https://opensource.org/licenses/mit-license.php"
             :distribution :repo}
   :mailing-list {:name "Midje"
                  :subscribe "https://groups.google.com/forum/?fromgroups#!forum/midje"}
@@ -54,4 +54,4 @@
 
   ;; For Clojure snapshots
   :repositories {"sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/"
-                 "stuartsierra-releases" "http://stuartsierra.com/maven2"})
+                 "stuartsierra-releases" "https://stuartsierra.com/maven2"})

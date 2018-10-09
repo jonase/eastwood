@@ -2,7 +2,7 @@
   :description "Clojure logging API."
   :url "https://github.com/clojure/tools.logging"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :source-paths [ "src/main/clojure" ]
   :test-paths [ "src/test/clojure" ]
   :global-vars {*warn-on-reflection* true}

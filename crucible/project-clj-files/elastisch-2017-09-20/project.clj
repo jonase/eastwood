@@ -1,5 +1,5 @@
 (defproject clojurewerkz/elastisch "3.0.0-beta3-SNAPSHOT"
-  :url "http://clojureelasticsearch.info"
+  :url "https://clojureelasticsearch.info"
   :description "Minimalistic fully featured well documented Clojure Elasticsearch client"
   :license {:name "Eclipse Public License"}
   :dependencies [[org.clojure/clojure   "1.8.0"]
@@ -27,10 +27,10 @@
                  :1.10 {:dependencies [[org.clojure/clojure "1.10.0-master-SNAPSHOT"]]}
                  :master {:dependencies [[org.clojure/clojure "1.9.0-master-SNAPSHOT"]]}}
   :aliases      {"all" ["with-profile" "dev:1.7,dev:1.9,dev:master,dev:cljhttp076,dev"]} ;try dev, then dev+1.8, then dev+master
-  :repositories {"sonatype"         {:url "http://oss.sonatype.org/content/repositories/releases"
+  :repositories {"sonatype"         {:url "https://oss.sonatype.org/content/repositories/releases"
                                      :snapshots false
                                      :releases {:checksum :fail :update :always}}
-                 "sonatype-snapshots" {:url "http://oss.sonatype.org/content/repositories/snapshots"
+                 "sonatype-snapshots" {:url "https://oss.sonatype.org/content/repositories/snapshots"
                                        :snapshots true
                                        :releases {:checksum :fail :update :always}}}
   :global-vars {*warn-on-reflection* true}

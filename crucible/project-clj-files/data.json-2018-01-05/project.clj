@@ -2,7 +2,7 @@
   :description "Generating/parsing JSON from/to Clojure data structures"
   :url "https://github.com/clojure/data.json"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :parent [org.clojure/pom.contrib "0.1.2"]
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.6.0"]]

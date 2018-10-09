@@ -2,7 +2,7 @@
   :description "A JVM bytecode generator for ASTs compatible with tools.analyzer(.jvm)."
   :url "https://github.com/clojure/tools.emitter.jvm"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
   :global-vars {*warn-on-reflection* true}

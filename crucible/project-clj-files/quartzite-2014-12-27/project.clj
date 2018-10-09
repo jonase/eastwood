@@ -21,10 +21,10 @@
                    :dependencies [[org.clojure/tools.logging "0.2.3" :exclusions [org.clojure/clojure]]
                                   [org.slf4j/slf4j-log4j12   "1.6.4"]]}}
   :aliases {"all" ["with-profile" "dev:dev,1.5:dev,1.7:dev,master"]}
-  :repositories {"sonatype" {:url "http://oss.sonatype.org/content/repositories/releases"
+  :repositories {"sonatype" {:url "https://oss.sonatype.org/content/repositories/releases"
                              :snapshots false
                              :releases {:checksum :fail :update :always}}
-                 "sonatype-snapshots" {:url "http://oss.sonatype.org/content/repositories/snapshots"
+                 "sonatype-snapshots" {:url "https://oss.sonatype.org/content/repositories/snapshots"
                                        :snapshots true
                                        :releases {:checksum :fail :update :always}}}
   :global-vars {*warn-on-reflection* true}

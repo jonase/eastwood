@@ -2,7 +2,7 @@
   :description "A Clojure client library for Riak 2.0.0. Uses Java 7 NIO.2."
   :url "https://github.com/bluemont/kria"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :min-lein-version "2.0.0"
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [com.google.protobuf/protobuf-java "2.6.0"]

@@ -1,9 +1,9 @@
 (defproject clojurewerkz/cassaforte "1.3.0-beta11-SNAPSHOT"
   :min-lein-version "2.0.0"
   :description "A Clojure client for Apache Cassandra"
-  :url "http://clojurecassandra.info"
+  :url "https://clojurecassandra.info"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure                          "1.5.1"]
                  [cc.qbits/hayt                                "1.4.1"
                   :exclusions [org.flatland/useful]]
@@ -34,10 +34,10 @@
                    :indexes :indexes
                    :default (fn [m] (not (:stress m)))
                    :ci      (complement :skip-ci)}
-  :repositories {"sonatype" {:url "http://oss.sonatype.org/content/repositories/releases"
+  :repositories {"sonatype" {:url "https://oss.sonatype.org/content/repositories/releases"
                              :snapshots false
                              :releases {:checksum :fail :update :always}}
-                 "sonatype-snapshots" {:url "http://oss.sonatype.org/content/repositories/snapshots"
+                 "sonatype-snapshots" {:url "https://oss.sonatype.org/content/repositories/snapshots"
                                        :snapshots true
                                        :releases {:checksum :fail :update :always}}}
   :global-vars {*warn-on-reflection* true}

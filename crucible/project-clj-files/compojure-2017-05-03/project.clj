@@ -2,7 +2,7 @@
   :description "A concise routing library for Ring"
   :url "https://github.com/weavejester/compojure"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :global-vars {*warn-on-reflection* true}
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/tools.macro "0.1.5"]
@@ -14,7 +14,7 @@
   :codox
   {:output-path "codox"
    :metadata {:doc/format :markdown}
-   :source-uri "http://github.com/weavejester/compojure/blob/{version}/{filepath}#L{line}"}
+   :source-uri "https://github.com/weavejester/compojure/blob/{version}/{filepath}#L{line}"}
   :aliases
   {"test-all" ["with-profile" "default:+1.8" "test"]}
   :profiles

@@ -5,7 +5,7 @@
                  :archive "https://groups.google.com/forum/?fromgroups#!forum/clj-time"
                  :post "clj-time@googlegroups.com"}
   :license {:name "MIT License"
-            :url "http://www.opensource.org/licenses/mit-license.php"
+            :url "https://www.opensource.org/licenses/mit-license.php"
             :distribution :repo}
   :dependencies [[joda-time "2.9.9"]
                  [org.clojure/clojure "1.9.0" :scope "provided"]]

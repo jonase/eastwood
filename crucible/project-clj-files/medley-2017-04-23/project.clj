@@ -2,7 +2,7 @@
   :description "A lightweight library of useful, mostly pure functions"
   :url "https://github.com/weavejester/medley"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]]
   :plugins [[lein-codox "0.10.3"]
             [lein-cljsbuild "1.1.2"]
@@ -10,7 +10,7 @@
   :codox
   {:output-path "codox"
    :metadata {:doc/format :markdown}
-   :source-uri "http://github.com/weavejester/medley/blob/{version}/{filepath}#L{line}"}
+   :source-uri "https://github.com/weavejester/medley/blob/{version}/{filepath}#L{line}"}
   :cljsbuild
   {:builds
    {:test

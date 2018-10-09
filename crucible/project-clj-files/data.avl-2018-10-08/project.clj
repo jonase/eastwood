@@ -2,7 +2,7 @@
   :description "Persistent sorted maps and sets with log-time rank queries"
   :url "https://github.com/clojure/data.avl"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :min-lein-version "2.6.1"
   :parent [org.clojure/pom.contrib "0.1.2"]
   :dependencies [[org.clojure/clojure "1.6.0"]]

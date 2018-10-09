@@ -1,7 +1,7 @@
 (defproject com.novemberain/pantomime "2.8.0-SNAPSHOT"
   :min-lein-version "2.5.1"
   :description "A minimalistic Clojure interface to Apache Tika"
-  :url "http://github.com/michaelklishin/pantomime"
+  :url "https://github.com/michaelklishin/pantomime"
   :license { :name "Eclipse Public License" }
   :source-paths ["src/clojure"]
   :dependencies [[org.clojure/clojure "1.6.0"]                 
@@ -15,10 +15,10 @@
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :1.10 {:dependencies [[org.clojure/clojure "1.10.0-master-SNAPSHOT"]]}
              :master {:dependencies [[org.clojure/clojure "1.8.0-master-SNAPSHOT"]]}}
-  :repositories {"sonatype" {:url "http://oss.sonatype.org/content/repositories/releases"
+  :repositories {"sonatype" {:url "https://oss.sonatype.org/content/repositories/releases"
                              :snapshots false
                              :releases {:checksum :fail :update :always}}
-                 "sonatype-snapshots" {:url "http://oss.sonatype.org/content/repositories/snapshots"
+                 "sonatype-snapshots" {:url "https://oss.sonatype.org/content/repositories/snapshots"
                                        :snapshots true
                                        :releases {:checksum :fail :update :always}}}
   :aliases  {"all" ["with-profile" "+dev:+1.7:+master"]}

@@ -26,10 +26,10 @@
              }
   :aliases {"all" ["with-profile" "dev:dev,clj1.4:dev,clj1.5"]
             "test-no-cache" ["with-profile" "+cacheless-test" "test"]}
-  :repositories {"sonatype" {:url "http://oss.sonatype.org/content/repositories/releases"
+  :repositories {"sonatype" {:url "https://oss.sonatype.org/content/repositories/releases"
                              :snapshots false
                              :releases {:checksum :fail :update :always}}
-                 "sonatype-snapshots" {:url "http://oss.sonatype.org/content/repositories/snapshots"
+                 "sonatype-snapshots" {:url "https://oss.sonatype.org/content/repositories/snapshots"
                                        :snapshots true
                                        :releases {:checksum :fail :update :always}}}
   :test-paths ["test/" "target/test/spec"])

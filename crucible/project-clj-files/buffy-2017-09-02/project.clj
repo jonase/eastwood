@@ -1,9 +1,9 @@
 (defproject clojurewerkz/buffy "1.2.0-SNAPSHOT"
   :description  "Clojure library for working with binary data"
-  :url          "http://github.com/clojurewerkz/buffy"
+  :url          "https://github.com/clojurewerkz/buffy"
 
   :license      {:name "Eclipse Public License"
-                 :url "http://www.eclipse.org/legal/epl-v10.html"}
+                 :url "https://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/clojure     "1.8.0"]
                  [io.netty/netty-buffer   "4.0.51.Final"]
@@ -25,10 +25,10 @@
                           :codox {:sources ["src/clojure"]
                                   :output-dir "doc/api"}}}
 
-  :repositories {"sonatype"           {:url "http://oss.sonatype.org/content/repositories/releases"
+  :repositories {"sonatype"           {:url "https://oss.sonatype.org/content/repositories/releases"
                                        :snapshots false
                                        :releases {:checksum :fail :update :always}}
-                 "sonatype-snapshots" {:url "http://oss.sonatype.org/content/repositories/snapshots"
+                 "sonatype-snapshots" {:url "https://oss.sonatype.org/content/repositories/snapshots"
                                        :snapshots true
                                        :releases {:checksum :fail :update :always}}}
 

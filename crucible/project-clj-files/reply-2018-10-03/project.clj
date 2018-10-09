@@ -17,7 +17,7 @@
                     :exclusions [org.clojure/clojure]]]
     :min-lein-version "2.0.0"
     :license {:name "Eclipse Public License"
-              :url "http://www.eclipse.org/legal/epl-v10.html"}
+              :url "https://www.eclipse.org/legal/epl-v10.html"}
     :url "https://github.com/trptcolin/reply"
     :profiles {:dev {:dependencies ~dev-deps}
                :base {:dependencies []}

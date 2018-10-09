@@ -3,7 +3,7 @@
   :parent [org.clojure/pom.contrib "0.1.2"]
   :url "https://github.com/clojure/java.jdbc"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
   :global-vars {*warn-on-reflection* true}

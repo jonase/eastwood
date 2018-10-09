@@ -1,7 +1,7 @@
 (defproject net.mikera/core.matrix "0.62.1-SNAPSHOT"
   :url "https://github.com/mikera/core.matrix"
   :license {:name "Eclipse Public License (EPL)"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :global-vars {*warn-on-reflection* true}
 
   :dependencies [[org.clojure/clojure "1.8.0"]]
@@ -83,7 +83,7 @@
                           }
              }}
 
-  :marginalia {:javascript ["http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"]}
+  :marginalia {:javascript ["https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"]}
 
   ;;runs both clj and cljs tests on invocation of "lein test"
   :aliases {"test" ["do" "clean," "test," "with-profile" "cljs" "doo" "nashorn" "test" "once"]}

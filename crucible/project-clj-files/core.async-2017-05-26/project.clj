@@ -2,7 +2,7 @@
   :description "Facilities for async programming and communication in Clojure"
   :url "https://github.com/clojure/core.async"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
   :parent [org.clojure/pom.contrib "0.1.2"]
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/tools.analyzer.jvm "0.7.0"]

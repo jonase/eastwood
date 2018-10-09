@@ -1,9 +1,9 @@
 (defproject http-kit "2.3.0"
   :author "Feng Shen (@shenfeng)"
   :description "High-performance event-driven HTTP client/server for Clojure"
-  :url "http://http-kit.org/"
+  :url "https://http-kit.org/"
   :license {:name "Apache License, Version 2.0"
-            :url "http://www.apache.org/licenses/LICENSE-2.0.html"
+            :url "https://www.apache.org/licenses/LICENSE-2.0.html"
             :distribution :repo}
   :min-lein-version "2.3.3"
   :global-vars {*warn-on-reflection* true}

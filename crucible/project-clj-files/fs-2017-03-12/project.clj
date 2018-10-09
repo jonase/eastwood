@@ -1,7 +1,7 @@
 (defproject me.raynes/fs "1.5.0"
   :description "File system utilities for clojure"
   :license {:name "Eclipse Public License - v 1.0"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
 
   :url "https://github.com/funcool/fs"
 
@@ -13,7 +13,7 @@
   :codeina {:sources ["src"]
             :reader :clojure
             :target "doc/dist/latest/api"
-            :src-uri "http://github.com/funcool/fs/blob/master/"
+            :src-uri "https://github.com/funcool/fs/blob/master/"
             :src-uri-prefix "#L"}
 
 

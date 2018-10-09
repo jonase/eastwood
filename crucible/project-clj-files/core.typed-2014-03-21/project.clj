@@ -1,7 +1,7 @@
 (defproject org.clojure/core.typed "0.2.35-SNAPSHOT"
   :description "Gradual typing for Clojure"
   :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+            :url "https://www.eclipse.org/legal/epl-v10.html"}
 
   :dependencies [[org.clojure/jvm.tools.analyzer "0.6.1"
                   :exclusions [org.clojure/clojure
