@@ -1,8 +1,4 @@
-;; NOTE: This project.clj file exists purely to make it easier to
-;; develop and test java.jdbc locally. The pom.xml file is the
-;; "system of record" as far as the project version is concerned.
-
-(defproject org.clojure/java.jdbc "0.7.4-SNAPSHOT"
+(defproject org.clojure/java.jdbc "0.7.9-SNAPSHOT"
   :description "A low-level Clojure wrapper for JDBC-based access to databases."
   :parent [org.clojure/pom.contrib "0.1.2"]
   :url "https://github.com/clojure/java.jdbc"
@@ -11,7 +7,7 @@
   :source-paths ["src/main/clojure"]
   :test-paths ["src/test/clojure"]
   :global-vars {*warn-on-reflection* true}
-  :dependencies [[org.clojure/clojure "1.9.0-beta1"]
+  :dependencies [[org.clojure/clojure "1.9.0"]
                  ;; These are just the versions most recently test against
                  ;; for your own projects, use whatever version is most
                  ;; appropriate for you. Again, note that this project.clj
