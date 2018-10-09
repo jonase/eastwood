@@ -1,8 +1,8 @@
-(defproject org.clojure/core.memoize "0.5.7-SNAPSHOT"
+(defproject org.clojure/core.memoize "0.7.2-SNAPSHOT"
   :description "A memoization library for Clojure."
   :dependencies [;;[org.clojure/pom.contrib "0.1.2"]
-                 [org.clojure/clojure "1.5.1"]
-                 [org.clojure/core.cache "0.6.4"]]
+                 [org.clojure/clojure "1.6.0"]
+                 [org.clojure/core.cache "0.7.1"]]
   :profiles {:1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
