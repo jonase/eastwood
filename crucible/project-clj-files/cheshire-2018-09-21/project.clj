@@ -1,21 +1,16 @@
-(defproject cheshire "5.8.1-SNAPSHOT"
+(defproject cheshire "5.8.2-SNAPSHOT"
   :description "JSON and JSON SMILE encoding, fast."
   :url "https://github.com/dakrone/cheshire"
   :license {:name "The MIT License"
             :url "http://opensource.org/licenses/MIT"
             :distribution :repo}
   :global-vars {*warn-on-reflection* false}
-  :dependencies [[com.fasterxml.jackson.core/jackson-core "2.9.0"]
-                 [com.fasterxml.jackson.dataformat/jackson-dataformat-smile "2.9.0"]
-                 [com.fasterxml.jackson.dataformat/jackson-dataformat-cbor "2.9.0"]
+  :dependencies [[com.fasterxml.jackson.core/jackson-core "2.9.6"]
+                 [com.fasterxml.jackson.dataformat/jackson-dataformat-smile "2.9.6"]
+                 [com.fasterxml.jackson.dataformat/jackson-dataformat-cbor "2.9.6"]
                  [tigris "0.1.1"]]
   :profiles {:dev {:dependencies [[org.clojure/clojure "1.8.0"]
                                   [org.clojure/test.generative "0.1.4"]
-                                  ;; With Clojure 1.9.0-beta2,
-                                  ;; tools.namespace versions earlier
-                                  ;; than 0.2.1 contain incorrect ns
-                                  ;; forms that cause clojure.spec to
-                                  ;; fail on one of them.
                                   [org.clojure/tools.namespace "0.2.1"]]}
              :1.3 {:dependencies [[org.clojure/clojure "1.3.0"]]}
              :1.4 {:dependencies [[org.clojure/clojure "1.4.0"]]}
