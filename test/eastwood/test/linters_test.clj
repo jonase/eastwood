@@ -4,7 +4,8 @@
             [clojure.string :as str]
             [clojure.pprint :as pp]
             [eastwood.util :as util]
-            [eastwood.lint :refer :all])
+            [eastwood.lint :refer :all]
+            [eastwood.reporting-callbacks :as reporting])
   (:import (java.io File)))
 
 ;; TBD: It would be cleaner to make Eastwood's error reporting code
@@ -43,14 +44,15 @@ the next."
                    (compare ((juxt :line :column :linter :msg) w1)
                             ((juxt :line :column :linter :msg) w2)))))
 
-(def default-opts {})
+(def default-test-opts {})
 
 ;; If an exception occurs during analyze, re-throw it.  This will
 ;; cause any test written that calls lint-ns-noprint to fail, unless
 ;; it expects the exception.
 (defn lint-ns-noprint [ns-sym linters opts]
-  (let [opts (assoc opts :linters linters)
-        opts (last-options-map-adjustments opts)
+  (let [opts (assoc opts :linters linters
+                     :debug #{})
+        opts (last-options-map-adjustments opts (reporting/silent-reporter opts))
         cb (fn cb [info]
              (case (:kind info)
                (:eval-out :eval-err) (println (:msg info))
@@ -93,7 +95,7 @@ the next."
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var :wrong-tag :non-dynamic-earmuffs
     :unused-locals]
-   (assoc default-opts
+   (assoc default-test-opts
      ;;:debug [:ns :config]
      :config-files
      [(fname-from-parts "cases" "testcases" "eastwood-testing-config.clj")])

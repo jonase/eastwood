@@ -71,29 +71,28 @@ the value of File/separator for the platform."
 (defn pre-analyze-debug [asts form _env ns opt]
   (when (util/debug? :ns opt)
     (let [print-normally? (util/debug? :forms opt)
-          pprint? (util/debug? :forms-pprint opt)
-          debug-cb (util/make-msg-cb :debug opt)]
+          pprint? (util/debug? :forms-pprint opt)]
       (when (or print-normally? pprint?)
-        (debug-cb (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
+        (println (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
                           (count asts) (str ns) (meta ns)))
         (when pprint?
-          (debug-cb "    form before macroexpand:")
-          (debug-cb (with-out-str (pp/pprint form))))
+          (println "    form before macroexpand:")
+          (pp/pprint form))
         (when print-normally?
-          (debug-cb "    form before macroexpand, with metadata (some elided for brevity):")
-          (debug-cb (with-out-str (util/pprint-meta-elided form))))
-        (debug-cb "\n    --------------------")
+          (println "    form before macroexpand, with metadata (some elided for brevity):")
+          (util/pprint-meta-elided form))
+        (println "\n    --------------------")
         (if (dont-expand-twice? form)
           (when print-normally?
-            (debug-cb "    form is gen-interface, so avoiding macroexpand on it"))
+            (println "    form is gen-interface, so avoiding macroexpand on it"))
           (let [exp (macroexpand form)]
             (when pprint?
-              (debug-cb "    form after macroexpand:")
-              (debug-cb (with-out-str (pp/pprint exp))))
+              (println "    form after macroexpand:")
+              (pp/pprint exp))
             (when print-normally?
-              (debug-cb "    form after macroexpand, with metadata (some elided for brevity):")
-              (debug-cb (with-out-str (util/pprint-meta-elided exp))))))
-        (debug-cb "\n    --------------------")))))
+              (println "    form after macroexpand, with metadata (some elided for brevity):")
+              (util/pprint-meta-elided exp))))
+        (println "\n    --------------------")))))
 
 (def ^:dynamic *forms-read-writer* nil)
 (def ^:dynamic *forms-analyzed-writer* nil)
@@ -124,11 +123,9 @@ the value of File/separator for the platform."
 
 (defn post-analyze-debug [filename asts form ast ns opt]
   (when (util/debug? :ns opt)
-    (let [show-ast? (util/debug? :ast opt)
-          cb (:callback opt)
-          debug-cb (util/make-msg-cb :debug opt)]
+    (let [show-ast? (util/debug? :ast opt)]
       (when (or show-ast? (util/debug? :progress opt))
-        (debug-cb (format "dbg anal'd %d ns=%s%s"
+        (println(format "dbg anal'd %d ns=%s%s"
                           (count asts) (str ns)
                           (if show-ast? " ast=" ""))))
       (when show-ast?
@@ -145,10 +142,9 @@ the value of File/separator for the platform."
 
 (defn before-analyze-file-debug [source-path opt]
   (when (util/debug? :ns opt)
-    (let [debug-cb (util/make-msg-cb :debug opt)]
-      (debug-cb (format "all-ns before (analyze-file \"%s\") begins:"
-                        source-path))
-      (debug-cb (with-out-str (pp/pprint (sort (all-ns-names-set))))))))
+    (println (format "all-ns before (analyze-file \"%s\") begins:"
+                     source-path))
+    (pp/pprint (sort (all-ns-names-set)))))
 
 (defn eastwood-wrong-tag-handler [t ast]
   (let [tag (if (= t :name/tag)
