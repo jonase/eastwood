@@ -164,37 +164,6 @@ describing the error."
           :warn-data (format "Exception thrown by linter %s on namespace %s" (:name linter) ns-sym)
           :exception e}]))))
 
-<<<<<<< HEAD
-(defn report-warnings [cb warning-count warnings]
-  (swap! warning-count + (count warnings))
-  (doseq [warning warnings]
-    (cb warning)))
-
-(defn- report-analyzer-exception [exception exception-phase exception-form ns-sym]
-  (let [[strings error-cb] (msgs/string-builder)]
-    (error-cb (str "Exception thrown during phase " exception-phase
-                   " of linting namespace " ns-sym))
-    (let [{:keys [msgs info]} (msgs/format-exception ns-sym exception)]
-      (swap! strings into msgs)
-      (when (= info :show-more-details)
-        (error-cb "\nThe following form was being processed during the exception:")
-        ;; TBD: Replace this binding with util/pprint-form variation
-        ;; that does not print metadata?
-        (error-cb (with-out-str (binding [*print-level* 7
-                                          *print-length* 50]
-                                  (pp/pprint exception-form))))
-        (error-cb "\nShown again with metadata for debugging (some metadata elided for brevity):")
-        (error-cb (with-out-str (util/pprint-form exception-form)))))
-    (error-cb
-     (str "\nAn exception was thrown while analyzing namespace " ns-sym "
-Lint results may be incomplete.  If there are compilation errors in
-your code, try fixing those.  If not, check above for info on the
-exception."))
-    {:exception exception
-     :msgs @strings}))
-
-=======
->>>>>>> Remove callbacks + cleanups
 (defn lint-ns* [ns-sym analyze-results opts linter]
   (let [[results elapsed] (util/timeit (run-linter linter analyze-results ns-sym opts))]
     (->> results
@@ -529,9 +498,7 @@ Exception thrown while analyzing last namespace.
                                                 (:name linter) elapsed))
         (reporting/add-warnings reporter lint-warning)
         (reporting/add-exceptions reporter lint-error)
-        (->> lint-error
-             (map :warn-data)
-             (reporting/add-errors reporter))))
+        (reporting/add-errors reporter namespace lint-error)))
     (catch RuntimeException e
       (reporting/error reporter e))))
 

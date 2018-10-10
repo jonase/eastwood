@@ -1,8 +1,8 @@
 (ns eastwood.reporting-callbacks
   (:require [clojure.java.io :as io]
-            [clojure.pprint :as pp]
-            [eastwood.util :as util]
-            [clojure.string :as str]))
+            [clojure.string :as str]
+            [eastwood.error-messages :as msgs]
+            [eastwood.util :as util]))
 
 (def last-cwd-shown (atom nil))
 
@@ -89,9 +89,12 @@
   (doseq [warning warnings]
     (lint-warning reporter warning)))
 
-(defn add-errors [reporter errors]
-  (doseq [error errors]
-    (lint-error reporter error)))
+(defn add-errors [reporter namespace errors]
+  (doseq [{:keys [exception warn-data] :as error} errors]
+    (when exception
+      (let [{:keys [msgs]} (msgs/format-exception namespace exception)]
+        (doseq [msg msgs] (println msg))))
+  (lint-error reporter (:warn-data error))))
 
 (defn add-exceptions [reporter exceptions]
   (doseq [exception exceptions]
