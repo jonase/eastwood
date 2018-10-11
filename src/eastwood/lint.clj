@@ -349,7 +349,7 @@
        :err-data {:unknown-linters unknown-linters
                   :known-linters known-linters}}
       ;; else
-      {:err nil, :linters linters})))
+      {:linters linters})))
 
 
 
@@ -420,8 +420,8 @@ Return value:
     (->> (misc/non-clojure-files non-clojure-files opts)
          (reporting/add-warnings reporter))
     (cond
-     (:err m1) m1
-     (:err m2) m2
+      (:err m1) {:error m1}
+      (:err m2) {:error m2}
      :else
      (let [continue-on-exception? (:continue-on-exception opts)
            stopped-on-exc (atom false)]
@@ -497,7 +497,7 @@ Return value:
    ;; Use caller-provided :cwd and :callback values if provided
    (let [opts (last-options-map-adjustments opts reporter)]
      (if (:err opts)
-       {:some-warnings true}
+       (reporting/show-error reporter opts)
        (do
          (reporting/debug reporter :var-info (with-out-str
                                                (util/print-var-info-summary @typos/var-info-map-delayed opts)))
@@ -508,7 +508,7 @@ Return value:
                (eastwood-core reporter opts)]
 
            (when error
-             (reporting/error reporter (-> error :err-data :exception)))
+             (reporting/show-error reporter error))
            (reporting/note reporter (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
                                             (count (reporting/warnings reporter))
                                             (count (reporting/analyzer-exceptions reporter))))

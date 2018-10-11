@@ -61,6 +61,7 @@
 (defmulti lint-warning dispatch-fn)
 (defmulti analyzer-exception dispatch-fn)
 (defmulti note dispatch-fn)
+;(defmulti show-error dispatch-fn)
 
 (defmethod lint-warning PrintingReporter [reporter warning]
   (swap! (:warnings reporter) conj warning)
@@ -72,6 +73,7 @@
   (swap! (:analyzer-exceptions reporter) conj exception)
   (println (str/join "\n" (:msgs exception)))
   (flush))
+
 
 (defmethod note PrintingReporter [reporter msg]
   (println msg)
@@ -99,3 +101,11 @@
 (defn add-exceptions [reporter exceptions]
   (doseq [exception exceptions]
     (lint-error reporter exception)))
+
+(defn show-error [reporter linting-error]
+  (let [message (msgs/error-msg linting-error)
+        exception (-> linting-error :err-data :exception)]
+    (note reporter message)
+    (error reporter exception)
+    (lint-error reporter exception)))
+
