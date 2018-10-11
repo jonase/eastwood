@@ -44,7 +44,7 @@ the next."
                    (compare ((juxt :line :column :linter :msg) w1)
                             ((juxt :line :column :linter :msg) w2)))))
 
-(def default-opts {})
+(def default-test-opts {})
 
 ;; If an exception occurs during analyze, re-throw it.  This will
 ;; cause any test written that calls lint-ns-noprint to fail, unless
@@ -95,7 +95,7 @@ the next."
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var :wrong-tag :non-dynamic-earmuffs
     :unused-locals]
-   (assoc default-opts
+   (assoc default-test-opts
      ;;:debug [:ns :config]
      :config-files
      [(fname-from-parts "cases" "testcases" "eastwood-testing-config.clj")])

@@ -878,12 +878,11 @@ StringWriter."
               (println "(none specified to debug-warning fn)")))))))))
 
 
-(def ^:private warning-enable-config-atom (atom []))
-
+;; This atom is modified from the config files
+(def warning-enable-config-atom (atom []))
 
 (defn disable-warning [m]
   (swap! warning-enable-config-atom conj m))
-
 
 (defn process-configs [warning-enable-config]
   (reduce (fn [configs {:keys [linter] :as m}]
@@ -908,13 +907,11 @@ StringWriter."
   (io/resource (str "eastwood/config/" name)))
 
 
-(defn init-warning-enable-config [opt]
-  (let [builtin-config-files (:builtin-config-files opt)
-        other-config-files (get opt :config-files [])
-        config-files (concat (map builtin-config-to-resource
-                                  builtin-config-files)
-                             other-config-files)]
-    (doseq [config-file config-files]
+(defn init-warning-enable-config [builtin-config-files config-files opt]
+  (let [all-config-files (concat (map builtin-config-to-resource
+                                      builtin-config-files)
+                                 config-files)]
+    (doseq [config-file all-config-files]
       (when (debug? :config opt)
         (println (format "Loading config file: %s" config-file)))
       (try

@@ -243,9 +243,8 @@ describing the error."
                :recommended-fnames desired-fname-set,
                :recommended-namespace desired-ns}]))))
 
-
 (defn nss-in-dirs [dir-name-strs linters]
-  (let [dir-name-strs (map util/canonical-filename dir-name-strs)
+  (let [dir-name-strs (set (map util/canonical-filename dir-name-strs))
         mismatches (filename-namespace-mismatches dir-name-strs)]
     (if (seq mismatches)
       {:err :namespace-filename-mismatch
@@ -255,31 +254,12 @@ describing the error."
                       ;; Use empty tracker if dir-name-strs is empty.
                       ;; Calling dir/scan-all will use complete Java
                       ;; classpath if called with an empty sequence.
-                      (track/tracker))
-            files-no-ns-form-found
-            (when (some #{:no-ns-form-found} linters)
-              (let [tfiles (-> tracker
-                               :eastwood.copieddeps.dep9.clojure.tools.namespace.dir/files
-                               set)
-                    tfilemap (-> tracker
-                                 :eastwood.copieddeps.dep9.clojure.tools.namespace.file/filemap
-                                 keys
-                                 set)
-                    maybe-data-readers (->> dir-name-strs
-                                            (map #(File.
-                                                   (str % File/separator
-                                                        "data_readers.clj")))
-                                            set)]
-                (set/difference tfiles tfilemap maybe-data-readers)))]
-        {:err nil
-         :dirs dir-name-strs
-         :non-clojure-files
-         (:eastwood.copieddeps.dep9.clojure.tools.namespace.dir/non-clojure-files
-          tracker)
-         :no-ns-form-found-files files-no-ns-form-found
-         :namespaces
-         (:eastwood.copieddeps.dep9.clojure.tools.namespace.track/load
-          tracker)}))))
+                      (track/tracker))]
+        {:dirs dir-name-strs
+         :non-clojure-files (::dir/non-clojure-files tracker)
+         :files (set (::dir/files tracker))
+         :file-map (::file/filemap tracker)
+         :namespaces (::track/load tracker)}))))
 
 
 (defmethod error-msg :namespace-filename-mismatch [err-info]
@@ -312,30 +292,22 @@ merely suggestions.  It may be better in your case to rename both the
 file and namespace to avoid name collisions."))))
 
 
-(defn replace-ns-keywords [namespaces source-paths test-paths]
-  (mapcat (fn [x]
-            (if (keyword? x)
-              (case x
-                :source-paths source-paths
-                :test-paths test-paths
-                ;;:force-order []
-                )
-              [x]))
-          namespaces))
+(defn expand-ns-keywords
+  "Expand any keyword in `namespaces` with values from `expanded-namespaces`"
+  [expanded-namespaces namespaces]
+  (mapcat (fn [x] (get expanded-namespaces x [x])) namespaces))
 
-;; special case 'merge': If _neither_ of :source-paths or
-;; :test-paths were specified in the options map, then set
-;; _one_ of them to a list of all the directories on the
-;; classpath.  If either is present, leave them both as is.
-;; Both of these should always have a value if invoked from
-;; Leiningen command line, so this is only for when invoked
-;; directly, e.g. from the REPL, intended as a convenience.
-
-(defn setup-lint-paths [source-paths test-paths]
-  (if-not (and (seq source-paths) (seq test-paths))
-    {:source-paths (classpath/classpath-directories)}
-    {:source-paths source-paths
-     :test-paths test-paths}))
+(defn setup-lint-paths
+  "Return a map containing `:source-path` and `:test-paths` which
+  contains the set of values in each. If both `source-paths` and `test-paths`
+  are empty then `:source-path` is set to all the directories on the classpath,
+  while `:test-paths` is the empty set."
+  [source-paths test-paths]
+  (if-not (or (seq source-paths) (seq test-paths))
+    {:source-paths (set (classpath/classpath-directories))
+     :test-paths #{}}
+    {:source-paths (set source-paths)
+     :test-paths (set test-paths)}))
 
 ;; If you do not specify :namespaces in the options, it defaults to
 ;; the same as if you specified [:source-paths :test-paths].  If you
@@ -355,47 +327,37 @@ file and namespace to avoid name collisions."))))
 ;; TBD: Abort with an easily understood error message if a namespace
 ;; is given that cannot be found.
 
-(defn opts->namespaces [{:keys [exclude-namespaces namespaces cwd enabled-linters] :as opts} lint-paths]
-  (let [sp-included? (namespaces :source-paths)
-        tp-included? (namespaces :test-paths)]
-    ;; If keyword :source-paths occurs in namespaces or
-    ;; excluded-namespaces, replace it with all namespaces found in
-    ;; the directories in (:source-paths opts), in an order that
-    ;; honors dependencies, and similarly for :test-paths.
-    ;; nss-in-dirs traverses part of the file system, so only call it
-    ;; once for each of :source-paths and :test-paths, and only if
-    ;; needed.
-    (let [all-ns (concat namespaces exclude-namespaces)
-          cwd (:cwd opts)
-          linters (:enabled-liters opts)
-          sp (if (some #{:source-paths} all-ns)
-               (nss-in-dirs (:source-paths opts) linters))
-          tp (if (some #{:test-paths} all-ns)
-               (nss-in-dirs (:test-paths opts) linters))]
-      (cond
-        (:err sp) sp
-        (:err tp) tp
-        :else
-        (let [source-paths (:namespaces sp)
-              test-paths (:namespaces tp)
-              namespaces (replace-ns-keywords namespaces
-                                              source-paths test-paths)
-              namespaces (distinct namespaces)
-              excluded-namespaces (set (replace-ns-keywords exclude-namespaces
-                                                            source-paths
-                                                            test-paths))
-              namespaces (remove excluded-namespaces namespaces)]
-          {:err nil,
-           :namespaces namespaces,
-           :dirs (distinct (concat (if sp-included? (:dirs sp))
-                                   (if tp-included? (:dirs tp))))
-           :no-ns-form-found-files
-           (concat
-            (if sp-included? (:no-ns-form-found-files sp))
-            (if tp-included? (:no-ns-form-found-files tp)))
-           :non-clojure-files (concat
-                               (if sp-included? (:non-clojure-files sp))
-                               (if tp-included? (:non-clojure-files tp)))})))))
+(defn opts->namespaces [{:keys [exclude-namespaces namespaces cwd enabled-linters] :as opts}
+                        {:keys [source-paths test-paths]}]
+  ;; If keyword :source-paths occurs in namespaces or
+  ;; excluded-namespaces, replace it with all namespaces found in
+  ;; the directories in (:source-paths opts), in an order that
+  ;; honors dependencies, and similarly for :test-paths.
+  ;; nss-in-dirs traverses part of the file system, so only call it
+  ;; once for each of :source-paths and :test-paths, and only if
+  ;; needed.
+  (let [all-ns (concat namespaces exclude-namespaces)
+        sp (if (some #{:source-paths} all-ns)
+             (nss-in-dirs source-paths enabled-linters))
+        tp (if (some #{:test-paths} all-ns)
+             (nss-in-dirs test-paths enabled-linters))]
+    (cond
+      (:err sp) sp
+      (:err tp) tp
+      :else
+      (let [expanded-namespaces {:source-paths (:namespaces sp)
+                                 :test-paths (:namespaces tp)}
+            excluded-namespaces (set (expand-ns-keywords expanded-namespaces
+                                                         exclude-namespaces))]
+        {:namespaces (->> namespaces
+                          (expand-ns-keywords expanded-namespaces)
+                          distinct
+                          (remove excluded-namespaces))
+         :dirs (concat (:dirs sp) (:dirs tp))
+         :files (set (concat (:files sp) (:files tp)))
+         :file-map (merge (:file-map sp) (:file-map tp))
+         :non-clojure-files (set/union (:non-clojure-files sp)
+                                       (:non-clojure-files tp))}))))
 
 
 (defn replace-linter-keywords [linters all-linters default-linters]
@@ -537,13 +499,12 @@ Return value:
   (let [{:keys [linters] :as m1} (opts->linters opts linter-name->info
                                                 default-linters)
         opts (assoc opts :enabled-linters linters)
-        {:keys [namespaces dirs no-ns-form-found-files
+        {:keys [namespaces dirs files file-map
                 non-clojure-files] :as m2}
         (opts->namespaces opts (setup-lint-paths (:source-paths opts) (:test-paths opts)))]
     (dirs-scanned reporter (:cwd opts) dirs)
     (when (some #{:no-ns-form-found} (:enabled-linters opts))
-      (->> no-ns-form-found-files
-           (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" (:cwd opts)))
+      (->> (misc/no-ns-form-found-files (:cwd opts) dirs files file-map)
            (reporting/add-warnings reporter)))
     (when (some #{:non-clojure-file} (:enabled-linters opts))
       (->> non-clojure-files
@@ -582,35 +543,35 @@ Return value:
           {:error {:err :exception-thrown
                    :err-data @stopped-on-exc}}))))))
 
-;; Test Eastwood for a while with messages being written to file
-;; "east-out.txt", to see if I catch everything that was going to
-;; *out* with callback functions or return values.
-
-;; Use the java.io.PrintWriter shown below to write messages to the
-;; same place as Eastwood does in version 0.1.4.
-
-
 (def default-builtin-config-files
   ["clojure.clj"
    "clojure-contrib.clj"
    "third-party-libs.clj"])
 
+(def default-opts {:cwd (.getCanonicalFile (io/file "."))
+                   :linters default-linters
+                   :debug #{}
+                   :source-paths #{}
+                   :test-paths #{}
+                   :namespaces #{:source-paths :test-paths}
+                   :exclude-namespaces #{}
+                   :config-files #{}
+                   :builtin-config-files default-builtin-config-files})
 
 (defn last-options-map-adjustments [opts reporter]
-  (let [opts (update opts :debug set)
-        opts (update opts :namespaces set)
-        opts (update opts :source-paths set)
-        opts (update opts :test-paths set)
-        opts (update opts :exclude-namespaces set)
-        opts (merge {:cwd (.getCanonicalFile (io/file "."))
-                     :linters default-linters
-                     :namespaces #{:source-paths :test-paths}
-                     :builtin-config-files default-builtin-config-files}
-                    opts)
+  (let [opts (merge default-opts opts)
+        opts (-> opts
+                 (update :debug set)
+                 (update :namespaces set)
+                 (update :source-paths set)
+                 (update :test-paths set)
+                 (update :exclude-namespaces set))
         ;; Changes below override anything in the caller-provided
         ;; options map.
         opts (assoc opts :warning-enable-config
-                    (util/init-warning-enable-config opts))]
+                    (util/init-warning-enable-config
+                     (:builtin-config-files opts)
+                     (:config-files opts) opts))]
     (reporting/debug reporter :options (with-out-str
                                          (println "\nOptions map after filling in defaults:")
                                          (pp/pprint (into (sorted-map) opts))))

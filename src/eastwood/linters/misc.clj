@@ -6,7 +6,8 @@
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [resolve-sym arglist-for-arity dynamic?]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as j]
-            [eastwood.util :as util]))
+            [eastwood.util :as util])
+    (:import java.io.File))
 
 (defn var-of-ast [ast]
   (-> ast :form second))
@@ -1025,3 +1026,22 @@
              :msg "More than one ns form found in same file"}
             warnings)
       warnings)))
+
+(defn make-lint-warning [kw msg cwd file]
+  {:kind :lint-warning,
+   :warn-data (let [inf (util/file-warn-info file cwd)]
+                (merge
+                 {:linter kw
+                  :msg (format (str msg " '%s'.  It will not be linted.")
+                               (:uri-or-file-name inf))}
+                 inf))})
+
+(defn no-ns-form-found-files [cwd dir-name-strs files filemap]
+  (let [tfilemap (-> filemap keys set)
+        maybe-data-readers (->> dir-name-strs
+                                (map #(File.
+                                       (str % File/separator
+                                            "data_readers.clj")))
+                                set)]
+    (->> (set/difference files tfilemap maybe-data-readers)
+         (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" cwd)))))
