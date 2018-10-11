@@ -9,19 +9,34 @@
     (.-name ns)))
 
 
+(defn within-other-ns-macro?
+  [ast ns-sym]
+  (let [macro-namespace-syms (->> ast
+                                  util/enclosing-macros
+                                  (keep #(some-> % :macro namespace symbol))
+                                  set)]
+
+    (not (empty? (disj macro-namespace-syms
+                       ns-sym
+                       'clojure.core)))))
+
+
 (defn implicit-dependencies [{:keys [asts forms] :as x} _]
   (let [ns-ast (first (util/ns-form-asts asts))
         ns-decl (first (:raw-forms ns-ast))
+        ns-sym (ns-parse/name-from-ns-decl ns-decl)
         namespace-dependency? (conj (ns-parse/deps-from-ns-decl ns-decl)
                                     ;;consider namespace as part of itself
-                                    (ns-parse/name-from-ns-decl ns-decl)
+                                    ns-sym
                                     ;;clojure core is always included in every namespace, no need to warn about it
                                     'clojure.core)]
+
 
     (->> asts
          (mapcat ast/nodes)
          (keep (fn [expr]
-                 (when (= (:op expr) :var)
+                 (when (and (= (:op expr) :var)
+                            (not (within-other-ns-macro? expr ns-sym)))
                    (let [implicit-ns-sym (var->ns-symbol (:var expr))]
                      (when (not (namespace-dependency? implicit-ns-sym))
                        {:linter :implicit-dependencies
