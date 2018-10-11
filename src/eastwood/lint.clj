@@ -481,9 +481,10 @@ Return value:
                     (util/init-warning-enable-config
                      (:builtin-config-files opts)
                      (:config-files opts) opts))]
-    (reporting/debug reporter :options (with-out-str
-                                         (println "\nOptions map after filling in defaults:")
-                                         (pp/pprint (into (sorted-map) opts))))
+    (reporting/debug reporter
+                     :options (with-out-str
+                                (println "\nOptions map after filling in defaults:")
+                                (pp/pprint (into (sorted-map) opts))))
     (or
      ;; Return an error if any keywords appear in the namespace lists
      ;; that are not recognized.

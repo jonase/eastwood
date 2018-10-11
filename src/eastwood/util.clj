@@ -764,10 +764,7 @@ of these kind."
        not-found)))
 
 (defn debug? [debug-options opt]
-  {:pre [(or (keyword? debug-options) (set? debug-options))
-         (map? opt)
-         (set? (:debug opt))]}
-  (let [d (:debug opt)]
+  (when-let [d (:debug opt)]
     (or (contains? d :all)
         (and (set? debug-options)
              (some debug-options d))
