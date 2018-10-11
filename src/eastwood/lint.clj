@@ -137,14 +137,6 @@ describing the error."
      {:namespace-sym ns-sym}
      (util/file-warn-info uri cwd-file))))
 
-(defn make-lint-warning [kw msg cwd file]
-  {:kind :lint-warning,
-   :warn-data (let [inf (util/file-warn-info file cwd)]
-                (merge
-                 {:linter kw
-                  :msg (format (str msg " '%s'.  It will not be linted.")
-                               (:uri-or-file-name inf))}
-                 inf))})
 
 (defn- handle-lint-result [linter ns-info {:keys [msg loc] :as result}]
   {:kind :lint-warning,
