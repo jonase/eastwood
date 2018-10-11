@@ -323,6 +323,20 @@ file and namespace to avoid name collisions."))))
               [x]))
           namespaces))
 
+;; special case 'merge': If _neither_ of :source-paths or
+;; :test-paths were specified in the options map, then set
+;; _one_ of them to a list of all the directories on the
+;; classpath.  If either is present, leave them both as is.
+;; Both of these should always have a value if invoked from
+;; Leiningen command line, so this is only for when invoked
+;; directly, e.g. from the REPL, intended as a convenience.
+
+(defn setup-lint-paths [source-paths test-paths]
+  (if-not (and (seq source-paths) (seq test-paths))
+    {:source-paths (classpath/classpath-directories)}
+    {:source-paths source-paths
+     :test-paths test-paths}))
+
 ;; If you do not specify :namespaces in the options, it defaults to
 ;; the same as if you specified [:source-paths :test-paths].  If you
 ;; specify a list of namespaces explicitly, perhaps mingled with
@@ -341,42 +355,33 @@ file and namespace to avoid name collisions."))))
 ;; TBD: Abort with an easily understood error message if a namespace
 ;; is given that cannot be found.
 
-(defn opts->namespaces [opts]
-  (let [namespaces1 (distinct (:namespaces opts))
-        sp-included? (some #{:source-paths} namespaces1)
-        tp-included? (some #{:test-paths} namespaces1)
-        excluded-namespaces (set (:exclude-namespaces opts))]
-    ;; Return an error if any keywords appear in the namespace lists
-    ;; that are not recognized.
-    (or
-     (unknown-ns-keywords namespaces1 #{:source-paths :test-paths}
-                          ":namespaces")
-     (unknown-ns-keywords excluded-namespaces #{:source-paths :test-paths}
-                          ":exclude-namespaces")
-     ;; If keyword :source-paths occurs in namespaces1 or
-     ;; excluded-namespaces, replace it with all namespaces found in
-     ;; the directories in (:source-paths opts), in an order that
-     ;; honors dependencies, and similarly for :test-paths.
-     ;; nss-in-dirs traverses part of the file system, so only call it
-     ;; once for each of :source-paths and :test-paths, and only if
-     ;; needed.
-     (let [all-ns (concat namespaces1 excluded-namespaces)
-           cwd (:cwd opts)
-           linters (:enabled-liters opts)
-           sp (if (some #{:source-paths} all-ns)
-                (nss-in-dirs (:source-paths opts) linters))
-           tp (if (some #{:test-paths} all-ns)
-                (nss-in-dirs (:test-paths opts) linters))]
-       (cond
+(defn opts->namespaces [{:keys [exclude-namespaces namespaces cwd enabled-linters] :as opts} lint-paths]
+  (let [sp-included? (namespaces :source-paths)
+        tp-included? (namespaces :test-paths)]
+    ;; If keyword :source-paths occurs in namespaces or
+    ;; excluded-namespaces, replace it with all namespaces found in
+    ;; the directories in (:source-paths opts), in an order that
+    ;; honors dependencies, and similarly for :test-paths.
+    ;; nss-in-dirs traverses part of the file system, so only call it
+    ;; once for each of :source-paths and :test-paths, and only if
+    ;; needed.
+    (let [all-ns (concat namespaces exclude-namespaces)
+          cwd (:cwd opts)
+          linters (:enabled-liters opts)
+          sp (if (some #{:source-paths} all-ns)
+               (nss-in-dirs (:source-paths opts) linters))
+          tp (if (some #{:test-paths} all-ns)
+               (nss-in-dirs (:test-paths opts) linters))]
+      (cond
         (:err sp) sp
         (:err tp) tp
         :else
         (let [source-paths (:namespaces sp)
               test-paths (:namespaces tp)
-              namespaces (replace-ns-keywords namespaces1
+              namespaces (replace-ns-keywords namespaces
                                               source-paths test-paths)
               namespaces (distinct namespaces)
-              excluded-namespaces (set (replace-ns-keywords excluded-namespaces
+              excluded-namespaces (set (replace-ns-keywords exclude-namespaces
                                                             source-paths
                                                             test-paths))
               namespaces (remove excluded-namespaces namespaces)]
@@ -390,7 +395,7 @@ file and namespace to avoid name collisions."))))
             (if tp-included? (:no-ns-form-found-files tp)))
            :non-clojure-files (concat
                                (if sp-included? (:non-clojure-files sp))
-                               (if tp-included? (:non-clojure-files tp)))}))))))
+                               (if tp-included? (:non-clojure-files tp)))})))))
 
 
 (defn replace-linter-keywords [linters all-linters default-linters]
@@ -534,7 +539,7 @@ Return value:
         opts (assoc opts :enabled-linters linters)
         {:keys [namespaces dirs no-ns-form-found-files
                 non-clojure-files] :as m2}
-        (opts->namespaces opts)]
+        (opts->namespaces opts (setup-lint-paths (:source-paths opts) (:test-paths opts)))]
     (dirs-scanned reporter (:cwd opts) dirs)
     (when (some #{:no-ns-form-found} (:enabled-linters opts))
       (->> no-ns-form-found-files
@@ -592,25 +597,16 @@ Return value:
 
 
 (defn last-options-map-adjustments [opts reporter]
-  (let [opts (update-in opts [:debug] set)
+  (let [opts (update opts :debug set)
+        opts (update opts :namespaces set)
+        opts (update opts :source-paths set)
+        opts (update opts :test-paths set)
+        opts (update opts :exclude-namespaces set)
         opts (merge {:cwd (.getCanonicalFile (io/file "."))
                      :linters default-linters
-                     :namespaces [:source-paths :test-paths]
+                     :namespaces #{:source-paths :test-paths}
                      :builtin-config-files default-builtin-config-files}
                     opts)
-        ;; special case 'merge': If _neither_ of :source-paths or
-        ;; :test-paths were specified in the options map, then set
-        ;; _one_ of them to a list of all the directories on the
-        ;; classpath.  If either is present, leave them both as is.
-        ;; Both of these should always have a value if invoked from
-        ;; Leiningen command line, so this is only for when invoked
-        ;; directly, e.g. from the REPL, intended as a convenience.
-        opts (if (or (contains? opts :source-paths)
-                     (contains? opts :test-paths))
-               opts
-               (assoc opts :source-paths
-                      (classpath/classpath-directories)))
-
         ;; Changes below override anything in the caller-provided
         ;; options map.
         opts (assoc opts :warning-enable-config
@@ -618,31 +614,39 @@ Return value:
     (reporting/debug reporter :options (with-out-str
                                          (println "\nOptions map after filling in defaults:")
                                          (pp/pprint (into (sorted-map) opts))))
-    opts))
+    (or
+     ;; Return an error if any keywords appear in the namespace lists
+     ;; that are not recognized.
+     (unknown-ns-keywords (:namespaces opts) #{:source-paths :test-paths} ":namespaces")
+     (unknown-ns-keywords (:exclude-namespaces opts) #{:source-paths :test-paths} ":exclude-namespaces")
+     opts)))
 
 (defn eastwood
   ([opts] (eastwood opts (reporting/printing-reporter opts)))
   ([opts reporter]
    ;; Use caller-provided :cwd and :callback values if provided
    (let [opts (last-options-map-adjustments opts reporter)]
-     (reporting/debug reporter :var-info (with-out-str
-                                           (util/print-var-info-summary @typos/var-info-map-delayed opts)))
-     (reporting/note reporter (version/version-string))
-     (reporting/debug reporter :compare-forms
-                      "Writing files forms-read.txt and forms-emitted.txt")
-     (let [{:keys [error warning-count exception-count]}
-           (eastwood-core reporter opts)]
+     (if (:err opts)
+       {:some-warnings true}
+       (do
+         (reporting/debug reporter :var-info (with-out-str
+                                               (util/print-var-info-summary @typos/var-info-map-delayed opts)))
+         (reporting/note reporter (version/version-string))
+         (reporting/debug reporter :compare-forms
+                          "Writing files forms-read.txt and forms-emitted.txt")
+         (let [{:keys [error warning-count exception-count]}
+               (eastwood-core reporter opts)]
 
-       (when error
-         (reporting/error reporter (-> error :err-data :exception)))
-       (reporting/note reporter (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
-                                        (count (reporting/warnings reporter))
-                                        (count (reporting/analyzer-exceptions reporter))))
-       (if (or error
-               (> (count (reporting/warnings reporter)) 0)
-               (> (count (reporting/analyzer-exceptions reporter)) 0))
-         {:some-warnings true}
-         {:some-warnings false})))))
+           (when error
+             (reporting/error reporter (-> error :err-data :exception)))
+           (reporting/note reporter (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
+                                            (count (reporting/warnings reporter))
+                                            (count (reporting/analyzer-exceptions reporter))))
+           (if (or error
+                   (> (count (reporting/warnings reporter)) 0)
+                   (> (count (reporting/analyzer-exceptions reporter)) 0))
+             {:some-warnings true}
+             {:some-warnings false})))))))
 
 (defn eastwood-from-cmdline [opts]
   (let [ret (eastwood opts)]
@@ -717,12 +721,15 @@ Keys in a warning map:
       e.g. \"testcases/f02.clj\""
   ([opts] (lint opts (reporting/silent-reporter opts)))
   ([opts reporter]
-   (let [opts (last-options-map-adjustments opts reporter)
-         {:keys [err err-data] :as ret} (eastwood-core reporter opts)]
-     {:warnings (reporting/warnings reporter)
-      :err err
-      :err-data err-data
-      :versions (version/versions)})))
+   (let [opts (last-options-map-adjustments opts reporter)]
+     (if (:err opts)
+       (merge {:versions (version/versions)}
+              opts)
+       (let [{:keys [err err-data] :as ret} (eastwood-core reporter opts)]
+         {:warnings (reporting/warnings reporter)
+          :err err
+          :err-data err-data
+          :versions (version/versions)})))))
 
 (defn insp
   "Read, analyze, and eval a file specified by namespace as a symbol,
