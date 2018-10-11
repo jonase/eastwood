@@ -503,13 +503,10 @@ Return value:
                 non-clojure-files] :as m2}
         (opts->namespaces opts (setup-lint-paths (:source-paths opts) (:test-paths opts)))]
     (dirs-scanned reporter (:cwd opts) dirs)
-    (when (some #{:no-ns-form-found} (:enabled-linters opts))
-      (->> (misc/no-ns-form-found-files (:cwd opts) dirs files file-map)
-           (reporting/add-warnings reporter)))
-    (when (some #{:non-clojure-file} (:enabled-linters opts))
-      (->> non-clojure-files
-           (map (partial make-lint-warning :non-clojure-file "Non-Clojure file" (:cwd opts)))
-           (reporting/add-warnings reporter)))
+    (->> (misc/no-ns-form-found-files dirs files file-map opts)
+         (reporting/add-warnings reporter))
+    (->> (misc/non-clojure-files non-clojure-files opts)
+         (reporting/add-warnings reporter))
     (cond
      (:err m1) m1
      (:err m2) m2

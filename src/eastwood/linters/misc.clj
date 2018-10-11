@@ -1036,12 +1036,17 @@
                                (:uri-or-file-name inf))}
                  inf))})
 
-(defn no-ns-form-found-files [cwd dir-name-strs files filemap]
-  (let [tfilemap (-> filemap keys set)
-        maybe-data-readers (->> dir-name-strs
-                                (map #(File.
-                                       (str % File/separator
-                                            "data_readers.clj")))
-                                set)]
-    (->> (set/difference files tfilemap maybe-data-readers)
-         (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" cwd)))))
+(defn no-ns-form-found-files [dir-name-strs files filemap opts]
+  (when (some #{:no-ns-form-found} (:enabled-linters opts))
+    (let [tfilemap (-> filemap keys set)
+          maybe-data-readers (->> dir-name-strs
+                                  (map #(File.
+                                         (str % File/separator
+                                              "data_readers.clj")))
+                                  set)]
+      (->> (set/difference files tfilemap maybe-data-readers)
+           (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" (:cwd opts)))))))
+
+(defn non-clojure-files [non-clojure-files opts]
+  (when (some #{:non-clojure-file} (:enabled-linters opts))
+    (map (partial make-lint-warning :non-clojure-file "Non-Clojure file" (:cwd opts)) non-clojure-files)))
