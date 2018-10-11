@@ -270,3 +270,86 @@ your code, try fixing those.  If not, check above for info on the
 exception."))
     {:exception exception
      :msgs @strings}))
+
+(defmulti error-msg
+  "Given a map describing an Eastwood error result, which should
+always have at least the keys :err and :err-data, return a string
+describing the error."
+  :err)
+
+
+(defmethod error-msg :unknown-ns-keywords [err-info]
+  (let [{:keys [for-option unknown-ns-keywords allowed-ns-keywords]}
+        (:err-data err-info)]
+    (with-out-str
+      (println (format "The following keywords appeared in the namespaces specified after %s :"
+                       for-option))
+      (println (format "    %s" (seq unknown-ns-keywords)))
+      (println (format "The only keywords allowed in this list of namespaces are: %s"
+                       (seq allowed-ns-keywords))))))
+
+(defmethod error-msg :namespace-filename-mismatch [err-info]
+  (let [{:keys [mismatches]} (:err-data err-info)]
+    (with-out-str
+      (println "The following file(s) contain ns forms with namespaces that do not correspond
+with their file names:")
+      (doseq [[fname {:keys [dir namespace recommended-fnames recommended-namespace]}]
+              mismatches]
+        (println (format "Directory: %s" dir))
+        (println (format "    File                   : %s" fname))
+        (println (format "    has namespace          : %s" namespace))
+        (if (= namespace recommended-namespace)
+          ;; Give somewhat clearer message in this case
+          (println (format "    should be in file(s)   : %s"
+                           (str/join "\n                             "
+                                     recommended-fnames)))
+          (do
+            (println (format "    should have namespace  : %s"
+                             recommended-namespace))
+            (println (format "    or should be in file(s): %s"
+                             (str/join "\n                             "
+                                       recommended-fnames))))))
+      (println "
+No other linting checks will be performed until these problems have
+been corrected.
+
+The 'should have namespace' and 'should be in file' messages above are
+merely suggestions.  It may be better in your case to rename both the
+file and namespace to avoid name collisions."))))
+
+(defmethod error-msg :unknown-linter [err-info]
+  (let [{:keys [unknown-linters known-linters]} (:err-data err-info)]
+    (with-out-str
+      (println (format "The following requested or excluded linters are unknown: %s"
+                       (seq unknown-linters)))
+      (println (format "Known linters are: %s"
+                       (seq (sort known-linters)))))))
+
+(defmethod error-msg :exception-thrown [err-info]
+  (let [{:keys [unanalyzed-namespaces last-namespace]} (:err-data err-info)]
+    ;; Don't report that we stopped analyzing early if we stop on the
+    ;; last namespace (it is especially bad form to print the long
+    ;; message if only one namespace was being linted).
+    (if (seq unanalyzed-namespaces)
+      (format "
+Stopped analyzing namespaces after %s
+due to exception thrown.  %d namespaces left unanalyzed.
+
+If you wish to force continuation of linting after an exception in one
+namespace, make the option map key :continue-on-exception have the
+value true.
+
+WARNING: This can cause exceptions to be thrown while analyzing later
+namespaces that would not otherwise occur.  For example, if a function
+is defined in the namespace where the first exception occurs, after
+the exception, it will never be evaluated.  If the function is then
+used in namespaces analyzed later, it will be undefined, causing
+error.
+"
+            last-namespace
+            (count unanalyzed-namespaces))
+
+      "
+Exception thrown while analyzing last namespace.
+"
+      )))
