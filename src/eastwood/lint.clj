@@ -178,9 +178,6 @@
                   :unknown-ns-keywords unknown-ns-keywords
                   :allowed-ns-keywords known-ns-keywords}})))
 
-
-
-
 (defn filename-to-ns [fname]
   (-> fname
       (util/separate-suffix (:extensions find/clj))
@@ -365,21 +362,33 @@
          (str/join " ")
          (reporting/note reporter))))
 
+;; (defn- lint-namespace* [reporter namespace linters opts]
+;;   (try
+;;     (reporting/note reporter (str "== Linting " namespace " =="))
+;;     (let [{:keys [analyzer-exception lint-results analysis-time]} (lint-ns namespace linters opts)]
+;;       (reporting/debug reporter :time (format "Analysis took %.1f millisec" analysis-time))
+;;       (when analyzer-exception
+;;         (reporting/analyzer-exception reporter analyzer-exception))
+;;       (doseq [{:keys [lint-warning lint-error elapsed linter]} lint-results]
+;;         (reporting/debug reporter :time (format "Linter %s took %.1f millisec"
+;;                                                 (:name linter) elapsed))
+;;         (reporting/add-warnings reporter lint-warning)
+;;         (reporting/add-exceptions reporter lint-error)
+;;         (reporting/add-errors reporter namespace lint-error)))
+;;     (catch RuntimeException e
+;;       (reporting/error reporter e))))
+
+
 (defn- lint-namespace [reporter namespace linters opts]
   (try
-    (reporting/note reporter (str "== Linting " namespace " =="))
     (let [{:keys [analyzer-exception lint-results analysis-time]} (lint-ns namespace linters opts)]
-      (reporting/debug reporter :time (format "Analysis took %.1f millisec" analysis-time))
-      (when analyzer-exception
-        (reporting/analyzer-exception reporter analyzer-exception))
-      (doseq [{:keys [lint-warning lint-error elapsed linter]} lint-results]
-        (reporting/debug reporter :time (format "Linter %s took %.1f millisec"
-                                                (:name linter) elapsed))
-        (reporting/add-warnings reporter lint-warning)
-        (reporting/add-exceptions reporter lint-error)
-        (reporting/add-errors reporter namespace lint-error)))
+      {:lint-warnings (mapcat :lint-warning lint-results)
+       :lint-errors (mapcat :lint-error lint-results)
+       :lint-times [(into {} (map (juxt (comp :name :linter) :elapsed) lint-results))]
+       :analysis-time [analysis-time]
+       :analyser-exception [analyzer-exception]})
     (catch RuntimeException e
-      (reporting/error reporter e))))
+      {:lint-runtime-exception [e]})))
 
 (defn eastwood-core
   "Lint a sequence of namespaces using a specified collection of linters.
@@ -416,15 +425,16 @@ Return value:
         (opts->namespaces opts (setup-lint-paths (:source-paths opts) (:test-paths opts)))]
     (dirs-scanned reporter (:cwd opts) dirs)
     (->> (misc/no-ns-form-found-files dirs files file-map opts)
-         (reporting/add-warnings reporter))
+#_         (reporting/add-warnings reporter))
     (->> (misc/non-clojure-files non-clojure-files opts)
-         (reporting/add-warnings reporter))
+#_         (reporting/add-warnings reporter))
     (cond
       (:err m1) {:error m1}
       (:err m2) {:error m2}
      :else
-     (let [continue-on-exception? (:continue-on-exception opts)
-           stopped-on-exc (atom false)]
+     (let [stop-on-exception? (not (:continue-on-exception opts))
+           stopped-on-exc (atom false)
+           started (System/currentTimeMillis)]
        (reporting/debug reporter :ns (format "Namespaces to be linted:"))
        (doseq [n namespaces]
          (reporting/debug reporter :ns (format "    %s" n)))
@@ -435,22 +445,15 @@ Return value:
        ;; (alias 'x 'A)
        (doseq [n namespaces] (create-ns n))
        (when (seq (:enabled-linters opts))
-         (loop [namespaces namespaces]
-           (when-first [namespace namespaces]
-             (let [e (lint-namespace reporter namespace (:enabled-linters opts) opts)]
-               (if (or continue-on-exception?
-                       (not (instance? Throwable e)))
-                 (recur (next namespaces))
-                 (reset! stopped-on-exc
-                         {:exception e
-                          :last-namespace namespace
-                          :unanalyzed-namespaces (next namespaces)}))))))
-       (merge
-        {:warning-count (count (reporting/warnings reporter))
-         :exception-count (count (reporting/analyzer-exceptions reporter))}
-        (if @stopped-on-exc
-          {:error {:err :exception-thrown
-                   :err-data @stopped-on-exc}}))))))
+         (reduce (fn [results namespace]
+                   (reporting/note reporter (str "== Linting " namespace " =="))
+                   (let [result (lint-namespace reporter namespace (:enabled-linters opts) opts)]
+                     (if (and stop-on-exception? (:lint-runtime-exception result))
+                       (reduced (conj results result))
+                       (do
+                         (reporting/lint-warnings reporter (:lint-warnings result))
+                         (reporting/lint-errors reporter namespace (:lint-errors result))
+                         (conj results result))))) [] namespaces))))))
 
 (def default-builtin-config-files
   ["clojure.clj"
@@ -492,6 +495,26 @@ Return value:
      (unknown-ns-keywords (:exclude-namespaces opts) #{:source-paths :test-paths} ":exclude-namespaces")
      opts)))
 
+(defn summary [results]
+  (apply merge-with into results))
+
+(defn counted-summary [summary]
+  {:warning-count (count (:lint-warnings summary))
+   :error-count (count (:lint-errors summary))
+   :lint-time (apply + (mapcat vals(:lint-times summary)))
+   :analysis-time (apply + (:analysis-time summary))
+   :error nil})
+
+(defn make-report [reporter {:keys [error warning-count error-count] :as result}]
+  (when error
+    (reporting/show-error reporter error))
+  (reporting/note reporter (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
+                                   warning-count
+                                   error-count))
+  {:some-warnings (or error
+                      (> warning-count 0)
+                      (> error-count 0))})
+
 (defn eastwood
   ([opts] (eastwood opts (reporting/printing-reporter opts)))
   ([opts reporter]
@@ -505,19 +528,10 @@ Return value:
          (reporting/note reporter (version/version-string))
          (reporting/debug reporter :compare-forms
                           "Writing files forms-read.txt and forms-emitted.txt")
-         (let [{:keys [error warning-count exception-count]}
-               (eastwood-core reporter opts)]
-
-           (when error
-             (reporting/show-error reporter error))
-           (reporting/note reporter (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
-                                            (count (reporting/warnings reporter))
-                                            (count (reporting/analyzer-exceptions reporter))))
-           (if (or error
-                   (> (count (reporting/warnings reporter)) 0)
-                   (> (count (reporting/analyzer-exceptions reporter)) 0))
-             {:some-warnings true}
-             {:some-warnings false})))))))
+         (->> (eastwood-core reporter opts)
+              summary
+              counted-summary
+              (make-report reporter)))))))
 
 (defn eastwood-from-cmdline [opts]
   (let [ret (eastwood opts)]
@@ -596,10 +610,12 @@ Keys in a warning map:
      (if (:err opts)
        (merge {:versions (version/versions)}
               opts)
-       (let [{:keys [err err-data] :as ret} (eastwood-core reporter opts)]
-         {:warnings (reporting/warnings reporter)
-          :err err
-          :err-data err-data
+       (let [{:keys [error error-data
+                     lint-warnings] :as ret} (->> (eastwood-core reporter opts)
+                                                 summary)]
+         {:warnings lint-warnings
+          :err error
+          :err-data error-data
           :versions (version/versions)})))))
 
 (defn insp
