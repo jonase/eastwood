@@ -44,6 +44,13 @@
 
 (disable-warning
  {:linter :constant-test
+  :for-macro 'clojure.core/or
+  :if-inside-macroexpansion-of #{'clojure.spec/coll-of 'clojure.spec.alpha/coll-of}
+  :within-depth 7
+  :reason "clojure.spec's `coll-of` can contain `clojure.core/or` invocations with only one argument."})
+
+(disable-warning
+ {:linter :constant-test
   :if-inside-macroexpansion-of #{'clojure.core/cond-> 'clojure.core/cond->>}
   :within-depth 2
   :reason "Allow cond-> and cond->> to have constant tests without warning"})

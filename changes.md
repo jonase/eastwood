@@ -3,6 +3,8 @@
 ## Changes from 0.3.1 to 0.3.2
 
 * Add `:implicit-dependencies` linter
+* Fix `:constant-test` warning on macro expansion of `clojure.spec`'s
+  `coll-of`
 
 ## Changes from version 0.2.x to 0.3.0
 
