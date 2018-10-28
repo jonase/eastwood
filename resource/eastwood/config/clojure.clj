@@ -4,7 +4,9 @@
 
 (disable-warning
  {:linter :redefd-vars
-  :if-inside-macroexpansion-of #{'clojure.core/defonce 'clojure.core/defmulti}
+  :if-inside-macroexpansion-of #{'clojure.core/defonce
+                                 'clojure.core/defmulti
+                                 'mount.core/defstate}
   :within-depth 2
   :reason "defonce, defmulti expand to code with multiple def's for the same Var."})
 
@@ -66,4 +68,3 @@
    :function-symbol 'clojure.core/eduction
    :arglists-for-linting '([& xform])
    :reason "eduction takes a sequence of transducer with a collection as the last item"})
-
