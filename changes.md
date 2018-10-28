@@ -1,5 +1,8 @@
 # Change log for Eastwood
 
+## Changes from 0.3.2 to 0.3.3
+* Disable `:redefd-vars` warning for mount's `defstate`
+
 ## Changes from 0.3.1 to 0.3.2
 
 * Add `:implicit-dependencies` linter
