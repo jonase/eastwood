@@ -6,7 +6,8 @@
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [resolve-sym arglist-for-arity dynamic?]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as j]
-            [eastwood.util :as util]))
+            [eastwood.util :as util])
+    (:import java.io.File))
 
 (defn var-of-ast [ast]
   (-> ast :form second))
@@ -265,23 +266,23 @@
 ;;                )
             match (some #(util/meets-suppress-condition lca-ast encl-macros %)
                         suppress-conditions)]
-        (if (and match (:debug-suppression opt))
-          ((util/make-msg-cb :debug opt)
-           (with-out-str
-             (let [c (:matching-condition match)
-                   depth (:within-depth c)]
-               (println (format "Ignoring def of Var %s while checking for :redefd-vars warning" defd-var))
-               (println (format "because it is within%s an expansion of macro"
-                                (if (number? depth)
-                                  (format " %d steps of" depth)
-                                  "")))
-               (println (format "'%s'" (:matching-macro match)))
-               (println "Reason suppression rule was created:" (:reason c))
-               (pp/pprint (map #(dissoc % :ast :index)
-                               (if depth
-                                 (take depth encl-macros)
-                                 encl-macros)))
-               ))))
+        ;; (if (and match (:debug-suppression opt))
+        ;;   ((util/make-msg-cb :debug opt)
+        ;;    (with-out-str
+        ;;      (let [c (:matching-condition match)
+        ;;            depth (:within-depth c)]
+        ;;        (println (format "Ignoring def of Var %s while checking for :redefd-vars warning" defd-var))
+        ;;        (println (format "because it is within%s an expansion of macro"
+        ;;                         (if (number? depth)
+        ;;                           (format " %d steps of" depth)
+        ;;                           "")))
+        ;;        (println (format "'%s'" (:matching-macro match)))
+        ;;        (println "Reason suppression rule was created:" (:reason c))
+        ;;        (pp/pprint (map #(dissoc % :ast :index)
+        ;;                        (if depth
+        ;;                          (take depth encl-macros)
+        ;;                          encl-macros)))
+        ;;        ))))
         (not match)))))
 
 
@@ -1025,3 +1026,29 @@
              :msg "More than one ns form found in same file"}
             warnings)
       warnings)))
+
+(defn make-lint-warning [kw msg cwd file]
+  {:kind :lint-warning,
+   :warn-data (let [inf (util/file-warn-info file cwd)]
+                (merge
+                 {:linter kw
+                  :msg (format (str msg " '%s'.  It will not be linted.")
+                               (:uri-or-file-name inf))}
+                 inf))})
+
+(defn no-ns-form-found-files [dir-name-strs files filemap linters cwd]
+  (when (some #{:no-ns-form-found} linters)
+    (let [tfilemap (-> filemap keys set)
+          maybe-data-readers (->> dir-name-strs
+                                  (map #(File.
+                                         (str % File/separator
+                                              "data_readers.clj")))
+                                  set)]
+      {:lint-warnings
+       (->> (set/difference files tfilemap maybe-data-readers)
+            (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" cwd)))})))
+
+(defn non-clojure-files [non-clojure-files linters cwd]
+  (when (some #{:non-clojure-file} linters)
+    {:lint-warnings
+     (map (partial make-lint-warning :non-clojure-file "Non-Clojure file" cwd) non-clojure-files)}))

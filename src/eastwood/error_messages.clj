@@ -53,7 +53,7 @@
     (when (contains? dat :form)
       (error-cb (format "    (:form dat)="))
       (error-cb (with-out-str (util/pprint-form (:form dat)))))
-    (util/pst exc nil error-cb)
+    (error-cb (with-out-str (util/pst exc nil)))
     @strings))
 
 (defn handle-values-of-env [ns-sym ^Throwable exc]
@@ -245,7 +245,113 @@ curious." eastwood-url))
      :else
      {:msgs (if dat
               (print-ex-data-details ns-sym exc)
-              (let [[strings sb] (string-builder)]
-                (util/pst exc nil sb)
-                @strings))
+              [(with-out-str (util/pst exc nil))])
       :info :show-more-details})))
+
+(defn report-analyzer-exception [exception exception-phase exception-form ns-sym]
+  (let [[strings error-cb] (string-builder)]
+    (error-cb (str "Exception thrown during phase " exception-phase
+                   " of linting namespace " ns-sym))
+    (let [{:keys [msgs info]} (format-exception ns-sym exception)]
+      (swap! strings into msgs)
+      (when (= info :show-more-details)
+        (error-cb "\nThe following form was being processed during the exception:")
+        ;; TBD: Replace this binding with util/pprint-form variation
+        ;; that does not print metadata?
+        (error-cb (with-out-str (binding [*print-level* 7
+                                                *print-length* 50]
+                                        (pp/pprint exception-form))))
+        (error-cb "\nShown again with metadata for debugging (some metadata elided for brevity):")
+        (error-cb (with-out-str (util/pprint-form exception-form)))))
+    (error-cb
+     (str "\nAn exception was thrown while analyzing namespace " ns-sym "
+Lint results may be incomplete.  If there are compilation errors in
+your code, try fixing those.  If not, check above for info on the
+exception."))
+    {:exception exception
+     :msgs @strings}))
+
+(defmulti error-msg
+  "Given a map describing an Eastwood error result, which should
+always have at least the keys :err and :err-data, return a string
+describing the error."
+  :err)
+
+(defmethod error-msg :default [err-info]
+  (str "Unknown error: " err-info))
+
+(defmethod error-msg :unknown-ns-keywords [err-info]
+  (let [{:keys [for-option unknown-ns-keywords allowed-ns-keywords]}
+        (:err-data err-info)]
+    (with-out-str
+      (println (format "The following keywords appeared in the namespaces specified after %s :"
+                       for-option))
+      (println (format "    %s" (seq unknown-ns-keywords)))
+      (println (format "The only keywords allowed in this list of namespaces are: %s"
+                       (seq allowed-ns-keywords))))))
+
+(defmethod error-msg :namespace-filename-mismatch [err-info]
+  (let [{:keys [mismatches]} (:err-data err-info)]
+    (with-out-str
+      (println "The following file(s) contain ns forms with namespaces that do not correspond
+with their file names:")
+      (doseq [[fname {:keys [dir namespace recommended-fnames recommended-namespace]}]
+              mismatches]
+        (println (format "Directory: %s" dir))
+        (println (format "    File                   : %s" fname))
+        (println (format "    has namespace          : %s" namespace))
+        (if (= namespace recommended-namespace)
+          ;; Give somewhat clearer message in this case
+          (println (format "    should be in file(s)   : %s"
+                           (str/join "\n                             "
+                                     recommended-fnames)))
+          (do
+            (println (format "    should have namespace  : %s"
+                             recommended-namespace))
+            (println (format "    or should be in file(s): %s"
+                             (str/join "\n                             "
+                                       recommended-fnames))))))
+      (println "
+No other linting checks will be performed until these problems have
+been corrected.
+
+The 'should have namespace' and 'should be in file' messages above are
+merely suggestions.  It may be better in your case to rename both the
+file and namespace to avoid name collisions."))))
+
+(defmethod error-msg :unknown-linter [err-info]
+  (let [{:keys [unknown-linters known-linters]} (:err-data err-info)]
+    (with-out-str
+      (println (format "The following requested or excluded linters are unknown: %s"
+                       (seq unknown-linters)))
+      (println (format "Known linters are: %s"
+                       (seq (sort known-linters)))))))
+
+(defmethod error-msg :exception-thrown [err-info]
+  (let [{:keys [namespaces-left last-namespace]} (:err-data err-info)]
+    ;; Don't report that we stopped analyzing early if we stop on the
+    ;; last namespace (it is especially bad form to print the long
+    ;; message if only one namespace was being linted).
+    (if (< 0 namespaces-left)
+      (format "
+Stopped analyzing namespaces after %s
+due to exception thrown.  %d namespaces left unanalyzed.
+
+If you wish to force continuation of linting after an exception in one
+namespace, make the option map key :continue-on-exception have the
+value true.
+
+WARNING: This can cause exceptions to be thrown while analyzing later
+namespaces that would not otherwise occur.  For example, if a function
+is defined in the namespace where the first exception occurs, after
+the exception, it will never be evaluated.  If the function is then
+used in namespaces analyzed later, it will be undefined, causing
+error.
+"
+            last-namespace
+            namespaces-left)
+
+      "
+Exception thrown while analyzing last namespace.
+"
+      )))
