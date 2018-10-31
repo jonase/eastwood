@@ -613,3 +613,8 @@ clojure.inspector/inspect-tree on it.  Example in REPL:
   (let [a (analyze/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}})]
     (update-in a [:analyze-results :asts]
                (fn [ast] (mapv util/clean-ast ast)))))
+
+(defn -main
+  ([] (-main (pr-str default-opts)))
+  ([opts]
+   (eastwood-from-cmdline  (edn/read-string opts))))

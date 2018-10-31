@@ -82,6 +82,21 @@ no more dangerous.  To confine linting to files in your
 
     $ lein eastwood "{:namespaces [:source-paths]}"
 
+## deps.edn
+If you're using `deps.edn`, consider merging
+```clojure
+{:aliases
+  {:eastwood
+      {:main-opts ["-m" "eastwood.lint" "{:source-paths,[\"src\"]}"]
+	   :extra-deps {jonase/eastwood {:mvn/version "RELASE"}}}}}
+
+```
+to your `deps.edn`, and you should then be able to run Eastwood as
+
+```sh
+$ clj -A:eastwood
+```
+
 If it is not obvious what a warning message means, _please_ check the
 next section, which has a `[more]` link for each type of warning.
 Most types of warning messages have a page or more of text describing
