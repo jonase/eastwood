@@ -86,7 +86,9 @@
 (defn show-error [reporter error-data]
   (when error-data
     (let [message (msgs/error-msg error-data)]
-      (note reporter message))))
+      (note reporter message)
+      (when (instance? Exception error-data)
+        (.printStackTrace error-data)))))
 
 (defn show-analyzer-exception [reporter namespace exception]
   (when-let [error (first exception)]

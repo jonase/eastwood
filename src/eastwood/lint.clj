@@ -502,7 +502,7 @@ Return value:
             counted-summary
             (make-report reporter)))
      (catch Exception e
-       (reporting/show-error reporter (ex-data e))
+       (reporting/show-error reporter (or (ex-data e) e))
        {:some-warnings true}))))
 
 (defn eastwood-from-cmdline [opts]
@@ -517,7 +517,6 @@ Return value:
       ;; linting a project.  Call shutdown-agents to avoid the
       ;; 1-minute 'hang' that would otherwise occur.
       (shutdown-agents))))
-
 
 (defn lint
   "Invoke Eastwood from REPL or other Clojure code, and return a map
