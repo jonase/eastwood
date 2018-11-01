@@ -88,7 +88,7 @@ If you're using `deps.edn`, consider merging
 {:aliases
   {:eastwood
       {:main-opts ["-m" "eastwood.lint" "{:source-paths,[\"src\"]}"]
-	   :extra-deps {jonase/eastwood {:mvn/version "RELASE"}}}}}
+	   :extra-deps {jonase/eastwood {:mvn/version "RELEASE"}}}}}
 
 ```
 to your `deps.edn`, and you should then be able to run Eastwood as
