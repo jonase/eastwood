@@ -472,7 +472,9 @@ Return value:
    :lint-time (apply + (mapcat vals(:lint-times summary)))
    :analysis-time (apply + (:analysis-time summary))})
 
-(defn make-report [reporter {:keys [warning-count error-count] :as result}]
+(defn make-report [reporter start-time {:keys [warning-count error-count] :as result}]
+  (reporting/note reporter (format "== Linting done in %d ms ==" (- (System/currentTimeMillis)
+                                                                    start-time)))
   (reporting/note reporter (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
                                    warning-count
                                    error-count))
@@ -484,13 +486,14 @@ Return value:
   ([opts reporter]
    (try
      (reporting/note reporter (version/version-string))
-     (let [{:keys [exclude-namespaces
+     (let [start-time (System/currentTimeMillis)
+           {:keys [exclude-namespaces
                    namespaces
                    source-paths
                    test-paths
                    cwd] :as opts} (last-options-map-adjustments opts reporter)
            namespaces-info (effective-namespaces exclude-namespaces namespaces
-                                               (setup-lint-paths source-paths test-paths))
+                                                 (setup-lint-paths source-paths test-paths))
            linter-info (select-keys opts [:linters :exclude-linters :add-linters :disable-linter-name-checks])]
        (reporting/debug reporter :var-info (with-out-str
                                              (util/print-var-info-summary @typos/var-info-map-delayed opts)))
@@ -500,7 +503,7 @@ Return value:
             (eastwood-core reporter opts cwd namespaces-info)
             summary
             counted-summary
-            (make-report reporter)))
+            (make-report reporter start-time)))
      (catch Exception e
        (reporting/show-error reporter (or (ex-data e) e))
        {:some-warnings true}))))
