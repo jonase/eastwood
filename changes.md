@@ -1,5 +1,10 @@
 # Change log for Eastwood
 
+## Changes from 0.3.3 to 0.3.4
+
+* Add support for parallelism. First shot is `:naive` which runs `pmap` over
+the namespaces. 
+
 ## Changes from 0.3.2 to 0.3.3
 * Disable `:redefd-vars` warning for mount's `defstate`
 
