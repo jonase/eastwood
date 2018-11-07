@@ -304,6 +304,13 @@ wish.  See [How the Eastwood options map is
 determined](#how-the-eastwood-options-map-is-determined) for more
 details.
 
+## Parallelism
+
+As of version 0.3.4, you can now add parallelism to your linting.
+Currently only a `:naive` form of parallelism is supported, which just uses
+`pmap` to run the linters over your namespaces. You can specify 
+`:parallelism?` in your options map, currently `:none` and `:naive` are valid options.
+
 As mentioned in the [Installation & Quick
 usage](#installation--quick-usage) section above, Eastwood causes any
 and all side effects that loading the file would cause (e.g. by doing
