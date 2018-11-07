@@ -601,7 +601,7 @@ Keys in a warning map:
         :err-data error-data
         :versions (version/versions)})
      (catch Exception e
-       {:err (ex-data e)
+       {:err (or (ex-data e) e)
         :versions (version/versions)}))))
 
 (defn insp
