@@ -63,7 +63,7 @@
   (flush))
 
 (defmethod note PrintingReporter [reporter msg]
-  (println msg)
+  (print (str msg "\n"))
   (flush))
 
 (defmethod note SilentReporter [reporter msg] )
@@ -88,7 +88,7 @@
     (let [message (msgs/error-msg error-data)]
       (note reporter message)
       (when (instance? Exception error-data)
-        (.printStackTrace error-data)))))
+        (.printStackTrace ^Exception error-data)))))
 
 (defn show-analyzer-exception [reporter namespace exception]
   (when-let [error (first exception)]
@@ -99,7 +99,8 @@
   (let [namespace (first (:namespace result))]
     (lint-warnings reporter (:lint-warnings result))
     (lint-errors reporter namespace (:lint-errors result))
-    (show-analyzer-exception reporter namespace (:analyzer-exception result))))
+    (show-analyzer-exception reporter namespace (:analyzer-exception result))
+    result))
 
 (defn stopped-on-exception [reporter namespaces results result]
   (let [namespace (first (:namespace result))

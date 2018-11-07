@@ -236,7 +236,8 @@
        :non-clojure-files (::dir/non-clojure-files tracker)
        :files (set (::dir/files tracker))
        :file-map (::file/filemap tracker)
-       :namespaces (::track/load tracker)})))
+       :namespaces (::track/load tracker)
+       :deps (::track/deps tracker)})))
 
 (defn expand-ns-keywords
   "Expand any keyword in `namespaces` with values from `expanded-namespaces`"
@@ -295,6 +296,8 @@
                       (expand-ns-keywords expanded-namespaces)
                       distinct
                       (remove excluded-namespaces))
+     :test-deps (:deps tp)
+     :src-deps (:deps sp)
      :dirs (concat (:dirs sp) (:dirs tp))
      :files (set (concat (:files sp) (:files tp)))
      :file-map (merge (:file-map sp) (:file-map tp))
@@ -363,6 +366,33 @@
   (doseq [n namespaces]
     (reporting/debug reporter :ns (format "    %s" n))))
 
+(defmulti lint-namespaces (fn [& args] (first args)))
+
+(defmethod lint-namespaces :none [parallel? reporter {:keys [namespaces]} linters opts]
+  (let [stop-on-exception? (not (:continue-on-exception opts))]
+    (reduce (fn [results namespace]
+              (reporting/note reporter (str "== Linting " namespace " =="))
+              (let [result (lint-namespace reporter namespace linters opts)
+                    results (conj results result)]
+                (if (and stop-on-exception?
+                         (or (:lint-runtime-exception result)
+                             (:analyzer-exception result)))
+                  (do
+                    (reporting/stopped-on-exception reporter namespaces results result)
+                    (reduced results))
+                  (do
+                    (reporting/report-result reporter result)
+                    results))))
+            []
+            namespaces)))
+
+(defmethod lint-namespaces :naive [parallel? reporter {:keys [namespaces]} linters opts]
+  (reporting/note reporter (str "Linting using " (name parallel?) " parallelism."))
+  (pmap (fn [namespace]
+          (reporting/note reporter (str "== Linting " namespace " =="))
+          (reporting/report-result reporter (lint-namespace reporter namespace linters opts)))
+        namespaces))
+
 (defn eastwood-core
   "Lint a sequence of namespaces using a specified collection of linters.
 
@@ -390,36 +420,22 @@ Return value:
 + TBD
 "
   [reporter opts cwd {:keys [namespaces dirs files file-map
-                             non-clojure-files] :as info} linters]
-  (let [stop-on-exception? (not (:continue-on-exception opts))]
-    (dirs-scanned reporter cwd dirs)
-    (let [no-ns-forms (misc/no-ns-form-found-files dirs files file-map linters cwd)
-          non-clojure-files (misc/non-clojure-files non-clojure-files linters cwd)]
-      (reporting/report-result reporter no-ns-forms)
-      (reporting/report-result reporter non-clojure-files)
-      (when (seq linters)
-        (reporting/debug-namespaces reporter namespaces)
-        ;; Create all namespaces to be analyzed.  This can help in some
-        ;; (unusual) situations, such as when namespace A requires B,
-        ;; so Eastwood analyzes B first, but eval'ing B assumes that
-        ;; A's namespace has been created first because B contains
-        ;; (alias 'x 'A)
-        (doseq [n namespaces] (create-ns n))
-        (reduce (fn [results namespace]
-                  (reporting/note reporter (str "== Linting " namespace " =="))
-                  (let [result (lint-namespace reporter namespace linters opts)
-                        results (conj results result)]
-                    (if (and stop-on-exception?
-                             (or (:lint-runtime-exception result)
-                                 (:analyzer-exception result)))
-                      (do
-                        (reporting/stopped-on-exception reporter namespaces results result)
-                        (reduced results))
-                      (do
-                        (reporting/report-result reporter result)
-                        results))))
-                [no-ns-forms non-clojure-files]
-                namespaces)))))
+                             non-clojure-files] :as effective-namespaces} linters]
+  (dirs-scanned reporter cwd dirs)
+  (let [no-ns-forms (misc/no-ns-form-found-files dirs files file-map linters cwd)
+        non-clojure-files (misc/non-clojure-files non-clojure-files linters cwd)]
+    (reporting/report-result reporter no-ns-forms)
+    (reporting/report-result reporter non-clojure-files)
+    (when (seq linters)
+      (reporting/debug-namespaces reporter namespaces)
+      ;; Create all namespaces to be analyzed.  This can help in some
+      ;; (unusual) situations, such as when namespace A requires B,
+      ;; so Eastwood analyzes B first, but eval'ing B assumes that
+      ;; A's namespace has been created first because B contains
+      ;; (alias 'x 'A)
+      (doseq [n namespaces] (create-ns n))
+      (into [no-ns-forms non-clojure-files]
+            (lint-namespaces (:parallel? opts) reporter effective-namespaces linters opts)))))
 
 (def default-builtin-config-files
   ["clojure.clj"
@@ -429,6 +445,7 @@ Return value:
 (def default-opts {:cwd (.getCanonicalFile (io/file "."))
                    :linters default-linters
                    :debug #{}
+                   :parallel? :none
                    :source-paths #{}
                    :test-paths #{}
                    :namespaces #{:source-paths :test-paths}
