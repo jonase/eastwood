@@ -79,6 +79,8 @@ output varies across versions, e.g. to discover whether a particular
 warning is no longer caught with a new version of Eastwood, or a new
 warning _is_ caught with a new version of Eastwood.
 
+This command must be run from inside of Eastwood's `crucible`
+directory, in order to use the `deps.edn` file there:
 ```bash
 % clj -Acrucible --versions version-combos.edn
 ```

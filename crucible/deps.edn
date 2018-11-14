@@ -1,0 +1,6 @@
+{:aliases {:crucible
+           {:extra-deps
+            {eastwood-test-runner
+             {:git/url "https://github.com/jafingerhut/eastwood-crucible-runner.git"
+              :sha "338ea101151eb05b6b06d59eb8982d3c50fe054c"}}
+            :main-opts ["-m" "eastwood.crucible-runner"]}}}
