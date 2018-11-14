@@ -1,17 +1,10 @@
 #! /bin/bash
 
 # All of the Leiningen project.clj files should either already contain
-# a profile called 1.6 that uses Clojure 1.6.0, or I have made a
-# modified project.clj file for them that does, and they all use
-# Clojure 1.5.1 if you do not specify a profile.
-#
-# Thus change the value of the shell variable PROFILE below to
-# "with-profile +1.6" to use Clojure 1.6.0-master-SNAPSHOT for all of
-# these.
-#
-# All project.clj files also have a 1.7 profile that uses Clojure
-# 1.7.0-master-SNAPSHOT.
-
+# profiles called 1.6 1.7 1.8 1.9 1.10 that uses the corresponding
+# version of Clojure, or I have made a modified project.clj file for
+# them that does, and they all use Clojure 1.5.1 if you do not specify
+# a profile.
 
 # set -e    exit immediately if a command exits with a non-0 exit status
 # set +e    stop doing that
@@ -19,13 +12,53 @@
 # set -x    echo expanded commands before executing them
 # set +x    stop doing that
 
-# Use PROFILE="" to test with Clojure 1.5.1
-#PROFILE=""
-#PROFILE="+1.6"
-#PROFILE="+1.7"
-#PROFILE="+1.8"
-#PROFILE="+1.9"
-PROFILE="+1.10"
+which lein >& /dev/null
+EXIT_STATUS=$?
+if [ $EXIT_STATUS != 0 ]
+then
+    1>&2 echo "Command 'lein' not found:"
+    exit $EXIT_STATUS
+fi
+if [ -d "$HOME/.lein" ]
+then
+    1>&2 echo "Found directory $HOME/.lein as expected."
+else
+    1>&2 echo "No directory $HOME/.lein found.  Aborting."
+    exit 1
+fi
+
+
+if [ $# -ne 2 ]
+then
+    1>&2 echo "usage: `basename $0` <eastwood_version> <clj_version_as_lein_profile>"
+    1>&2 echo ""
+    1>&2 echo "Example <clj_version_as_lein_profile>: 1.6 1.7 1.8 1.9 1.10"
+    exit 1
+fi
+
+EASTWOOD_VERSION="$1"
+PROFILE="+$2"
+
+
+RESTORE_PROFILES_CLJ=0
+if [ -e "$HOME/.lein/profiles.clj" ]
+then
+    PROFILES_CLJ_BACKUP_FNAME=`mktemp -p $HOME/.lein -t profiles.clj-backup-XXXXXX`
+    EXIT_STATUS=$?
+    if [ $EXIT_STATUS != 0 ]
+    then
+	1>&2 echo "The following command failed with exit status $EXIT_STATUS"
+	1>&2 echo "mktemp -p $HOME/.lein -t profiles.clj-backup-XXXXXX"
+	exit $EXIT_STATUS
+    fi
+    1>&2 echo "$HOME/.lein/profiles.clj exists.  Moving it to temporary"
+    1>&2 echo "file $PROFILES_CLJ_BACKUP_FNAME while running this script."
+    /bin/mv -f "$HOME/.lein/profiles.clj" "$PROFILES_CLJ_BACKUP_FNAME"
+    RESTORE_PROFILES_CLJ=1
+fi
+
+echo "{:user {:plugins [[jonase/eastwood \"${EASTWOOD_VERSION}\"]]}}" > "$HOME/.lein/profiles.clj"
+
 
 do_eastwood()
 {
@@ -39,6 +72,10 @@ do_eastwood()
     else
 	LEIN_PROFILE=""
     fi
+
+    #echo "do_eastwood: project=$1 ns=$2 LEIN_PROFILE=${LEIN_PROFILE}"
+    #return 0
+    #echo "After return 0.  How did this happen?"
 
     lein clean
     /bin/rm -f eastwood-out.txt
@@ -175,3 +212,14 @@ cd ..
 #cd ..
 
 date
+
+# Remove temporary profiles.clj file
+/bin/rm -f "$HOME/.lein/profiles.clj"
+
+# Restore the original, if there was one
+if [ $RESTORE_PROFILES_CLJ == 1 ]
+then
+    /bin/mv -f "$PROFILES_CLJ_BACKUP_FNAME" "$HOME/.lein/profiles.clj"
+    1>&2 echo "Restored original $HOME/.lein/profiles.clj file"
+    1>&2 echo "to its original location."
+fi

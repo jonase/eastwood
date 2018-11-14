@@ -30,20 +30,27 @@ To run Eastwood on many of these repos, make sure you have edited your
 Eastwood's README.md file.  Then run:
 
 ```bash
-% ./lint.sh
-```
+% ./lint.sh <eastwood_version> <clojure_version>  >& out.txt
 
-To save all of the output in a file:
+[ for example, Eastwood version 0.3.3 and Clojure 1.9 ]
 
-```bash
-% ./lint.sh >& out.txt
+% ./lint.sh 0.3.3 1.9 >& out.txt
 ```
 
 You can see the progress with `less out.txt` or `tail -f out.txt` in
 another terminal window.
 
+NOTE: If you have a file named `$HOME/.lein/profiles.clj`, this
+command will temporarily rename it and create a new one in its place
+while it runs, to control which version of Eastwood is used via
+Leiningen.  Do not run this script more than once in parallel, or the
+restoration of the original back to its place will probably mess up
+the contents of that file.  You may also wish to avoid running any
+other Leiningen processes that rely on the original contents of this
+file.
+
 To change the options used for Eastwood, the easiest way right now is
-simply to edit lint.sh and change the command lines that invoke
+simply to edit `lint.sh` and change the command lines that invoke
 Eastwood.
 
 
