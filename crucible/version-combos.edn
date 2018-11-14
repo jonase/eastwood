@@ -1,0 +1,39 @@
+{
+ :eastwood-versions
+ {"0.2.6" {:lein-profiles-user-plugins [[jonase/eastwood "0.2.6"]]},
+  "0.3.2" {:lein-profiles-user-plugins [[jonase/eastwood "0.3.2"]]},
+  "0.3.3" {:lein-profiles-user-plugins [[jonase/eastwood "0.3.3"]]}}
+
+ :clojure-versions
+ {"1.6" {:lein-profile "1.6"},
+  "1.7" {:lein-profile "1.7"},
+  "1.8" {:lein-profile "1.8"},
+  "1.9" {:lein-profile "1.9"},
+  "1.10" {:lein-profile "1.10"}}
+
+ :jdk-versions
+ {"oracle-1.8.0_192" {:java-home-dir "/home/jafinger/jdks/jdk1.8.0_192"},
+  "oracle-10.0.2" {:java-home-dir "/home/jafinger/jdks/jdk-10.0.2"},
+  "openjdk-11.0.1" {:java-home-dir "/home/jafinger/jdks/jdk-11.0.1"}}
+
+ :version-combinations-to-run
+ [
+  {:eastwood-version "0.2.6" :clojure-version "1.9"
+   :jdk-version "oracle-1.8.0_192"}
+  {:eastwood-version "0.2.6" :clojure-version "1.9"
+   :jdk-version "openjdk-11.0.1"}
+  {:eastwood-version "0.2.6" :clojure-version "1.10"
+   :jdk-version "oracle-1.8.0_192"}
+  {:eastwood-version "0.2.6" :clojure-version "1.10"
+   :jdk-version "openjdk-11.0.1"}
+
+  {:eastwood-version "0.3.3" :clojure-version "1.9"
+   :jdk-version "oracle-1.8.0_192"}
+  {:eastwood-version "0.3.3" :clojure-version "1.9"
+   :jdk-version "openjdk-11.0.1"}
+  {:eastwood-version "0.3.3" :clojure-version "1.10"
+   :jdk-version "oracle-1.8.0_192"}
+  {:eastwood-version "0.3.3" :clojure-version "1.10"
+   :jdk-version "openjdk-11.0.1"}
+  ]
+ }
