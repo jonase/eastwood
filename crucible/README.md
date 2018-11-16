@@ -86,8 +86,13 @@ output varies across versions, e.g. to discover whether a particular
 warning is no longer caught with a new version of Eastwood, or a new
 warning _is_ caught with a new version of Eastwood.
 
+The bash script `lint-multiversion.sh` describes a set of 8 version
+combinations, numbered 1 through 8.  Edit each of them to be the set
+of version combinations you are interested in.
+
+, as well as the case statement beginning with the line `case ${JDK} in`.
 This command must be run from inside of Eastwood's `crucible`
 directory, in order to use the `deps.edn` file there:
 ```bash
-% clj -Acrucible --versions version-combos.edn
+% ./lint-multiversion.sh
 ```
