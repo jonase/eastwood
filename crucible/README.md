@@ -88,11 +88,17 @@ warning _is_ caught with a new version of Eastwood.
 
 The bash script `lint-multiversion.sh` describes a set of 8 version
 combinations, numbered 1 through 8.  Edit each of them to be the set
-of version combinations you are interested in.
+of version combinations you are interested in.  Add more if you wish,
+or remove some from the 'for j in ...' loop statement and only the
+ones that remain will be executed.
 
-, as well as the case statement beginning with the line `case ${JDK} in`.
+Also edit the `case` statement beginning with the line `case ${JDK}
+in`, to set up the environment variables correctly for each version of
+the JDK you want to use.
+
 This command must be run from inside of Eastwood's `crucible`
 directory, in order to use the `deps.edn` file there:
+
 ```bash
 % ./lint-multiversion.sh
 ```
