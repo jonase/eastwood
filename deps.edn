@@ -2,6 +2,6 @@
  :deps {org.clojure/clojure {:mvn/version "1.8.0"}
         org.clojars.brenton/google-diff-match-patch {:mvn/version "0.1"}
         org.ow2.asm/asm-all {:mvn/version "5.2"}}
- :aliases {:eastwood {:main-opts ["-m" "eastwood.lint" "{:parallel?,naive,:source-paths,[\"src\"]}"]}
+ :aliases {:eastwood {:main-opts ["-m" "eastwood.lint" "{:parallel?,:naive,:source-paths,[\"src\"]}"]}
            :ancient {:main-opts ["-m" "deps-ancient.deps-ancient"]
                      :extra-deps {deps-ancient {:mvn/version "RELEASE"}}}}}
