@@ -64,7 +64,7 @@ released to fix that problem.
 Merge the following into your `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.3.3"]] }}
+{:user {:plugins [[jonase/eastwood "0.3.4"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -308,7 +308,7 @@ details.
 
 As of version 0.3.4, you can now add parallelism to your linting.
 Currently only a `:naive` form of parallelism is supported, which just uses
-`pmap` to run the linters over your namespaces. You can specify 
+`pmap` to run the linters over your namespaces. You can specify
 `:parallelism?` in your options map, currently `:none` and `:naive` are valid options.
 
 As mentioned in the [Installation & Quick
@@ -630,7 +630,7 @@ The warnings tend to be longer than one screen width.  You can use
 previous.  See the Vim documentation for more details,
 e.g. [here](http://vimdoc.sourceforge.net/htmldoc/quickfix.html).
 
-If you have [Syntastic](https://github.com/scrooloose/syntastic) and 
+If you have [Syntastic](https://github.com/scrooloose/syntastic) and
 [vim-fireplace](https://github.com/tpope/vim-fireplace/) installed,
 you can use [vim-eastwood](https://github.com/venantius/vim-eastwood)
 to automatically run Eastwood on the namespace in your current buffer.
@@ -1268,7 +1268,7 @@ to some other thing used purely for documentation purposes.
 It is true that even Clojure itself does not conform to this
 restriction.  For example, the arglists of `defn`, `defmacro`, and
 several other macros override `:arglists` for purposes of clearer
-documentation.  However, all but these few exceptional macros 
+documentation.  However, all but these few exceptional macros
 
 Other facts supporting this belief are:
 
