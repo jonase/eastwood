@@ -219,19 +219,21 @@
                :recommended-fnames desired-fname-set,
                :recommended-namespace desired-ns}]))))
 
-(defn nss-in-dirs [dir-name-strs]
+(defn nss-in-dirs [dir-name-strs modified-since]
   (let [dir-name-strs (set (map util/canonical-filename dir-name-strs))
         mismatches (filename-namespace-mismatches dir-name-strs)]
     (when (seq mismatches)
       (throw (ex-info "namespace-file-name-mismatch"
                       {:err :namespace-filename-mismatch
                        :err-data {:mismatches mismatches}})))
-    (let [tracker (if (seq dir-name-strs)
-                    (dir/scan-dirs (track/tracker) dir-name-strs)
+    (let [tracker (assoc (track/tracker) ::dir/time modified-since)
+          tracker (if (seq dir-name-strs)
+                    (dir/scan-dirs tracker dir-name-strs)
                     ;; Use empty tracker if dir-name-strs is empty.
                     ;; Calling dir/scan-all will use complete Java
                     ;; classpath if called with an empty sequence.
-                    (track/tracker))]
+                    tracker)
+          ]
       {:dirs dir-name-strs
        :non-clojure-files (::dir/non-clojure-files tracker)
        :files (set (::dir/files tracker))
@@ -275,7 +277,7 @@
 ;; is given that cannot be found.
 
 (defn effective-namespaces [exclude-namespaces namespaces
-                          {:keys [source-paths test-paths]}]
+                          {:keys [source-paths test-paths]} modified-since]
   ;; If keyword :source-paths occurs in namespaces or
   ;; excluded-namespaces, replace it with all namespaces found in
   ;; the directories in (:source-paths opts), in an order that
@@ -285,9 +287,9 @@
   ;; needed.
   (let [all-ns (concat namespaces exclude-namespaces)
         sp (if (some #{:source-paths} all-ns)
-             (nss-in-dirs source-paths))
+             (nss-in-dirs source-paths modified-since))
         tp (if (some #{:test-paths} all-ns)
-             (nss-in-dirs test-paths))
+             (nss-in-dirs test-paths modified-since))
         expanded-namespaces {:source-paths (:namespaces sp)
                              :test-paths (:namespaces tp)}
         excluded-namespaces (set (expand-ns-keywords expanded-namespaces
@@ -427,6 +429,7 @@ Return value:
     (reporting/report-result reporter no-ns-forms)
     (reporting/report-result reporter non-clojure-files)
     (when (seq linters)
+      (spit ".eastwood" (System/currentTimeMillis))
       (reporting/debug-namespaces reporter namespaces)
       ;; Create all namespaces to be analyzed.  This can help in some
       ;; (unusual) situations, such as when namespace A requires B,
@@ -476,7 +479,10 @@ Return value:
     ;; that are not recognized.
     (unknown-ns-keywords (:namespaces opts) #{:source-paths :test-paths} ":namespaces")
     (unknown-ns-keywords (:exclude-namespaces opts) #{:source-paths :test-paths} ":exclude-namespaces")
-    opts))
+    (let [ts-file (File. ".eastwood")]
+      (assoc opts :modified-since (if (and (.exists ts-file) (:only-modified opts))
+                                    (edn/read-string (slurp ts-file))
+                                    0)))))
 
 (defn summary [results]
   (apply merge-with into results))
@@ -508,9 +514,10 @@ Return value:
                    namespaces
                    source-paths
                    test-paths
+                   modified-since
                    cwd] :as opts} (last-options-map-adjustments opts reporter)
            namespaces-info (effective-namespaces exclude-namespaces namespaces
-                                                 (setup-lint-paths source-paths test-paths))
+                                                 (setup-lint-paths source-paths test-paths) modified-since)
            linter-info (select-keys opts [:linters :exclude-linters :add-linters :disable-linter-name-checks])]
        (reporting/debug reporter :var-info (with-out-str
                                              (util/print-var-info-summary @typos/var-info-map-delayed opts)))
@@ -602,9 +609,10 @@ Keys in a warning map:
                    namespaces
                    source-paths
                    test-paths
+                   modified-since
                    cwd] :as opts} (last-options-map-adjustments opts reporter)
            namespaces-info (effective-namespaces exclude-namespaces namespaces
-                                               (setup-lint-paths source-paths test-paths))
+                                               (setup-lint-paths source-paths test-paths) modified-since)
            linter-info (select-keys opts [:linters :exclude-linters :add-linters :disable-linter-name-checks])
            {:keys [error error-data
                    lint-warnings

@@ -56,7 +56,7 @@
     (testing "basic functionality"
       (is (= {:dirs (set (map util/canonical-filename dirs))
               :namespaces eastwood-src-namespaces}
-             (select-keys (nss-in-dirs dirs) [:dirs :namespaces]))))))
+             (select-keys (nss-in-dirs dirs 0) [:dirs :namespaces]))))))
 
 (deftest effective-namespaces-test
   (let [source-paths #{"src"}
@@ -68,5 +68,5 @@
              (select-keys (effective-namespaces #{}
                                                 #{:source-paths :test-paths}
                                                 {:source-paths source-paths
-                                                 :test-paths test-paths})
+                                                 :test-paths test-paths} 0)
                           [:dirs :namespaces]))))))

@@ -43,6 +43,7 @@
                         "test"]}
   :eastwood {:source-paths ["src"]
              :test-paths ["test"]
+             :only-modified true
              :debug #{}}
   :plugins [[net.assum/lein-ver "1.2.0"]]
   :lein-ver {:version-file "resources/EASTWOOD_VERSION"}

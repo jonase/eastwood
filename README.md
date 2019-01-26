@@ -64,7 +64,7 @@ released to fix that problem.
 Merge the following into your `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.3.3"]] }}
+{:user {:plugins [[jonase/eastwood "0.3.5"]] }}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -310,6 +310,12 @@ As of version 0.3.4, you can now add parallelism to your linting.
 Currently only a `:naive` form of parallelism is supported, which just uses
 `pmap` to run the linters over your namespaces. You can specify 
 `:parallelism?` in your options map, currently `:none` and `:naive` are valid options.
+
+## Only lint files modified since last run
+
+As of version 0.3.5, you can now instruct eastwood to only lint the files
+changed since the last run. This feature is pr 0.3.5 to be considered
+alpha and subject to change.
 
 As mentioned in the [Installation & Quick
 usage](#installation--quick-usage) section above, Eastwood causes any
