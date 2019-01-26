@@ -1,5 +1,12 @@
 # Change log for Eastwood
 
+## Changes from 0.3.4 to 0.3.5
+
+* Add support for only linting changed files since last run.
+This feature is to be considered alpha. If passed `:only-modified` with the value true,
+Eastwood will only lint the files which are modified since the timestamp stored in
+`.eastwood`
+
 ## Changes from 0.3.3 to 0.3.4
 
 * Add support for parallelism. First shot is `:naive` which runs `pmap` over
