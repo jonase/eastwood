@@ -644,5 +644,10 @@ clojure.inspector/inspect-tree on it.  Example in REPL:
 
 (defn -main
   ([] (-main (pr-str default-opts)))
-  ([opts]
-   (eastwood-from-cmdline  (edn/read-string opts))))
+  ([& opts]
+   (if (and
+         (= 1 (count opts))
+         (string? (first opts)))
+     (eastwood-from-cmdline (edn/read-string (first opts)))
+     (let [parsed (->> opts (interpose " ") (apply str) edn/read-string)]
+       (eastwood-from-cmdline parsed)))))

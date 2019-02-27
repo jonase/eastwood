@@ -83,11 +83,12 @@ no more dangerous.  To confine linting to files in your
     $ lein eastwood "{:namespaces [:source-paths]}"
 
 ## deps.edn
-If you're using `deps.edn`, consider merging
+If you're using `deps.edn`, you can set options to eastwood linter in a
+ EDN map, like this:
 ```clojure
 {:aliases
   {:eastwood
-      {:main-opts ["-m" "eastwood.lint" "{:source-paths,[\"src\"]}"]
+      {:main-opts ["-m" "eastwood.lint" {:source-paths ["src"]}]
 	   :extra-deps {jonase/eastwood {:mvn/version "RELEASE"}}}}}
 
 ```
