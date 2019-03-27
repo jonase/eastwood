@@ -6,7 +6,6 @@
             [clojure.pprint :as pp]
             [eastwood.util :as util]
             [eastwood.passes :as pass]
-            [clojure.set :as set]
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as tr]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rts]
@@ -19,8 +18,7 @@
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
             [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
              [emit-form :refer [emit-form]]
-             [warn-on-reflection :refer [warn-on-reflection]]]
-            [eastwood.reporting-callbacks :as reporting]))
+             [warn-on-reflection :refer [warn-on-reflection]]]))
 
 ;; uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer, then later probably diverged from each other.

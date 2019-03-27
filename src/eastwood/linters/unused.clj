@@ -1,7 +1,6 @@
 (ns eastwood.linters.unused
   (:import (java.lang.reflect Method))
   (:require [clojure.set :as set]
-            [clojure.data :as data]
             [clojure.string :as str]
             [clojure.java.io :as io]
             [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
@@ -574,13 +573,13 @@ discarded inside null: null'."
                              (with-out-str
                                (binding [pp/*print-right-margin* nil]
                                  (pp/pprint (:form stmt)))))))}))
-        
+
         (util/static-call? stmt)
         (let [m (select-keys stmt [:class :method])
               action (warning-unused-static m)]
           (unused-ret-val-lint-result stmt "static method call"
                                       action m location))
-        
+
         (util/invoke-expr? stmt)
         (let [v1 (get-in stmt [:fn :var])
               ;; Special case for apply.  Issue a warning based upon
@@ -675,7 +674,7 @@ discarded inside null: null'."
                    :host-interop "instance method/field access")
                  (first orig-form)
                  sorted-removed-meta-keys)
-         
+
          :else
          (format "Macro invocation of '%s' has metadata with keys %s that are almost certainly ignored."
                  (first orig-form)
