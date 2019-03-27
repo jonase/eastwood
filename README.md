@@ -317,6 +317,14 @@ Currently only a `:naive` form of parallelism is supported, which just uses
 As of version 0.3.5, you can now instruct eastwood to only lint the files
 changed since the last run. This feature is pr 0.3.5 to be considered
 alpha and subject to change.
+If passed `:only-modified` with the value true, Eastwood will only lint the 
+files which are modified since the timestamp stored in `.eastwood`.
+
+```
+  :only-modified true
+```
+
+## Usage
 
 As mentioned in the [Installation & Quick
 usage](#installation--quick-usage) section above, Eastwood causes any
