@@ -1,5 +1,10 @@
 # Methods of annotating Clojure code for analysis tools
 
+WARNING: This document records some thoughts on ways that one might
+annotate Clojure source code to selectively disable Eastwood warnings
+on individual expressions.  Unfortunately, it has NOT been implemented
+in Eastwood yet.
+
 
 ## Goal
 
