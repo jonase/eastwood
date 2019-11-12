@@ -69,6 +69,13 @@
   :within-depth 11
   :reason "Timbre's defnp, profile and p macros commonly expand to contain a check if the function name is a keyword, which is constant if file is a compile-time constant."})
 
+(disable-warning
+ {:linter :constant-test
+  :for-macro 'clojure.core/let
+  :if-inside-macroexpansion-of #{'taoensso.carmine/with-new-pubsub-listener}
+  :within-depth 8
+  :reason "Carmine's with-new-pubsub-listener macro commonly expands to contain an false positive."})
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Configs to disable warnings in Korma, version 0.4.0
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
