@@ -121,6 +121,56 @@
            :else form)))
       form)))
 
+(def ns-safe-symbol #{
+                      #'clojure.core/while
+                      #'clojure.core/time
+                      #'clojure.core/cond->>
+                      #'clojure.core/with-out-str
+                      #'clojure.core/vswap!
+                      #'clojure.core/doto
+                      #'clojure.core/..
+                      #'clojure.core/with-open
+                      #'clojure.core/dotimes
+                      #'clojure.core/as->
+                      #'clojure.core/future
+                      #'clojure.core/for
+                      #'clojure.core/lazy-seq
+                      #'clojure.core/some->
+                      #'clojure.core/cond->
+                      #'clojure.core/assert
+                      #'clojure.test/are
+                      #'clojure.core/if-not
+                      #'clojure.core/some->>
+                      #'clojure.core/condp
+                      #'clojure.core/letfn
+                      #'clojure.core/doseq
+                      #'clojure.core/case
+                      #'clojure.core/sync
+                      #'clojure.core/dosync
+                      #'clojure.core/when-not
+                      #'clojure.core/if-let
+                      #'clojure.core/reify
+                      #'clojure.test/testing
+                      #'clojure.core/loop
+                      #'clojure.core/delay
+                      #'clojure.core/cond
+                      #'clojure.core/when-let
+                      #'clojure.core/defn-
+                      #'clojure.core/->>
+                      #'clojure.core/or
+                      #'clojure.core/->
+                      #'clojure.core/and
+                      #'clojure.core/when
+                      #'clojure.test/try-expr
+                      #'clojure.test/deftest
+                      #'clojure.test/deftest-
+                      #'clojure.core/defn
+                      #'clojure.test/is
+                      #'clojure.core/fn
+                      #'clojure.core/let})
+
+(def macros-seen (atom {}))
+
 (defn macroexpand-1
   "If form represents a macro form or an inlineable function,returns its expansion,
    else returns form."
@@ -147,7 +197,10 @@
 
                macro?
                (let [res (apply v form (:locals env) (rest form))] ; (m &form &env & args)
-                 (update-ns-map!)
+                 (when-not (ns-safe-symbol v)
+                   #_                   (println "symbol" v)
+                   (swap! macros-seen update v (fnil inc 0))
+                    (update-ns-map!))
                  (if (obj? res)
                    (vary-meta res merge (meta form))
                    res))

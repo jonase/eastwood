@@ -351,6 +351,9 @@
 (defn- lint-namespace [reporter namespace linters opts]
   (try
     (let [{:keys [analyzer-exception lint-results analysis-time]} (lint-ns namespace linters opts)]
+      (println "analyzed in " analysis-time "ms")
+      (clojure.pprint/pprint (sort-by val @eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm/macros-seen))
+    (reset! eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm/macros-seen {})
       {:namespace [namespace]
        :lint-warnings (mapcat :lint-warning lint-results)
        :lint-errors (mapcat :lint-error lint-results)
