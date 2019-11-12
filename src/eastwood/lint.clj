@@ -448,6 +448,8 @@ Return value:
 (def default-opts {:cwd (.getCanonicalFile (io/file "."))
                    :linters default-linters
                    :debug #{}
+                   :only-modified false
+                   :modified-since 0
                    :parallel? :none
                    :source-paths #{}
                    :test-paths #{}
