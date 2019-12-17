@@ -1,5 +1,9 @@
 # Change log for Eastwood
 
+## Changes from 0.3.5 to 0.3.6
+
+* Add support for files with tagged literals using custom data readers
+
 ## Changes from 0.3.4 to 0.3.5
 
 * Add support for only linting changed files since last run.

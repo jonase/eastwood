@@ -306,7 +306,8 @@ recursing into ASTs with :op equal to :do"
 
     ;; If we eval a form that changes *ns*, I want it to go back to
     ;; the original before returning.
-    (binding [*ns* *ns*
+    (binding [tr/*data-readers* *data-readers*
+              *ns* *ns*
               *file* (str source-path)]
       (env/with-env (ana.jvm/global-env)
         (begin-file-debug *file* *ns* opt)

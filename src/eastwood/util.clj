@@ -599,7 +599,8 @@ pprint-meta instead."
   string is in that same namespace.  Fortunately, this is pretty
   common for most Clojure code as written today."
   [s ns include-line-col-metadata?]
-  (binding [*ns* (or ns *ns*)]
+  (binding [trdr/*data-readers* *data-readers*
+            *ns* (or ns *ns*)]
     (let [rdr (if include-line-col-metadata?
                 (LineNumberingPushbackReader. (StringReader. s))
                 (rdr-types/string-push-back-reader s))
