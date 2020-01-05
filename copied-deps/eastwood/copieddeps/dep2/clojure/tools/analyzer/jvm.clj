@@ -48,6 +48,55 @@
   (:import (clojure.lang IObj RT Compiler Var)
            java.net.URL))
 
+(def ns-safe-macro
+  "Clojure macros that are known to not alter namespaces"
+  #{#'clojure.core/->
+    #'clojure.core/->>
+    #'clojure.core/..
+    #'clojure.core/and
+    #'clojure.core/as->
+    #'clojure.core/assert
+    #'clojure.core/case
+    #'clojure.core/cond
+    #'clojure.core/cond->
+    #'clojure.core/cond->>
+    #'clojure.core/condp
+    #'clojure.core/defn
+    #'clojure.core/defn-
+    #'clojure.core/delay
+    #'clojure.core/doseq
+    #'clojure.core/dosync
+    #'clojure.core/dotimes
+    #'clojure.core/doto
+    #'clojure.core/fn
+    #'clojure.core/for
+    #'clojure.core/future
+    #'clojure.core/if-let
+    #'clojure.core/if-not
+    #'clojure.core/lazy-seq
+    #'clojure.core/let
+    #'clojure.core/letfn
+    #'clojure.core/loop
+    #'clojure.core/or
+    #'clojure.core/reify
+    #'clojure.core/some->
+    #'clojure.core/some->>
+    #'clojure.core/sync
+    #'clojure.core/time
+    #'clojure.core/vswap!
+    #'clojure.core/when
+    #'clojure.core/when-let
+    #'clojure.core/when-not
+    #'clojure.core/while
+    #'clojure.core/with-open
+    #'clojure.core/with-out-str
+    #'clojure.test/are
+    #'clojure.test/deftest
+    #'clojure.test/deftest-
+    #'clojure.test/is
+    #'clojure.test/testing
+    #'clojure.test/try-expr})
+
 (def specials
   "Set of the special forms for clojure in the JVM"
   (into ana/specials
@@ -147,7 +196,8 @@
 
                macro?
                (let [res (apply v form (:locals env) (rest form))] ; (m &form &env & args)
-                 (update-ns-map!)
+                 (when-not (ns-safe-macro v)
+                   (update-ns-map!))
                  (if (obj? res)
                    (vary-meta res merge (meta form))
                    res))
