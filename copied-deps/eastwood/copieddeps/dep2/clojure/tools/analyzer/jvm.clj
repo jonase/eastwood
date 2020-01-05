@@ -41,6 +41,7 @@
              [emit-form :refer [emit-form]]]
 
             [clojure.java.io :as io]
+            [clojure.test :as test]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as readers]
 
