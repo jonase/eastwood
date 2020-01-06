@@ -1,19 +1,17 @@
 (ns leiningen.eastwood
   (:require [clojure.pprint :as pp]
             [leiningen.core.eval :as leval]
-            [leiningen.core.main :as lein]))
+            [leiningen.core.main :as lein]
+            [eastwood.version :as version]))
 
 ;; 'lein help' prints only the first line of the string returned by
 ;; help.  'lein help eastwood' prints all of it, plus the arg vectors
 ;; taken by the eastwood function below.
 
-(defn help [version]
+(defn help []
   (with-out-str
     (println "Lint your Clojure code.")
-    (println (format "== Eastwood %s, Clojure %s, JVM %s"
-                     version
-                     (clojure-version)
-                     (get (System/getProperties) "java.version")))
+    (println (version/version-string))
     (println "
 Usage: To lint all Clojure files in your :source-paths and :test-paths:
 
@@ -112,8 +110,7 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
   ([project] (eastwood project "{}"))
   ([project opts]
    (cond
-     (= opts "help") (lein/info (help (or (second (eastwood-plugin project))
-                                          "Bleading Edge"))) ;; when dog-fooding
+     (= opts "help") (lein/info (help))
      (= opts "lein-project")
      (do
        (lein/info (with-out-str (pprint-meta (into (sorted-map) project))))
