@@ -66,7 +66,7 @@
   (print (str msg "\n"))
   (flush))
 
-(defmethod note SilentReporter [reporter msg] )
+(defmethod note SilentReporter [reporter msg])
 
 (defmethod lint-warning SilentReporter [reporter warning])
 
@@ -92,8 +92,8 @@
 
 (defn show-analyzer-exception [reporter namespace exception]
   (when-let [error (first exception)]
-    (doseq [msg (:msgs (first exception))]
-      (note reporter msg))))
+    (doseq [msg (:msgs error)]
+      (analyzer-exception reporter msg))))
 
 (defn report-result [reporter result]
   (let [namespace (first (:namespace result))]
