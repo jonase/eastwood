@@ -918,6 +918,7 @@ StringWriter."
         (catch Exception e
           (println (format "Exception while attempting to load config file: %s" config-file))
           (pst e nil))))
+    (reset! warning-enable-config-atom [])
     (process-configs @warning-enable-config-atom)))
 
 
