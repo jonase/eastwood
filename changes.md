@@ -1,5 +1,9 @@
 # Change log for Eastwood
 
+## Changes from 0.3.6 to 0.3.7
+
+ * Fix memory leak on repeated runs
+
 ## Changes from 0.3.5 to 0.3.6
 
 * Add support for files with tagged literals using custom data readers
