@@ -1007,7 +1007,8 @@ warning, that contains the constant value."
         (format "%s found that is always logical true or always logical false.  Should be changed to function call?  %s"
                 condition-desc-begin (pr-str condition))
 
-        (= :var (:op test-ast))
+        (and (-> test-ast :op #{:var})
+             (-> test-ast :var meta :dynamic #{nil false}))
         (format "%s found that is probably always logical true or always logical false.  Should be changed to function call?  %s"
                 condition-desc-begin (pr-str condition))
         
