@@ -1,5 +1,9 @@
 # Change log for Eastwood
 
+## Changes from 0.3.7 to 0.3.8
+
+ * Fix pre-post warning for dynamic vars
+
 ## Changes from 0.3.6 to 0.3.7
 
  * Fix memory leak on repeated runs
