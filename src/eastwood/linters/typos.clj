@@ -1008,7 +1008,7 @@ warning, that contains the constant value."
                 condition-desc-begin (pr-str condition))
 
         (and (-> test-ast :op #{:var})
-             (-> test-ast :var meta :dynamic #{nil false}))
+             (-> test-ast :var meta :dynamic not))
         (format "%s found that is probably always logical true or always logical false.  Should be changed to function call?  %s"
                 condition-desc-begin (pr-str condition))
         
