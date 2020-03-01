@@ -909,6 +909,7 @@ StringWriter."
   (let [all-config-files (concat (map builtin-config-to-resource
                                       builtin-config-files)
                                  config-files)]
+    (reset! warning-enable-config-atom [])
     (doseq [config-file all-config-files]
       (when (debug? :config opt)
         (println (format "Loading config file: %s" config-file)))
@@ -918,7 +919,6 @@ StringWriter."
         (catch Exception e
           (println (format "Exception while attempting to load config file: %s" config-file))
           (pst e nil))))
-    (reset! warning-enable-config-atom [])
     (process-configs @warning-enable-config-atom)))
 
 
