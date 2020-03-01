@@ -1,4 +1,4 @@
-(defproject jonase/eastwood "0.3.9"
+(defproject jonase/eastwood "0.3.10"
   :description "A Clojure lint tool"
   :url "https://github.com/jonase/eastwood"
   :license {:name "Eclipse Public License"
