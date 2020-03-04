@@ -165,7 +165,7 @@
      :analysis-time elapsed
      :lint-results (some->> linters
                             (keep linter-name->info)
-                            (map (partial lint-ns* ns-sym analyze-results opts)))
+                            (@util/linter-executor-atom (partial lint-ns* ns-sym analyze-results opts)))
      :analyzer-exception (when exception
                            (msgs/report-analyzer-exception exception exception-phase exception-form ns-sym))}))
 
