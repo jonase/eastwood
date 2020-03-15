@@ -4,4 +4,7 @@
         org.ow2.asm/asm-all {:mvn/version "5.2"}}
  :aliases {:eastwood {:main-opts ["-m" "eastwood.lint" "{:parallel?,:naive,:source-paths,[\"src\"]}"]}
            :ancient {:main-opts ["-m" "deps-ancient.deps-ancient"]
-                     :extra-deps {deps-ancient {:mvn/version "RELEASE"}}}}}
+                     :extra-deps {deps-ancient {:mvn/version "RELEASE"}}}
+           :deploy {:extra-deps {deps-deploy {:mvn/version "RELEASE"}}
+                    :main-opts ["-m" "deps-deploy.deps-deploy" "deploy"
+                                "target/eastwood-0.3.11.jar"]}}}
