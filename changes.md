@@ -1,6 +1,6 @@
 # Change log for Eastwood
 
-## Changes from 0.3.10 to 0.4.0
+## Changes from 0.3.10 to 0.3.11
 
  * Add `set-linter-executor!` configuration option
 
