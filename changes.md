@@ -1,5 +1,9 @@
 # Change log for Eastwood
 
+## Changes from 0.3.10 to 0.4.0
+
+ * Add `set-linter-executor!` configuration option
+
 ## Changes from 0.3.7 to 0.3.8
 
  * Fix pre-post warning for dynamic vars

@@ -882,6 +882,15 @@ StringWriter."
 (defn disable-warning [m]
   (swap! warning-enable-config-atom conj m))
 
+(def linter-executor-atom
+  "A `#'map`-like function that will run each of the linters.
+
+  Can be customized in order to achieve linter parallelism, or extra logging, etc."
+  (atom map))
+
+(defn set-linter-executor! [executor]
+  (reset! linter-executor-atom executor))
+
 (defn process-configs [warning-enable-config]
   (reduce (fn [configs {:keys [linter] :as m}]
             (case linter
@@ -910,6 +919,7 @@ StringWriter."
                                       builtin-config-files)
                                  config-files)]
     (reset! warning-enable-config-atom [])
+    (reset! linter-executor-atom map)
     (doseq [config-file all-config-files]
       (when (debug? :config opt)
         (println (format "Loading config file: %s" config-file)))
