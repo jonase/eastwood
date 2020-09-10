@@ -429,7 +429,7 @@ as deprecated without breaking the build.
 ```clojure
 (disable-warning
   {:linter :deprecations
-   :symbol-matches #{#"^#'my\.old\.project\.*}})
+   :symbol-matches #{#"^#'my\.old\.project\.*"}})
 ```
 
 Eastwood would normally report a `:suspicious-expression` warning if
