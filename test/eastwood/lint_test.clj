@@ -70,3 +70,20 @@
                                                 {:source-paths source-paths
                                                  :test-paths test-paths} 0)
                           [:dirs :namespaces]))))))
+
+(deftest exceptions-test
+  (let [valid-namespaces   (take 1 eastwood-src-namespaces)
+        invalid-namespaces '[invalid.syntax]]
+    (are [namespaces rethrow-exceptions? ok?] (testing [namespaces rethrow-exceptions?]
+                                                (try
+                                                  (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces namespaces :rethrow-exceptions? rethrow-exceptions?))
+                                                  (is ok?)
+                                                  (catch Exception _
+                                                    (is (not ok?))))
+                                                true)
+      []                 false true
+      []                 true  true
+      invalid-namespaces false true
+      invalid-namespaces true  false
+      valid-namespaces   true  true
+      valid-namespaces   false true)))

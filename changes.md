@@ -1,5 +1,10 @@
 # Change log for Eastwood
 
+## Changes from 0.3.11 to 0.3.12
+
+* Introduce `:rethrow-exceptions?` option, which offers throwing any encountered exceptions during analysis/linting instead of only reporting them.
+You might want this if using Eastwood programatically.
+
 ## Changes from 0.3.10 to 0.3.11
 
  * Add `set-linter-executor!` configuration option

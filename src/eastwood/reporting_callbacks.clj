@@ -102,16 +102,23 @@
     (show-analyzer-exception reporter namespace (:analyzer-exception result))
     result))
 
-(defn stopped-on-exception [reporter namespaces results result]
+(defn stopped-on-exception [reporter
+                            namespaces
+                            results
+                            {:keys [analyzer-exception lint-runtime-exception] :as result}
+                            rethrow-exceptions?]
   (let [namespace (first (:namespace result))
         processed-namespaces (->> results (map :namespace) (filter identity))]
-    (show-analyzer-exception reporter namespace (:analyzer-exception result))
-    (show-error reporter (:lint-runtime-exception result))
+    (show-analyzer-exception reporter namespace analyzer-exception)
+    (show-error reporter lint-runtime-exception)
     (let [error {:err :exception-thrown
                  :err-data {:last-namespace namespace
                             :namespaces-left (- (count namespaces)
                                                 (count processed-namespaces))}}]
-      (note reporter (msgs/error-msg error)))))
+      (note reporter (msgs/error-msg error)))
+    (when rethrow-exceptions?
+      (some-> analyzer-exception first throw)
+      (some-> lint-runtime-exception first throw))))
 
 (defn debug-namespaces [reporter namespaces]
   (debug reporter :ns (format "Namespaces to be linted:"))

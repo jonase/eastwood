@@ -380,7 +380,7 @@
                          (or (:lint-runtime-exception result)
                              (:analyzer-exception result)))
                   (do
-                    (reporting/stopped-on-exception reporter namespaces results result)
+                    (reporting/stopped-on-exception reporter namespaces results result (:rethrow-exceptions? opts))
                     (reduced results))
                   (do
                     (reporting/report-result reporter result)
@@ -456,7 +456,8 @@ Return value:
                    :namespaces #{:source-paths :test-paths}
                    :exclude-namespaces #{}
                    :config-files #{}
-                   :builtin-config-files default-builtin-config-files})
+                   :builtin-config-files default-builtin-config-files
+                   :rethrow-exceptions? false})
 
 (defn last-options-map-adjustments [opts reporter]
   (let [opts (merge default-opts opts)
@@ -508,7 +509,7 @@ Return value:
 
 (defn eastwood
   ([opts] (eastwood opts (reporting/printing-reporter opts)))
-  ([opts reporter]
+  ([{:keys [rethrow-exceptions?] :as opts} reporter]
    (try
      (reporting/note reporter (version/version-string))
      (let [start-time (System/currentTimeMillis)
@@ -532,7 +533,9 @@ Return value:
             (make-report reporter start-time)))
      (catch Exception e
        (reporting/show-error reporter (or (ex-data e) e))
-       {:some-warnings true}))))
+       (if rethrow-exceptions?
+         (throw e)
+         {:some-warnings true})))))
 
 (defn eastwood-from-cmdline [opts]
   (let [ret (eastwood opts)]
