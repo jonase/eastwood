@@ -460,10 +460,13 @@ Return value:
                    :rethrow-exceptions? false})
 
 (defn last-options-map-adjustments [opts reporter]
-  (let [opts (merge default-opts opts)
+  (let [{:keys [namespaces] :as opts} (merge default-opts opts)
+        distinct* (fn [x] ;; distinct but keeps original coll type
+                    (->> (into (empty x) (distinct) x)
+                         (into (empty x)))) ;; restore list order
         opts (-> opts
                  (update :debug set)
-                 (update :namespaces set)
+                 (update :namespaces distinct*)
                  (update :source-paths set)
                  (update :test-paths set)
                  (update :exclude-namespaces set))
