@@ -102,6 +102,12 @@
     (show-analyzer-exception reporter namespace (:analyzer-exception result))
     result))
 
+(defn maybe-wrap-in-ex-info [x]
+  (if (instance? Throwable x)
+    x
+    (ex-info (str ::stopped-on-exception)
+             x)))
+
 (defn stopped-on-exception [reporter
                             namespaces
                             results
@@ -117,8 +123,8 @@
                                                 (count processed-namespaces))}}]
       (note reporter (msgs/error-msg error)))
     (when rethrow-exceptions?
-      (some-> analyzer-exception first throw)
-      (some-> lint-runtime-exception first throw))))
+      (some-> analyzer-exception first maybe-wrap-in-ex-info throw)
+      (some-> lint-runtime-exception first maybe-wrap-in-ex-info throw))))
 
 (defn debug-namespaces [reporter namespaces]
   (debug reporter :ns (format "Namespaces to be linted:"))
