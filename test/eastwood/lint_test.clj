@@ -19,14 +19,22 @@
       (is (= default-opts
              (dissoc (last-options-map-adjustments nil reporter)
                      :warning-enable-config))))
-    (testing "passed options are respected"
+    (testing "passed options are respected. So are the type and sort order of :namespaces."
+      (is (= (assoc default-opts
+                    :namespaces ["foo" "bar"])
+             (dissoc (last-options-map-adjustments {:namespaces ["foo" "bar"]} reporter)
+                     :warning-enable-config)))
       (is (= (assoc default-opts
                     :namespaces #{"foo"})
-             (dissoc (last-options-map-adjustments {:namespaces ["foo"]} reporter)
+             (dissoc (last-options-map-adjustments {:namespaces #{"foo"}} reporter)
+                     :warning-enable-config)))
+      (is (= (assoc default-opts
+                    :namespaces '("foo" "bar"))
+             (dissoc (last-options-map-adjustments {:namespaces '("foo" "bar")} reporter)
                      :warning-enable-config))))
-    (testing "all the things are sets"
+    (testing "all the things are sets (except :namespaces, which keep their original class)"
       (is (empty? (->>
-                   (select-keys (last-options-map-adjustments {:namespaces []} reporter) [:debug :namespaces :source-paths :test-paths :exclude-namespaces])
+                   (select-keys (last-options-map-adjustments {:namespaces []} reporter) [:debug :source-paths :test-paths :exclude-namespaces])
                    (vals)
                    (remove set?)))))))
 

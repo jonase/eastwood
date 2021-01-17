@@ -2180,7 +2180,7 @@ the next."
      default-opts
      {{:linter :duplicate-params,
        :msg
-       "Local name a occurs multiple times in the same argument vector",
+       "Local name `a` occurs multiple times in the same argument vector",
        :file "testcases/duplicateparams2.clj",
        :line 7,
        :column 48}
