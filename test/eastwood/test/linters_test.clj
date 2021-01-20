@@ -1709,6 +1709,11 @@ the next."
     1,
     })
   (lint-test
+   'testcases.unusednsimport
+   [:unused-namespaces]
+   default-opts
+   {})
+  (lint-test
    'testcases.unusednss
    [:unused-namespaces :unused-locals]
    default-opts
