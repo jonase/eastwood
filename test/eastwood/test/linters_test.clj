@@ -1708,6 +1708,23 @@ the next."
      :line 164, :column 1}
     1,
     })
+  ;; No faults expected:
+  (lint-test 'testcases.unusednsimport.consumer1 [:unused-namespaces] default-opts {})
+  ;; Fault expected (since the refered type is in a `comment` form):
+  (lint-test 'testcases.unusednsimport.consumer2
+             [:unused-namespaces]
+             default-opts
+             {{:linter :unused-namespaces
+               :msg "Namespace testcases.unusednsimport.defrecord is never used in testcases.unusednsimport.consumer2"
+               :file "testcases/unusednsimport/consumer2.clj"
+               :line 1
+               :column 1} 1})
+  ;; No faults expected:
+  (lint-test 'testcases.unusednsimport.consumer3 [:unused-namespaces] default-opts {})
+  ;; No faults expected:
+  (lint-test 'testcases.unusednsimport.consumer4 [:unused-namespaces] default-opts {})
+  ;; No faults expected:
+  (lint-test 'testcases.unusednsimport.consumer5 [:unused-namespaces] default-opts {})
   (lint-test
    'testcases.unusednss
    [:unused-namespaces :unused-locals]

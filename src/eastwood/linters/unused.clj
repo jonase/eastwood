@@ -63,6 +63,19 @@
       (str/replace #"\.[^\.]+$" "")
       symbol))
 
+(defn classes-used [asts]
+  (let [simple-tags (->> asts
+                         (mapcat ast/nodes)
+                         (keep :o-tag))
+        tags-from-meta (->> asts
+                            (mapcat ast/nodes)
+                            (keep (comp :tag meta :result)))
+        tags (into simple-tags tags-from-meta)]
+    
+    (into #{}
+          (remove nil?)
+          tags)))
+
 (defn protocols-used [asts]
   (->> asts
        (mapcat ast/nodes)
@@ -267,6 +280,7 @@ Example: (all-suffixes [1 2 3])
         used-keywords (keywords-used asts)
         used-macros (macros-invoked asts)
         used-protocols (protocols-used asts)
+        used-classes (classes-used asts)
 ;;        _ (do
 ;;            (println "dbg: required namespaces:")
 ;;            (pp/pprint required)
@@ -302,7 +316,8 @@ Example: (all-suffixes [1 2 3])
                                       (map symbol))
                                  (keep #(if-let [n (namespace %)] (symbol n))
                                        used-macros)
-                                 (map namespace-for used-protocols)))]
+                                 (map namespace-for used-protocols)
+                                 (map namespace-for used-classes)))]
     (for [ns (set/difference required used-namespaces)]
       {:loc loc
        :unused-namespace-sym ns
