@@ -13,4 +13,9 @@
      :file "testcases/implicit_dependencies.clj",
      :line 4,
      :column 3}
-    1}))
+    1})
+  (linters-test/lint-test
+   'testcases.f08
+   [:implicit-dependencies]
+   {}
+   {}))

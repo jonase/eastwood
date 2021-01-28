@@ -1,5 +1,14 @@
 # Change log for Eastwood
 
+## Changes from 0.3.13 to 
+
+* Improve `:implicit-dependencies` to support potemkin/import-vars
+
+## Changes from 0.3.12 to 0.3.13
+
+* Fix `:rethrow-exceptions?` option which could try to hash-map
+* Keep order for `:namespaces` option
+
 ## Changes from 0.3.11 to 0.3.12
 
 * Introduce `:rethrow-exceptions?` option, which offers throwing any encountered exceptions during analysis/linting instead of only reporting them.

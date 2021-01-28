@@ -5,8 +5,7 @@
 
 
 (defn var->ns-symbol [var]
-  (let [^clojure.lang.Namespace ns (-> var meta :ns)]
-    (.-name ns)))
+  (symbol (namespace (symbol var))))
 
 
 (defn within-other-ns-macro?
