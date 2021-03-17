@@ -64,14 +64,11 @@
       symbol))
 
 (defn classes-used [asts]
-  (let [simple-tags (->> asts
-                         (mapcat ast/nodes)
-                         (keep :o-tag))
-        tags-from-meta (->> asts
-                            (mapcat ast/nodes)
-                            (keep (comp :tag meta :result)))
+  (let [nodes (mapcat ast/nodes asts)
+        simple-tags (keep :o-tag nodes)
+        tags-from-meta (keep (comp :tag meta :result)
+                             nodes)
         tags (into simple-tags tags-from-meta)]
-    
     (into #{}
           (remove nil?)
           tags)))
