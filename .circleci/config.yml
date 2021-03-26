@@ -21,6 +21,16 @@ commands:
   run-tests:
     description: "Run tests"
     steps:
+      - run: git clean -fdx # prevent any form of caching
+      - run:
+          name: Run tests with all supported clojure versions
+          command: |
+            EVAL_IN_LEININGEN=1 lein eastwood
+            
+  lint:
+    description: "Run Eastwood against itself"
+    steps:
+      - run: git clean -fdx # prevent any form of caching
       - run:
           name: Run tests with all supported clojure versions
           command: |
@@ -39,6 +49,7 @@ jobs:
     steps:
       - setup-project
       - run-tests
+      - lint
 
   openjdk-11:
     docker:
@@ -50,7 +61,7 @@ jobs:
 
     steps:
       - setup-project
-      - run-tests
+      - lint
 
 workflows:
   default:

@@ -12,7 +12,8 @@
                                                       :builtin-config-files input}))
                            (is (pred @proof))
                            ;; Avoid duplicate failure reports, did the tests fail:
-                           true)
+                           #_ true ;; temporarily disabled because of a false positive
+                           )
     "The custom `set-linter-executor!` successfully runs"
     ["linter_executor.clj"]
     seq
