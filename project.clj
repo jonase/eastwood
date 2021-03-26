@@ -3,15 +3,13 @@
   :url "https://github.com/jonase/eastwood"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :global-vars {*warn-on-reflection* true
-                ;;*unchecked-math* :warn-on-boxed
-                }
   :source-paths ["src" "copied-deps"]
   :dependencies [[org.clojure/clojure "1.10.2" :scope "provided"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
                  [org.ow2.asm/asm-all "5.2"]]
   :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.5"]
                                   [jafingerhut/dolly "0.1.0"]]}
+             :warn-on-reflection {:global-vars {*warn-on-reflection* true}}
              :test {:dependencies [[commons-io "2.4" #_"Needed for issue-173-test"]]
                     :resource-paths ["test-resources"
                                      ;; if wanting the `cases` to be available during development / the default profile,
@@ -23,7 +21,9 @@
              :1.10.1 {:dependencies [[org.clojure/clojure "1.10.1"]]}
              :1.10.2 {:dependencies [[org.clojure/clojure "1.10.2"]]}}
   :aliases {"test-all" ["with-profile"
-                        "-dev,+test,+1.7:-dev,+test,+1.8:-dev,+test,+1.9:-dev,+test,+1.10"
+                        ~(->> ["1.7" "1.8" "1.9" "1.10"]
+                              (map (partial str "-user,-dev,+test,+warn-on-reflection,+"))
+                              (clojure.string/join ":"))
                         "test"]}
   :eastwood {:source-paths ["src"]
              :test-paths ["test"]
