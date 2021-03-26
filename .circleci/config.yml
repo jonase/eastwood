@@ -25,7 +25,7 @@ commands:
       - run:
           name: Run tests with all supported clojure versions
           command: |
-            EVAL_IN_LEININGEN=1 lein eastwood
+            EVAL_IN_LEININGEN=1 lein with-profile +eastwood-plugin eastwood
             
   lint:
     description: "Run Eastwood against itself"
