@@ -5,7 +5,11 @@
 
 
 (defn var->ns-symbol [var]
-  (symbol (namespace (symbol var))))
+  (if (util/clojure-1-10-or-later)
+    ;; Use the most accurate method:
+    (symbol (namespace (symbol var)))
+    (let [^clojure.lang.Namespace ns (-> var meta :ns)]
+      (.-name ns))))
 
 
 (defn within-other-ns-macro?
