@@ -11,7 +11,7 @@
                  ;[org.clojure/clojure "1.5.1"]
                  ;[org.clojure/clojure "1.6.0"]
                  ;[org.clojure/clojure "1.7.0"]
-                 [org.clojure/clojure "1.8.0"]
+                 ;[org.clojure/clojure "1.8.0"]
                  ;[org.clojure/clojure "1.9.0-master-SNAPSHOT"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
                  [org.ow2.asm/asm-all "5.2"]]
@@ -38,10 +38,14 @@
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
-             :1.10 {:dependencies [[org.clojure/clojure "1.10.0-master-SNAPSHOT"]]}}
+             :1.10.1 {:dependencies [[org.clojure/clojure "1.10.1"]]}
+             :1.10.2 {:dependencies [[org.clojure/clojure "1.10.2"]]}}
   :aliases {"test-all" ["with-profile"
-                        "dev,test,1.6:dev,test,1.7:dev,test,1.8:dev,test,1.9"
-                        "test"]}
+                        "dev,test,1.6:dev,test,1.7:dev,test,1.8:dev,test,1.9:dev,test,1.10.1:dev,test,1.10.2"
+                        "test"]
+            "lint-all" ["with-profile"
+                        "dev,test,1.6:dev,test,1.7:dev,test,1.8:dev,test,1.9:dev,test,1.10.1:dev,test,1.10.2"
+                        "eastwood-all"]}
   :eastwood {:source-paths ["src"]
              :test-paths ["test"]
              :only-modified true

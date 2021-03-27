@@ -1,45 +1,66 @@
-# Clojure CircleCI 2.0 configuration file
-#
-# Check https://circleci.com/docs/2.0/language-clojure/ for more details
-#
-version: 2
-jobs:
-  build:
-    docker:
-      # specify the version you desire here
-      - image: circleci/clojure:lein-2.8.0
-
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
-
-    working_directory: ~/repo
-
-    environment:
-      LEIN_ROOT: "true"
-      # Customize the JVM maximum heap limit
-      JVM_OPTS: -Xmx3200m
-
+version: 2.1
+commands:
+  setup-project:
+    description: "Setup project"
     steps:
       - checkout
 
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-dependencies-{{ checksum "project.clj" }}
-          # fallback to using the latest cache if no exact match is found
-          - v1-dependencies-
+            - v1-dependencies-{{ checksum "project.clj" }}
 
-      - run: lein deps
-
+      - run:
+          name: Fetch dependencies
+          command: |
+            lein deps-all
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "project.clj" }}
-
-      # dogfood!
       - run: lein eastwood
 
-      # run tests!
-      - run: lein test
+  run-tests:
+    description: "Run tests"
+    steps:
+      - run:
+          name: Run tests with all supported clojure versions
+          command: |
+            lein test-all
+      - run:
+          name: Lint with all supported clojure versions
+	  command: |
+	    lein eastwood-all
+
+jobs:
+
+  openjdk-8:
+    docker:
+      - image: circleci/clojure:openjdk-8-lein-2.9.1-node
+    working_directory: ~/repo
+
+    environment:
+      JVM_OPTS: -Xmx3200m
+
+    steps:
+      - setup-project
+      - run-tests
+
+  openjdk-11:
+    docker:
+      - image: circleci/clojure:openjdk-11-lein-2.9.1-node
+    working_directory: ~/repo
+
+    environment:
+      JVM_OPTS: -Xmx3200m
+
+    steps:
+      - setup-project
+      - run-tests
+
+workflows:
+  version: 2
+  default:
+    jobs:
+      - openjdk-8
+      - openjdk-11
