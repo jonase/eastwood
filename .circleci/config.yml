@@ -29,8 +29,8 @@ commands:
             lein test-all
       - run:
           name: Lint with all supported clojure versions
-	  command: |
-	    lein eastwood-all
+          command: |
+            lein eastwood-all
 
 jobs:
 
