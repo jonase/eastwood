@@ -141,11 +141,20 @@
                      (when-let [url (:url linter)]
                        {"warning-details-url" url}))})
 
+(defn ignore-fault? [ignored-faults {{:keys [namespace-sym column line linter]} :warn-data
+                               :as linter-result}]
+  (let [match (get-in ignored-faults [linter namespace-sym])]
+    (or (true? match)
+        (= match
+           {:line line :column column}))))
+
 (defn- run-linter [linter analyze-results ns-sym opts]
   (let [ns-info (namespace-info ns-sym (:cwd opts))]
     (try
-      (doall (->> ((:fn linter) analyze-results opts)
-                  (map (partial handle-lint-result linter ns-info))))
+      (->> ((:fn linter) analyze-results opts)
+           (map (partial handle-lint-result linter ns-info))
+           (remove (partial ignore-fault? (:ignored-faults opts)))
+           doall)
       (catch Throwable e
         [{:kind :lint-error
           :warn-data (format "Exception thrown by linter %s on namespace %s" (:name linter) ns-sym)
@@ -457,7 +466,8 @@ Return value:
                    :exclude-namespaces #{}
                    :config-files #{}
                    :builtin-config-files default-builtin-config-files
-                   :rethrow-exceptions? false})
+                   :rethrow-exceptions? false
+                   :ignored-faults {}})
 
 (defn last-options-map-adjustments [opts reporter]
   (let [{:keys [namespaces] :as opts} (merge default-opts opts)

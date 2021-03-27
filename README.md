@@ -2346,6 +2346,28 @@ remains the same throughout the file.  This is a common convention
 followed by most Clojure source code, and required by several other
 Clojure development tools.
 
+## Ignored faults
+
+If there are specific instances of linter faults that you need to supress
+(e.g. for making a CI build pass), you can use the `:ignored-faults` option.
+
+It has the following shape:
+
+```clj
+;;linter-name            ns-name            target
+;;---                    ---                ---
+{:implicit-dependencies {'example.namespace {:line 3 :column 2}} 
+ :unused-ret-vals       {'another.namespace true}}
+```
+
+`{:line 3 :column 2}` matches a given linter (within a specific ns)
+if and only if the linter triggers that fault in that exact line/column.
+Accordingly, you might have to update the configured line/column from time to time.
+
+If you wish to ban a ignore a linter for an entire namespace, pass `true` instead, as shown in the example above.
+
+> Please, if encountering an issue in Eastwood, consider reporting it in addition to (or instead of) silencing it.
+> This way Eastwood can continue to be a precise linter, having as few false positives as possible.
 
 ## Change log
 

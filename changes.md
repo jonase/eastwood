@@ -1,6 +1,19 @@
 # Change log for Eastwood
 
-## Changes from 0.3.13 to 
+## Changes from 0.3.14 to 0.4.0 
+
+* Introduce `:ignored-faults` option
+   * See: https://github.com/jonase/eastwood#ignored-faults
+   * Fixes https://github.com/jonase/eastwood/issues/21
+* Support require+import pattern for defrecords, without triggering "Namespace is never used"
+   * Fixes https://github.com/jonase/eastwood/issues/210
+* Remove a noisy println, on certain cases that would be already caught by the reflection warnings mechanism.
+   * Fixes https://github.com/jonase/eastwood/issues/355
+* Restore accidentally-dropped support for Clojure < 1.10
+   * Fixes https://github.com/jonase/eastwood/issues/356
+* Drop support for Clojure 1.6
+
+## Changes from 0.3.13 to 0.3.14 
 
 * Improve `:implicit-dependencies` to support potemkin/import-vars
 
