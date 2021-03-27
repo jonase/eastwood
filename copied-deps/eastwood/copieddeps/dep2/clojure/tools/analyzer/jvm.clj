@@ -583,6 +583,8 @@
               :raw-forms  raw-forms})
            (let [a (analyze mform env opts)
                  frm (emit-form a)
+                 ;; NOTE: the retry inside the `catch` is a monkeypatch from Eastwood side.
+                 ;; ------------ begin patch -------------
                  result (try
                           ;; eval the emitted form rather than directly the form to avoid double macroexpansion:
                           (eval frm)
@@ -599,7 +601,9 @@
                                      
                                      eval)
                                 (catch Exception e
-                                  (handle-evaluation-exception (ExceptionThrown. e a)))))))]
+                                  (handle-evaluation-exception (ExceptionThrown. e a)))))))
+                 ;; ------------ end patch -------------
+                 ]
              (merge a {:result    result
                        :raw-forms raw-forms})))))))
 
