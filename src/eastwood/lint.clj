@@ -142,11 +142,22 @@
                        {"warning-details-url" url}))})
 
 (defn ignore-fault? [ignored-faults {{:keys [namespace-sym column line linter]} :warn-data
-                               :as linter-result}]
-  (let [match (get-in ignored-faults [linter namespace-sym])]
-    (or (true? match)
-        (= match
-           {:line line :column column}))))
+                                     :as linter-result}]
+  (let [matches (get-in ignored-faults [linter namespace-sym])
+        matches (cond-> matches
+                  (not (sequential? matches))
+                  ;; The syntax is a bit lenient - generally we expect vectors, but if a map was passed, we simply wrap it:
+                  vector)]
+    (->> matches
+         (some (fn [match]
+                 (let [candidates (cond-> #{true
+                                            {:line line :column column}}
+                                    (and match
+                                         (not (true? match))
+                                         (not (:column match)))
+                                    (conj {:line line}))]
+                   (candidates match))))
+         (boolean))))
 
 (defn- run-linter [linter analyze-results ns-sym opts]
   (let [ns-info (namespace-info ns-sym (:cwd opts))]

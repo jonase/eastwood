@@ -2354,17 +2354,30 @@ If there are specific instances of linter faults that you need to supress
 It has the following shape:
 
 ```clj
-;;linter-name            ns-name            target
-;;---                    ---                ---
-{:implicit-dependencies {'example.namespace {:line 3 :column 2}} 
- :unused-ret-vals       {'another.namespace true}}
+;;linter-name            ns-name                target
+;;---                    ---                    ---
+{:implicit-dependencies {'example.namespace     [{:line 3 :column 2}]
+                         'another.namespace     [{:line 79}]
+                         'random.namespace      [{:line 89}, {:line 110}, {:line 543 :column 10}]} 
+ :unused-ret-vals       {'yet.another.namespace true}}
 ```
 
-`{:line 3 :column 2}` matches a given linter (within a specific ns)
-if and only if the linter triggers that fault in that exact line/column.
-Accordingly, you might have to update the configured line/column from time to time.
+An entry like `:implicit-dependencies {'example.namespace [{:line 3 :column 2}]` has the meaning
+"the linter `:implicit-dependencies` should be ignored in line 3, column 2".
 
-If you wish to ban a ignore a linter for an entire namespace, pass `true` instead, as shown in the example above.
+Note that the `target`s are expressed as vectors, since there may be multiple instances to ignore.
+
+The following are acceptable `target`s:
+
+* `[{:line 1 :column 1}]`
+  * will only ignore a linter if line _and_ column do match
+* `[{:line 1}]`
+  * will match line, disregarding the column
+  * it's a bit more lenient than the previous syntax, while not too much
+* `true`
+  * will match any ocurrence within the given namespace, regardless of line/column
+  * this is the most lenient choce, which of course can create some false negatives.
+  * if passing `true`, you don't need to wrap it in a vector.
 
 > Please, if encountering an issue in Eastwood, consider reporting it in addition to (or instead of) silencing it.
 > This way Eastwood can continue to be a precise linter, having as few false positives as possible.

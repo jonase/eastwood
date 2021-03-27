@@ -106,17 +106,42 @@
                                                            :line 1
                                                            :column 2
                                                            :linter :some-linter}}))
-    nil                                                  false
-    {}                                                   false
-    {:some-linter {'some-ns true}}                       true
-    {:different-linter {'some-ns true}}                  false
-    {:some-linter {'different-ns true}}                  false
-    {:some-linter {'some-ns {:line 1 :column 2}}}        true
-    {:some-linter {'some-ns {:line 999 :column 2}}}      false
-    {:some-linter {'some-ns {:line 1 :column 999}}}      false
-    {:some-linter {'different-ns {:line 1 :column 2}}}   false
-    {:some-linter {'different-ns {:line 999 :column 2}}} false
-    {:some-linter {'different-ns {:line 1 :column 999}}} false))
+    nil                                                                        false
+    {}                                                                         false
+    {:some-linter {'some-ns true}}                                             true
+    {:some-linter {'some-ns [true]}}                                           true
+    {:different-linter {'some-ns true}}                                        false
+    {:different-linter {'some-ns [true]}}                                      false
+    {:some-linter {'different-ns true}}                                        false
+    {:some-linter {'different-ns [true]}}                                      false
+    {:some-linter {'some-ns {:line 1 :column 2}}}                              true
+    {:some-linter {'some-ns [{:line 1 :column 2}]}}                            true
+    {:some-linter {'some-ns {:line 999 :column 2}}}                            false
+    {:some-linter {'some-ns [{:line 999 :column 2}]}}                          false
+    {:some-linter {'some-ns {:line 1 :column 999}}}                            false
+    {:some-linter {'some-ns [{:line 1 :column 999}]}}                          false
+    {:some-linter {'some-ns [{:line 1 :column 2} {:line 1 :column 999}]}}      true
+    {:some-linter {'some-ns [{:line 1 :column 999} {:line 1 :column 2}]}}      true
+    {:some-linter {'different-ns {:line 1 :column 2}}}                         false
+    {:some-linter {'different-ns [{:line 1 :column 2}]}}                       false
+    {:some-linter {'different-ns {:line 999 :column 2}}}                       false
+    {:some-linter {'different-ns [{:line 999 :column 2}]}}                     false
+    {:some-linter {'different-ns {:line 1 :column 999}}}                       false
+    {:some-linter {'different-ns [{:line 1 :column 999}]}}                     false
+    {:some-linter {'different-ns [{:line 1 :column 2} {:line 1 :column 999}]}} false
+    ;; Exercises line-only matching:
+    {:some-linter {'some-ns {:line 1}}}                                        true
+    {:some-linter {'some-ns [{:line 1}]}}                                      true
+    {:some-linter {'some-ns {:line 999}}}                                      false
+    {:some-linter {'some-ns [{:line 999}]}}                                    false
+    {:some-linter {'some-ns [{:line 1} {:line 1}]}}                            true
+    {:some-linter {'some-ns [{:line 1} {:line 2}]}}                            true
+    {:some-linter {'some-ns [{:line 2} {:line 1} {:line 2}]}}                  true
+    {:some-linter {'different-ns {:line 1}}}                                   false
+    {:some-linter {'different-ns [{:line 1}]}}                                 false
+    {:some-linter {'different-ns {:line 999}}}                                 false
+    {:some-linter {'different-ns [{:line 999}]}}                               false
+    {:some-linter {'different-ns [{:line 1} {:line 1}]}}                       false))
 
 (deftest ignored-faults-test
   (testing "A ignored-faults can remove warnings.
@@ -128,6 +153,6 @@ The ignored-faults must match ns (exactly) and file/column (exactly, but only if
                                  (eastwood.lint/eastwood)))
       {}                                                                                {:some-warnings true}
       {:implicit-dependencies {'testcases.ignored-faults-example true}}                 {:some-warnings false}
-      {:implicit-dependencies {'testcases.ignored-faults-example {:line 4 :column 1}}}  {:some-warnings false}
-      {:implicit-dependencies {'testcases.ignored-faults-example {:line 4 :column 99}}} {:some-warnings true}
-      {:implicit-dependencies {'testcases.ignored-faults-example {:line 99 :column 1}}} {:some-warnings true})))
+      {:implicit-dependencies {'testcases.ignored-faults-example [{:line 4 :column 1}]}}  {:some-warnings false}
+      {:implicit-dependencies {'testcases.ignored-faults-example [{:line 4 :column 99}]}} {:some-warnings true}
+      {:implicit-dependencies {'testcases.ignored-faults-example [{:line 99 :column 1}]}} {:some-warnings true})))
