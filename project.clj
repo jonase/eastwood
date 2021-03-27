@@ -11,7 +11,7 @@
                  ;[org.clojure/clojure "1.5.1"]
                  ;[org.clojure/clojure "1.6.0"]
                  ;[org.clojure/clojure "1.7.0"]
-                 ;[org.clojure/clojure "1.8.0"]
+                 [org.clojure/clojure "1.8.0"]
                  ;[org.clojure/clojure "1.9.0-master-SNAPSHOT"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
                  [org.ow2.asm/asm-all "5.2"]]
@@ -60,9 +60,10 @@
   ;; core.cache or core.memoize on which the latest tools.analyzer.jvm
   ;; 0.1.0-SNAPSHOT depends, versus what Leiningen itself probably
   ;; depends on.
-;;  :eval-in-leiningen true
+
+  ;;  :eval-in-leiningen true
+
   ;; Eastwood may work with earlier Leiningen versions, but this is
   ;; close to the earliest version that it was most tested with.
   :min-lein-version "2.3.0"
-  :resource-paths ["resource" "resources"]
-  :eval-in-leiningen true)
+  :resource-paths ["resource" "resources"])
