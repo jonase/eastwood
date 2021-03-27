@@ -1,5 +1,6 @@
 (ns eastwood.test.implicit-dependencies-linter-test
   (:require [clojure.test :refer :all]
+            [eastwood.util :as util]
             [eastwood.test.linters-test :as linters-test]))
 
 (deftest implicit-dependency-linter
@@ -14,8 +15,9 @@
      :line 4,
      :column 3}
     1})
-  (linters-test/lint-test
-   'testcases.f08
-   [:implicit-dependencies]
-   {}
-   {}))
+  (when (util/clojure-1-10-or-later)
+    (linters-test/lint-test
+     'testcases.f08
+     [:implicit-dependencies]
+     {}
+     {})))
