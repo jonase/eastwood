@@ -41,10 +41,10 @@
              :1.10.1 {:dependencies [[org.clojure/clojure "1.10.1"]]}
              :1.10.2 {:dependencies [[org.clojure/clojure "1.10.2"]]}}
   :aliases {"test-all" ["with-profile"
-                        "1.7:dev,test,1.8:dev,test,1.9:dev,test,1.10.1:dev,test,1.10.2"
+                        "dev,test,1.7:dev,test,1.8:dev,test,1.9:dev,test,1.10.1:dev,test,1.10.2"
                         "test"]
             "lint-all" ["with-profile"
-                        "1.7:dev,test,1.8:dev,test,1.9:dev,test,1.10.1:dev,test,1.10.2"
+                        "dev,test,1.7:dev,test,1.8:dev,test,1.9:dev,test,1.10.1:dev,test,1.10.2"
                         "eastwood-all"]}
   :eastwood {:source-paths ["src"]
              :test-paths ["test"]
