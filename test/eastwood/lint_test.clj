@@ -94,3 +94,8 @@
       invalid-namespaces true  false
       valid-namespaces   true  true
       valid-namespaces   false true)))
+
+(deftest large-defprotocol-test
+  (testing "A large defprotocol doesn't cause a 'Method code too large' exception"
+    (is (= {:some-warnings false}
+           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.large-defprotocol}))))))

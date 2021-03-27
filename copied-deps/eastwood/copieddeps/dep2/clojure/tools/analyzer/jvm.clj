@@ -42,6 +42,7 @@
 
             [clojure.java.io :as io]
             [clojure.test :as test]
+            [clojure.walk :as walk]
             [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
             [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as readers]
 
@@ -582,9 +583,23 @@
               :raw-forms  raw-forms})
            (let [a (analyze mform env opts)
                  frm (emit-form a)
-                 result (try (eval frm) ;; eval the emitted form rather than directly the form to avoid double macroexpansion
-                             (catch Exception e
-                               (handle-evaluation-exception (ExceptionThrown. e a))))]
+                 result (try
+                          ;; eval the emitted form rather than directly the form to avoid double macroexpansion:
+                          (eval frm)
+                          (catch Exception e
+                            (if-not (some-> e .getCause .getMessage #{"Method code too large!"})
+                              (handle-evaluation-exception (ExceptionThrown. e a))
+                              (try
+                                (->> frm
+                                     ;; get rid of non-essential metadata, which bloats code size (git.io/JYOaE):
+                                     (walk/postwalk (fn [x]
+                                                      (if-not (instance? clojure.lang.IObj x)
+                                                        x
+                                                        (vary-meta x dissoc :arglists :file :line :column :end-line :end-column))))
+                                     
+                                     eval)
+                                (catch Exception e
+                                  (handle-evaluation-exception (ExceptionThrown. e a)))))))]
              (merge a {:result    result
                        :raw-forms raw-forms})))))))
 
