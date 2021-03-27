@@ -13,12 +13,11 @@ commands:
       - run:
           name: Fetch dependencies
           command: |
-            lein deps-all
+            lein deps
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "project.clj" }}
-      - run: lein eastwood
 
   run-tests:
     description: "Run tests"
