@@ -1,11 +1,35 @@
 version: 2.1
-commands:
-  setup-project:
-    description: "Setup project"
+
+executor_defaults: &executor_defaults
+  working_directory: ~/repo
+
+executors:
+  openjdk8:
+    docker:
+      - image: circleci/clojure:openjdk-8-lein-2.9.5
+    environment:
+      LEIN_ROOT: "true"
+      JVM_OPTS: -Xmx3200m
+    <<: *executor_defaults
+  openjdk11:
+    docker:
+      - image: circleci/clojure:openjdk-11-lein-2.9.5
+    environment:
+      LEIN_ROOT: "true"
+      JVM_OPTS: -Xmx3200m --illegal-access=deny
+    <<: *executor_defaults
+   
+jobs:
+  test:
+    parameters:
+      executor:
+        type: executor
+      clojure-version:
+        type: string
+    executor: << parameters.executor >>
     steps:
       - checkout
 
-      # Download and cache dependencies
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "project.clj" }}
@@ -14,48 +38,33 @@ commands:
           name: Fetch dependencies
           command: |
             lein deps
+            
       - save_cache:
           paths:
             - ~/.m2
           key: v1-dependencies-{{ checksum "project.clj" }}
 
-  run-tests:
-    description: "Run tests"
-    steps:
       - run:
-          name: Run tests with all supported clojure versions
-          command: |
-            lein test-all
-
-jobs:
-
-  openjdk-8:
-    docker:
-      - image: circleci/clojure:openjdk-8-lein-2.9.1-node
-    working_directory: ~/repo
-
-    environment:
-      JVM_OPTS: -Xmx3200m
-
-    steps:
-      - setup-project
-      - run-tests
-
-  openjdk-11:
-    docker:
-      - image: circleci/clojure:openjdk-11-lein-2.9.1-node
-    working_directory: ~/repo
-
-    environment:
-      JVM_OPTS: -Xmx3200m
-
-    steps:
-      - setup-project
-      - run-tests
+          name: Prevent any form of caching, for the next step
+          command: git clean -fdx
+                  
+      - run:
+          name: Run Eastwood against itself
+          command: EVAL_IN_LEININGEN=1 lein with-profile +eastwood-plugin eastwood
+      
+      - run:
+          name: Prevent any form of caching, for the next step
+          command:  git clean -fdx
+                  
+      - run:
+          name: Run test suite
+          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+<< parameters.clojure-version >> do clean, test
 
 workflows:
-  version: 2
   default:
     jobs:
-      - openjdk-8
-      - openjdk-11
+      - test:
+          matrix:
+            parameters:
+              executor: [openjdk8, openjdk11]
+              clojure-version: ["1.7", "1.8", "1.9", "1.10.1", "1.10.2"]

@@ -85,10 +85,9 @@
     (are [namespaces rethrow-exceptions? ok?] (testing [namespaces rethrow-exceptions?]
                                                 (try
                                                   (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces namespaces :rethrow-exceptions? rethrow-exceptions?))
-                                                  (is ok?)
+                                                  ok?
                                                   (catch Exception _
-                                                    (is (not ok?))))
-                                                true)
+                                                    (not ok?))))
       []                 false true
       []                 true  true
       invalid-namespaces false true
