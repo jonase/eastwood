@@ -2,6 +2,8 @@
 
 ## Changes from 0.3.14 to 0.4.0 
 
+* Improve compatibility with Leiningen higher-order tasks, plugins, etc
+  * Fixes https://github.com/jonase/eastwood/issues/244
 * Improve compatibility with forms defined with `^:const` 
   * Fixes https://github.com/jonase/eastwood/issues/341
 * Improve compatibility with CIDER
