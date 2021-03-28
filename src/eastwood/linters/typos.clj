@@ -171,15 +171,22 @@
            thrown-args (and thrown? (rest is-arg1))
            thrown-arg2 (and thrown? (nth is-arg1 2))
            is-loc (-> isf first meta)
-           first-invoke-do-report-ast (->>
-                                       (ast/nodes ast)
-                                       (filter #(and
-                                                 (= :invoke (:op %))
-                                                 (= 'clojure.test/do-report
-                                                    (-> % :fn :var
-                                                        util/var-to-fqsym))))
+           pred (fn [{:keys [op]}]
+                  (#{:const :map} op))
+           first-invoke-do-report-ast (doto (->>
+                                             (ast/nodes ast)
+                                             (filter #(and
+                                                       (= :invoke (:op %))
+                                                       (= 'clojure.test/do-report
+                                                          (-> % :fn :var
+                                                              util/var-to-fqsym))
+                                                       (->> % :args (some pred))))
+                                             first)
+                                        assert)
+           const-or-map-ast (doto (->> (get-in first-invoke-do-report-ast [:args])
+                                       (filter pred)
                                        first)
-           const-or-map-ast (get-in first-invoke-do-report-ast [:args 0])
+                              assert)
            message-val-or-ast (case (:op const-or-map-ast)
                                 :const (-> const-or-map-ast :val :message)
                                 :map (util/get-val-in-map-ast

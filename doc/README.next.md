@@ -2296,7 +2296,7 @@ more likely to run across new undiscovered bugs), install Eastwood in
 your local Maven repository:
 
     $ cd path/to/eastwood
-    $ lein install
+    $ lein with-profile +eastwood-plugin install
 
 Then add `[jonase/eastwood "0.2.6-SNAPSHOT"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
