@@ -22,30 +22,8 @@ and
 [tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
 libraries to inspect namespaces and report possible problems.
 
-Clojure version compatibility:
-
-* Eastwood supports only Clojure on Java, not ClojureScript or
+> Eastwood supports only Clojure (>= 1.7.0) on Java, not ClojureScript or
   Clojure/CLR.
-
-* Clojure 1.9.0 - Use Eastwood 0.2.5 or later.  This is necessary if
-  you want to lint projects that use the new [map namespace
-  syntax](https://clojure.org/reference/reader#map_namespace_syntax),
-  for example.
-
-* Clojure 1.8.0 - Use Eastwood 0.2.2 or later.  There are known
-  problems using Eastwood 0.2.1 and earlier with Clojure 1.8.0.
-
-* 1.6.0, or 1.7.0 - Many versions of Eastwood have been tested with
-  these, up through Eastwood 0.2.3.
-
-* Clojure 1.5.1 - Use Eastwood 0.2.5 or earlier.
-
-* Clojure 1.4.0 - Use Eastwood 0.1.5 or earlier.
-
-The `.cljc` files introduced in Clojure 1.7.0 are linted, starting
-with Eastwood version 0.2.4.  Earlier Eastwood versions ignore such
-files.
-
 
 ## Installation & Quick usage
 
