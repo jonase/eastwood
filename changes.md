@@ -2,9 +2,17 @@
 
 ## Changes from 0.3.14 to 0.4.0 
 
+#### New
+
+* Introduce `:ignored-faults` option
+   * See: https://github.com/jonase/eastwood#ignored-faults
+   * Fixes https://github.com/jonase/eastwood/issues/21
 * Default to linter parallelism
   * Linter parallelism (as opposed to the `:parallelism?` option, which affects analysis/evaluation) is thread-safe.
   * Fixes https://github.com/jonase/eastwood/issues/339
+
+#### Bugfixes
+
 * Improve compatibility with Leiningen higher-order tasks, plugins, etc
   * Fixes https://github.com/jonase/eastwood/issues/244
 * Improve compatibility with forms defined with `^:const` 
@@ -13,15 +21,15 @@
   * Fixes https://github.com/jonase/eastwood/issues/298
 * Improve compatibility with large defprotocols
   * Fixes https://github.com/jonase/eastwood/issues/191
-* Introduce `:ignored-faults` option
-   * See: https://github.com/jonase/eastwood#ignored-faults
-   * Fixes https://github.com/jonase/eastwood/issues/21
 * Support require+import pattern for defrecords, without triggering "Namespace is never used"
    * Fixes https://github.com/jonase/eastwood/issues/210
 * Remove a noisy println, on certain cases that would be already caught by the reflection warnings mechanism.
    * Fixes https://github.com/jonase/eastwood/issues/355
 * Restore accidentally-dropped support for Clojure < 1.10
    * Fixes https://github.com/jonase/eastwood/issues/356
+
+#### Breaking changes
+
 * Drop support for Clojure 1.6
 
 ## Changes from 0.3.13 to 0.3.14 
