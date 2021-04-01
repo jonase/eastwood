@@ -2,6 +2,12 @@
 
 ## Changes from 0.3.14 to 0.4.0 
 
+* Improve compatibility with forms defined with `^:const` 
+  * Fixes https://github.com/jonase/eastwood/issues/341
+* Improve compatibility with CIDER
+  * Fixes https://github.com/jonase/eastwood/issues/298
+* Improve compatibility with large defprotocols
+  * Fixes https://github.com/jonase/eastwood/issues/191
 * Introduce `:ignored-faults` option
    * See: https://github.com/jonase/eastwood#ignored-faults
    * Fixes https://github.com/jonase/eastwood/issues/21

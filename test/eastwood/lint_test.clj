@@ -156,3 +156,8 @@ The ignored-faults must match ns (exactly) and file/column (exactly, but only if
       {:implicit-dependencies {'testcases.ignored-faults-example [{:line 4 :column 1}]}}  {:some-warnings false}
       {:implicit-dependencies {'testcases.ignored-faults-example [{:line 4 :column 99}]}} {:some-warnings true}
       {:implicit-dependencies {'testcases.ignored-faults-example [{:line 99 :column 1}]}} {:some-warnings true})))
+
+(deftest const-handling
+  (testing "Processing a namespace where `^:const` is used results in no exceptions being thrown"
+    (is (= {:some-warnings false}
+           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.const}))))))

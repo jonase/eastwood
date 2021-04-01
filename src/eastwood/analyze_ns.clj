@@ -1,6 +1,7 @@
 (ns eastwood.analyze-ns
   (:refer-clojure :exclude [macroexpand-1])
-  (:import (java.net URL)
+  (:import (clojure.lang IMeta)
+           (java.net URL)
            (java.io File))
   (:require [clojure.string :as string]
             [clojure.pprint :as pp]
@@ -254,6 +255,16 @@ recursing into ASTs with :op equal to :do"
     (doseq [s (string/split-lines err-msgs-str)]
       (println (replace-path-in-compiler-error s cwd)))))
 
+(defn cleanup [form]
+  (let [should-change? (and (-> form list?)
+                            (some-> form first symbol?)
+                            (some-> form first name (.startsWith "def"))
+                            (some-> form second symbol?)
+                            (-> form second meta :const))]
+    (cond-> form
+      should-change? vec
+      should-change? (update 1 vary-meta dissoc :const)
+      should-change? seq)))
 
 (defn analyze-file
   "Takes a file path and optionally a pushback reader.  Returns a map
@@ -313,7 +324,7 @@ recursing into ASTs with :op equal to :do"
         (begin-file-debug *file* *ns* opt)
         (loop [forms []
                asts []]
-          (let [form (tr/read reader-opts reader)]
+          (let [form (cleanup (tr/read reader-opts reader))]
             (if (identical? form eof)
               {:forms forms, :asts asts, :exception nil}
               (let [cur-env (env/deref-env)
