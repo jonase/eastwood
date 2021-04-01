@@ -141,11 +141,31 @@
                      (when-let [url (:url linter)]
                        {"warning-details-url" url}))})
 
+(defn ignore-fault? [ignored-faults {{:keys [namespace-sym column line linter]} :warn-data
+                                     :as linter-result}]
+  (let [matches (get-in ignored-faults [linter namespace-sym])
+        matches (cond-> matches
+                  (not (sequential? matches))
+                  ;; The syntax is a bit lenient - generally we expect vectors, but if a map was passed, we simply wrap it:
+                  vector)]
+    (->> matches
+         (some (fn [match]
+                 (let [candidates (cond-> #{true
+                                            {:line line :column column}}
+                                    (and match
+                                         (not (true? match))
+                                         (not (:column match)))
+                                    (conj {:line line}))]
+                   (candidates match))))
+         (boolean))))
+
 (defn- run-linter [linter analyze-results ns-sym opts]
   (let [ns-info (namespace-info ns-sym (:cwd opts))]
     (try
-      (doall (->> ((:fn linter) analyze-results opts)
-                  (map (partial handle-lint-result linter ns-info))))
+      (->> ((:fn linter) analyze-results opts)
+           (map (partial handle-lint-result linter ns-info))
+           (remove (partial ignore-fault? (:ignored-faults opts)))
+           doall)
       (catch Throwable e
         [{:kind :lint-error
           :warn-data (format "Exception thrown by linter %s on namespace %s" (:name linter) ns-sym)
@@ -457,7 +477,8 @@ Return value:
                    :exclude-namespaces #{}
                    :config-files #{}
                    :builtin-config-files default-builtin-config-files
-                   :rethrow-exceptions? false})
+                   :rethrow-exceptions? false
+                   :ignored-faults {}})
 
 (defn last-options-map-adjustments [opts reporter]
   (let [{:keys [namespaces] :as opts} (merge default-opts opts)

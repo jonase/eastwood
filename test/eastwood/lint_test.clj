@@ -1,13 +1,12 @@
 (ns eastwood.lint-test
   (:use [clojure.test ])
-  (:require [eastwood.lint :refer :all]
+  (:require [eastwood.lint :as sut :refer :all]
             [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
             [eastwood.util :as util]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
             [eastwood.reporting-callbacks :as reporting])
   (:import java.io.File))
-
 
 (deftest expand-ns-keywords-test
   (testing ""
@@ -99,3 +98,61 @@
   (testing "A large defprotocol doesn't cause a 'Method code too large' exception"
     (is (= {:some-warnings false}
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.large-defprotocol}))))))
+
+(deftest ignore-fault?-test
+  (are [input expected] (= expected
+                           (sut/ignore-fault? input
+                                              {:warn-data {:namespace-sym 'some-ns
+                                                           :line 1
+                                                           :column 2
+                                                           :linter :some-linter}}))
+    nil                                                                        false
+    {}                                                                         false
+    {:some-linter {'some-ns true}}                                             true
+    {:some-linter {'some-ns [true]}}                                           true
+    {:different-linter {'some-ns true}}                                        false
+    {:different-linter {'some-ns [true]}}                                      false
+    {:some-linter {'different-ns true}}                                        false
+    {:some-linter {'different-ns [true]}}                                      false
+    {:some-linter {'some-ns {:line 1 :column 2}}}                              true
+    {:some-linter {'some-ns [{:line 1 :column 2}]}}                            true
+    {:some-linter {'some-ns {:line 999 :column 2}}}                            false
+    {:some-linter {'some-ns [{:line 999 :column 2}]}}                          false
+    {:some-linter {'some-ns {:line 1 :column 999}}}                            false
+    {:some-linter {'some-ns [{:line 1 :column 999}]}}                          false
+    {:some-linter {'some-ns [{:line 1 :column 2} {:line 1 :column 999}]}}      true
+    {:some-linter {'some-ns [{:line 1 :column 999} {:line 1 :column 2}]}}      true
+    {:some-linter {'different-ns {:line 1 :column 2}}}                         false
+    {:some-linter {'different-ns [{:line 1 :column 2}]}}                       false
+    {:some-linter {'different-ns {:line 999 :column 2}}}                       false
+    {:some-linter {'different-ns [{:line 999 :column 2}]}}                     false
+    {:some-linter {'different-ns {:line 1 :column 999}}}                       false
+    {:some-linter {'different-ns [{:line 1 :column 999}]}}                     false
+    {:some-linter {'different-ns [{:line 1 :column 2} {:line 1 :column 999}]}} false
+    ;; Exercises line-only matching:
+    {:some-linter {'some-ns {:line 1}}}                                        true
+    {:some-linter {'some-ns [{:line 1}]}}                                      true
+    {:some-linter {'some-ns {:line 999}}}                                      false
+    {:some-linter {'some-ns [{:line 999}]}}                                    false
+    {:some-linter {'some-ns [{:line 1} {:line 1}]}}                            true
+    {:some-linter {'some-ns [{:line 1} {:line 2}]}}                            true
+    {:some-linter {'some-ns [{:line 2} {:line 1} {:line 2}]}}                  true
+    {:some-linter {'different-ns {:line 1}}}                                   false
+    {:some-linter {'different-ns [{:line 1}]}}                                 false
+    {:some-linter {'different-ns {:line 999}}}                                 false
+    {:some-linter {'different-ns [{:line 999}]}}                               false
+    {:some-linter {'different-ns [{:line 1} {:line 1}]}}                       false))
+
+(deftest ignored-faults-test
+  (testing "A ignored-faults can remove warnings.
+The ignored-faults must match ns (exactly) and file/column (exactly, but only if provided)"
+    (are [input expected] (= expected
+                             (-> eastwood.lint/default-opts
+                                 (assoc :namespaces #{'testcases.ignored-faults-example}
+                                        :ignored-faults input)
+                                 (eastwood.lint/eastwood)))
+      {}                                                                                {:some-warnings true}
+      {:implicit-dependencies {'testcases.ignored-faults-example true}}                 {:some-warnings false}
+      {:implicit-dependencies {'testcases.ignored-faults-example [{:line 4 :column 1}]}}  {:some-warnings false}
+      {:implicit-dependencies {'testcases.ignored-faults-example [{:line 4 :column 99}]}} {:some-warnings true}
+      {:implicit-dependencies {'testcases.ignored-faults-example [{:line 99 :column 1}]}} {:some-warnings true})))
