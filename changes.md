@@ -2,6 +2,9 @@
 
 ## Changes from 0.3.14 to 0.4.0 
 
+* Default to linter parallelism
+  * Linter parallelism (as opposed to the `:parallelism?` option, which affects analysis/evaluation) is thread-safe.
+  * Fixes https://github.com/jonase/eastwood/issues/339
 * Improve compatibility with Leiningen higher-order tasks, plugins, etc
   * Fixes https://github.com/jonase/eastwood/issues/244
 * Improve compatibility with forms defined with `^:const` 

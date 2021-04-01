@@ -312,6 +312,8 @@ Currently only a `:naive` form of parallelism is supported, which just uses
 `pmap` to run the linters over your namespaces. You can specify
 `:parallelism?` in your options map, currently `:none` and `:naive` are valid options.
 
+> :parallelism? performs AST analysis/evaluation in parallel and might cause issues.
+
 ## Only lint files modified since last run
 
 As of version 0.3.5, you can now instruct eastwood to only lint the files
