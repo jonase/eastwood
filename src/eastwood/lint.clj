@@ -11,6 +11,7 @@
             [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
             [eastwood.error-messages :as msgs]
+            [eastwood.exit :refer [exit-fn]]
             [eastwood.linters.deprecated :as deprecated]
             [eastwood.linters.implicit-dependencies :as implicit-dependencies]
             [eastwood.linters.misc :as misc]
@@ -567,7 +568,7 @@ Return value:
       ;; Exit with non-0 exit status for the benefit of any shell
       ;; scripts invoking Eastwood that want to know if there were no
       ;; errors, warnings, or exceptions.
-      (System/exit 1)
+      ((exit-fn) 1)
       ;; Eastwood does not use future, pmap, or clojure.shell/sh now
       ;; (at least not yet), but it may evaluate code that does when
       ;; linting a project.  Call shutdown-agents to avoid the
