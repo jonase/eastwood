@@ -889,7 +889,7 @@ StringWriter."
   "A `#'map`-like function that will run each of the linters.
 
   Can be customized in order to achieve linter parallelism, or extra logging, etc."
-  (atom map))
+  (atom pmap))
 
 (defn set-linter-executor! [executor]
   (reset! linter-executor-atom executor))
@@ -922,7 +922,7 @@ StringWriter."
                                       builtin-config-files)
                                  config-files)]
     (reset! warning-enable-config-atom [])
-    (reset! linter-executor-atom map)
+    (reset! linter-executor-atom pmap)
     (doseq [config-file all-config-files]
       (when (debug? :config opt)
         (println (format "Loading config file: %s" config-file)))

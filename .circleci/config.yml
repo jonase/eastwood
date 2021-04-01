@@ -1,6 +1,9 @@
 version: 2.1
 
 executor_defaults: &executor_defaults
+  # 2xlarge: use as many CPU cores as possible, to exercise parallelism as realistically as possible
+  # 2xlarge is only applied in paid accounts and gracefully degrades to a compatible resource_class in regular accounts
+  resource_class: 2xlarge
   working_directory: ~/repo
 
 executors:
