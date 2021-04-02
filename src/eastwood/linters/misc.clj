@@ -95,7 +95,7 @@
 ;; Misplaced docstring
 
 (defn- misplaced-docstring? [expr]
-  (if-let [fn-ast (util/get-fn-in-def expr)]
+  (when-let [fn-ast (util/get-fn-in-def expr)]
     (some true?
           (for [method (-> fn-ast :methods)
                 :let [body (:body method)]
@@ -242,14 +242,14 @@
             ;; Don't bother calculating enclosing-macros if there are
             ;; no suppress-conditions to check, to save time.
             [lca-path lca-ast]
-            (if (seq suppress-conditions)
+            (when (seq suppress-conditions)
               (let [a (get-in all-asts lca-path)]
                 ;; If the lowest common ancestor is a vector, back up
                 ;; one step to the parent, which should be an AST.
                 (if (vector? a)
                   [(pop lca-path) (get-in all-asts (pop lca-path))]
                   [lca-path a])))
-            encl-macros (if (seq suppress-conditions)
+            encl-macros (when (seq suppress-conditions)
                           (util/enclosing-macros lca-ast))
 ;;            _ (do
 ;;                (println (format "dbg (count suppress-conditions)=%d"
@@ -395,7 +395,7 @@
                         (map argvec-kind arglists))
         ;; If there are multiple 'N args or more', keep only the one
         ;; with smallest N, since it is the most permissive.
-        n-or-more (if (seq (get kinds true))
+        n-or-more (when (seq (get kinds true))
                     (apply min (map second (get kinds true))))
         ;; If there are exact arg counts that are larger than the
         ;; smallest 'N args or more', remove them.  Sort any that are
@@ -715,8 +715,8 @@
 ;;                                  (more-restrictive-sigs? meta-sigs fn-sigs)))
 ;;                 )
                    loc (-> a var-of-ast meta)]
-               (if (and (not (nil? meta-arglists))
-                        (not (more-restrictive-sigs? meta-sigs fn-sigs)))
+               (when (and (not (nil? meta-arglists))
+                          (not (more-restrictive-sigs? meta-sigs fn-sigs)))
                  [{:loc loc
                    :linter :bad-arglists
                    :msg (format "%s on var %s defined taking # args %s but :arglists metadata has # args %s"
@@ -969,13 +969,13 @@
                       valid-but-unusual-flags (set/intersection flags valid-flags)
                       libspecs-or-prefix-lists (remove keyword? reference-args)]
                   (concat
-                   (if (seq invalid-flags)
+                   (when (seq invalid-flags)
                      [{:loc (most-specific-loc loc reference)
                        :linter :wrong-ns-form
                        :msg (format "%s contains unknown flags: %s - flags should only be the following: %s"
                                     kw (string/join " " (sort invalid-flags))
                                     (string/join " " (sort valid-flags)))}])
-                   (if (seq valid-but-unusual-flags)
+                   (when (seq valid-but-unusual-flags)
                      [{:loc (most-specific-loc loc reference)
                        :linter :wrong-ns-form
                        :msg (format "%s contains the following valid flags, but it is most common to use them interactively, not in ns forms: %s"

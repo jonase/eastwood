@@ -18,9 +18,9 @@
                                   (keep #(some-> % :macro namespace symbol))
                                   set)]
 
-    (not (empty? (disj macro-namespace-syms
-                       ns-sym
-                       'clojure.core)))))
+    (boolean (seq (disj macro-namespace-syms
+                        ns-sym
+                        'clojure.core)))))
 
 (defn implicit-dependencies [{:keys [asts forms] :as x} _]
   (let [ns-ast (first (util/ns-form-asts asts))

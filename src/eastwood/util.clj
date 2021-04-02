@@ -155,7 +155,7 @@ entire stack trace if depth is nil).  Does not print ex-data."
       (println (str \tab (repl/stack-element-str el))))
     (when cause
       (println "Caused by:")
-      (pst cause (if depth
+      (pst cause (when depth
                    (min depth
                         (+ 2 (- (count (.getStackTrace cause))
                                 (count st)))))))))
@@ -322,7 +322,9 @@ twice."
   that is a suffix of s, and (str x y)=s.  If no string in suffixes is
   a suffix of s, return nil."
   [^String s suffixes]
-  (if-let [suffix (some #(if (.endsWith s %) %) suffixes)]
+  (when-let [suffix (some #(when (.endsWith s %)
+                             %)
+                          suffixes)]
     [(subs s 0 (- (count s) (count suffix))) suffix]))
 
 (defn nth-last
@@ -331,11 +333,13 @@ element, n=2 is the second-to-last, etc.  Returns nil if there are
 fewer than n elements in the vector."
   [v n]
   (let [c (count v)]
-    (if (>= c n)
+    (when (>= c n)
       (v (- c n)))))
 
 (defn var-to-fqsym [^clojure.lang.Var v]
-  (if v (symbol (str (.ns v)) (str (.sym v)))))
+  (when v
+    (symbol (str (.ns v))
+            (str (.sym v)))))
 
 (defn op= [op]
   (fn [ast]
@@ -556,7 +560,7 @@ pprint-meta instead."
   ;; A few raw forms are symbols like clojure.lang.Compiler/COMPILE
   ;; (I'm probably misremembering the precise name, but it was
   ;; definitely a symbol, not a list).  Return nil for those.
-  (if (seq? raw-form)
+  (when (seq? raw-form)
     (-> raw-form
         meta
         :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op
@@ -751,7 +755,7 @@ of these kind."
           (= :map (:op map-ast))
           (vector? (:keys map-ast))
           (vector? (:vals map-ast))]}
-   (if-let [idx (some #(if (= k (:form (second %))) (first %))
+   (if-let [idx (some #(when (= k (:form (second %))) (first %))
                       (map-indexed vector (:keys map-ast)))]
      ((:vals map-ast) idx)
      not-found)))
@@ -922,7 +926,7 @@ StringWriter."
                            (take depth enclosing-macros)
                            enclosing-macros)]
     (some (fn [m]
-            (if (macro-set (:macro m))
+            (when (macro-set (:macro m))
               {:matching-condition condition
                :matching-macro (:macro m)}))
           enclosing-macros)))
@@ -932,11 +936,11 @@ StringWriter."
   (let [ast (-> w linter :ast)
         ;; Don't bother calculating enclosing-macros if there are
         ;; no suppress-conditions to check, to save time.
-        encl-macros (if (seq suppress-conditions)
+        encl-macros (when (seq suppress-conditions)
                       (enclosing-macros ast))
         match (some #(meets-suppress-condition ast encl-macros %)
                     suppress-conditions)]
-    (if (and match (:debug-suppression opt))
+    (when (and match (:debug-suppression opt))
       ((make-msg-cb :debug opt)
        (with-out-str
          (let [c (:matching-condition match)

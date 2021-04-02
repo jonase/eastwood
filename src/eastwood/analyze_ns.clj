@@ -207,7 +207,7 @@ the value of File/separator for the platform."
       pass/add-ancestors))
 
 (defn wrapped-exception? [result]
-  (if (instance? eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)
+  (when (instance? eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)
     (.e ^eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)))
 
 (defn asts-with-eval-exception

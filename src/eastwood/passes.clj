@@ -148,7 +148,7 @@ replaced by one that is resolved, with a namespace."
     (walk ast add-ancestors-pre add-ancestors-post)))
 
 (defn has-code-loc? [x]
-  (if (util/has-keys? x [:file :line :column])
+  (when (util/has-keys? x [:file :line :column])
     x))
 
 (defn code-loc [ast]

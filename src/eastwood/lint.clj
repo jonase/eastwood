@@ -303,9 +303,9 @@
   ;; once for each of :source-paths and :test-paths, and only if
   ;; needed.
   (let [all-ns (concat namespaces exclude-namespaces)
-        sp (if (some #{:source-paths} all-ns)
+        sp (when (some #{:source-paths} all-ns)
              (nss-in-dirs source-paths modified-since))
-        tp (if (some #{:test-paths} all-ns)
+        tp (when (some #{:test-paths} all-ns)
              (nss-in-dirs test-paths modified-since))
         expanded-namespaces {:source-paths (:namespaces sp)
                              :test-paths (:namespaces tp)}
