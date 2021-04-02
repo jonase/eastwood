@@ -1,7 +1,8 @@
 (ns eastwood.test.implicit-dependencies-linter-test
-  (:require [clojure.test :refer :all]
-            [eastwood.util :as util]
-            [eastwood.test.linters-test :as linters-test]))
+  (:require
+   [clojure.test :refer :all]
+   [eastwood.test.linters-test :as linters-test]
+   [eastwood.util :as util]))
 
 (deftest implicit-dependency-linter
   (linters-test/lint-test

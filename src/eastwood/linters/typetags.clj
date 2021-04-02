@@ -1,8 +1,9 @@
 (ns eastwood.linters.typetags
-  (:require [clojure.string :as string]
-            [eastwood.util :as util]
-            [eastwood.passes :as pass]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]))
+  (:require
+   [clojure.string :as string]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
+   [eastwood.passes :as pass]
+   [eastwood.util :as util]))
 
 (def default-classname-mapping
   (ns-map 'eastwood.linters.typetags))
@@ -24,7 +25,6 @@ significance needed by the user."
                   #"@[0-9a-fA-F]+"
                   (string/re-quote-replacement "@<somehex>")))
 
-
 (def keys-indicating-wrong-tag #{:eastwood/name-tag
                                  :eastwood/tag
                                  :eastwood/o-tag
@@ -32,7 +32,6 @@ significance needed by the user."
 
 (defn has-wrong-tag? [ast]
   (some #(contains? ast %) keys-indicating-wrong-tag))
-
 
 (defn wrong-tag-from-analyzer [{:keys [asts]} opt]
   (for [{:keys [op name form env] :as ast} (->> (mapcat ast/nodes asts)
@@ -45,13 +44,13 @@ significance needed by the user."
               [typ tag loc]
               (cond (= wrong-tag-keys #{:eastwood/name-tag})
                     [:wrong-tag-on-var (-> name meta :tag) env]
-                    
+
                     (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
                          (= op :fn-method))
                     (let [m (or (pass/has-code-loc? (meta form))
                                 (pass/code-loc (pass/nearest-ast-with-loc ast)))]
                       [:fn-method (-> ast :eastwood/tag) m])
-                    
+
                     ;; This set of wrong-tag-keys sometimes occurs for
                     ;; op :local, but since those can be multiple
                     ;; times, one for each use, I am hoping I can make
@@ -102,7 +101,7 @@ significance needed by the user."
                     (and (= wrong-tag-keys #{:eastwood/return-tag})
                          (= op :var))
                     [:var (get ast :return-tag) env]
-                    
+
                     ;; I have seen this case for this form:
                     ;; (def avlf1 (fn ^{:tag 'LinkedList} [coll] (java.util.LinkedList. coll)))
                     ;; Without warning about this case, I believe one

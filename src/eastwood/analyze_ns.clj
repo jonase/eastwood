@@ -1,25 +1,23 @@
 (ns eastwood.analyze-ns
   (:refer-clojure :exclude [macroexpand-1])
-  (:import (clojure.lang IMeta)
-           (java.net URL)
-           (java.io File))
-  (:require [clojure.string :as string]
-            [clojure.pprint :as pp]
-            [eastwood.util :as util]
-            [eastwood.passes :as pass]
-            [clojure.java.io :as io]
-            [eastwood.copieddeps.dep10.clojure.tools.reader :as tr]
-            [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rts]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.move :as move]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer
-             [ast :as ast]
-             [env :as env]
-             [passes :refer [schedule]]]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.trim :refer [trim]]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm
-             [emit-form :refer [emit-form]]
-             [warn-on-reflection :refer [warn-on-reflection]]]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.pprint :as pp]
+   [clojure.string :as string]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes :refer [schedule]]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.trim :refer [trim]]
+   [eastwood.copieddeps.dep10.clojure.tools.reader :as tr]
+   [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rts]
+   [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
+   [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.emit-form :refer [emit-form]]
+   [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.warn-on-reflection :refer [warn-on-reflection]]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.move :as move]
+   [eastwood.passes :as pass]
+   [eastwood.util :as util])
+  (:import
+   (java.net URL)))
 
 ;; uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer, then later probably diverged from each other.
@@ -60,7 +58,7 @@ the value of File/separator for the platform."
 (defn gen-interface-form? [form]
   (and (seq? form)
        (contains? #{'gen-interface 'clojure.core/gen-interface}
-          (first form))))
+                  (first form))))
 
 ;; Avoid macroexpand'ing a gen-interface form more than once, since it
 ;; causes an exception to be thrown.
@@ -73,7 +71,7 @@ the value of File/separator for the platform."
           pprint? (util/debug? :forms-pprint opt)]
       (when (or print-normally? pprint?)
         (println (format "dbg pre-analyze #%d ns=%s (meta ns)=%s"
-                          (count asts) (str ns) (meta ns)))
+                         (count asts) (str ns) (meta ns)))
         (when pprint?
           (println "    form before macroexpand:")
           (pp/pprint form))
@@ -124,11 +122,11 @@ the value of File/separator for the platform."
   (when (util/debug? :ns opt)
     (let [show-ast? (util/debug? :ast opt)]
       (when (or show-ast? (util/debug? :progress opt))
-        (println(format "dbg anal'd %d ns=%s%s"
-                          (count asts) (str ns)
-                          (if show-ast? " ast=" ""))))
+        (println (format "dbg anal'd %d ns=%s%s"
+                         (count asts) (str ns)
+                         (if show-ast? " ast=" ""))))
       (when show-ast?
-         (util/pprint-ast-node ast))
+        (util/pprint-ast-node ast))
       ;; TBD: Change this to macroexpand form, at least if
       ;; dont-expand-twice? returns false.
       (when (util/debug? :compare-forms opt)
@@ -148,7 +146,7 @@ the value of File/separator for the platform."
 (defn eastwood-wrong-tag-handler [t ast]
   (let [tag (if (= t :name/tag)
               (-> ast :name meta :tag)
-            (get ast t))]
+              (get ast t))]
 ;;    (println (format "\nWrong tag: t=%s %s (%s) in %s"
 ;;                     t tag (class tag)
 ;;                     (:name ast)))
@@ -212,7 +210,6 @@ the value of File/separator for the platform."
   (if (instance? eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)
     (.e ^eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm.ExceptionThrown result)))
 
-
 (defn asts-with-eval-exception
   "tools.analyzer.jvm/analyze+eval returns an AST with a :result key
 being a specific class of Exception object, if an exception occurred
@@ -224,7 +221,6 @@ recursing into ASTs with :op equal to :do"
   [ast]
   (filter #(wrapped-exception? (:result %))
           (ast/nodes ast)))
-
 
 (defn remaining-forms [pushback-reader forms]
   (let [eof (reify)

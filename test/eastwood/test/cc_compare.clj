@@ -26,14 +26,13 @@
         ;; refs, and many others.
         (instance? Comparable x) (.getName (class x))
 
-        (or (instance? java.lang.Class x) 
+        (or (instance? java.lang.Class x)
             (instance? clojure.lang.Var x)) (.getName (class x))
 
         :else (throw
                (ex-info (format "cc-cmp does not implement comparison of values with class %s"
                                 (.getName (class x)))
                         {:value x}))))
-
 
 (defn cmp-seq-lexi
   "Compare sequences x and y in lexicographic order, using comparator
@@ -57,10 +56,10 @@ is less than, equal to, or greater than y."
         ;; Sequences contain same elements.  x = y
         0))))
 
-
 ;; The same result can be obtained by calling cmp-seq-lexi on two
 ;; vectors, but this one should allocate less memory comparing
 ;; vectors.
+
 (defn cmp-vec-lexi
   "Compare vectors x and y in lexicographic order, using comparator
 cmpf to compare elements from x and y to each other.  As a comparator
@@ -78,7 +77,7 @@ works for vectors."
       (if (== i len)
         ;; If all elements 0..(len-1) are same, shorter vector comes
         ;; first.
-        (compare x-len y-len) 
+        (compare x-len y-len)
         (let [c (cmpf (x i) (y i))]
           (if (zero? c)
             (recur (inc i))
@@ -102,7 +101,6 @@ integer if x is less than, equal to, or greater than y."
           (if (zero? c)
             (recur (inc i))
             c))))))
-
 
 (defn cc-cmp
   "cc-cmp compares two values x and y.  As a comparator, it returns a
@@ -174,5 +172,5 @@ above, e.g. Java arrays."
           ;; vectors, e.g. a vector and a list will be compared here.
           (= x-cls "clojure.lang.Sequential")
           (cmp-seq-lexi cc-cmp x y)
-          
+
           :else (compare x y))))

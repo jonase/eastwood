@@ -1,6 +1,7 @@
 (ns eastwood.linter-executor-test
-  (:require [clojure.test :refer :all]
-            [eastwood.lint]))
+  (:require
+   [clojure.test :refer :all]
+   [eastwood.lint]))
 
 (def proof (atom []))
 
@@ -12,7 +13,7 @@
                                                       :builtin-config-files input}))
                            (is (pred @proof))
                            ;; Avoid duplicate failure reports, did the tests fail:
-                           #_ true ;; temporarily disabled because of a false positive
+                           #_true ;; temporarily disabled because of a false positive
                            )
     "The custom `set-linter-executor!` successfully runs"
     ["linter_executor.clj"]

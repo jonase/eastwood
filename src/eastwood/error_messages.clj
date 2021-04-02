@@ -1,7 +1,8 @@
 (ns eastwood.error-messages
-  (:require [eastwood.util :as util]
-            [clojure.pprint :as pp]
-            [clojure.string :as str]))
+  (:require
+   [clojure.pprint :as pp]
+   [clojure.string :as str]
+   [eastwood.util :as util]))
 
 (def eastwood-url "https://github.com/jonase/eastwood")
 
@@ -17,15 +18,15 @@
 
 (defn misplaced-primitive-tag? [x]
   (condp = x
-   clojure.core/byte    {:prim-name "byte",    :supported-as-ret-hint false}
-   clojure.core/short   {:prim-name "short",   :supported-as-ret-hint false}
-   clojure.core/int     {:prim-name "int",     :supported-as-ret-hint false}
-   clojure.core/long    {:prim-name "long",    :supported-as-ret-hint true}
-   clojure.core/boolean {:prim-name "boolean", :supported-as-ret-hint false}
-   clojure.core/char    {:prim-name "char",    :supported-as-ret-hint false}
-   clojure.core/float   {:prim-name "float",   :supported-as-ret-hint false}
-   clojure.core/double  {:prim-name "double",  :supported-as-ret-hint true}
-   nil))
+    clojure.core/byte    {:prim-name "byte",    :supported-as-ret-hint false}
+    clojure.core/short   {:prim-name "short",   :supported-as-ret-hint false}
+    clojure.core/int     {:prim-name "int",     :supported-as-ret-hint false}
+    clojure.core/long    {:prim-name "long",    :supported-as-ret-hint true}
+    clojure.core/boolean {:prim-name "boolean", :supported-as-ret-hint false}
+    clojure.core/char    {:prim-name "char",    :supported-as-ret-hint false}
+    clojure.core/float   {:prim-name "float",   :supported-as-ret-hint false}
+    clojure.core/double  {:prim-name "double",  :supported-as-ret-hint true}
+    nil))
 
 ;; this is a terrible hack to
 ;; stop everyting from printing all over the place
@@ -47,7 +48,7 @@
       (error-cb (format "     (:op ast)=%s" (-> dat :ast :op)))
       (when (contains? (:ast dat) :form)
         (error-cb (format "    (class (-> dat :ast :form))=%s (-> dat :ast :form)="
-                         (class (-> dat :ast :form))))
+                          (class (-> dat :ast :form))))
         (error-cb (with-out-str (util/pprint-form (-> dat :ast :form)))))
       (error-cb (with-out-str (util/pprint-form (-> dat :ast)))))
     (when (contains? dat :form)
@@ -84,100 +85,100 @@
         dat (ex-data exc)
         ast (:ast dat)]
     (cond
-     (#{:var :invoke :const} (:op ast))
-     (let [form (:form ast)
-           form (if (= (:op ast) :invoke)
-                  (first form)
-                  form)
-           tag (or (-> form meta :tag)
-                   (:tag ast))]
-       (error-cb (format "A function, macro, protocol method, var, etc. named %s has been used here:"
-                         form))
-       (error-cb (with-out-str (util/pprint-form (meta form))))
-       (error-cb (format "Wherever it is defined, or where it is called, it has a type of %s"
-                         tag))
-       (cond
-        (maybe-unqualified-java-class-name? tag)
-        (do
-          (error-cb (format
-"This appears to be a Java class name with no package path.
+      (#{:var :invoke :const} (:op ast))
+      (let [form (:form ast)
+            form (if (= (:op ast) :invoke)
+                   (first form)
+                   form)
+            tag (or (-> form meta :tag)
+                    (:tag ast))]
+        (error-cb (format "A function, macro, protocol method, var, etc. named %s has been used here:"
+                          form))
+        (error-cb (with-out-str (util/pprint-form (meta form))))
+        (error-cb (format "Wherever it is defined, or where it is called, it has a type of %s"
+                          tag))
+        (cond
+          (maybe-unqualified-java-class-name? tag)
+          (do
+            (error-cb (format
+                       "This appears to be a Java class name with no package path.
 Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
 If this definition is easy for you to change, we recommend you prepend it with
 a full package path name, e.g. java.net.URI
 Otherwise import the class by adding a line like this to your ns statement:
     (:import (java.net URI))"))
-          {:info :no-more-details-needed
-           :msgs @strings})
+            {:info :no-more-details-needed
+             :msgs @strings})
 
-        (misplaced-primitive-tag? tag)
-        (let [{:keys [prim-name supported-as-ret-hint]} (misplaced-primitive-tag? tag)
-              form (if (var? form)
-                     (name (.sym ^clojure.lang.Var form))
-                     form)
-              good-prim-name (if supported-as-ret-hint
-                               prim-name
-                               "long")]
-          (error-cb (format
-"It has probably been defined with a primitive return type tag on the var name,
+          (misplaced-primitive-tag? tag)
+          (let [{:keys [prim-name supported-as-ret-hint]} (misplaced-primitive-tag? tag)
+                form (if (var? form)
+                       (name (.sym ^clojure.lang.Var form))
+                       form)
+                good-prim-name (if supported-as-ret-hint
+                                 prim-name
+                                 "long")]
+            (error-cb (format
+                       "It has probably been defined with a primitive return type tag on the var name,
 like this:
     (defn ^%s %s [args] ...)" prim-name form))
-          (error-cb (format
-"Clojure 1.5.1 and 1.6.0 do not handle such tags as you probably expect.
-They silently treat this as a tag of the *function* named clojure.core/%s"
-prim-name))
-          (when-not supported-as-ret-hint
             (error-cb (format
-"Also, it only supports return type hints of long and double, not %s" prim-name)))
-          (error-cb (format
-"Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
+                       "Clojure 1.5.1 and 1.6.0 do not handle such tags as you probably expect.
+They silently treat this as a tag of the *function* named clojure.core/%s"
+                       prim-name))
+            (when-not supported-as-ret-hint
+              (error-cb (format
+                         "Also, it only supports return type hints of long and double, not %s" prim-name)))
+            (error-cb (format
+                       "Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
 If you wish the function to have a primitive return type, this is only
 supported for types long and double, and the type tag must be given just
 before the argument vector, like this:
     (defn %s ^%s [args] ...)" form good-prim-name))
-          (error-cb (format
-"or if there are multiple arities defined, like this:
+            (error-cb (format
+                       "or if there are multiple arities defined, like this:
     (defn %s (^%s [arg1] ...) (^%s [arg1 arg2] ...))" form good-prim-name good-prim-name))
-          (error-cb (format
-"If you wish to use a primitive type tag on the Var name, Clojure will
+            (error-cb (format
+                       "If you wish to use a primitive type tag on the Var name, Clojure will
 only use that if the function is called and its return value is used
 as an argument in a Java interop call.  In such situations, the type
 tag can help choose a Java method and often avoid reflection.  If that
 is what you want, you must specify the tag like so:
     (defn ^{:tag '%s} %s [args] ...)" prim-name form))
-          {:info :no-more-details-needed
-           :msgs @strings})
-        :else
-        (do
-          (error-cb (format "dbgx tag=%s (class tag)=%s (str tag)='%s' boolean?=%s long?=%s"
-                           tag
-                           (class tag)
-                           (str tag)
-                           (= tag clojure.core/boolean)
-                           (= tag clojure.core/long)))
-          {:info :show-more-details
-           :msgs @strings})))
-     (#{:local :binding} (:op ast))
-     (let [form (:form ast)
-           tag (-> form meta :tag)]
-       (error-cb (format "Local name '%s' has been given a type tag '%s' here:"
-                         form tag))
-       (error-cb (with-out-str (util/pprint-form (meta tag))))
-       (cond
-        (maybe-unqualified-java-class-name? tag)
-        (do
-          (error-cb (format
-"This appears to be a Java class name with no package path.
+            {:info :no-more-details-needed
+             :msgs @strings})
+          :else
+          (do
+            (error-cb (format "dbgx tag=%s (class tag)=%s (str tag)='%s' boolean?=%s long?=%s"
+                              tag
+                              (class tag)
+                              (str tag)
+                              (= tag clojure.core/boolean)
+                              (= tag clojure.core/long)))
+            {:info :show-more-details
+             :msgs @strings})))
+      (#{:local :binding} (:op ast))
+      (let [form (:form ast)
+            tag (-> form meta :tag)]
+        (error-cb (format "Local name '%s' has been given a type tag '%s' here:"
+                          form tag))
+        (error-cb (with-out-str (util/pprint-form (meta tag))))
+        (cond
+          (maybe-unqualified-java-class-name? tag)
+          (do
+            (error-cb (format
+                       "This appears to be a Java class name with no package path.
 Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
 Either prepend it with a full package path name, e.g. java.net.URI
 Otherwise, import the Java class, e.g. add a line like this to the ns statement:
     (:import (java.net URI))"))
-          {:info :no-more-details-needed
-           :msgs @strings})
+            {:info :no-more-details-needed
+             :msgs @strings})
 
-        (symbol? tag)
-        (do
-          (error-cb (format
-"This is a symbol, but does not appear to be a Java class.  Whatever it
+          (symbol? tag)
+          (do
+            (error-cb (format
+                       "This is a symbol, but does not appear to be a Java class.  Whatever it
 is, library tools.analyzer, on which Eastwood relies, cannot analyze
 such files.
 
@@ -191,14 +192,14 @@ If you are not using test.generative, and are able to provide the code
 that you used that gives this error to the Eastwood developers for
 further investigation, please file an issue on the Eastwood Github
 page at %s"
-eastwood-url))
-          {:info :no-more-details-needed
-           :msgs @strings})
+                       eastwood-url))
+            {:info :no-more-details-needed
+             :msgs @strings})
 
-        (sequential? tag)
-        (do
-          (error-cb (format
-"This appears to be a Clojure form to be evaluated.
+          (sequential? tag)
+          (do
+            (error-cb (format
+                       "This appears to be a Clojure form to be evaluated.
 Library tools.analyzer, on which Eastwood relies, cannot analyze such files.
 
 If you have this expression in your source code, it is recommended to
@@ -212,41 +213,41 @@ test.generative.  That library uses tag metadata in an unusual way
 that might be changed to avoid this.  See
 http://dev.clojure.org/jira/browse/TGEN-5 for details if you are
 curious." eastwood-url))
-          {:info :no-more-details-needed
-           :msgs @strings})
+            {:info :no-more-details-needed
+             :msgs @strings})
 
-        :else
-        (do
-          (error-cb (format "dbgx for case :op %s tag=%s (class form)=%s (sequential? form)=%s form="
-                           (:op ast) tag (class form) (sequential? form)))
-          (error-cb (with-out-str (util/pprint-form form)))
-          {:info :show-more-details
-           :msgs @strings})))
+          :else
+          (do
+            (error-cb (format "dbgx for case :op %s tag=%s (class form)=%s (sequential? form)=%s form="
+                              (:op ast) tag (class form) (sequential? form)))
+            (error-cb (with-out-str (util/pprint-form form)))
+            {:info :show-more-details
+             :msgs @strings})))
 
-     :else
-     (do
-       {:info :show-more-details
-        :msgs (print-ex-data-details ns-sym exc)}))))
+      :else
+      (do
+        {:info :show-more-details
+         :msgs (print-ex-data-details ns-sym exc)}))))
 
 (defn format-exception [ns-sym ^Throwable exc]
   (let [dat (ex-data exc)
         msg (or (.getMessage exc) "")]
     (cond
-     (re-find #" cannot be cast to clojure\.lang\.Compiler\$LocalBinding" msg)
-     (handle-values-of-env ns-sym exc)
+      (re-find #" cannot be cast to clojure\.lang\.Compiler\$LocalBinding" msg)
+      (handle-values-of-env ns-sym exc)
 
-     (and (re-find #"method name must be a symbol, had:" msg)
-          (contains? dat :form))
-     (handle-bad-dot-form ns-sym exc)
+      (and (re-find #"method name must be a symbol, had:" msg)
+           (contains? dat :form))
+      (handle-bad-dot-form ns-sym exc)
 
-     (re-find #"Class not found: " msg)
-     (handle-bad-tag ns-sym exc)
+      (re-find #"Class not found: " msg)
+      (handle-bad-tag ns-sym exc)
 
-     :else
-     {:msgs (if dat
-              (print-ex-data-details ns-sym exc)
-              [(with-out-str (util/pst exc nil))])
-      :info :show-more-details})))
+      :else
+      {:msgs (if dat
+               (print-ex-data-details ns-sym exc)
+               [(with-out-str (util/pst exc nil))])
+       :info :show-more-details})))
 
 (defn report-analyzer-exception [exception exception-phase exception-form ns-sym]
   (let [[strings error-cb] (string-builder)]
@@ -259,8 +260,8 @@ curious." eastwood-url))
         ;; TBD: Replace this binding with util/pprint-form variation
         ;; that does not print metadata?
         (error-cb (with-out-str (binding [*print-level* 7
-                                                *print-length* 50]
-                                        (pp/pprint exception-form))))
+                                          *print-length* 50]
+                                  (pp/pprint exception-form))))
         (error-cb "\nShown again with metadata for debugging (some metadata elided for brevity):")
         (error-cb (with-out-str (util/pprint-form exception-form)))))
     (error-cb
@@ -348,10 +349,9 @@ the exception, it will never be evaluated.  If the function is then
 used in namespaces analyzed later, it will be undefined, causing
 error.
 "
-            last-namespace
-            namespaces-left)
+              last-namespace
+              namespaces-left)
 
       "
 Exception thrown while analyzing last namespace.
-"
-      )))
+")))

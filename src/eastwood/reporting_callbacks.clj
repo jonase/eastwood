@@ -1,8 +1,9 @@
 (ns eastwood.reporting-callbacks
-  (:require [clojure.java.io :as io]
-            [clojure.string :as str]
-            [eastwood.error-messages :as msgs]
-            [eastwood.util :as util]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.string :as str]
+   [eastwood.error-messages :as msgs]
+   [eastwood.util :as util]))
 
 (def last-cwd-shown (atom nil))
 
@@ -66,7 +67,7 @@
   (print (str msg "\n"))
   (flush))
 
-(defmethod note SilentReporter [reporter msg] )
+(defmethod note SilentReporter [reporter msg])
 
 (defmethod lint-warning SilentReporter [reporter warning])
 

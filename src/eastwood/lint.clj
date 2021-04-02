@@ -1,27 +1,29 @@
 (ns eastwood.lint
-  (:require [clojure.java.io :as io]
-            [clojure.pprint :as pp]
-            [clojure.set :as set]
-            [clojure.string :as str]
-            [clojure.edn :as edn]
-            [eastwood.analyze-ns :as analyze]
-            [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
-            [eastwood.error-messages :as msgs]
-            [eastwood.exit :refer [exit-fn]]
-            [eastwood.linters.deprecated :as deprecated]
-            [eastwood.linters.implicit-dependencies :as implicit-dependencies]
-            [eastwood.linters.misc :as misc]
-            [eastwood.linters.typetags :as typetags]
-            [eastwood.linters.typos :as typos]
-            [eastwood.linters.unused :as unused]
-            [eastwood.reporting-callbacks :as reporting]
-            [eastwood.util :as util]
-            [eastwood.version :as version])
-  (:import java.io.File))
+  (:require
+   [clojure.edn :as edn]
+   [clojure.java.io :as io]
+   [clojure.pprint :as pp]
+   [clojure.set :as set]
+   [clojure.string :as str]
+   [eastwood.analyze-ns :as analyze]
+   [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
+   [eastwood.error-messages :as msgs]
+   [eastwood.exit :refer [exit-fn]]
+   [eastwood.linters.deprecated :as deprecated]
+   [eastwood.linters.implicit-dependencies :as implicit-dependencies]
+   [eastwood.linters.misc :as misc]
+   [eastwood.linters.typetags :as typetags]
+   [eastwood.linters.typos :as typos]
+   [eastwood.linters.unused :as unused]
+   [eastwood.reporting-callbacks :as reporting]
+   [eastwood.util :as util]
+   [eastwood.version :as version])
+  (:import
+   (java.io File)))
 
 ;; Note: Linters below with nil for the value of the key :fn,
 ;; e.g. :no-ns-form-found, can be enabled/disabled from the opt map
@@ -31,8 +33,7 @@
 ;; namespace.
 
 (def linter-info
-  [
-   {:name :no-ns-form-found,          :enabled-by-default true,
+  [{:name :no-ns-form-found,          :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#no-ns-form-found",
     :fn (constantly nil)}
    {:name :non-clojure-file,          :enabled-by-default false,
@@ -114,7 +115,6 @@
     :url nil,
     :fn implicit-dependencies/implicit-dependencies}])
 
-
 (def linter-name->info (into {} (for [{:keys [name] :as info} linter-info]
                                   [name info])))
 
@@ -132,7 +132,6 @@
     (merge
      {:namespace-sym ns-sym}
      (util/file-warn-info uri cwd-file))))
-
 
 (defn- handle-lint-result [linter ns-info {:keys [msg loc] :as result}]
   {:kind :lint-warning,
@@ -208,14 +207,12 @@
       (str/replace File/separator ".")
       symbol))
 
-
 (defn ns-to-filename-set [namespace extensions]
   (let [basename (-> namespace
                      str
                      (str/replace "-" "_")
                      (str/replace "." File/separator))]
     (set (map #(str basename %) extensions))))
-
 
 (defn filename-namespace-mismatches [dir-name-strs]
   (let [files-by-dir (into {} (for [dir-name-str dir-name-strs]
@@ -253,8 +250,7 @@
                     ;; Use empty tracker if dir-name-strs is empty.
                     ;; Calling dir/scan-all will use complete Java
                     ;; classpath if called with an empty sequence.
-                    tracker)
-          ]
+                    tracker)]
       {:dirs dir-name-strs
        :non-clojure-files (::dir/non-clojure-files tracker)
        :files (set (::dir/files tracker))
@@ -298,7 +294,7 @@
 ;; is given that cannot be found.
 
 (defn effective-namespaces [exclude-namespaces namespaces
-                          {:keys [source-paths test-paths]} modified-since]
+                            {:keys [source-paths test-paths]} modified-since]
   ;; If keyword :source-paths occurs in namespaces or
   ;; excluded-namespaces, replace it with all namespaces found in
   ;; the directories in (:source-paths opts), in an order that
@@ -350,11 +346,11 @@
                                                    excluded-linters)
                                         known-linters)]
     (when (and (seq unknown-linters)
-             (not disable-linter-name-checks))
+               (not disable-linter-name-checks))
       (throw (ex-info "unknown-linter"
-              {:err :unknown-linter,
-               :err-data {:unknown-linters unknown-linters
-                          :known-linters known-linters}})))
+                      {:err :unknown-linter,
+                       :err-data {:unknown-linters unknown-linters
+                                  :known-linters known-linters}})))
 
     (set/intersection linters-requested known-linters)))
 
@@ -367,7 +363,6 @@
          (map :uri-or-file-name)
          (str/join " ")
          (reporting/note reporter))))
-
 
 (defn- lint-namespace [reporter namespace linters opts]
   (try
@@ -382,7 +377,6 @@
     (catch RuntimeException e
       {:lint-runtime-exception [e]
        :namespace [namespace]})))
-
 
 (defn debug-namespaces-to-be-reported [reporter namespaces]
   (reporting/debug reporter :ns (format "Namespaces to be linted:"))
@@ -520,7 +514,7 @@ Return value:
    :error-count (+ (count (:lint-errors summary))
                    (count (:lint-runtime-exception summary))
                    (count (:analyzer-exception summary)))
-   :lint-time (apply + (mapcat vals(:lint-times summary)))
+   :lint-time (apply + (mapcat vals (:lint-times summary)))
    :analysis-time (apply + (:analysis-time summary))})
 
 (defn make-report [reporter start-time {:keys [warning-count error-count] :as result}]
@@ -642,7 +636,7 @@ Keys in a warning map:
                    modified-since
                    cwd] :as opts} (last-options-map-adjustments opts reporter)
            namespaces-info (effective-namespaces exclude-namespaces namespaces
-                                               (setup-lint-paths source-paths test-paths) modified-since)
+                                                 (setup-lint-paths source-paths test-paths) modified-since)
            linter-info (select-keys opts [:linters :exclude-linters :add-linters :disable-linter-name-checks])
            {:keys [error error-data
                    lint-warnings
@@ -676,8 +670,8 @@ clojure.inspector/inspect-tree on it.  Example in REPL:
   ([] (-main (pr-str default-opts)))
   ([& opts]
    (if (and
-         (= 1 (count opts))
-         (string? (first opts)))
+        (= 1 (count opts))
+        (string? (first opts)))
      (eastwood-from-cmdline (edn/read-string (first opts)))
      (let [parsed (->> opts (interpose " ") (apply str) edn/read-string)]
        (eastwood-from-cmdline parsed)))))

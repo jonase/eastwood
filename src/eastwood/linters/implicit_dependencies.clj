@@ -1,8 +1,8 @@
 (ns eastwood.linters.implicit-dependencies
-  (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.parse :as ns-parse]
-            [eastwood.util :as util]))
-
+  (:require
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.parse :as ns-parse]
+   [eastwood.util :as util]))
 
 (defn var->ns-symbol [var]
   (if (util/clojure-1-10-or-later)
@@ -10,7 +10,6 @@
     (symbol (namespace (symbol var)))
     (let [^clojure.lang.Namespace ns (-> var meta :ns)]
       (.-name ns))))
-
 
 (defn within-other-ns-macro?
   [ast ns-sym]
@@ -23,7 +22,6 @@
                        ns-sym
                        'clojure.core)))))
 
-
 (defn implicit-dependencies [{:keys [asts forms] :as x} _]
   (let [ns-ast (first (util/ns-form-asts asts))
         ns-decl (first (:raw-forms ns-ast))
@@ -33,7 +31,6 @@
                                     ns-sym
                                     ;;clojure core is always included in every namespace, no need to warn about it
                                     'clojure.core)]
-
 
     (->> asts
          (mapcat ast/nodes)

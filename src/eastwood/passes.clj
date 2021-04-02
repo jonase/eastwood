@@ -1,12 +1,14 @@
 (ns eastwood.passes
   (:refer-clojure :exclude [get-method])
-  (:import [java.lang.reflect Method])
-  (:require [clojure.string :as str]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [children* update-children prewalk postwalk walk]]
-            [eastwood.util :as util]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
-            [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]))
+  (:require
+   [clojure.string :as str]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [children* postwalk prewalk update-children walk]]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
+   [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
+   [eastwood.util :as util])
+  (:import
+   (java.lang.reflect Method)))
 
 (defmulti reflect-validated :op)
 
@@ -55,11 +57,9 @@
             {:class cls, :method-name method-name,
              :arg-types arg-type-vec}))))))
 
-
 (defn void-method? [^Method m]
   (let [ret-val (.getGenericReturnType m)]
     (= ret-val Void/TYPE)))
-
 
 (defmethod reflect-validated :default [ast] ast)
 
@@ -132,7 +132,6 @@ replaced by one that is resolved, with a namespace."
                ast))]
     (postwalk ast pw)))
 
-
 (def ^:private ^:dynamic *ancestors*)
 
 (defn add-ancestors-pre [ast]
@@ -170,7 +169,6 @@ add-ancestors."
   (let [places (concat [ast] (util/nil-safe-rseq (:eastwood/ancestors ast)))]
     (filter code-loc places)))
 
-
 (defn add-path-pre* [path i ast]
   (assoc ast :eastwood/path (conj path i)))
 
@@ -189,6 +187,6 @@ add-ancestors."
 
 (defn add-path
   ([ast]
-     (add-path ast []))
+   (add-path ast []))
   ([ast root-path]
-     (prewalk (assoc ast :eastwood/path root-path) add-path-pre)))
+   (prewalk (assoc ast :eastwood/path root-path) add-path-pre)))

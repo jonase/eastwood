@@ -1,12 +1,14 @@
 (ns eastwood.test.linters-test
-  (:use [clojure.test])
-  (:require [clojure.data :as data]
-            [clojure.string :as str]
-            [clojure.pprint :as pp]
-            [eastwood.util :as util]
-            [eastwood.lint :refer :all]
-            [eastwood.reporting-callbacks :as reporting])
-  (:import (java.io File)))
+  (:require
+   [clojure.data :as data]
+   [clojure.pprint :as pp]
+   [clojure.string :as str]
+   [clojure.test :refer :all]
+   [eastwood.lint :refer :all]
+   [eastwood.reporting-callbacks :as reporting]
+   [eastwood.util :as util])
+  (:import
+   (java.io File)))
 
 ;; TBD: It would be cleaner to make Eastwood's error reporting code
 ;; independent of Clojure's hash order, but I am going to do the
@@ -51,7 +53,7 @@ the next."
 ;; it expects the exception.
 (defn lint-ns-noprint [ns-sym linters opts]
   (let [opts (assoc opts :linters linters
-                     :debug #{})
+                    :debug #{})
         opts (last-options-map-adjustments opts (reporting/silent-reporter opts))
         cb (fn cb [info]
              (case (:kind info)
@@ -66,7 +68,6 @@ the next."
            (mapcat :lint-warning)
            (map :warn-data))
       (throw (:exception exception)))))
-
 
 (defmacro lint-test [ns-sym linters opts expected-lint-result]
   `(let [lint-result# (lint-ns-noprint ~ns-sym ~linters ~opts)
@@ -97,10 +98,9 @@ the next."
     :unused-locals]
    (assoc default-test-opts
      ;;:debug [:ns :config]
-     :config-files
-     [(fname-from-parts "cases" "testcases" "eastwood-testing-config.clj")])
-   {
-    {:linter :redefd-vars,
+          :config-files
+          [(fname-from-parts "cases" "testcases" "eastwood-testing-config.clj")])
+   {{:linter :redefd-vars,
      :msg
      (str "Var i-am-redefd def'd 2 times at line:col locations: "
           (fname-from-parts "testcases" "f01.clj") ":4:6 "
@@ -177,18 +177,17 @@ the next."
      :msg "#'testcases.f01/*var2* should be marked dynamic",
      :file (fname-from-parts "testcases" "f01.clj"),
      :line 152, :column 1}
-    1,
-    })
+    1})
 
   ;; TBD: I do not know why the i-am-inner-defonce-sym warning appears
   ;; twice in the result.  Once would be enough.
+
   (lint-test
    'testcases.f02
    [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity
     :local-shadows-var :wrong-tag :unused-locals]
    default-opts
-   {
-    {:linter :redefd-vars,
+   {{:linter :redefd-vars,
      :msg (str "Var i-am-defonced-and-defmultid def'd 2 times at line:col locations: "
                (fname-from-parts "testcases" "f02.clj") ":8:10 "
                (fname-from-parts "testcases" "f02.clj") ":10:11"),
@@ -206,9 +205,7 @@ the next."
      :msg "There is a def of i-am-inner-defonce-sym nested inside def i-am-outer-defonce-sym",
      :file (fname-from-parts "testcases" "f02.clj"),
      :line 20, :column 42}
-    2,
-    }
-   )
+    2})
 
   (lint-test
    'testcases.f03
@@ -222,8 +219,7 @@ the next."
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
-   {
-    {:linter :local-shadows-var,
+   {{:linter :local-shadows-var,
      :msg "local: replace invoked as function shadows var: #'clojure.core/replace",
      :file (fname-from-parts "testcases" "f04.clj"),
      :line 44, :column 14}
@@ -242,8 +238,7 @@ the next."
      :msg "local: dogs invoked as function shadows var: #'testcases.f04/dogs",
      :file (fname-from-parts "testcases" "f04.clj"),
      :line 90, :column 13}
-    1,
-    })
+    1})
   ;; The following test is known to fail with Clojure 1.5.1 because of
   ;; protocol method names that begin with "-".  See
   ;; http://dev.clojure.org/jira/browse/TANAL-17 and
@@ -260,8 +255,7 @@ the next."
    [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
-   {
-    {:linter :unused-fn-args,
+   {{:linter :unused-fn-args,
      :msg "Function arg y never used",
      :file (fname-from-parts "testcases" "f06.clj"),
      :line 5, :column 30}
@@ -305,162 +299,158 @@ the next."
      :msg "Function arg val never used",
      :file (fname-from-parts "testcases" "f06.clj"),
      :line 69, :column 13}
-    1,
-    })
+    1})
   (let [common-expected-warnings
-        {
-    {:line 10, :column 5,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals-in-try,
-     :msg "Pure static method call return value is discarded inside body of try: (. clojure.lang.Numbers (add 5 7))"}
-    1,
-    {:line 27, :column 5,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Constant value is discarded: 7"}
-    1,
-    {:line 27, :column 5,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Constant value is discarded: :a"}
-    1,
-    {:line 24, :column 5,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (add (. clojure.lang.Numbers (add (. clojure.lang.Numbers (add (. clojure.lang.Numbers (add i n)) i)) n)) i))"}
-    1,
-    {:line 25, :column 5,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (multiplyP n i))"}
-    1,
-    {:line 26, :column 5,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (clojure.core/quotient i n))"}
-    1,
-    {:line 27, :column 29,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Lazy function call return value is discarded: (map inc [1 2 3])"}
-    1,
-    {:line 27, :column 9,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure function call return value is discarded: (dissoc {:b 2} :b)"}
-    1,
-    {:line 28, :column 6,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure function call return value is discarded: (assoc {} a n)"}
-    1,
-    {:line 28, :column 21,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (divide i a))"}
-    1,
-    {:line 32, :column 3,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure function call return value is discarded: (assoc {} x y)"}
-    1,
-    {:line 33, :column 3,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure function call return value is discarded: (apply + [1 2 3])"}
-    1,
-    {:line 34, :column 3,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Lazy function call return value is discarded: (filter print [1 2 3])"}
-    1,
-    {:line 35, :column 3,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg (if (util/clojure-1-6-or-later)
-            "Should use return value of function call, but it is discarded: (disj! (transient #{:b :a}) :a)"
-            "Should use return value of function call, but it is discarded: (disj! (transient #{:a :b}) :a)")}
-    1,
-    {:line 36, :column 3,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (minus (. clojure.lang.Numbers (minus x y)) x))"}
-    1,
-    {:line 60, :column 5,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (dec i))"}
-    2,
-    {:line 65, :column 5,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure function call return value is discarded: (assoc {} i i)"}
-    2,
-    {:line 81, :column 5,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Constant value is discarded: :a"}
-    1,
-    {:line 81, :column 9,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure function call return value is discarded: (dissoc {:b 2} :b)"}
-    1,
-    {:line 82, :column 6,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure function call return value is discarded: (assoc {} a n)"}
-    1,
-    {:line 82, :column 21,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (divide i a))"}
-    1,
-    {:line 100, :column 5,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure function call return value is discarded: (assoc {} i n)"}
-    1,
-    {:line 100, :column 28,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (add 3 n))"}
-    1,
-    {:line 100, :column 20,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (divide i n))"}
-    1,
-    {:line 107, :column 3,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Pure function call return value is discarded: (assoc {} k v)"}
-    1,
-    {:line 112, :column 5,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Var value is discarded: repeatedly"}
-    1,
-    {:line 112, :column 16,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Local value is discarded: n"}
-    1,
-    {:line 112, :column 18,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Local value is discarded: x"}
-    1,
-    {:line 125, :column 7,
-     :file (fname-from-parts "testcases" "f07.clj"),
-     :linter :unused-ret-vals,
-     :msg "Var value is discarded: gah"}
-    1,
-    }
+        {{:line 10, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals-in-try,
+          :msg "Pure static method call return value is discarded inside body of try: (. clojure.lang.Numbers (add 5 7))"}
+         1,
+         {:line 27, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Constant value is discarded: 7"}
+         1,
+         {:line 27, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Constant value is discarded: :a"}
+         1,
+         {:line 24, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (add (. clojure.lang.Numbers (add (. clojure.lang.Numbers (add (. clojure.lang.Numbers (add i n)) i)) n)) i))"}
+         1,
+         {:line 25, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (multiplyP n i))"}
+         1,
+         {:line 26, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (clojure.core/quotient i n))"}
+         1,
+         {:line 27, :column 29,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Lazy function call return value is discarded: (map inc [1 2 3])"}
+         1,
+         {:line 27, :column 9,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (dissoc {:b 2} :b)"}
+         1,
+         {:line 28, :column 6,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (assoc {} a n)"}
+         1,
+         {:line 28, :column 21,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (divide i a))"}
+         1,
+         {:line 32, :column 3,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (assoc {} x y)"}
+         1,
+         {:line 33, :column 3,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (apply + [1 2 3])"}
+         1,
+         {:line 34, :column 3,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Lazy function call return value is discarded: (filter print [1 2 3])"}
+         1,
+         {:line 35, :column 3,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg (if (util/clojure-1-6-or-later)
+                 "Should use return value of function call, but it is discarded: (disj! (transient #{:b :a}) :a)"
+                 "Should use return value of function call, but it is discarded: (disj! (transient #{:a :b}) :a)")}
+         1,
+         {:line 36, :column 3,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (minus (. clojure.lang.Numbers (minus x y)) x))"}
+         1,
+         {:line 60, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (dec i))"}
+         2,
+         {:line 65, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (assoc {} i i)"}
+         2,
+         {:line 81, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Constant value is discarded: :a"}
+         1,
+         {:line 81, :column 9,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (dissoc {:b 2} :b)"}
+         1,
+         {:line 82, :column 6,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (assoc {} a n)"}
+         1,
+         {:line 82, :column 21,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (divide i a))"}
+         1,
+         {:line 100, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (assoc {} i n)"}
+         1,
+         {:line 100, :column 28,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (add 3 n))"}
+         1,
+         {:line 100, :column 20,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure static method call return value is discarded: (. clojure.lang.Numbers (divide i n))"}
+         1,
+         {:line 107, :column 3,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Pure function call return value is discarded: (assoc {} k v)"}
+         1,
+         {:line 112, :column 5,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Var value is discarded: repeatedly"}
+         1,
+         {:line 112, :column 16,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Local value is discarded: n"}
+         1,
+         {:line 112, :column 18,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Local value is discarded: x"}
+         1,
+         {:line 125, :column 7,
+          :file (fname-from-parts "testcases" "f07.clj"),
+          :linter :unused-ret-vals,
+          :msg "Var value is discarded: gah"}
+         1}
 
         clojure-1-5-additional-expected-warnings
-        {
-         {:line 140, :column 3,
+        {{:line 140, :column 3,
           :file (fname-from-parts "testcases" "f07.clj"),
           :linter :unused-ret-vals,
           :msg "Pure function call return value is discarded: (false? a)"}
@@ -470,21 +460,18 @@ the next."
         ;; warn about calling that function when its return value is
         ;; unused.  Clojure 1.6 and later should.
         clojure-1-6-or-later-additional-expected-warnings
-        {
-         {:line 140, :column 3,
+        {{:line 140, :column 3,
           :file (fname-from-parts "testcases" "f07.clj"),
           :linter :unused-ret-vals,
           :msg "Pure function call return value is discarded: (some? a)"}
          1}
 
         clojure-1-8-or-later-additional-expected-warnings
-        {
-         {:line 162, :column 5,
+        {{:line 162, :column 5,
           :file (fname-from-parts "testcases" "f07.clj"),
           :linter :unused-ret-vals,
           :msg "Pure function call return value is discarded: (str/includes? \"food\" \"oo\")"}
-         1}
-        ]
+         1}]
     (lint-test
      'testcases.f07
      [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
@@ -500,8 +487,7 @@ the next."
    'testcases.deprecated
    [:deprecations :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
-   {
-    {:linter :deprecations,
+   {{:linter :deprecations,
      :msg
      "Constructor 'public java.util.Date(int,int,int)' is deprecated.",
      :file (fname-from-parts "testcases" "deprecated.clj"),
@@ -523,8 +509,7 @@ the next."
      :msg "Var '#'clojure.core/replicate' is deprecated.",
      :file (fname-from-parts "testcases" "deprecated.clj"),
      :line 13, :column 4}
-    1,
-    })
+    1})
   (lint-test
    'testcases.tanal-9
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
@@ -545,11 +530,9 @@ the next."
    [:keyword-typos :unused-ret-vals :unused-ret-vals-in-try
     :deprecations :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
    default-opts
-   {
-    {:linter :keyword-typos,
+   {{:linter :keyword-typos,
      :msg "Possible keyword typo: :occuption instead of :occupation ?"}
-    1,
-    })
+    1})
   (lint-test
    'testcases.isformsok
    [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag
@@ -561,8 +544,7 @@ the next."
    [:keyword-typos :suspicious-test :suspicious-expression
     :local-shadows-var :wrong-tag]
    default-opts
-   {
-    {:linter :suspicious-test,
+   {{:linter :suspicious-test,
      :msg "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 11, :column 4}
@@ -906,236 +888,232 @@ the next."
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
      :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?"}
-    1,
-    })
+    1})
 
   (let [common-expected-warnings
-        {
-    {:linter :suspicious-expression,
-     :msg "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 23, :column 5}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "-> called with 1 args.  (-> x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 25, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "and called with 0 args.  (and) always returns true.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 27, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "and called with 1 args.  (and x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 28, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "as-> called with 2 args.  (as-> expr name) always returns expr.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 29, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-   "case called with 2 args.  (case x y) always returns y.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 30, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-   "cond called with 0 args.  (cond) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 31, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "cond-> called with 1 args.  (cond-> x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 32, :column 12}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "cond->> called with 1 args.  (cond->> x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 33, :column 12}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "condp called with 3 args.  (condp pred test-expr expr) always returns expr.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 34, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 35, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "delay called with 0 args.  (delay) always returns (delay nil).  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 36, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "doseq called with 1 args.  (doseq [x coll]) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 37, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "dotimes called with 1 args.  (dotimes [i n]) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 38, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 39, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "import called with 0 args.  (import) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 40, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "lazy-cat called with 0 args.  (lazy-cat) always returns ().  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 41, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "let called with 1 args.  (let bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 42, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "letfn called with 1 args.  (letfn bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 43, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "locking called with 1 args.  (locking x) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 44, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "loop called with 1 args.  (loop bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 45, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "or called with 0 args.  (or) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 46, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "or called with 1 args.  (or x) always returns x.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 47, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "pvalues called with 0 args.  (pvalues) always returns ().  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 48, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "some-> called with 1 args.  (some-> expr) always returns expr.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 49, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "some->> called with 1 args.  (some->> expr) always returns expr.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 50, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "when called with 1 args.  (when test) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 51, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "when-first called with 1 args.  (when-first [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 52, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "when-let called with 1 args.  (when-let [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 53, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "when-not called with 1 args.  (when-not test) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 54, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "with-bindings called with 1 args.  (with-bindings map) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 56, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "with-in-str called with 1 args.  (with-in-str s) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 57, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "with-local-vars called with 1 args.  (with-local-vars bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 58, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "with-open called with 1 args.  (with-open bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 59, :column 1}
-    2,
-    {:linter :suspicious-expression,
-     :msg
-     "with-out-str called with 0 args.  (with-out-str) always returns \"\".  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 60, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "with-precision called with 1 args.  (with-precision precision) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 61, :column 1}
-    1,
-    {:linter :suspicious-expression,
-     :msg
-     "with-redefs called with 1 args.  (with-redefs bindings) always returns nil.  Perhaps there are misplaced parentheses?",
-     :file (fname-from-parts "testcases" "suspicious.clj"),
-     :line 62, :column 1}
-    1,
-    }
-        clojure-1-6-or-later-additional-expected-warnings
-        {
+        {{:linter :suspicious-expression,
+          :msg "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 23, :column 5}
+         1,
          {:linter :suspicious-expression,
+          :msg
+          "-> called with 1 args.  (-> x) always returns x.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 25, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "and called with 0 args.  (and) always returns true.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 27, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "and called with 1 args.  (and x) always returns x.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 28, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "as-> called with 2 args.  (as-> expr name) always returns expr.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 29, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "case called with 2 args.  (case x y) always returns y.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 30, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "cond called with 0 args.  (cond) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 31, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "cond-> called with 1 args.  (cond-> x) always returns x.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 32, :column 12}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "cond->> called with 1 args.  (cond->> x) always returns x.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 33, :column 12}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "condp called with 3 args.  (condp pred test-expr expr) always returns expr.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 34, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 35, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "delay called with 0 args.  (delay) always returns (delay nil).  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 36, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "doseq called with 1 args.  (doseq [x coll]) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 37, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "dotimes called with 1 args.  (dotimes [i n]) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 38, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 39, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "import called with 0 args.  (import) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 40, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "lazy-cat called with 0 args.  (lazy-cat) always returns ().  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 41, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "let called with 1 args.  (let bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 42, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "letfn called with 1 args.  (letfn bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 43, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "locking called with 1 args.  (locking x) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 44, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "loop called with 1 args.  (loop bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 45, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "or called with 0 args.  (or) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 46, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "or called with 1 args.  (or x) always returns x.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 47, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "pvalues called with 0 args.  (pvalues) always returns ().  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 48, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "some-> called with 1 args.  (some-> expr) always returns expr.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 49, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "some->> called with 1 args.  (some->> expr) always returns expr.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 50, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "when called with 1 args.  (when test) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 51, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "when-first called with 1 args.  (when-first [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 52, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "when-let called with 1 args.  (when-let [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 53, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "when-not called with 1 args.  (when-not test) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 54, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "with-bindings called with 1 args.  (with-bindings map) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 56, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "with-in-str called with 1 args.  (with-in-str s) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 57, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "with-local-vars called with 1 args.  (with-local-vars bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 58, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "with-open called with 1 args.  (with-open bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 59, :column 1}
+         2,
+         {:linter :suspicious-expression,
+          :msg
+          "with-out-str called with 0 args.  (with-out-str) always returns \"\".  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 60, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "with-precision called with 1 args.  (with-precision precision) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 61, :column 1}
+         1,
+         {:linter :suspicious-expression,
+          :msg
+          "with-redefs called with 1 args.  (with-redefs bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          :file (fname-from-parts "testcases" "suspicious.clj"),
+          :line 62, :column 1}
+         1}
+        clojure-1-6-or-later-additional-expected-warnings
+        {{:linter :suspicious-expression,
           :msg
           "->> called with 1 args.  (->> x) always returns x.  Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
@@ -1146,18 +1124,17 @@ the next."
           "when-some called with 1 args.  (when-some [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 55, :column 1}
-         1,
-         }
+         1}
         expected-warnings
         (merge common-expected-warnings
                (if (util/clojure-1-6-or-later)
                  clojure-1-6-or-later-additional-expected-warnings
                  nil))]
-  (lint-test
-   'testcases.suspicious
-   [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
-   default-opts
-   expected-warnings))
+    (lint-test
+     'testcases.suspicious
+     [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
+     default-opts
+     expected-warnings))
 
   ;; It is strange that the :unlimited-use linter has nil for :line
   ;; and :column here, but integer values when I use it from the
@@ -1166,8 +1143,7 @@ the next."
    'testcases.unlimiteduse
    [:unlimited-use :local-shadows-var :wrong-tag :unused-locals]
    default-opts
-   {
-    {:linter :unlimited-use,
+   {{:linter :unlimited-use,
      :msg "Unlimited use of ([clojure.reflect] [clojure inspector] [clojure [set]] [clojure.java.io :as io]) in testcases.unlimiteduse",
      :file (fname-from-parts "testcases" "unlimiteduse.clj"),
      :line 6, :column 10}
@@ -1176,143 +1152,137 @@ the next."
      :msg "Unlimited use of ((clojure [pprint :as pp] [uuid :as u])) in testcases.unlimiteduse",
      :file (fname-from-parts "testcases" "unlimiteduse.clj"),
      :line 14, :column 10}
-    1,
-    })
+    1})
   (lint-test
    'testcases.in-ns-switching
    [:unlimited-use :local-shadows-var :wrong-tag :unused-locals]
    default-opts
-   {
-    {:linter :unlimited-use,
+   {{:linter :unlimited-use,
      :msg "Unlimited use of (clojure.set [testcases.f01 :as t1]) in testcases.in-ns-switching",
      :file (fname-from-parts "testcases" "in_ns_switching.clj"),
      :line 4, :column 9}
-    1,
-    })
+    1})
   (let [common-expected-warnings
-        {
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lv1",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 7, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lv2",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 8, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: iv1",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 19, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: iv2",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 20, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf1",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 31, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf2",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 32, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf3",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 33, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf4",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 34, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if1",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 35, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if2",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 36, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if3",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 37, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if4",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 38, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Tag: (quote LinkedList) for return type of function method: ([coll] (java.util.LinkedList. coll)) should be Java class name (fully qualified if not in java.lang package)",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 84, :column 12}
-    1,
-    {:linter :wrong-tag,
-     :msg "Tag: (quote LinkedList) for return type of function method: ([coll] (java.util.LinkedList. coll)) should be Java class name (fully qualified if not in java.lang package)",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 85, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: Set on form: b",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 125, :column 14}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: (class (log-window-proxy nil)) on form: this",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 151, :column 9}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: (class (log-window-proxy nil)) on form: this",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 153, :column 11}
-    1,
-    {:linter :wrong-tag,
-     :msg "Tag: (Class/forName \"[D\") for return type of function method: ([m] m) should be Java class name (fully qualified if not in java.lang package)",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 208, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: (Class/forName \"[D\") on form: (do m)",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 208, :column 1}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: (Class/forName \"[D\") on form: m",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 210, :column 23}
-    1,
-    {:linter :wrong-tag,
-     :msg "Wrong tag: (Class/forName \"[D\") on form: m",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 211, :column 23}
-    1,
-    }
+        {{:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lv1",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 7, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lv2",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 8, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: iv1",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 19, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: iv2",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 20, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf1",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 31, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf2",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 32, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf3",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 33, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lf4",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 34, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if1",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 35, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if2",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 36, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if3",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 37, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: clojure.core$int@<somehex> in def of Var: if4",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 38, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Tag: (quote LinkedList) for return type of function method: ([coll] (java.util.LinkedList. coll)) should be Java class name (fully qualified if not in java.lang package)",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 84, :column 12}
+         1,
+         {:linter :wrong-tag,
+          :msg "Tag: (quote LinkedList) for return type of function method: ([coll] (java.util.LinkedList. coll)) should be Java class name (fully qualified if not in java.lang package)",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 85, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: Set on form: b",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 125, :column 14}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: (class (log-window-proxy nil)) on form: this",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 151, :column 9}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: (class (log-window-proxy nil)) on form: this",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 153, :column 11}
+         1,
+         {:linter :wrong-tag,
+          :msg "Tag: (Class/forName \"[D\") for return type of function method: ([m] m) should be Java class name (fully qualified if not in java.lang package)",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 208, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: (Class/forName \"[D\") on form: (do m)",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 208, :column 1}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: (Class/forName \"[D\") on form: m",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 210, :column 23}
+         1,
+         {:linter :wrong-tag,
+          :msg "Wrong tag: (Class/forName \"[D\") on form: m",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 211, :column 23}
+         1}
 
         ;; These warnings are not needed after CLJ-1232 was fixed in
         ;; Clojure 1.8.0.
+
         clojure-1-7-or-earlier-expected-warnings
-        {
-    {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 87, :column 28}
-    1,
-    {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 88, :column 25}
-    1,
-         }
+        {{:linter :wrong-tag,
+          :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 87, :column 28}
+         1,
+         {:linter :wrong-tag,
+          :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
+          :file (fname-from-parts "testcases" "wrongtag.clj"),
+          :line 88, :column 25}
+         1}
 
         clojure-1-6-or-earlier-expected-warnings
         (merge common-expected-warnings
@@ -1321,13 +1291,11 @@ the next."
         clojure-1-7-only-expected-warnings
         (merge common-expected-warnings
                clojure-1-7-or-earlier-expected-warnings
-               {
-    {:linter :wrong-tag,
-     :msg "Tag: LinkedList for return type of function on arg vector: [& p__<num>] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
-     :file (fname-from-parts "testcases" "wrongtag.clj"),
-     :line 93, :column 26}
-                1,
-                })]
+               {{:linter :wrong-tag,
+                 :msg "Tag: LinkedList for return type of function on arg vector: [& p__<num>] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
+                 :file (fname-from-parts "testcases" "wrongtag.clj"),
+                 :line 93, :column 26}
+                1})]
     (lint-test
      'testcases.wrongtag
      (concat @#'eastwood.lint/default-linters [:unused-locals])
@@ -1347,8 +1315,7 @@ the next."
    [:unlimited-use :local-shadows-var :wrong-tag :unused-meta-on-macro
     :unused-locals]
    default-opts
-   {
-    {:linter :unused-meta-on-macro,
+   {{:linter :unused-meta-on-macro,
      :msg "Java constructor call 'StringWriter.' has metadata with keys (:foo).  All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 20, :column 28}
@@ -1412,230 +1379,226 @@ the next."
      :msg "Java instance method/field access '.x' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 104, :column 20}
-    1,
-    })
+    1})
 
   (let [common-expected-warnings
-        {
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: false in form (if false 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 13, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [nil] in form (if [nil] 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 14, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: #{} in form (if #{} 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 15, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: {:a 1} in form (if {:a 1} 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 16, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (quote ()) in form (if (quote ()) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 17, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (quote (\"string\")) in form (if (quote (\"string\")) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 18, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [(inc 41)] in form (if [(inc 41)] 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 19, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: #{(dec 43)} in form (if #{(dec 43)} 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 20, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: {:a (/ 84 2)} in form (if {:a (/ 84 2)} 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 21, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (seq {:a 1}) in form (if (seq {:a 1}) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 22, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote x)) in form (if (clojure.core/not (quote x)) \"y\" \"z\")",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 24, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not false) in form (if (clojure.core/not false) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 25, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not [nil]) in form (if (clojure.core/not [nil]) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 26, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not #{}) in form (if (clojure.core/not #{}) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 27, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not {:a 1}) in form (if (clojure.core/not {:a 1}) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 28, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote ())) in form (if (clojure.core/not (quote ())) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 29, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote (\"string\"))) in form (if (clojure.core/not (quote (\"string\"))) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 30, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [(inc 41)] in form (if (clojure.core/not [(inc 41)]) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 31, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: #{(dec 43)} in form (if (clojure.core/not #{(dec 43)}) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 32, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: {:a (/ 84 2)} in form (if (clojure.core/not {:a (/ 84 2)}) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 33, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/not (seq {:a 1})) in form (if (clojure.core/not (seq {:a 1})) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 34, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: nil in form (if nil (do (quote tom) :cat))",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 36, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [nil] in form (if [nil] nil (do 1))",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 37, :column 1},
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: :x in form (if :x 8 (clojure.core/cond :else 9))",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 50, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: false in form (if false (assert false \"This won't be reached, but shouldn't warn about it whether it can be reached or not.\"))",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 64, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [false] in form (if temp__<num>__auto__ (clojure.core/let [x temp__<num>__auto__] \"w\") \"v\")",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 67, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (sorted-set 5 7) in form (if temp__<num>__auto__ (do (clojure.core/let [x temp__<num>__auto__] (println \"Hello\"))))",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 68, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/seq [1 2]) in form (if temp__<num>__auto__ (do (clojure.core/let [xs__<num>__auto__ temp__<num>__auto__] (clojure.core/let [x (clojure.core/first xs__<num>__auto__)] (println \"Goodbye\")))))",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 69, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: 7 in form (if and__<num>__auto__ (clojure.core/and (inc 2)) and__<num>__auto__)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 71, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: false in form (if or__<num>__auto__ or__<num>__auto__ (clojure.core/or 2))",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 72, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: true in form (if true nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" \"string\" \"\\n\" (clojure.core/pr-str (quote true)))))))",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 84, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: [false] in form (if [false] nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote [false])))))))",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 85, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: 0 in form (if 0 nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote 0)))))))",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 111, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: 32 in form (if 32 nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote 32)))))))",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 111, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (clojure.core/string? format-in__<num>__auto__) in form (if (clojure.core/string? format-in__<num>__auto__) ((var clojure.pprint/cached-compile) format-in__<num>__auto__) format-in__<num>__auto__)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 122, :column 4}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (map? (list [:p \"a\"] [:p \"b\"])) in form (if (map? (list [:p \"a\"] [:p \"b\"])) 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 127, :column 1}
-    1,
-    {:linter :constant-test,
-     :msg "Test expression is always logical true or always logical false: (map? (list [:p \"a\"] [:p \"b\"])) in form (if x 1 2)",
-     :file (fname-from-parts "testcases" "constanttestexpr.clj"),
-     :line 131, :column 3}
-    1,
-    {:linter :unused-locals,
-     :msg "let bound symbol 'x' never used",
-     :file "testcases/constanttestexpr.clj",
-     :line 67,
-     :column 10}
-    1,
-    {:linter :unused-locals,
-     :msg "let bound symbol 'x' never used",
-     :file "testcases/constanttestexpr.clj",
-     :line 68,
-     :column 12}
-    1,
-    {:linter :unused-locals,
-     :msg "let bound symbol 'x' never used",
-     :file "testcases/constanttestexpr.clj",
-     :line 69,
-     :column 14}
-    1,
-    {:linter :unused-locals,
-     :msg "let bound symbol 'x' never used",
-     :file "testcases/constanttestexpr.clj",
-     :line 74,
-     :column 55}
-    1,
-    {:linter :unused-locals,
-     :msg "let bound symbol 'x' never used",
-     :file "testcases/constanttestexpr.clj",
-     :line 75,
-     :column 59}
-    1,
-    }
+        {{:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: false in form (if false 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 13, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: [nil] in form (if [nil] 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 14, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: #{} in form (if #{} 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 15, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: {:a 1} in form (if {:a 1} 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 16, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (quote ()) in form (if (quote ()) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 17, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (quote (\"string\")) in form (if (quote (\"string\")) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 18, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: [(inc 41)] in form (if [(inc 41)] 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 19, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: #{(dec 43)} in form (if #{(dec 43)} 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 20, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: {:a (/ 84 2)} in form (if {:a (/ 84 2)} 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 21, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (seq {:a 1}) in form (if (seq {:a 1}) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 22, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote x)) in form (if (clojure.core/not (quote x)) \"y\" \"z\")",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 24, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (clojure.core/not false) in form (if (clojure.core/not false) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 25, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (clojure.core/not [nil]) in form (if (clojure.core/not [nil]) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 26, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (clojure.core/not #{}) in form (if (clojure.core/not #{}) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 27, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (clojure.core/not {:a 1}) in form (if (clojure.core/not {:a 1}) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 28, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote ())) in form (if (clojure.core/not (quote ())) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 29, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (clojure.core/not (quote (\"string\"))) in form (if (clojure.core/not (quote (\"string\"))) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 30, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: [(inc 41)] in form (if (clojure.core/not [(inc 41)]) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 31, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: #{(dec 43)} in form (if (clojure.core/not #{(dec 43)}) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 32, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: {:a (/ 84 2)} in form (if (clojure.core/not {:a (/ 84 2)}) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 33, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (clojure.core/not (seq {:a 1})) in form (if (clojure.core/not (seq {:a 1})) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 34, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: nil in form (if nil (do (quote tom) :cat))",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 36, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: [nil] in form (if [nil] nil (do 1))",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 37, :column 1},
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: :x in form (if :x 8 (clojure.core/cond :else 9))",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 50, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: false in form (if false (assert false \"This won't be reached, but shouldn't warn about it whether it can be reached or not.\"))",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 64, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: [false] in form (if temp__<num>__auto__ (clojure.core/let [x temp__<num>__auto__] \"w\") \"v\")",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 67, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (sorted-set 5 7) in form (if temp__<num>__auto__ (do (clojure.core/let [x temp__<num>__auto__] (println \"Hello\"))))",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 68, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (clojure.core/seq [1 2]) in form (if temp__<num>__auto__ (do (clojure.core/let [xs__<num>__auto__ temp__<num>__auto__] (clojure.core/let [x (clojure.core/first xs__<num>__auto__)] (println \"Goodbye\")))))",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 69, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: 7 in form (if and__<num>__auto__ (clojure.core/and (inc 2)) and__<num>__auto__)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 71, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: false in form (if or__<num>__auto__ or__<num>__auto__ (clojure.core/or 2))",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 72, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: true in form (if true nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" \"string\" \"\\n\" (clojure.core/pr-str (quote true)))))))",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 84, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: [false] in form (if [false] nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote [false])))))))",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 85, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: 0 in form (if 0 nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote 0)))))))",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 111, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: 32 in form (if 32 nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" (clojure.core/pr-str (quote 32)))))))",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 111, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (clojure.core/string? format-in__<num>__auto__) in form (if (clojure.core/string? format-in__<num>__auto__) ((var clojure.pprint/cached-compile) format-in__<num>__auto__) format-in__<num>__auto__)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 122, :column 4}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (map? (list [:p \"a\"] [:p \"b\"])) in form (if (map? (list [:p \"a\"] [:p \"b\"])) 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 127, :column 1}
+         1,
+         {:linter :constant-test,
+          :msg "Test expression is always logical true or always logical false: (map? (list [:p \"a\"] [:p \"b\"])) in form (if x 1 2)",
+          :file (fname-from-parts "testcases" "constanttestexpr.clj"),
+          :line 131, :column 3}
+         1,
+         {:linter :unused-locals,
+          :msg "let bound symbol 'x' never used",
+          :file "testcases/constanttestexpr.clj",
+          :line 67,
+          :column 10}
+         1,
+         {:linter :unused-locals,
+          :msg "let bound symbol 'x' never used",
+          :file "testcases/constanttestexpr.clj",
+          :line 68,
+          :column 12}
+         1,
+         {:linter :unused-locals,
+          :msg "let bound symbol 'x' never used",
+          :file "testcases/constanttestexpr.clj",
+          :line 69,
+          :column 14}
+         1,
+         {:linter :unused-locals,
+          :msg "let bound symbol 'x' never used",
+          :file "testcases/constanttestexpr.clj",
+          :line 74,
+          :column 55}
+         1,
+         {:linter :unused-locals,
+          :msg "let bound symbol 'x' never used",
+          :file "testcases/constanttestexpr.clj",
+          :line 75,
+          :column 59}
+         1}
         clojure-1-6-or-later-additional-expected-warnings
-        {
-         }
+        {}
         expected-warnings
         (merge common-expected-warnings
                (if (util/clojure-1-6-or-later)
@@ -1646,13 +1609,12 @@ the next."
      [:constant-test :unused-locals]
      default-opts
      expected-warnings))
-  
+
   (lint-test
    'testcases.unusedlocals
    [:unused-locals :unused-private-vars]
    default-opts
-   {
-    {:linter :unused-locals,
+   {{:linter :unused-locals,
      :msg "let bound symbol 'unused-first-should-warn' never used",
      :file (fname-from-parts "testcases" "unusedlocals.clj"),
      :line 68, :column 11}
@@ -1706,8 +1668,7 @@ the next."
      :msg "Private var 'foo10' is never used"
      :file (fname-from-parts "testcases" "unusedlocals.clj"),
      :line 164, :column 1}
-    1,
-    })
+    1})
   ;; No faults expected:
   (lint-test 'testcases.unusednsimport.consumer1 [:unused-namespaces] default-opts {})
   ;; Fault expected (since the refered type is in a `comment` form):
@@ -1729,13 +1690,11 @@ the next."
    'testcases.unusednss
    [:unused-namespaces :unused-locals]
    default-opts
-   {
-    {:linter :unused-namespaces,
+   {{:linter :unused-namespaces,
      :msg "Namespace clojure.string is never used in testcases.unusednss",
      :file (fname-from-parts "testcases" "unusednss.clj"),
      :line 1, :column 1}
-    1,
-    })
+    1})
   (lint-test
    'testcases.unusednss3
    [:unused-namespaces :unused-locals]
@@ -1745,19 +1704,16 @@ the next."
    'testcases.unusednss4
    [:unused-namespaces :unused-locals]
    default-opts
-   {
-    {:linter :unused-namespaces,
+   {{:linter :unused-namespaces,
      :msg "Namespace testcases.unusednss2 is never used in testcases.unusednss4",
      :file (fname-from-parts "testcases" "unusednss4.clj"),
      :line 1, :column 1}
-    1,
-    })
+    1})
   (lint-test
    'testcases.wrongnsform
    [:wrong-ns-form :unused-locals]
    default-opts
-   {
-    {:linter :wrong-ns-form,
+   {{:linter :wrong-ns-form,
      :msg "ns reference starts with ':println' - should be one one of the keywords: :gen-class :import :load :refer-clojure :require :use",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 5, :column 3}
@@ -1811,14 +1767,12 @@ the next."
      :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :exclude :include-macros :refer :refer-macros :rename",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 182, :column 13}
-    1,
-    })
+    1})
   (lint-test
    'testcases.wrongprepost
    (concat @#'eastwood.lint/default-linters [:unused-locals])
    default-opts
-   {
-    {:linter :wrong-pre-post,
+   {{:linter :wrong-pre-post,
      :msg "All function preconditions should be in a vector.  Found: (pos? x)",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 5, :column 9}
@@ -1921,14 +1875,12 @@ the next."
      :file "testcases/wrongprepost.clj",
      :line 109,
      :column 40}
-    1,
-    })
+    1})
   (lint-test
    'testcases.arglists
    (concat @#'eastwood.lint/default-linters [:unused-locals])
    default-opts
-   {
-    {:linter :bad-arglists,
+   {{:linter :bad-arglists,
      :msg "Function on var fn-with-arglists1 defined taking # args [1] but :arglists metadata has # args [2]",
      :file (fname-from-parts "testcases" "arglists.clj"),
      :line 9, :column 7}
@@ -1937,8 +1889,7 @@ the next."
      :msg "Function on var fn-with-arglists3 defined taking # args [1 3] but :arglists metadata has # args [2 4]",
      :file (fname-from-parts "testcases" "arglists.clj"),
      :line 22, :column 7}
-    1,
-    })
+    1})
   (lint-test
    'testcases.duplicateparams
    (concat @#'eastwood.lint/default-linters [:unused-locals])
@@ -2183,7 +2134,6 @@ the next."
 ;;   {})
   )
 
-
 (deftest test2
   (when (util/clojure-1-9-or-later)
     (lint-test
@@ -2201,5 +2151,4 @@ the next."
        :file "testcases/duplicateparams2.clj",
        :line 7,
        :column 48}
-      1})
-    ))
+      1})))

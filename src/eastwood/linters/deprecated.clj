@@ -1,8 +1,10 @@
 (ns eastwood.linters.deprecated
   (:refer-clojure :exclude [get-method])
-  (:require [eastwood.passes :as pass]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast])
-  (:import (java.lang.reflect Method Constructor Field)))
+  (:require
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
+   [eastwood.passes :as pass])
+  (:import
+   (java.lang.reflect Constructor Field Method)))
 
 (defn no-constructor-found [ctor-info]
   (if (map? ctor-info)
@@ -110,5 +112,4 @@
                  :var (deprecated-var dexpr)}
               allow? (not (allow-warning w opt))]
         :when allow?]
-    w
-))
+    w))
