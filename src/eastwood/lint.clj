@@ -5,7 +5,7 @@
    [clojure.pprint :as pp]
    [clojure.set :as set]
    [clojure.string :as str]
-   [eastwood.analyze-ns :as analyze]
+   [eastwood.analyze-ns :as analyze-ns]
    [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
@@ -128,7 +128,7 @@
        (map :name)))
 
 (defn namespace-info [ns-sym cwd-file]
-  (let [uri (util/to-uri (analyze/uri-for-ns ns-sym))]
+  (let [uri (util/to-uri (analyze-ns/uri-for-ns ns-sym))]
     (merge
      {:namespace-sym ns-sym}
      (util/file-warn-info uri cwd-file))))
@@ -179,7 +179,7 @@
                  :linter linter}))))
 
 (defn lint-ns [ns-sym linters opts]
-  (let [[result elapsed] (util/timeit (analyze/analyze-ns ns-sym :opt opts))
+  (let [[result elapsed] (util/timeit (analyze-ns/analyze-ns ns-sym :opt opts))
         {:keys [analyze-results exception exception-phase exception-form]} result]
     {:ns ns-sym
      :analysis-time elapsed
@@ -662,7 +662,7 @@ clojure.inspector/inspect-tree on it.  Example in REPL:
 (require '[eastwood.lint :as l] '[clojure.inspector :as i])
 (i/inspect-tree (l/insp 'testcases.f01))"
   [nssym]
-  (let [a (analyze/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}})]
+  (let [a (analyze-ns/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}})]
     (update-in a [:analyze-results :asts]
                (fn [ast] (mapv util/clean-ast ast)))))
 

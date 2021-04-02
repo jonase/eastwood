@@ -6,7 +6,7 @@
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [dynamic? resolve-sym]]
-   [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as j]
+   [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as jvm]
    [eastwood.util :as util])
   (:import
    (java.io File)))
@@ -736,7 +736,7 @@
                    ;; the difference between that and (:tag fn) ?
                    (not= clojure.lang.AFunction (:tag fn))
                    (contains? (:locals env) (:form fn)))
-        :let [v (env/ensure (j/global-env) (resolve-sym (:form fn) env))]
+        :let [v (env/ensure (jvm/global-env) (resolve-sym (:form fn) env))]
         :when v]
     {:loc env
      :linter :local-shadows-var

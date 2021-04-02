@@ -8,9 +8,9 @@
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes :refer [schedule]]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.trim :refer [trim]]
-   [eastwood.copieddeps.dep10.clojure.tools.reader :as tr]
-   [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rts]
-   [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
+   [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
+   [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as reader-types]
+   [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as jvm]
    [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.emit-form :refer [emit-form]]
    [eastwood.copieddeps.dep2.clojure.tools.analyzer.passes.jvm.warn-on-reflection :refer [warn-on-reflection]]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.move :as move]
@@ -49,8 +49,8 @@ the value of File/separator for the platform."
   "Returns an IndexingReader for namespace ns-sym"
   [ns-sym]
   (let [uri (uri-for-ns ns-sym)]
-    (rts/indexing-push-back-reader (java.io.PushbackReader. (io/reader uri))
-                                   1 (#'move/ns-file-name ns-sym))))
+    (reader-types/indexing-push-back-reader (java.io.PushbackReader. (io/reader uri))
+                                            1 (#'move/ns-file-name ns-sym))))
 
 (defn all-ns-names-set []
   (set (map str (all-ns))))
@@ -182,7 +182,7 @@ the value of File/separator for the platform."
   ;; Doing clojure.core/eval in analyze+eval already generates
   ;; reflection warnings from Clojure.  Doing it in tools.analyzer
   ;; also leads to duplicate warnings.
-  (disj ana.jvm/default-passes #'warn-on-reflection #'trim))
+  (disj jvm/default-passes #'warn-on-reflection #'trim))
 
 (def scheduled-eastwood-passes
   (schedule eastwood-passes))
@@ -194,7 +194,7 @@ the value of File/separator for the platform."
   (scheduled-eastwood-passes ast))
 
 (def eastwood-passes-opts
-  (merge ana.jvm/default-passes-opts
+  (merge jvm/default-passes-opts
          {:validate/wrong-tag-handler eastwood-wrong-tag-handler}))
 
 ;; TBD: Consider changing how the functions called within
@@ -226,7 +226,7 @@ recursing into ASTs with :op equal to :do"
   (let [eof (reify)
         reader-opts {:read-cond :allow :features #{:clj} :eof eof}]
     (loop [forms forms]
-      (let [form (tr/read reader-opts pushback-reader)]
+      (let [form (reader/read reader-opts pushback-reader)]
         (if (identical? form eof)
           forms
           (recur (conj forms form)))))))
@@ -313,14 +313,14 @@ recursing into ASTs with :op equal to :do"
 
     ;; If we eval a form that changes *ns*, I want it to go back to
     ;; the original before returning.
-    (binding [tr/*data-readers* *data-readers*
+    (binding [reader/*data-readers* *data-readers*
               *ns* *ns*
               *file* (str source-path)]
-      (env/with-env (ana.jvm/global-env)
+      (env/with-env (jvm/global-env)
         (begin-file-debug *file* *ns* opt)
         (loop [forms []
                asts []]
-          (let [form (cleanup (tr/read reader-opts reader))]
+          (let [form (cleanup (reader/read reader-opts reader))]
             (if (identical? form eof)
               {:forms forms, :asts asts, :exception nil}
               (let [cur-env (env/deref-env)
@@ -329,9 +329,9 @@ recursing into ASTs with :op equal to :do"
                     (try
                       (let [{:keys [val out err]}
                             (util/with-out-str2
-                              (binding [ana.jvm/run-passes run-passes]
-                                (ana.jvm/analyze+eval
-                                 form (ana.jvm/empty-env)
+                              (binding [jvm/run-passes run-passes]
+                                (jvm/analyze+eval
+                                 form (jvm/empty-env)
                                  {:passes-opts eastwood-passes-opts})))]
                         (do-eval-output-callbacks out err (:cwd opt))
                         [nil val])

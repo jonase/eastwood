@@ -5,7 +5,7 @@
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [children* postwalk prewalk update-children walk]]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :as utils]
-   [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as ana.jvm]
+   [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as jvm]
    [eastwood.util :as util])
   (:import
    (java.lang.reflect Method)))
@@ -120,7 +120,7 @@ replaced by one that is resolved, with a namespace."
                      (mapv (fn [form]
                              (if (seq? form)
                                (let [[op & args] form
-                                     ^clojure.lang.Var var (env/ensure (ana.jvm/global-env)
+                                     ^clojure.lang.Var var (env/ensure (jvm/global-env)
                                                                        (utils/resolve-sym op env))
                                      resolved-var-sym (if (nil? var)
                                                         op

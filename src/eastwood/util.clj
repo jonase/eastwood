@@ -5,8 +5,8 @@
    [clojure.repl :as repl]
    [clojure.set :as set]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
-   [eastwood.copieddeps.dep10.clojure.tools.reader :as trdr]
-   [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as rdr-types])
+   [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
+   [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as reader-types])
   (:import
    (clojure.lang LineNumberingPushbackReader)
    (java.io File StringReader)
@@ -591,14 +591,14 @@ pprint-meta instead."
   string is in that same namespace.  Fortunately, this is pretty
   common for most Clojure code as written today."
   [s ns include-line-col-metadata?]
-  (binding [trdr/*data-readers* *data-readers*
+  (binding [reader/*data-readers* *data-readers*
             *ns* (or ns *ns*)]
     (let [rdr (if include-line-col-metadata?
                 (LineNumberingPushbackReader. (StringReader. s))
-                (rdr-types/string-push-back-reader s))
+                (reader-types/string-push-back-reader s))
           eof (reify)]
       (loop [forms []]
-        (let [x (trdr/read rdr nil eof)]
+        (let [x (reader/read rdr nil eof)]
           (if (identical? x eof)
             forms
             (recur (conj forms x))))))))
