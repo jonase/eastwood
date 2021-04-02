@@ -1,20 +1,21 @@
 (ns eastwood.util
-  (:require [clojure.java.io :as io]
-            [clojure.pprint :as pp]
-            [clojure.repl :as repl]
-            [clojure.set :as set]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
-            [eastwood.copieddeps.dep10.clojure.tools.reader :as trdr]
-            [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types
-             :as
-             rdr-types])
-  (:import clojure.lang.LineNumberingPushbackReader
-           [java.io File StringReader]
-           java.net.URI))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.pprint :as pp]
+   [clojure.repl :as repl]
+   [clojure.set :as set]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
+   [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
+   [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as reader-types])
+  (:import
+   (clojure.lang LineNumberingPushbackReader)
+   (java.io File StringReader)
+   (java.net URI)))
 
 (defmacro timeit
   "Evaluates expr and returns a vector containing the expression's
 return value followed by the time it took to evaluate in millisec."
+  {:style/indent 0}
   [expr]
   `(let [start# (. System (nanoTime))
          ret# ~expr
@@ -73,7 +74,6 @@ return value followed by the time it took to evaluate in millisec."
         (string? x) (.toURI (File. ^String x))
         :else (assert false)))
 
-
 (defn remove-prefix
   "If string s starts with the string prefix, return s with that
   prefix removed.  Otherwise, return s."
@@ -81,7 +81,6 @@ return value followed by the time it took to evaluate in millisec."
   (if (.startsWith s prefix)
     (subs s (count prefix))
     s))
-
 
 (defn file-warn-info [f cwd-file]
   (let [uri (to-uri f)
@@ -139,7 +138,6 @@ user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
                           (java.io.File. ^String fname))]
     (.getCanonicalPath f)))
 
-
 ;; Copied from clojure.repl/pst then modified to 'print' using a
 ;; callback function, and to use depth nil to print all stack frames.
 
@@ -148,7 +146,7 @@ user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
 entire stack trace if depth is nil).  Does not print ex-data."
   [^Throwable e depth]
   (println (str (-> e class .getSimpleName) " "
-                 (.getMessage e)))
+                (.getMessage e)))
   (let [st (.getStackTrace e)
         cause (.getCause e)]
     (doseq [el (remove #(#{"clojure.lang.RestFn" "clojure.lang.AFn"}
@@ -157,11 +155,10 @@ entire stack trace if depth is nil).  Does not print ex-data."
       (println (str \tab (repl/stack-element-str el))))
     (when cause
       (println "Caused by:")
-      (pst cause (if depth
+      (pst cause (when depth
                    (min depth
                         (+ 2 (- (count (.getStackTrace cause))
                                 (count st)))))))))
-
 
 ;; ordering-map copied under Eclipse Public License v1.0 from useful
 ;; library available at: https://github.com/flatland/useful
@@ -172,15 +169,15 @@ keys first, in the order specified. Other keys will be placed after
 the special keys, sorted by the default-comparator."
   ([key-order] (ordering-map key-order compare))
   ([key-order default-comparator]
-     (let [indices (into {} (map-indexed (fn [i x] [x i]) key-order))]
-       (sorted-map-by (fn [a b]
-                        (if-let [a-idx (indices a)]
-                          (if-let [b-idx (indices b)]
-                            (compare a-idx b-idx)
-                            -1)
-                          (if (indices b)
-                            1
-                            (default-comparator a b))))))))
+   (let [indices (into {} (map-indexed (fn [i x] [x i]) key-order))]
+     (sorted-map-by (fn [a b]
+                      (if-let [a-idx (indices a)]
+                        (if-let [b-idx (indices b)]
+                          (compare a-idx b-idx)
+                          -1)
+                        (if (indices b)
+                          1
+                          (default-comparator a b))))))))
 
 (defn ast-to-ordered
   "Take an ast and return an identical one, except every map is
@@ -241,23 +238,19 @@ more interesting keys earlier."
                           ;; exceptions due to incomparable keys.
                           ast)))))
 
-
 (defn all-children-vectors [asts]
   (->> asts
        (mapcat ast/nodes)
        (keep :children)
        frequencies))
 
-
 (defn has-keys? [m key-seq]
   (every? #(contains? m %) key-seq))
-
 
 (defn nil-safe-rseq [s]
   (if (nil? s)
     nil
     (rseq s)))
-
 
 (defn keys-in-map
   "Return the subset of key-set that are keys of map m, or nil if no
@@ -271,7 +264,6 @@ element of key-set is a key of m."
     (if (empty? keys-in-m)
       nil
       keys-in-m)))
-
 
 (defn sorted-map-with-non-keyword-keys? [x]
   (and (map? x)
@@ -288,7 +280,6 @@ element of key-set is a key of m."
        (not (sorted-map-with-non-keyword-keys? p))
        (has-keys? p [:on :on-interface :sigs :var :method-map
                      :method-builders])))
-
 
 (defn butlast+last
   "Returns same value as (juxt butlast last), but slightly more
@@ -325,16 +316,16 @@ twice."
       (recur (conj! ret (first s1)) (next s1) (next s2))
       (persistent! ret))))
 
-
 (defn separate-suffix
   "Given a string s and a sequence of strings, suffixes, return a
   vector of 2 strings [x y] where y is the first element of suffixes
   that is a suffix of s, and (str x y)=s.  If no string in suffixes is
   a suffix of s, return nil."
   [^String s suffixes]
-  (if-let [suffix (some #(if (.endsWith s %) %) suffixes)]
+  (when-let [suffix (some #(when (.endsWith s %)
+                             %)
+                          suffixes)]
     [(subs s 0 (- (count s) (count suffix))) suffix]))
-
 
 (defn nth-last
   "Return the nth-last element of a vector v, where n=1 means the last
@@ -342,11 +333,13 @@ element, n=2 is the second-to-last, etc.  Returns nil if there are
 fewer than n elements in the vector."
   [v n]
   (let [c (count v)]
-    (if (>= c n)
+    (when (>= c n)
       (v (- c n)))))
 
 (defn var-to-fqsym [^clojure.lang.Var v]
-  (if v (symbol (str (.ns v)) (str (.sym v)))))
+  (when v
+    (symbol (str (.ns v))
+            (str (.sym v)))))
 
 (defn op= [op]
   (fn [ast]
@@ -371,13 +364,13 @@ fewer than n elements in the vector."
   [inner outer form]
   (let [m (meta form)
         f (cond
-           (list? form) (apply list (map inner form))
-           (instance? clojure.lang.IMapEntry form) (vec (map inner form))
-           (seq? form) (doall (map inner form))
-           (instance? clojure.lang.IRecord form)
-             (reduce (fn [r x] (conj r (inner x))) form form)
-           (coll? form) (into (empty form) (map inner form))
-           :else form)]
+            (list? form) (apply list (map inner form))
+            (instance? clojure.lang.IMapEntry form) (vec (map inner form))
+            (seq? form) (doall (map inner form))
+            (instance? clojure.lang.IRecord form)
+            (reduce (fn [r x] (conj r (inner x))) form form)
+            (coll? form) (into (empty form) (map inner form))
+            :else form)]
     (if (and m (instance? clojure.lang.IObj f))
       (outer (with-meta f m))
       (outer f))))
@@ -426,8 +419,8 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
         (fn pm [o]
           (let [o (if (protocol? o)
                     (assoc o
-                      :var :true-value-replaced-to-avoid-pprint-infinite-loop
-                      :method-builders :true-value-replaced-to-avoid-pprint-infinite-loop)
+                           :var :true-value-replaced-to-avoid-pprint-infinite-loop
+                           :method-builders :true-value-replaced-to-avoid-pprint-infinite-loop)
                     o)]
             (when (meta o)
               (print "^")
@@ -493,13 +486,13 @@ pprint-meta instead."
   (ast/postwalk ast (fn [ast]
                       (map-vals (fn [val]
                                   (cond
-                                   (protocol? val)
-                                   (dissoc val :var :method-builders)
+                                    (protocol? val)
+                                    (dissoc val :var :method-builders)
 
-                                   (and (var? val) (protocol? @val))
-                                   (dissoc @val :var :method-builders)
+                                    (and (var? val) (protocol? @val))
+                                    (dissoc @val :var :method-builders)
 
-                                   :else val))
+                                    :else val))
                                 ast))))
 
 (defn clean-ast [ast & kws]
@@ -567,7 +560,7 @@ pprint-meta instead."
   ;; A few raw forms are symbols like clojure.lang.Compiler/COMPILE
   ;; (I'm probably misremembering the precise name, but it was
   ;; definitely a symbol, not a list).  Return nil for those.
-  (if (seq? raw-form)
+  (when (seq? raw-form)
     (-> raw-form
         meta
         :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op
@@ -602,14 +595,14 @@ pprint-meta instead."
   string is in that same namespace.  Fortunately, this is pretty
   common for most Clojure code as written today."
   [s ns include-line-col-metadata?]
-  (binding [trdr/*data-readers* *data-readers*
+  (binding [reader/*data-readers* *data-readers*
             *ns* (or ns *ns*)]
     (let [rdr (if include-line-col-metadata?
                 (LineNumberingPushbackReader. (StringReader. s))
-                (rdr-types/string-push-back-reader s))
+                (reader-types/string-push-back-reader s))
           eof (reify)]
       (loop [forms []]
-        (let [x (trdr/read rdr nil eof)]
+        (let [x (reader/read rdr nil eof)]
           (if (identical? x eof)
             forms
             (recur (conj forms x))))))))
@@ -654,42 +647,42 @@ pprint-meta instead."
   (if-not (= :try (:op ast))
     ast
     (if-not (some #{:body} (:children ast))
-        (do
-          (println (format "Found try node but it had no :body key in its :children, only %s"
-                           (seq (:children ast))))
-          (pprint-ast-node ast)
-          ast)
-        (let [body (:body ast)]
-          (if-not (= :do (:op body))
-            (update-in ast [:body]
-                       (fn [node]
-                         (assoc node
-                           :eastwood/used-ret-val-expr-in-try-body true)))
-            (let [;; Mark statements - i.e. non-returning expressions in body
-                  ast (if-not (and (some #{:statements} (:children body))
-                                   (vector? (:statements body)))
-                        (do
-                          (println (format "Found :try node with :body child that is :do, but either do has no :statements in children (only %s), or it does, but it is not a vector (it has class %s)"
-                                           (seq (:children body))
-                                           (class (:statements body))))
-                          (pprint-ast-node ast)
-                          ast)
-                        (update-in ast [:body :statements]
-                                   (fn [stmts]
-                                     (mapv #(assoc % :eastwood/unused-ret-val-expr-in-try-body true)
-                                           stmts))))
+      (do
+        (println (format "Found try node but it had no :body key in its :children, only %s"
+                         (seq (:children ast))))
+        (pprint-ast-node ast)
+        ast)
+      (let [body (:body ast)]
+        (if-not (= :do (:op body))
+          (update-in ast [:body]
+                     (fn [node]
+                       (assoc node
+                              :eastwood/used-ret-val-expr-in-try-body true)))
+          (let [;; Mark statements - i.e. non-returning expressions in body
+                ast (if-not (and (some #{:statements} (:children body))
+                                 (vector? (:statements body)))
+                      (do
+                        (println (format "Found :try node with :body child that is :do, but either do has no :statements in children (only %s), or it does, but it is not a vector (it has class %s)"
+                                         (seq (:children body))
+                                         (class (:statements body))))
+                        (pprint-ast-node ast)
+                        ast)
+                      (update-in ast [:body :statements]
+                                 (fn [stmts]
+                                   (mapv #(assoc % :eastwood/unused-ret-val-expr-in-try-body true)
+                                         stmts))))
                   ;; Mark the return expression
-                  ast (if-not (some #{:ret} (:children body))
-                        (do
-                          (println (format "Found :try node with :body child that is :do, but do has no :ret in children (only %s)"
-                                           (seq (:children body))))
-                          (pprint-ast-node ast)
-                          ast)
-                        (update-in ast [:body :ret]
-                                   (fn [node]
-                                     (assoc node
-                                       :eastwood/used-ret-val-expr-in-try-body true))))]
-              ast))))))
+                ast (if-not (some #{:ret} (:children body))
+                      (do
+                        (println (format "Found :try node with :body child that is :do, but do has no :ret in children (only %s)"
+                                         (seq (:children body))))
+                        (pprint-ast-node ast)
+                        ast)
+                      (update-in ast [:body :ret]
+                                 (fn [node]
+                                   (assoc node
+                                          :eastwood/used-ret-val-expr-in-try-body true))))]
+            ast))))))
 
 (defn mark-exprs-in-try-body
   "Return an ast that is identical to the argument, except that
@@ -756,16 +749,16 @@ of these kind."
 
 (defn get-val-in-map-ast
   ([map-ast k]
-     (get-val-in-map-ast map-ast k nil))
+   (get-val-in-map-ast map-ast k nil))
   ([map-ast k not-found]
-     {:pre [(map? map-ast)
-            (= :map (:op map-ast))
-            (vector? (:keys map-ast))
-            (vector? (:vals map-ast))]}
-     (if-let [idx (some #(if (= k (:form (second %))) (first %))
-                        (map-indexed vector (:keys map-ast)))]
-       ((:vals map-ast) idx)
-       not-found)))
+   {:pre [(map? map-ast)
+          (= :map (:op map-ast))
+          (vector? (:keys map-ast))
+          (vector? (:vals map-ast))]}
+   (if-let [idx (some #(when (= k (:form (second %))) (first %))
+                      (map-indexed vector (:keys map-ast)))]
+     ((:vals map-ast) idx)
+     not-found)))
 
 (defn debug? [debug-options opt]
   (when-let [d (:debug opt)]
@@ -773,7 +766,6 @@ of these kind."
         (and (set? debug-options)
              (some debug-options d))
         (contains? d debug-options))))
-
 
 (defn make-msg-cb
   "Tiny helper function to create a simple way to call the Eastwood callback function with only a message string.
@@ -787,13 +779,13 @@ message string."
   (fn [msg-str]
     ((:callback opt) {:kind kind, :msg msg-str, :opt opt})))
 
-
 (defmacro with-out-str2
   "Like with-out-str, but returns a map m.  (:val m) is the return
 value of the last expression in the body.  (:out m) is the string
 normally returned by with-out-str.  (:err m) is the string that would
 be returned by with-out-str if it bound *err* instead of *out* to a
 StringWriter."
+  {:style/indent 0}
   [& body]
   `(let [s# (new java.io.StringWriter)
          s2# (new java.io.StringWriter)
@@ -801,7 +793,6 @@ StringWriter."
                       *err* s2#]
               ~@body)]
      {:val x# :out (str s#) :err (str s2#)}))
-
 
 ;; TBD: There are some cases I have seen of calling this for every ast
 ;; warned about in the :constant-test linter, where the 'leaf' AST
@@ -825,10 +816,8 @@ StringWriter."
     (println (format "  form=%s" (:form a)))
     (println (format "  op=%s" (:op a)))))
 
-
 (def empty-enclosing-macro-map
-  (ordering-map [
-                 :depth
+  (ordering-map [:depth
                  :index
                  :final
                  :op
@@ -836,32 +825,30 @@ StringWriter."
                  :eastwood/path
                  :form
                  :first-only
-                 :ast
-                 ]))
+                 :ast]))
 
 (defn enclosing-macros
   [ast]
   (apply concat
-    (for [[i a] (map-indexed vector
-                             (cons ast
-                                   (nil-safe-rseq (-> ast :eastwood/ancestors))))]
-      (for [[j f] (map-indexed vector
-                               (reverse (:raw-forms a)))]
-        (into empty-enclosing-macro-map
-              {:depth i, :index j, :op (:op a), :ast a,
-               :eastwood/path (:eastwood/path a),
-               :form f, :resolved-form-meta (meta (:form a)),
-               :macro (fqsym-of-raw-form f)})))))
-
+         (for [[i a] (map-indexed vector
+                                  (cons ast
+                                        (nil-safe-rseq (-> ast :eastwood/ancestors))))]
+           (for [[j f] (map-indexed vector
+                                    (reverse (:raw-forms a)))]
+             (into empty-enclosing-macro-map
+                   {:depth i, :index j, :op (:op a), :ast a,
+                    :eastwood/path (:eastwood/path a),
+                    :form f, :resolved-form-meta (meta (:form a)),
+                    :macro (fqsym-of-raw-form f)})))))
 
 (defn debug-warning
   ([w ast opt extra-flags]
    (debug-warning w ast opt extra-flags nil))
   ([w ast opt extra-flags f]
    (let [d (cond
-            (not (:debug-warning opt)) false
-            (true? (:debug-warning opt)) #{}
-            :else (set (:debug-warning opt)))]
+             (not (:debug-warning opt)) false
+             (true? (:debug-warning opt)) #{}
+             :else (set (:debug-warning opt)))]
      (when d
        ((make-msg-cb :debug opt)
         (with-out-str
@@ -878,8 +865,8 @@ StringWriter."
               (pprint-ast-node ast)
               (println "(none specified to debug-warning fn)")))))))))
 
-
 ;; This atom is modified from the config files
+
 (def warning-enable-config-atom (atom []))
 
 (defn disable-warning [m]
@@ -912,10 +899,8 @@ StringWriter."
                          into (:symbol-matches m))))
           {} warning-enable-config))
 
-
 (defn builtin-config-to-resource [name]
   (io/resource (str "eastwood/config/" name)))
-
 
 (defn init-warning-enable-config [builtin-config-files config-files opt]
   (let [all-config-files (concat (map builtin-config-to-resource
@@ -934,7 +919,6 @@ StringWriter."
           (pst e nil))))
     (process-configs @warning-enable-config-atom)))
 
-
 (defn meets-suppress-condition [ast enclosing-macros condition]
   (let [macro-set (:if-inside-macroexpansion-of condition)
         depth (:within-depth condition)
@@ -942,22 +926,21 @@ StringWriter."
                            (take depth enclosing-macros)
                            enclosing-macros)]
     (some (fn [m]
-            (if (macro-set (:macro m))
+            (when (macro-set (:macro m))
               {:matching-condition condition
                :matching-macro (:macro m)}))
           enclosing-macros)))
-
 
 (defn allow-warning-based-on-enclosing-macros [w linter suppress-desc
                                                suppress-conditions opt]
   (let [ast (-> w linter :ast)
         ;; Don't bother calculating enclosing-macros if there are
         ;; no suppress-conditions to check, to save time.
-        encl-macros (if (seq suppress-conditions)
+        encl-macros (when (seq suppress-conditions)
                       (enclosing-macros ast))
         match (some #(meets-suppress-condition ast encl-macros %)
                     suppress-conditions)]
-    (if (and match (:debug-suppression opt))
+    (when (and match (:debug-suppression opt))
       ((make-msg-cb :debug opt)
        (with-out-str
          (let [c (:matching-condition match)
@@ -1002,7 +985,6 @@ StringWriter."
         (allow-warning-based-on-enclosing-macros
          w linter "" suppress-conditions opt)))))
 
-
 ;; Linters that use the info in resource file var-info.edn as of
 ;; Eastwood 0.2.2:
 
@@ -1026,7 +1008,6 @@ StringWriter."
 ;; like :side-effect :lazy-fn :pure-fn :pure-fn-if-fn-args-pure
 ;; :warn-if-ret-val-unused to determine whether an expression has an
 ;; unused return value.
-
 
 ;; For each namespace with at least one symbol as a key in
 ;; var-info.edn, print the following:
@@ -1059,8 +1040,7 @@ StringWriter."
                                             set)]))
                                (into {}))
         ns-names (into (sorted-set) (concat (keys file-vars-by-ns)
-                                            (keys loaded-vars-by-ns)))
-        ]
+                                            (keys loaded-vars-by-ns)))]
     (println "Clojure version " (clojure-version))
     (println)
     (println "Summary of contents of var-info.edn file:")
@@ -1098,40 +1078,39 @@ StringWriter."
             (doseq [name (sort file-but-not-loaded)]
               (println (format "            %s" name)))))))))
 
-
 (comment
 
 ;; This version tends to be much slower due to the size of the :env
 ;; data, and converting it all to strings.
-(def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv #(util/clean-ast % :with-env) ast))))
+  (def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv #(util/clean-ast % :with-env) ast))))
 
 ;; Older versions that may not be so useful any more, but kept here in
 ;; case there remains something useful.
 
-(def fn1 (:init (nth a 1)))
-(def locs1 (->> fn1 util/ast-nodes (filter (util/op= :local))))
-(#'un/unused-fn-args* fn1)
-(#'un/params (-> fn1 :methods first))
-(#'un/used-locals (-> fn1 :methods first :body util/ast-nodes))
+  (def fn1 (:init (nth a 1)))
+  (def locs1 (->> fn1 util/ast-nodes (filter (util/op= :local))))
+  (#'un/unused-fn-args* fn1)
+  (#'un/params (-> fn1 :methods first))
+  (#'un/used-locals (-> fn1 :methods first :body util/ast-nodes))
 
-(def fn4 (:init (nth a 4)))
-(def locs4 (->> fn4 util/ast-nodes (filter (util/op= :local))))
+  (def fn4 (:init (nth a 4)))
+  (def locs4 (->> fn4 util/ast-nodes (filter (util/op= :local))))
 
-(require '[eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as aj])
-(def form (read-string "
+  (require '[eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as aj])
+  (def form (read-string "
 (defn fn-with-unused-args3 [x y z]
   (let [foo (fn [y z]
               (* y z))]
     (foo x y)))
 "))
-(def env (aj/empty-env))
-(def an (aj/analyze form env))
-(def meth1 (-> an :init :methods first))
-(def ret-expr-args (-> meth1 :body :ret :body :ret :args))
+  (def env (aj/empty-env))
+  (def an (aj/analyze form env))
+  (def meth1 (-> an :init :methods first))
+  (def ret-expr-args (-> meth1 :body :ret :body :ret :args))
 
-(map :name (:params meth1))
+  (map :name (:params meth1))
 ;;=> (x__#0 y__#0 z__#0)
-(map :name ret-expr-args)
+  (map :name ret-expr-args)
 ;;=> (x__#0 y__#-1)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1139,38 +1118,36 @@ StringWriter."
 ;; Some code useful for copying and pasting into a REPL for debugging
 ;; AST contents with clojure.inspector.
 
-(require '[clojure.inspector :as insp])
-(require '[eastwood.analyze-ns :as ana] :reload)
-(require '[eastwood.util :as util] :reload)
-(require '[eastwood.linters.unused :as un] :reload)
-(require '[eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast])
+  (require '[clojure.inspector :as insp])
+  (require '[eastwood.analyze-ns :as ana] :reload)
+  (require '[eastwood.util :as util] :reload)
+  (require '[eastwood.linters.unused :as un] :reload)
+  (require '[eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast])
 
-(defn has-resolved-op? [ast]
-  (contains? (-> ast :raw-forms first meta)
-             :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op))
+  (defn has-resolved-op? [ast]
+    (contains? (-> ast :raw-forms first meta)
+               :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op))
 
-(defn resolved-op-asts [asts]
-  (->> asts
-       (mapcat ast/nodes)
-       (filter has-resolved-op?)))
+  (defn resolved-op-asts [asts]
+    (->> asts
+         (mapcat ast/nodes)
+         (filter has-resolved-op?)))
 
-(defn resolved-ops [ast]
-  (map (fn [rf]
-         (-> rf meta
-             :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op))
-       (:raw-forms ast)))
+  (defn resolved-ops [ast]
+    (map (fn [rf]
+           (-> rf meta
+               :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op))
+         (:raw-forms ast)))
 
-(defn add-resolved-ops [ast]
-  (assoc ast
-    :resolved-ops-on-raw-forms
-    (resolved-ops ast)))
+  (defn add-resolved-ops [ast]
+    (assoc ast
+           :resolved-ops-on-raw-forms
+           (resolved-ops ast)))
 
-(def nssym 'testcases.f06)
-(def a (ana/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}}))
-(def a2 (update-in a [:analyze-results :asts]
-                   (fn [asts]
-                     (mapv (fn [ast] (-> ast add-resolved-ops util/clean-ast))
-                           asts))))
-(insp/inspect-tree a2)
-
-)
+  (def nssym 'testcases.f06)
+  (def a (ana/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}}))
+  (def a2 (update-in a [:analyze-results :asts]
+                     (fn [asts]
+                       (mapv (fn [ast] (-> ast add-resolved-ops util/clean-ast))
+                             asts))))
+  (insp/inspect-tree a2))

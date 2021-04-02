@@ -1,12 +1,14 @@
 (ns eastwood.lint-test
-  (:use [clojure.test ])
-  (:require [eastwood.lint :as sut :refer :all]
-            [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
-            [eastwood.util :as util]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
-            [eastwood.reporting-callbacks :as reporting])
-  (:import java.io.File))
+  (:require
+   [clojure.test :refer :all]
+   [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
+   [eastwood.lint :as sut :refer :all]
+   [eastwood.reporting-callbacks :as reporting]
+   [eastwood.util :as util])
+  (:import
+   (java.io File)))
 
 (deftest expand-ns-keywords-test
   (testing ""
@@ -49,7 +51,7 @@
             :test-paths #{"bar"}}
            (setup-lint-paths #{"lol"} #{"bar"}))))
   (testing "empty source/test paths yields classpath-directories"
-    (with-redefs [classpath/classpath-directories (fn [] [(File. "lol" )])]
+    (with-redefs [classpath/classpath-directories (fn [] [(File. "lol")])]
       (is (= {:source-paths #{(File. "lol")}
               :test-paths #{}}
              (setup-lint-paths nil nil))))))

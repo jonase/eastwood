@@ -1,7 +1,9 @@
 (ns eastwood.version
-  (:require [clojure.java.io :refer [reader resource]]
-            [clojure.string :refer [join]])
-  (:import java.io.PushbackReader))
+  (:require
+   [clojure.java.io :refer [reader resource]]
+   [clojure.string :refer [join]])
+  (:import
+   (java.io PushbackReader)))
 (let [version-file (resource "EASTWOOD_VERSION")]
   (when version-file
     (with-open [rdr (reader version-file)]

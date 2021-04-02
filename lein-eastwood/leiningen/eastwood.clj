@@ -1,8 +1,9 @@
 (ns leiningen.eastwood
-  (:require [clojure.pprint :as pp]
-            [leiningen.core.eval :as leval]
-            [leiningen.core.main :as lein]
-            [eastwood.version :as version]))
+  (:require
+   [clojure.pprint :as pp]
+   [eastwood.version :as version]
+   [leiningen.core.eval :as eval]
+   [leiningen.core.main :as main]))
 
 ;; 'lein help' prints only the first line of the string returned by
 ;; help.  'lein help eastwood' prints all of it, plus the arg vectors
@@ -28,7 +29,6 @@ your :source-paths, use this command:
 For other options, see the full documentation on-line here:
 
     https://github.com/jonase/eastwood")))
-
 
 ;; Everything from here down to, and including, pprint-meta is a copy
 ;; of some functions from namespace eastwood.util, specifically to
@@ -69,8 +69,8 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
         (fn pm [o]
           (let [o (if (protocol? o)
                     (assoc o
-                      :var :true-value-replaced-to-avoid-pprint-infinite-loop
-                      :method-builders :true-value-replaced-to-avoid-pprint-infinite-loop)
+                           :var :true-value-replaced-to-avoid-pprint-infinite-loop
+                           :method-builders :true-value-replaced-to-avoid-pprint-infinite-loop)
                     o)]
             (when (meta o)
               (print "^")
@@ -110,12 +110,12 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
   ([project] (eastwood project "{}"))
   ([project opts]
    (cond
-     (= opts "help") (lein/info (help))
+     (= opts "help") (main/info (help))
      (= opts "lein-project")
      (do
-       (lein/info (with-out-str (pprint-meta (into (sorted-map) project))))
-       (lein/info "\nValue of :eastwood key in project map:")
-       (lein/info (with-out-str (pprint-meta (into (sorted-map) (:eastwood project))))))
+       (main/info (with-out-str (pprint-meta (into (sorted-map) project))))
+       (main/info "\nValue of :eastwood key in project map:")
+       (main/info (with-out-str (pprint-meta (into (sorted-map) (:eastwood project))))))
 
      :else
      (let [leiningen-paths (select-keys project [:source-paths
@@ -123,18 +123,18 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
            leiningen-opts (:eastwood project)
            cmdline-opts (read-string opts)
            opts (merge leiningen-paths leiningen-opts cmdline-opts)]
-       (lein/debug "\nLeiningen paths:")
-       (lein/debug (with-out-str (pprint-meta (into (sorted-map) leiningen-paths))))
-       (lein/debug "\nLeiningen options map:")
-       (lein/debug (with-out-str (pprint-meta (into (sorted-map) leiningen-opts))))
-       (lein/debug "\nCommand line options map:")
-       (lein/debug (with-out-str (pprint-meta (into (sorted-map) cmdline-opts))))
-       (lein/debug "\nMerged options map:")
-       (lein/debug (with-out-str (pprint-meta (into (sorted-map) opts))))
-       (lein/debug "\nLeiningen project map:")
-       (lein/debug (with-out-str (pprint-meta (into (sorted-map) project))))
-       (lein/debug)
-       (leval/eval-in-project
+       (main/debug "\nLeiningen paths:")
+       (main/debug (with-out-str (pprint-meta (into (sorted-map) leiningen-paths))))
+       (main/debug "\nLeiningen options map:")
+       (main/debug (with-out-str (pprint-meta (into (sorted-map) leiningen-opts))))
+       (main/debug "\nCommand line options map:")
+       (main/debug (with-out-str (pprint-meta (into (sorted-map) cmdline-opts))))
+       (main/debug "\nMerged options map:")
+       (main/debug (with-out-str (pprint-meta (into (sorted-map) opts))))
+       (main/debug "\nLeiningen project map:")
+       (main/debug (with-out-str (pprint-meta (into (sorted-map) project))))
+       (main/debug)
+       (eval/eval-in-project
         (maybe-add-eastwood project)
         `(eastwood.versioncheck/run-eastwood '~opts)
         '(require 'eastwood.versioncheck))))))

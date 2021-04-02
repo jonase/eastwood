@@ -1,13 +1,15 @@
 (ns eastwood.linters.typos
-  (:require [clojure.pprint :as pp])
-  (:require [eastwood.util :as util]
-            [eastwood.passes :as pass]
-            [clojure.set :as set]
-            [clojure.string :as str]
-            [clojure.java.io :as io]
-            [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
-            [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast])
-  (:import [name.fraser.neil.plaintext diff_match_patch]))
+  (:require
+   [clojure.java.io :as io]
+   [clojure.pprint :as pp]
+   [clojure.set :as set]
+   [clojure.string :as str]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
+   [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
+   [eastwood.passes :as pass]
+   [eastwood.util :as util])
+  (:import
+   (name.fraser.neil.plaintext diff_match_patch)))
 
 ;; Typos in keywords
 
@@ -108,7 +110,6 @@
       {:linter :keyword-typos
        :msg (format "Possible keyword typo: %s instead of %s ?" kw1 kw2)})))
 
-
 ;; Wrong args to clojure.test/is macro invocations
 
 ;; TBD: Consider trying to find forms like (= ...) that are not
@@ -135,7 +136,6 @@
 (defn constant-expr? [expr]
   (or (constant-expr-logical-false? expr)
       (constant-expr-logical-true? expr)))
-
 
 ;; This is an alternate way to find the AST of the :message key for
 ;; the call to clojure.test/do-report than what is used below for
@@ -204,47 +204,45 @@
 ;;       (when thrown?
 ;;         (println (format "Found (is (thrown? ...)) with thrown-arg2=%s: %s" thrown-arg2 isf)))
        (cond
-        (and (= n 2) (string? is-arg1))
-        [{:loc is-loc
-          :linter :suspicious-test,
-          :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test")}]
-        
-        (and (constant-expr-logical-true? is-arg1)
-             (not (list? is-arg1)))
-        [{:loc is-loc
-          :linter :suspicious-test,
-          :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test")}]
-        
-        (and (= n 2)
-             (not= message-tag java.lang.String))
-        [{:loc is-loc
-          :linter :suspicious-test,
-          :msg (format "'is' form has non-string as second arg (inferred type is %s).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away."
-                       message-tag)}]
-        
-        (and thrown? (util/regex? thrown-arg2))
-        [{:loc is-loc
-          :linter :suspicious-test,
-          :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")}]
-        
-        (and thrown? (string? thrown-arg2))
-        [{:loc is-loc
-          :linter :suspicious-test,
-          :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")}]
-        
-        (and thrown? (some string? thrown-args))
-        [{:loc is-loc
-          :linter :suspicious-test,
-          :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")}]
-        
-        :else nil)))))
+         (and (= n 2) (string? is-arg1))
+         [{:loc is-loc
+           :linter :suspicious-test,
+           :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test")}]
 
+         (and (constant-expr-logical-true? is-arg1)
+              (not (list? is-arg1)))
+         [{:loc is-loc
+           :linter :suspicious-test,
+           :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test")}]
+
+         (and (= n 2)
+              (not= message-tag java.lang.String))
+         [{:loc is-loc
+           :linter :suspicious-test,
+           :msg (format "'is' form has non-string as second arg (inferred type is %s).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away."
+                        message-tag)}]
+
+         (and thrown? (util/regex? thrown-arg2))
+         [{:loc is-loc
+           :linter :suspicious-test,
+           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")}]
+
+         (and thrown? (string? thrown-arg2))
+         [{:loc is-loc
+           :linter :suspicious-test,
+           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")}]
+
+         (and thrown? (some string? thrown-args))
+         [{:loc is-loc
+           :linter :suspicious-test,
+           :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")}]
+
+         :else nil)))))
 
 (def var-info-map-delayed
   (delay
    ;;(println "Reading var-info.edn for :suspicious-test linter")
-   (edn/read-string (slurp (io/resource "var-info.edn")))))
-
+    (edn/read-string (slurp (io/resource "var-info.edn")))))
 
 (defn predicate-forms [subexpr-maps form-type]
   (let [var-info-map @var-info-map-delayed]
@@ -253,42 +251,42 @@
      (for [{:keys [subexpr ast]} subexpr-maps
            :let [f subexpr]]
        (cond
-        (and (not (list? f))
-             (constant-expr? f))
-        [(let [meta-loc (-> f meta)
-               loc (or (pass/has-code-loc? meta-loc)
-                       (pass/code-loc (pass/nearest-ast-with-loc ast)))]
-           {:loc loc :linter :suspicious-test,
-            :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
-                         (cond (-> meta-loc :line) ""
-                               (string? f) (str " \"" f "\"")
-                               :else (str " " f))
-                         (if f (.getName (class f)) "nil") form-type)})]
-        
-        (sequential? f)
-        (let [ff (first f)
-              cc-sym (and ff
-                          (instance? clojure.lang.Named ff)
-                          (symbol "clojure.core" (name ff)))
-              var-info (and cc-sym (var-info-map cc-sym))
+         (and (not (list? f))
+              (constant-expr? f))
+         [(let [meta-loc (-> f meta)
+                loc (or (pass/has-code-loc? meta-loc)
+                        (pass/code-loc (pass/nearest-ast-with-loc ast)))]
+            {:loc loc :linter :suspicious-test,
+             :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
+                          (cond (-> meta-loc :line) ""
+                                (string? f) (str " \"" f "\"")
+                                :else (str " " f))
+                          (if f (.getName (class f)) "nil") form-type)})]
+
+         (sequential? f)
+         (let [ff (first f)
+               cc-sym (and ff
+                           (instance? clojure.lang.Named ff)
+                           (symbol "clojure.core" (name ff)))
+               var-info (and cc-sym (var-info-map cc-sym))
 ;;              _ (println (format "dbx: predicate-forms ff=%s cc-sym=%s var-info=%s"
 ;;                                 ff cc-sym var-info))
-              loc (-> ff meta)]
-          (cond
-           (and var-info (get var-info :predicate))
-           [{:loc loc
-             :linter :suspicious-test,
-             :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
-                          ff form-type ff)}]
-           
-           (and var-info (get var-info :pure-fn))
-           [{:loc loc
-             :linter :suspicious-test,
-             :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
-                          ff form-type)}]
-           
-           :else nil))
-        :else nil)))))
+               loc (-> ff meta)]
+           (cond
+             (and var-info (get var-info :predicate))
+             [{:loc loc
+               :linter :suspicious-test,
+               :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
+                            ff form-type ff)}]
+
+             (and var-info (get var-info :pure-fn))
+             [{:loc loc
+               :linter :suspicious-test,
+               :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
+                            ff form-type)}]
+
+             :else nil))
+         :else nil)))))
 
 ;; suspicious-test used to do its job only examining source forms, but
 ;; now it goes through the forms on the :raw-forms lists of the AST
@@ -311,7 +309,7 @@
                        raw-form (frms ast)]
                    {:raw-form raw-form
                     :ast ast})
-        
+
         pr-first-is-formasts
         (remove nil?
                 (for [ast (mapcat ast/nodes asts)]
@@ -321,7 +319,7 @@
                     (first (filter #(= 'clojure.test/is
                                        (util/fqsym-of-raw-form (:raw-form %)))
                                    formasts)))))
-        
+
         ;; To find deftest subexpressions, first filter all of the raw
         ;; forms for those with a resolved-op symbol equal to
         ;; clojure.test/deftest, then get of the first 2 symbols from
@@ -334,7 +332,7 @@
              (mapcat (fn [formast]
                        (for [subexpr (nthnext (:raw-form formast) 2)]
                          (assoc formast :subexpr subexpr)))))
-        
+
         ;; Similarly for testing subexprs as for deftest subexprs.
         ;; TBD: Make a helper function to eliminate the nearly
         ;; duplicated code between deftest and testing.
@@ -356,8 +354,7 @@
 ;; determined solely by the number of arguments to the macro.
 
 (def core-macros-that-do-little
-  '{
-    ;; (-> x) expands to x
+  '{;; (-> x) expands to x
     clojure.core/->       {1 {:args [x] :ret-val x}}
 
     ;; (->> x) threw an arity exception for some version of Clojure
@@ -485,8 +482,7 @@
 
     ;; (with-redefs [var expr]) has medium-sized expansion, but always
     ;; returns nil.
-    clojure.core/with-redefs {1 {:args [bindings] :ret-val nil}}
-    })
+    clojure.core/with-redefs {1 {:args [bindings] :ret-val nil}}})
 
 ;; suspicious-macro-invocations was formerly called
 ;; suspicious-expressions-forms, and implemented to use the 'forms'
@@ -517,7 +513,6 @@
 (defn raw-form-of-interest? [raw-form core-macros-that-do-little]
   (get core-macros-that-do-little (util/fqsym-of-raw-form raw-form)))
 
-
 (defn and-or-self-expansion? [ast]
   (let [parent-ast (-> ast :eastwood/ancestors peek)]
     (and (= :if (-> parent-ast :op))
@@ -525,13 +520,11 @@
          (#{'clojure.core/and 'clojure.core/or}
           (-> ast :raw-forms first util/fqsym-of-raw-form)))))
 
-
 (defn cond-self-expansion? [ast]
   (let [parent-ast (-> ast :eastwood/ancestors peek)]
     (and (= :if (-> parent-ast :op))
          (#{'clojure.core/cond}
           (-> ast :raw-forms first util/fqsym-of-raw-form)))))
-
 
 (defn suspicious-macro-invocations [{:keys [asts]} opt]
   (let [selected-macro-invoke-asts
@@ -591,7 +584,6 @@
         (util/debug-warning w ast opt #{:enclosing-macros})
         w))))
 
-
 ;; Note: Looking for asts that contain :invoke nodes for the function
 ;; 'clojure.core/= will not find expressions like (clojure.test/is (=
 ;; (+ 1 1))), because the is macro changes that to an apply on
@@ -599,8 +591,7 @@
 ;; expressions are looked for by the function suspicious-is-try-expr.
 
 (def core-fns-that-do-little
-  {
-   'clojure.core/*        '{0 {:args []  :ret-val 1},   ; inline
+  {'clojure.core/*        '{0 {:args []  :ret-val 1},   ; inline
                             1 {:args [x] :ret-val x}}
    'clojure.core/*'       '{0 {:args []  :ret-val 1},   ; inline
                             1 {:args [x] :ret-val x}}
@@ -633,10 +624,9 @@
    'clojure.core/print-str '{0 {:args [] :ret-val ""}}
    'clojure.core/pr       '{0 {:args [] :ret-val nil}}
    'clojure.core/print    '{0 {:args [] :ret-val nil}}
-   
+
    'clojure.core/comp     '{0 {:args [] :ret-val identity}}
-   'clojure.core/partial  '{1 {:args [f] :ret-val f}}
-   })
+   'clojure.core/partial  '{1 {:args [f] :ret-val f}}})
 
 (defn suspicious-fn-calls [{:keys [asts]} opt]
   (let [fn-sym-set (set (keys core-fns-that-do-little))
@@ -669,7 +659,6 @@
                           (if (= "" (:ret-val info))
                             "\"\""
                             (print-str (:ret-val info))))})))))))
-
 
 ;; This code may get a bit hackish, trying to recognize exactly the
 ;; macroexpansion of clojure.test/try-expr, in particular the case
@@ -743,13 +732,11 @@
                       "\"\""
                       (print-str (:ret-val info))))})))
 
-
 (defn suspicious-expression [& args]
   (concat
    (apply suspicious-macro-invocations args)
    (apply suspicious-fn-calls args)
    (apply suspicious-is-try-expr args)))
-
 
 (defn logical-true-test
   "Return the ast to report a warning for, if the 'ast' argument
@@ -762,7 +749,6 @@ always logical true.  Otherwise, return nil."
         (= :with-meta (:op ast)) (logical-true-test (:expr ast))
         :else nil))
 
-
 (defn pure-fn-ast? [ast]
   (and (= :var (:op ast))
        (var? (:var ast))
@@ -770,20 +756,16 @@ always logical true.  Otherwise, return nil."
          (if (:pure-fn (@var-info-map-delayed sym))
            sym))))
 
-
 (declare constant-ast)
-
 
 (defn constant-map? [ast]
   (and (= :map (:op ast))
        (every? constant-ast (:keys ast))
        (every? constant-ast (:vals ast))))
 
-
 (defn constant-vector-or-set? [ast]
   (and (#{:vector :set} (:op ast))
        (every? constant-ast (:items ast))))
-
 
 (defn constant-ast
   "Return nil if 'ast' is not one that we can determine to be a
@@ -809,23 +791,22 @@ warning, that contains the constant value."
 ;;                           (-> bound-val-ast :form meta :line)))
           (if bound-val-ast
             (constant-ast bound-val-ast)))
-        
+
         (#{:const :quote} (:op ast))  ast
         (constant-map? ast)           ast
         (constant-vector-or-set? ast) ast
-        
+
         (= :invoke (:op ast))
         (let [pfn (pure-fn-ast? (:fn ast))]
           (cond (and pfn (every? constant-ast (:args ast)))
                 ast
-                
+
                 (= 'clojure.core/not pfn)
                 (logical-true-test (-> ast :args first))
-                
-                :else nil))
-        
-        :else nil))
 
+                :else nil))
+
+        :else nil))
 
 (defn assert-false-expansion? [ast]
   (and (= :if (:op ast))
@@ -841,13 +822,11 @@ warning, that contains the constant value."
        (= :const (-> ast :test :op))
        (contains? #{false nil} (-> ast :test :val))))
 
-
 (defn if-with-predictable-test [ast]
   (if (and (= :if (:op ast))
            (not (assert-false-expansion? ast)))
     (or (constant-ast (-> ast :test))
         (logical-true-test (-> ast :test)))))
-
 
 (defn transform-ns-keyword [kw]
   (if (and (keyword? kw) (some? (namespace kw)))
@@ -862,7 +841,6 @@ warning, that contains the constant value."
        (seq (:raw-forms ast))
        (= 'clojure.core/cond
           (-> ast :raw-forms first util/fqsym-of-raw-form))))
-
 
 (defn constant-test [{:keys [asts]} opt]
   (let [const-tests (->> asts
@@ -887,7 +865,6 @@ warning, that contains the constant value."
       (do
         (util/debug-warning w ast opt #{:enclosing-macros})
         w))))
-
 
 (defn fn-form-with-pre-post [form ast]
 ;;  (println "dbg fn-form-with-pre-post:")
@@ -920,7 +897,6 @@ warning, that contains the constant value."
            (map-indexed (fn [idx m] (if m (assoc m :method-num idx))))
            (remove nil?)))))
 
-
 (defn fn-ast-with-pre-post [ast]
   ;; Starting in Clojure 1.8.0, the :op :fn AST is usually not the one
   ;; to have the macroexpansion from clojure.core/fn to
@@ -939,7 +915,6 @@ warning, that contains the constant value."
     (seq (mapcat #(fn-form-with-pre-post % ast)
                  (:raw-forms ast)))))
 
-
 (defn get-do-body-from-fn-or-with-meta-ast [fn-or-with-meta-ast method-num]
   (case (:op fn-or-with-meta-ast)
     :fn (util/get-in-ast fn-or-with-meta-ast
@@ -949,7 +924,6 @@ warning, that contains the constant value."
                                 [[[:expr] :fn]
                                  [[:methods method-num] :fn-method]
                                  [[:body] :do]])))
-
 
 (defn ast-of-condition-test
   [kind fn-ast method-num condition-idx condition-form]
@@ -985,7 +959,6 @@ warning, that contains the constant value."
                          (count matching-assert-asts)
                          (pr-str condition-form)))))))
 
-
 (defn wrong-pre-post-messages [kind conditions method-num ast
                                condition-desc-begin condition-desc-middle]
 ;;  (println (format "dbg wrong-pre-post-messages: kind=%s method-num=%s conditions=%s (vector? conditions)=%s (class conditions)=%s"
@@ -994,54 +967,53 @@ warning, that contains the constant value."
 ;;                   (class conditions)))
   (if (not (vector? conditions))
     [(format "All function %s should be in a vector.  Found: %s"
-            condition-desc-middle (pr-str conditions))]
-    
+             condition-desc-middle (pr-str conditions))]
+
     (remove nil?
-     (for [[condition test-ast]
-           (map-indexed (fn [i condition]
-                          [condition
-                           (ast-of-condition-test kind ast method-num i
-                                                  condition)])
-                        conditions)]
+            (for [[condition test-ast]
+                  (map-indexed (fn [i condition]
+                                 [condition
+                                  (ast-of-condition-test kind ast method-num i
+                                                         condition)])
+                               conditions)]
 ;;       (do
 ;;         (println (format "dbg3: kind=%s line=%d :op=%s condition=%s :form=%s same?=%s"
 ;;                          kind (:line (meta conditions))
 ;;                          (:op test-ast)
 ;;                          condition (:form test-ast)
 ;;                          (= condition (:form test-ast))))
-       (cond
-        (= :const (:op test-ast))
-        (format "%s found that is always logical true or always logical false.  Should be changed to function call?  %s"
-                condition-desc-begin (pr-str condition))
+              (cond
+                (= :const (:op test-ast))
+                (format "%s found that is always logical true or always logical false.  Should be changed to function call?  %s"
+                        condition-desc-begin (pr-str condition))
 
-        (and (-> test-ast :op #{:var})
-             (-> test-ast :var meta :dynamic not))
-        (format "%s found that is probably always logical true or always logical false.  Should be changed to function call?  %s"
-                condition-desc-begin (pr-str condition))
-        
+                (and (-> test-ast :op #{:var})
+                     (-> test-ast :var meta :dynamic not))
+                (format "%s found that is probably always logical true or always logical false.  Should be changed to function call?  %s"
+                        condition-desc-begin (pr-str condition))
+
         ;; In this case, probably the developer wanted to assert that
         ;; a function arg was logical true, i.e. neither nil nor
         ;; false.
-        (= :local (:op test-ast))
-        nil
-        
+                (= :local (:op test-ast))
+                nil
+
         ;; The following kinds of things are 'complex' enough that we
         ;; will not try to do any fancy calculation to determine
         ;; whether their results are constant or not.
-        (#{:invoke :static-call :let :if :instance? :keyword-invoke} (:op test-ast))
-        nil
+                (#{:invoke :static-call :let :if :instance? :keyword-invoke} (:op test-ast))
+                nil
 
-        :else
-        (println (format "dbg wrong-pre-post: condition=%s line=%d test-ast :op=%s"
-                         condition (:line (meta conditions))
-                         (:op test-ast))))))))
+                :else
+                (println (format "dbg wrong-pre-post: condition=%s line=%d test-ast :op=%s"
+                                 condition (:line (meta conditions))
+                                 (:op test-ast))))))))
 ;;)
-
 
 (defn wrong-pre-post [{:keys [asts]} opt]
   (let [fns-with-pre-post (->> asts
-                          (mapcat ast/nodes)
-                          (mapcat fn-ast-with-pre-post))]
+                               (mapcat ast/nodes)
+                               (mapcat fn-ast-with-pre-post))]
     (concat
      (for [{:keys [ast form name pre method-num]} fns-with-pre-post
            :when pre
@@ -1069,8 +1041,6 @@ warning, that contains the constant value."
                     :msg msg}]]
        w))))
 
-
-
 (defn arg-vecs-of-fn-raw-form [fn-raw-form]
 ;;  (println "fn-raw-form -> " fn-raw-form)
 ;;  (flush)
@@ -1091,16 +1061,14 @@ warning, that contains the constant value."
 ;;        (println "   fn-bodies -> " fn-bodies)
 ;;        (println "   (map first fn-bodies) -> " (map first fn-bodies))
 ;;        (flush)
-        (map first fn-bodies)
+      (map first fn-bodies)
 ;;        )
       )))
-
 
 (defn arg-vecs-of-ast [ast]
   (if (and (contains? ast :raw-forms)
            (sequential? (:raw-forms ast)))
     (mapcat arg-vecs-of-fn-raw-form (:raw-forms ast))))
-
 
 ;; Copied a few functions from Clojure 1.9.0, and renamed with 'my-'
 ;; prefix.  That enables running this code with earlier Clojure
@@ -1116,15 +1084,13 @@ warning, that contains the constant value."
 (defn my-qualified-keyword? [x]
   (boolean (and (keyword? x) (namespace x) true)))
 
-
 ;; Adapted from core.spec.alpha spec ::local-name
+
 (defn my-local-name? [x]
   (and (my-simple-symbol? x) (not= '& x)))
 
-
 (def non-matching-info {:result false :local-names []})
 (declare binding-form-info)
-
 
 ;; x might be a symbol with a namespace, or without a namespace.
 ;; x might also be a keyword with or without a namespace.
@@ -1135,7 +1101,6 @@ warning, that contains the constant value."
 
 (defn symbol-or-kw-to-local-name [x]
   (symbol nil (name x)))
-
 
 (defn better-loc [cur-loc maybe-better-loc-in-meta-of-this-obj]
   (let [m (meta maybe-better-loc-in-meta-of-this-obj)]
@@ -1148,7 +1113,6 @@ warning, that contains the constant value."
    :local-name (symbol-or-kw-to-local-name x)
    :loc (better-loc loc x)})
 
-
 (defn local-name-info [x loc]
   (if (my-local-name? x)
     {:result true
@@ -1157,8 +1121,8 @@ warning, that contains the constant value."
     ;; else
     non-matching-info))
 
-
 ;; Adapted from core.spec.alpha spec ::seq-binding-form
+
 (defn seq-binding-form-info [x loc top-level-arg-vector?]
   (if (vector? x)
     (let [n (count x)
@@ -1206,13 +1170,11 @@ warning, that contains the constant value."
     ;; else
     non-matching-info))
 
-
 (defn map-binding-value-for-keys-syms-strs [v pred loc]
   (if (and (vector? v) (every? pred v))
     {:result true, :local-names (map #(local-name-with-loc % loc) v),
      :kind :map-keys-syms-strs}
     non-matching-info))
-
 
 (defn one-map-binding-form-info [[k v] loc]
   (cond
@@ -1247,37 +1209,36 @@ warning, that contains the constant value."
                :kind :map-sub-destructure}
               info))))
 
-
 (defn map-binding-form-info [x loc]
   (let [ret
 
-  (if (map? x)
-    (let [infos (map #(one-map-binding-form-info % (better-loc loc %)) x)]
-      (if (every? :result infos)
+        (if (map? x)
+          (let [infos (map #(one-map-binding-form-info % (better-loc loc %)) x)]
+            (if (every? :result infos)
         ;; Check for warnings to issue for this one associative/map
         ;; destructuring form, independent of any destructuring forms
         ;; that might be nested within it, or what this destructuring
         ;; form might be nested within.
-        (let [{:keys [map-bind-local-name map-keys-syms-strs
-                      map-sub-destructure map-or map-as]}
-              (group-by :kind infos)
-              as-local-name (if map-as (-> map-as first :as-name))
-              or-names (if map-or
-                         (-> map-or first :or-map keys)
-                         [])
-              or-names-set (set or-names)
-              bound-local-names (->> (concat map-bind-local-name
-                                             map-keys-syms-strs)
-                                     (mapcat :local-names)
-                                     (map :local-name))
-              as-or-warning
-              (if (and as-local-name
-                       (contains? or-names-set as-local-name))
-                [{:loc (better-loc loc as-local-name)
-                  :linter :unused-or-default
-                  :unused-or-default {}
-                  :msg (format "Name %s after :as is also in :or map of associative destructuring.  The default value in the :or will never be used."
-                               as-local-name)}])
+              (let [{:keys [map-bind-local-name map-keys-syms-strs
+                            map-sub-destructure map-or map-as]}
+                    (group-by :kind infos)
+                    as-local-name (if map-as (-> map-as first :as-name))
+                    or-names (if map-or
+                               (-> map-or first :or-map keys)
+                               [])
+                    or-names-set (set or-names)
+                    bound-local-names (->> (concat map-bind-local-name
+                                                   map-keys-syms-strs)
+                                           (mapcat :local-names)
+                                           (map :local-name))
+                    as-or-warning
+                    (if (and as-local-name
+                             (contains? or-names-set as-local-name))
+                      [{:loc (better-loc loc as-local-name)
+                        :linter :unused-or-default
+                        :unused-or-default {}
+                        :msg (format "Name %s after :as is also in :or map of associative destructuring.  The default value in the :or will never be used."
+                                     as-local-name)}])
 
               ;; Warn about any keys in an :or map that are not
               ;; elsewhere in the _same_ map binding form's map.  For
@@ -1288,38 +1249,36 @@ warning, that contains the constant value."
 ;                  (println "    bound-local-names " bound-local-names)
 ;                  (println "    as-local-name " as-local-name)
 ;                  (flush))
-              unused-or-names (set/difference or-names-set
-                                              (conj (set bound-local-names)
-                                                    as-local-name))
-              unused-or-name-warnings
-              (map (fn [unused-or-name]
-                     {:loc (better-loc loc unused-or-name)
-                      :linter :unused-or-default
-                      :unused-or-default {}
-                      :msg (format "Name %s with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used."
-                                   unused-or-name)})
-                   unused-or-names)
-              sub-infos (map :nested-info map-sub-destructure)]
-          {:result true,
-           :local-names (concat (mapcat :local-names infos)
-                                (mapcat :local-names sub-infos)
-                                (if as-local-name
-                                  [(local-name-with-loc as-local-name loc)]
-                                  [])),
-           :warnings (concat as-or-warning unused-or-name-warnings
-                             (mapcat :warnings sub-infos))
-           :kind :map-binding-form})
+                    unused-or-names (set/difference or-names-set
+                                                    (conj (set bound-local-names)
+                                                          as-local-name))
+                    unused-or-name-warnings
+                    (map (fn [unused-or-name]
+                           {:loc (better-loc loc unused-or-name)
+                            :linter :unused-or-default
+                            :unused-or-default {}
+                            :msg (format "Name %s with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used."
+                                         unused-or-name)})
+                         unused-or-names)
+                    sub-infos (map :nested-info map-sub-destructure)]
+                {:result true,
+                 :local-names (concat (mapcat :local-names infos)
+                                      (mapcat :local-names sub-infos)
+                                      (if as-local-name
+                                        [(local-name-with-loc as-local-name loc)]
+                                        [])),
+                 :warnings (concat as-or-warning unused-or-name-warnings
+                                   (mapcat :warnings sub-infos))
+                 :kind :map-binding-form})
         ;; else
-        non-matching-info))
+              non-matching-info))
     ;; else
-    non-matching-info)
-
-        ]
+          non-matching-info)]
 ;;    (println "dbg map-binding-form-info x " x)
 ;;    (println "     ret " ret)
 ;;    (flush)
-    ret))
 
+    ret))
 
 (defn binding-form-info [x loc]
   (let [info (local-name-info x loc)]
@@ -1329,7 +1288,6 @@ warning, that contains the constant value."
         (if (:result info)
           info
           (map-binding-form-info x (better-loc loc x)))))))
-
 
 (defn dont-warn-for-symbol?
   "Return logical true for symbols in arg vectors that should never be
@@ -1343,7 +1301,6 @@ wish."
   [sym]
   (.startsWith (name sym) "_"))
 
-
 (defn duplicate-local-names [symbols]
   (->> symbols
        (group-by :local-name)
@@ -1354,40 +1311,38 @@ wish."
        ;; the first.
        (map second)))
 
-
 (defn duplicate-params [{:keys [asts]} opt]
   (let [arg-vecs (->> asts
                       (mapcat ast/nodes)
                       (mapcat arg-vecs-of-ast))]
     (doall
-    (apply concat
-     (for [arg-vec arg-vecs
-           :let [loc (meta arg-vec)]]
-       (let [{:keys [result local-names warnings] :as info}
-             (seq-binding-form-info arg-vec loc true)]
-         (if result
-           (let [
-;                 _ (do
+     (apply concat
+            (for [arg-vec arg-vecs
+                  :let [loc (meta arg-vec)]]
+              (let [{:keys [result local-names warnings] :as info}
+                    (seq-binding-form-info arg-vec loc true)]
+                (if result
+                  (let [;                 _ (do
 ;                     (println "dbg arg-vec " arg-vec)
 ;                     (println "dbg (type local-names):" (type local-names))
 ;                     (pp/pprint local-names)
 ;                     (flush))
-                 dups (->> (duplicate-local-names local-names)
-                           (remove #(dont-warn-for-symbol? (:local-name %))))]
-             (concat
-              (map (fn [dup]
-                     {:loc (:loc dup)
-                      :linter :duplicate-params
-                      :duplicate-params {}
-                      :msg (if (= (:source-name dup) (:local-name dup))
-                             (format "Local name `%s` occurs multiple times in the same argument vector"
-                                     (:source-name dup))
-                             (format "Local name `%s` (part of full name `%s`) occurs multiple times in the same argument vector"
-                                     (:local-name dup) (:source-name dup)))})
-                   dups)
-              warnings))
+                        dups (->> (duplicate-local-names local-names)
+                                  (remove #(dont-warn-for-symbol? (:local-name %))))]
+                    (concat
+                     (map (fn [dup]
+                            {:loc (:loc dup)
+                             :linter :duplicate-params
+                             :duplicate-params {}
+                             :msg (if (= (:source-name dup) (:local-name dup))
+                                    (format "Local name `%s` occurs multiple times in the same argument vector"
+                                            (:source-name dup))
+                                    (format "Local name `%s` (part of full name `%s`) occurs multiple times in the same argument vector"
+                                            (:local-name dup) (:source-name dup)))})
+                          dups)
+                     warnings))
            ;; else
-           [{:loc loc
-             :linter :duplicate-params
-             :duplicate-params {}
-             :msg (format "Unrecognized argument vector syntax %s" arg-vec)}])))))))
+                  [{:loc loc
+                    :linter :duplicate-params
+                    :duplicate-params {}
+                    :msg (format "Unrecognized argument vector syntax %s" arg-vec)}])))))))
