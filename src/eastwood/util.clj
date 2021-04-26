@@ -885,6 +885,7 @@ StringWriter."
   (reduce (fn [configs {:keys [linter] :as m}]
             (case linter
               (:constant-test :redefd-vars :unused-ret-vals
+                              :wrong-tag
                               :unused-ret-vals-in-try)
               (update-in configs [linter]
                          conj (dissoc m :linter))
@@ -933,7 +934,10 @@ StringWriter."
 
 (defn allow-warning-based-on-enclosing-macros [w linter suppress-desc
                                                suppress-conditions opt]
-  (let [ast (-> w linter :ast)
+  (let [ast (-> w
+                linter
+                :ast
+                (doto (assert "The given warning should provide an `:ast` under its linter key. Else this mechanism cannot work properly.")))
         ;; Don't bother calculating enclosing-macros if there are
         ;; no suppress-conditions to check, to save time.
         encl-macros (when (seq suppress-conditions)
@@ -975,12 +979,7 @@ StringWriter."
            w linter (format " for invocation of macro '%s'" macro-symbol)
            suppress-conditions opt)))
 
-      :constant-test
-      (let [suppress-conditions (get-in opt [:warning-enable-config linter])]
-        (allow-warning-based-on-enclosing-macros
-         w linter "" suppress-conditions opt))
-
-      (:unused-ret-vals :unused-ret-vals-in-try)
+      (:unused-ret-vals :unused-ret-vals-in-try :constant-test :wrong-tag)
       (let [suppress-conditions (get-in opt [:warning-enable-config linter])]
         (allow-warning-based-on-enclosing-macros
          w linter "" suppress-conditions opt)))))

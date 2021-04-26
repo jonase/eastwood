@@ -153,8 +153,8 @@ The ignored-faults must match ns (exactly) and file/column (exactly, but only if
                                  (assoc :namespaces #{'testcases.ignored-faults-example}
                                         :ignored-faults input)
                                  (eastwood.lint/eastwood)))
-      {}                                                                                {:some-warnings true}
-      {:implicit-dependencies {'testcases.ignored-faults-example true}}                 {:some-warnings false}
+      {}                                                                                  {:some-warnings true}
+      {:implicit-dependencies {'testcases.ignored-faults-example true}}                   {:some-warnings false}
       {:implicit-dependencies {'testcases.ignored-faults-example [{:line 4 :column 1}]}}  {:some-warnings false}
       {:implicit-dependencies {'testcases.ignored-faults-example [{:line 4 :column 99}]}} {:some-warnings true}
       {:implicit-dependencies {'testcases.ignored-faults-example [{:line 99 :column 1}]}} {:some-warnings true})))
@@ -168,3 +168,15 @@ The ignored-faults must match ns (exactly) and file/column (exactly, but only if
   (testing "Processing a vanilla defn where `^:test` is used results in no linter faults"
     (is (= {:some-warnings false}
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.test-metadata-example}))))))
+
+(deftest wrong-tag-disabling-test
+  (testing "The `:wrong-tag` linter can be selectively disabled via the `disable-warning` mechanism,
+relative to a specific macroexpansion"
+    (are [input expected] (= expected
+                             (-> eastwood.lint/default-opts
+                                 (assoc :namespaces #{'testcases.wrong-tag-example})
+                                 (merge input)
+                                 eastwood.lint/eastwood))
+      {}                                                          {:some-warnings true}
+      {:builtin-config-files ["disable_wrong_tag.clj"]}           {:some-warnings false}
+      {:builtin-config-files ["disable_wrong_tag_unrelated.clj"]} {:some-warnings true})))
