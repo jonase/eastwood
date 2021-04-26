@@ -1,5 +1,11 @@
 # Change log for Eastwood
 
+## Changes from 0.4.0 to 
+
+#### Bugfixes
+
+* Vanilla `defn`s having `:test` metadata don't result in false positives for the `:bad-arglists` linter anymore. 
+
 ## Changes from 0.3.14 to 0.4.0 
 
 #### New
