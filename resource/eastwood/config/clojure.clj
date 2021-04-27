@@ -68,3 +68,11 @@
    :function-symbol 'clojure.core/eduction
    :arglists-for-linting '([& xform])
    :reason "eduction takes a sequence of transducer with a collection as the last item"})
+
+(disable-warning
+ {:linter :suspicious-test
+  :if-inside-macroexpansion-of #{'clojure.test/are}
+  ;; only omit the warning if :suspicious-test failed due to a `true` value:
+  :qualifier true
+  :within-depth 9
+  :reason "Support a specific pattern that tends to fail better."})

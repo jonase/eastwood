@@ -257,7 +257,7 @@
 ;;                (println (format "  :op=%s" (:op lca-ast)))
 ;;                (println (format "  :form=%s" (:form lca-ast)))
 ;;                )
-            match (some #(util/meets-suppress-condition lca-ast encl-macros %)
+            match (some #(util/meets-suppress-condition lca-ast encl-macros :eastwood/unset %)
                         suppress-conditions)]
         ;; (if (and match (:debug-suppression opt))
         ;;   ((util/make-msg-cb :debug opt)

@@ -244,49 +244,55 @@
    ;;(println "Reading var-info.edn for :suspicious-test linter")
     (edn/read-string (slurp (io/resource "var-info.edn")))))
 
-(defn predicate-forms [subexpr-maps form-type]
-  (let [var-info-map @var-info-map-delayed]
-    (apply
-     concat
-     (for [{:keys [subexpr ast]} subexpr-maps
-           :let [f subexpr]]
-       (cond
-         (and (not (list? f))
-              (constant-expr? f))
-         [(let [meta-loc (-> f meta)
-                loc (or (pass/has-code-loc? meta-loc)
-                        (pass/code-loc (pass/nearest-ast-with-loc ast)))]
-            {:loc loc :linter :suspicious-test,
-             :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
-                          (cond (-> meta-loc :line) ""
-                                (string? f) (str " \"" f "\"")
-                                :else (str " " f))
-                          (if f (.getName (class f)) "nil") form-type)})]
+(defn predicate-forms [opt subexpr-maps form-type]
+  (let [var-info-map @var-info-map-delayed
+        result (for [{:keys [subexpr ast]} subexpr-maps
+                     :let [f subexpr]]
+                 (cond
+                   (and (not (list? f))
+                        (constant-expr? f))
+                   (let [meta-loc (-> f meta)
+                         loc (or (pass/has-code-loc? meta-loc)
+                                 (pass/code-loc (pass/nearest-ast-with-loc ast)))
+                         warning {:loc loc
+                                  :linter :suspicious-test
+                                  :suspicious-test {:ast ast}
+                                  :qualifier f
+                                  :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
+                                               (cond (-> meta-loc :line) ""
+                                                     (string? f) (str " \"" f "\"")
+                                                     :else (str " " f))
+                                               (if f (.getName (class f)) "nil") form-type)}]
+                     (when (util/allow-warning warning opt)
+                       [warning]))
 
-         (sequential? f)
-         (let [ff (first f)
-               cc-sym (and ff
-                           (instance? clojure.lang.Named ff)
-                           (symbol "clojure.core" (name ff)))
-               var-info (and cc-sym (var-info-map cc-sym))
+                   (sequential? f)
+                   (let [ff (first f)
+                         cc-sym (and ff
+                                     (instance? clojure.lang.Named ff)
+                                     (symbol "clojure.core" (name ff)))
+                         var-info (and cc-sym (var-info-map cc-sym))
 ;;              _ (println (format "dbx: predicate-forms ff=%s cc-sym=%s var-info=%s"
 ;;                                 ff cc-sym var-info))
-               loc (-> ff meta)]
-           (cond
-             (and var-info (get var-info :predicate))
-             [{:loc loc
-               :linter :suspicious-test,
-               :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
-                            ff form-type ff)}]
+                         loc (-> ff meta)]
+                     (cond
+                       (and var-info (get var-info :predicate))
+                       [{:loc loc
+                         :linter :suspicious-test,
+                         :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
+                                      ff form-type ff)}]
 
-             (and var-info (get var-info :pure-fn))
-             [{:loc loc
-               :linter :suspicious-test,
-               :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
-                            ff form-type)}]
+                       (and var-info (get var-info :pure-fn))
+                       [{:loc loc
+                         :linter :suspicious-test,
+                         :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
+                                      ff form-type)}]
 
-             :else nil))
-         :else nil)))))
+                       :else nil))
+                   :else nil))]
+    (->> result
+         (keep identity)
+         (apply concat))))
 
 ;; suspicious-test used to do its job only examining source forms, but
 ;; now it goes through the forms on the :raw-forms lists of the AST
@@ -346,8 +352,8 @@
 
         pr-is-formasts pr-first-is-formasts]
     (concat (suspicious-is-forms pr-is-formasts)
-            (predicate-forms pr-deftest-subexprs 'deftest)
-            (predicate-forms pr-testing-subexprs 'testing))))
+            (predicate-forms opt pr-deftest-subexprs 'deftest)
+            (predicate-forms opt pr-testing-subexprs 'testing))))
 
 ;; Suspicious macro invocations.  Any macros in clojure.core that can
 ;; have 'trivial' expansions are included here, if it can be

@@ -885,7 +885,7 @@ StringWriter."
   (reduce (fn [configs {:keys [linter] :as m}]
             (case linter
               (:constant-test :redefd-vars :unused-ret-vals
-                              :wrong-tag
+                              :wrong-tag :suspicious-test
                               :unused-ret-vals-in-try)
               (update-in configs [linter]
                          conj (dissoc m :linter))
@@ -920,17 +920,19 @@ StringWriter."
           (pst e nil))))
     (process-configs @warning-enable-config-atom)))
 
-(defn meets-suppress-condition [ast enclosing-macros condition]
-  (let [macro-set (:if-inside-macroexpansion-of condition)
-        depth (:within-depth condition)
-        enclosing-macros (if (number? depth)
-                           (take depth enclosing-macros)
-                           enclosing-macros)]
-    (some (fn [m]
-            (when (macro-set (:macro m))
-              {:matching-condition condition
-               :matching-macro (:macro m)}))
-          enclosing-macros)))
+(defn meets-suppress-condition [ast enclosing-macros qualifier condition]
+  (when (or (= qualifier :eastwood/unset) ;; `nil` can be a qualifier value, so :eastwood/unset conveys an absent value
+            (= qualifier (:qualifier condition)))
+    (let [macro-set (:if-inside-macroexpansion-of condition)
+          depth (:within-depth condition)
+          enclosing-macros (if (number? depth)
+                             (take depth enclosing-macros)
+                             enclosing-macros)]
+      (some (fn [m]
+              (when (macro-set (:macro m))
+                {:matching-condition condition
+                 :matching-macro (:macro m)}))
+            enclosing-macros))))
 
 (defn allow-warning-based-on-enclosing-macros [w linter suppress-desc
                                                suppress-conditions opt]
@@ -942,7 +944,10 @@ StringWriter."
         ;; no suppress-conditions to check, to save time.
         encl-macros (when (seq suppress-conditions)
                       (enclosing-macros ast))
-        match (some #(meets-suppress-condition ast encl-macros %)
+        match (some #(meets-suppress-condition ast
+                                               encl-macros
+                                               (:qualifier w :eastwood/unset)
+                                               %)
                     suppress-conditions)]
     (when (and match (:debug-suppression opt))
       ((make-msg-cb :debug opt)
@@ -979,7 +984,7 @@ StringWriter."
            w linter (format " for invocation of macro '%s'" macro-symbol)
            suppress-conditions opt)))
 
-      (:unused-ret-vals :unused-ret-vals-in-try :constant-test :wrong-tag)
+      (:unused-ret-vals :unused-ret-vals-in-try :constant-test :wrong-tag :suspicious-test)
       (let [suppress-conditions (get-in opt [:warning-enable-config linter])]
         (allow-warning-based-on-enclosing-macros
          w linter "" suppress-conditions opt)))))

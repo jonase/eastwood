@@ -8,8 +8,9 @@
     (are [f input expected] (let [result (f input)]
                               (is (= result input)
                                   "Applying `f` should return an equivalent object (even after removing metadata)")
-                              (= expected
-                                 (-> result second meta :const)))
+                              (is (= expected
+                                     (-> result second meta :const)))
+                              true)
       identity    '(defn ^:const foo) true
       sut/cleanup '(defn ^:const foo) nil
       sut/cleanup '(defn foo)         nil)))
