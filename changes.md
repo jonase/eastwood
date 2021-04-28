@@ -11,6 +11,10 @@
 
 #### Bugfixes
 
+* Fix false positive `suspicious-expression` for `clojure.test/is`
+  * Fixes https://github.com/jonase/eastwood/issues/207
+* Support `clojure.test/assert-expr` better
+  * Fixes https://github.com/jonase/eastwood/issues/313
 * Vanilla `defn`s having `:test` metadata don't result in false positives for the `:bad-arglists` linter anymore. 
 
 ## Changes from 0.3.14 to 0.4.0 

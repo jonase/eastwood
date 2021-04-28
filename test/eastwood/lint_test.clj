@@ -203,3 +203,8 @@ relative to a specific macroexpansion"
 
     "only `true` is deemed an apt :qualifier value"
     #{'testcases.are-true.red-three} {:some-warnings true}))
+
+(deftest clojure-test-test
+  (testing "Some reported false positives against clojure.test"
+    (is (= {:some-warnings false}
+           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.clojure-test}))))))

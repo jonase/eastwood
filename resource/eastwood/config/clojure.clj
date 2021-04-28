@@ -53,6 +53,12 @@
 
 (disable-warning
  {:linter :constant-test
+  :if-inside-macroexpansion-of #{'clojure.test/is}
+  :within-depth 2
+  :reason "`is` can contain arbitrary exprs that are \"constant-looking\". They typically intend to exercise a predicate."})
+
+(disable-warning
+ {:linter :constant-test
   :if-inside-macroexpansion-of #{'clojure.core/cond-> 'clojure.core/cond->>}
   :within-depth 2
   :reason "Allow cond-> and cond->> to have constant tests without warning"})

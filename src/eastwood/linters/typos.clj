@@ -692,7 +692,7 @@
                                     :init  ; in :op :binding
                                     :args  ; in :op :invoke for clojure.core/list
                                     )
-                num-args (count fn-args-ast-vec)
+                num-args (some-> fn-args-ast-vec count)
                 fn-var (-> let-bindings-ast
                            second  ; in vector of 2 bindings
                            :init   ; in :op :binding
@@ -726,7 +726,8 @@
 ;;                    (println (format "    loc=%s" loc))
 ;;                    )
                 ]
-          :when (contains? suspicious-args num-args)]
+          :when (and num-args
+                     (contains? suspicious-args num-args))]
       {:loc loc
        :linter :suspicious-expression
        :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
