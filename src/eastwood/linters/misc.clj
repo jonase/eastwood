@@ -692,7 +692,8 @@
                                        (maybe-unwrap-quote
                                         (-> a :meta :val :arglists))
                                  ;; see case 2 notes above
-                                       (and (contains? (-> a :meta) :keys)
+                                       (and (not (-> a :var meta :arglists))
+                                            (contains? (-> a :meta) :keys)
                                             (->> (-> a :meta :keys)
                                                  (some #(= :test (get % :val)))))
                                        [[]]
