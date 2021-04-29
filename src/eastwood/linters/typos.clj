@@ -959,7 +959,7 @@ warning, that contains the constant value."
                          (count matching-assert-asts)
                          (pr-str condition-form)))))))
 
-(defn wrong-pre-post-messages [kind conditions method-num ast
+(defn wrong-pre-post-messages [opt kind conditions method-num ast
                                condition-desc-begin condition-desc-middle]
 ;;  (println (format "dbg wrong-pre-post-messages: kind=%s method-num=%s conditions=%s (vector? conditions)=%s (class conditions)=%s"
 ;;                   kind method-num conditions
@@ -1005,9 +1005,10 @@ warning, that contains the constant value."
                 nil
 
                 :else
-                (println (format "dbg wrong-pre-post: condition=%s line=%d test-ast :op=%s"
-                                 condition (:line (meta conditions))
-                                 (:op test-ast))))))))
+                (when (util/debug? :forms opt)
+                  (println (format "dbg wrong-pre-post: condition=%s line=%d test-ast :op=%s"
+                                   condition (:line (meta conditions))
+                                   (:op test-ast)))))))))
 ;;)
 
 (defn wrong-pre-post [{:keys [asts]} opt]
@@ -1018,7 +1019,8 @@ warning, that contains the constant value."
      (for [{:keys [ast form name pre method-num]} fns-with-pre-post
            :when pre
            :let [loc (meta pre)
-                 msgs (wrong-pre-post-messages :precondition pre
+                 msgs (wrong-pre-post-messages opt
+                                               :precondition pre
                                                method-num ast
                                                "Precondition"
                                                "preconditions")]
@@ -1030,7 +1032,8 @@ warning, that contains the constant value."
      (for [{:keys [ast form name post method-num]} fns-with-pre-post
            :when post
            :let [loc (meta post)
-                 msgs (wrong-pre-post-messages :postcondition post
+                 msgs (wrong-pre-post-messages opt
+                                               :postcondition post
                                                method-num ast
                                                "Postcondition"
                                                "postconditions")]

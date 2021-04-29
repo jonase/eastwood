@@ -2,6 +2,11 @@
 
 ## Changes from 0.4.0 to 
 
+#### New
+
+* Now the `:wrong-tag` linter can also be configured via the [`disable-warning`](https://github.com/jonase/eastwood#eastwood-config-files) mechanism.
+  * Related: the `disable-warnings` that Eastwood ships by default now prevent false positives against the [speced.def](https://github.com/nedap/speced.def) lib. 
+
 #### Bugfixes
 
 * Vanilla `defn`s having `:test` metadata don't result in false positives for the `:bad-arglists` linter anymore. 

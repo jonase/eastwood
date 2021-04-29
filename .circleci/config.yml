@@ -40,7 +40,7 @@ jobs:
       - run:
           name: Fetch dependencies
           command: |
-            lein deps
+            lein with-profile +test,+test-3rd-party-deps, deps
             
       - save_cache:
           paths:
@@ -60,8 +60,40 @@ jobs:
           command:  git clean -fdx
                   
       - run:
-          name: Run test suite
+          name: Run normal test suite
           command: lein with-profile -user,-dev,+test,+warn-on-reflection,+<< parameters.clojure-version >> do clean, test
+      
+  test_third_party_deps:
+    parameters:
+      executor:
+        type: executor
+      clojure-version:
+        type: string
+    executor: << parameters.executor >>
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "project.clj" }}
+
+      - run:
+          name: Fetch dependencies
+          command: |
+            lein with-profile +test,+test-3rd-party-deps, deps
+            
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v1-dependencies-{{ checksum "project.clj" }}
+
+      - run:
+          name: Prevent any form of caching, for the next step
+          command:  git clean -fdx
+                  
+      - run:
+          name: Run test suite that exercises 3rd-party libs
+          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+test-3rd-party-deps,+<< parameters.clojure-version >> do clean, test
 
 workflows:
   default:
@@ -70,4 +102,12 @@ workflows:
           matrix:
             parameters:
               executor: [openjdk8, openjdk11]
-              clojure-version: ["1.7", "1.8", "1.9", "1.10.1", "1.10.2"]
+              clojure-version: ["1.7", "1.8", "1.9", "1.10.1", "1.10.2", "1.10.3"]
+      # the `test_third_party_deps` profile uses a separate matrix because the contained libs (especially the ones that use clojure.spec)
+      # don't target older versions.
+      - test_third_party_deps:
+          matrix:
+            parameters:
+              executor: [openjdk8, openjdk11]
+              # Run just the latest version. This saves resources trusts that the main test suite already exercises clojure compat sufficiently:
+              clojure-version: ["1.10.3"]

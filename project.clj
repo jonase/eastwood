@@ -17,16 +17,23 @@
                                   [jafingerhut/dolly "0.1.0"]]}
              :eastwood-plugin {:source-paths [~plugin-source-path]}
              :warn-on-reflection {:global-vars {*warn-on-reflection* true}}
-             :test {:dependencies [[commons-io "2.4" #_"Needed for issue-173-test"]]
+             :test {:dependencies
+                    ;; NOTE: please don't add non-essential 3rd-party deps here.
+                    ;; It is desirable to rest assured that the test suite does not depend on a third-party lib.
+                    ;; If you wish to exercise compatibility against a 3rd-party lib, use the `:test-3rd-party-deps` profile instead.
+                    [[commons-io "2.4" #_"Needed for issue-173-test"]]
                     :resource-paths ["test-resources"
                                      ;; if wanting the `cases` to be available during development / the default profile,
                                      ;; please simply add `with-profile +test` to your CLI invocation.
                                      "cases"]}
+             :test-3rd-party-deps {:test-paths ^:replace ["test-third-party-deps"]
+                                   :dependencies [[com.nedap.staffing-solutions/speced.def "2.0.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :1.10.1 {:dependencies [[org.clojure/clojure "1.10.1"]]}
-             :1.10.2 {:dependencies [[org.clojure/clojure "1.10.2"]]}}
+             :1.10.2 {:dependencies [[org.clojure/clojure "1.10.2"]]}
+             :1.10.3 {:dependencies [[org.clojure/clojure "1.10.3"]]}}
   :aliases {"test-all" ["with-profile"
                         ~(->> ["1.7" "1.8" "1.9" "1.10"]
                               (map (partial str "-user,-dev,+test,+warn-on-reflection,+"))

@@ -197,8 +197,7 @@
                          ([] [a b])]
 
                         [[hiccup.test.def/three-forms-extra]
-                         ([] [a] [a b])]
-                       )]
+                         ([] [a] [a b])])]
   ;; hiccup defelem's allow an optional first map argument
   (let [defelem-modified-arglists (concat arglist
                                           (map #(vec (cons 'attr-map? %))
@@ -310,3 +309,23 @@
   :if-inside-macroexpansion-of #{'slingshot.slingshot/try+}
   :within-depth 15
   :reason "slingshot.slingshot/try+ generates an (and ...) with one or more arguments. Suppress the 'and called with 1 args' warning."})
+
+(disable-warning
+ {:linter :constant-test
+  :for-macro 'clojure.core/if
+  :if-inside-macroexpansion-of '#{nedap.speced.def/defn
+                                  nedap.speced.def/defprotocol
+                                  nedap.speced.def/let
+                                  nedap.speced.def/letfn
+                                  nedap.speced.def/fn}
+  :within-depth 13
+  :reason "The emitted code emits an (if (class? x) ...) where x may be a class or a protocol. The result cannot be known at compile-time (especially as classes and protocols can be defined in runtime)."})
+
+(disable-warning
+ {:linter :wrong-tag
+  :if-inside-macroexpansion-of '#{nedap.speced.def/defn
+                                  nedap.speced.def/defprotocol
+                                  nedap.speced.def/let
+                                  nedap.speced.def/letfn
+                                  nedap.speced.def/fn}
+  :reason "The speced.def library uses an extended meaning for tag syntax."})

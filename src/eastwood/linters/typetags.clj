@@ -34,129 +34,132 @@ significance needed by the user."
   (some #(contains? ast %) keys-indicating-wrong-tag))
 
 (defn wrong-tag-from-analyzer [{:keys [asts]} opt]
-  (for [{:keys [op name form env] :as ast} (->> (mapcat ast/nodes asts)
-                                                (filter has-wrong-tag?))
-        :let [wrong-tag-keys (util/keys-in-map keys-indicating-wrong-tag ast)
-;;              _ (do
-;;                  (when wrong-tag-keys
-;;                    (println (format "jafinger-dbg1: op=%s name=%s wrong-tag-keys=%s"
-;;                                     op name wrong-tag-keys))))
-              [typ tag loc]
-              (cond (= wrong-tag-keys #{:eastwood/name-tag})
-                    [:wrong-tag-on-var (-> name meta :tag) env]
+  (keep identity (for [{:keys [op name form env] :as ast} (->> (mapcat ast/nodes asts)
+                                                               (filter has-wrong-tag?))
+                       :let [wrong-tag-keys (util/keys-in-map keys-indicating-wrong-tag ast)
+                             ;;              _ (do
+                             ;;                  (when wrong-tag-keys
+                             ;;                    (println (format "jafinger-dbg1: op=%s name=%s wrong-tag-keys=%s"
+                             ;;                                     op name wrong-tag-keys))))
+                             [typ tag loc]
+                             (cond (= wrong-tag-keys #{:eastwood/name-tag})
+                                   [:wrong-tag-on-var (-> name meta :tag) env]
 
-                    (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
-                         (= op :fn-method))
-                    (let [m (or (pass/has-code-loc? (meta form))
-                                (pass/code-loc (pass/nearest-ast-with-loc ast)))]
-                      [:fn-method (-> ast :eastwood/tag) m])
+                                   (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
+                                        (= op :fn-method))
+                                   (let [m (or (pass/has-code-loc? (meta form))
+                                               (pass/code-loc (pass/nearest-ast-with-loc ast)))]
+                                     [:fn-method (-> ast :eastwood/tag) m])
 
-                    ;; This set of wrong-tag-keys sometimes occurs for
-                    ;; op :local, but since those can be multiple
-                    ;; times, one for each use, I am hoping I can make
-                    ;; the warnings less redundant by restricting them
-                    ;; to the :binding ops (checked for below), and
-                    ;; still not lose any important warnings.
-                    ;; This can also occur for op :quote, but in the
-                    ;; case that I have seen this occur so far
-                    ;; (Prismatic's Schema library), the wrong tag was
-                    ;; also detected on other 'nearby' ASTs, so
-                    ;; ignoring the op :quote one seems to avoid
-                    ;; duplicate warnings while still reporting the
-                    ;; issue.
-                    (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
-                         (#{:local :quote} op))
-                    [nil nil nil]
+                                   ;; This set of wrong-tag-keys sometimes occurs for
+                                   ;; op :local, but since those can be multiple
+                                   ;; times, one for each use, I am hoping I can make
+                                   ;; the warnings less redundant by restricting them
+                                   ;; to the :binding ops (checked for below), and
+                                   ;; still not lose any important warnings.
+                                   ;; This can also occur for op :quote, but in the
+                                   ;; case that I have seen this occur so far
+                                   ;; (Prismatic's Schema library), the wrong tag was
+                                   ;; also detected on other 'nearby' ASTs, so
+                                   ;; ignoring the op :quote one seems to avoid
+                                   ;; duplicate warnings while still reporting the
+                                   ;; issue.
+                                   (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
+                                        (#{:local :quote} op))
+                                   [nil nil nil]
 
-                    ;; This started appearing with Clojure 1.8.0 due
-                    ;; to the :rettag changes.  See
-                    ;; eastwood.util/get-fn-in-def for some more
-                    ;; details of this change.
-                    (and (= wrong-tag-keys #{:eastwood/return-tag})
-                         (#{:with-meta} op))
-                    [nil nil nil]
+                                   ;; This started appearing with Clojure 1.8.0 due
+                                   ;; to the :rettag changes.  See
+                                   ;; eastwood.util/get-fn-in-def for some more
+                                   ;; details of this change.
+                                   (and (= wrong-tag-keys #{:eastwood/return-tag})
+                                        (#{:with-meta} op))
+                                   [nil nil nil]
 
-                    (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
-                         (= op :invoke))
-                    [:invoke (-> ast :tag) (meta form)]
+                                   (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
+                                        (= op :invoke))
+                                   [:invoke (-> ast :tag) (meta form)]
 
-                    (or (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
-                             (#{:binding :do} op))
-                        (and (= wrong-tag-keys #{:eastwood/tag})
-                             (#{:local :const :var} op)))
-                    [:tag (get ast :tag)
-                     (or (pass/has-code-loc? (meta form))
-                         (pass/code-loc (pass/nearest-ast-with-loc ast)))]
+                                   (or (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
+                                            (#{:binding :do} op))
+                                       (and (= wrong-tag-keys #{:eastwood/tag})
+                                            (#{:local :const :var} op)))
+                                   [:tag (get ast :tag)
+                                    (or (pass/has-code-loc? (meta form))
+                                        (pass/code-loc (pass/nearest-ast-with-loc ast)))]
 
-                    ;; So far I have only seen this case in ztellman's
-                    ;; byte-streams library, and the warnings from a
-                    ;; different case were more clear and closer to
-                    ;; the source of the problem.  At least for now,
-                    ;; don't issue warnings for this case.
-                    (and (= wrong-tag-keys #{:eastwood/o-tag})
-                         (#{:local} op))
-                    ;;[:tag (get ast :o-tag) (meta form)]
-                    [nil nil nil]
+                                   ;; So far I have only seen this case in ztellman's
+                                   ;; byte-streams library, and the warnings from a
+                                   ;; different case were more clear and closer to
+                                   ;; the source of the problem.  At least for now,
+                                   ;; don't issue warnings for this case.
+                                   (and (= wrong-tag-keys #{:eastwood/o-tag})
+                                        (#{:local} op))
+                                   ;;[:tag (get ast :o-tag) (meta form)]
+                                   [nil nil nil]
 
-                    (and (= wrong-tag-keys #{:eastwood/return-tag})
-                         (= op :var))
-                    [:var (get ast :return-tag) env]
+                                   (and (= wrong-tag-keys #{:eastwood/return-tag})
+                                        (= op :var))
+                                   [:var (get ast :return-tag) env]
 
-                    ;; I have seen this case for this form:
-                    ;; (def avlf1 (fn ^{:tag 'LinkedList} [coll] (java.util.LinkedList. coll)))
-                    ;; Without warning about this case, I believe one
-                    ;; of the other cases already issues a warning for
-                    ;; this.
-                    (and (= wrong-tag-keys #{:eastwood/return-tag})
-                         (or (#{:def :fn} op)
-                             (and (= :do op)
-                                  (= [] (:statements ast))
-                                  (= :fn (-> ast :ret :op)))))
-                    [nil nil nil]
-                    ;;[:var (get ast :return-tag) env]
+                                   ;; I have seen this case for this form:
+                                   ;; (def avlf1 (fn ^{:tag 'LinkedList} [coll] (java.util.LinkedList. coll)))
+                                   ;; Without warning about this case, I believe one
+                                   ;; of the other cases already issues a warning for
+                                   ;; this.
+                                   (and (= wrong-tag-keys #{:eastwood/return-tag})
+                                        (or (#{:def :fn} op)
+                                            (and (= :do op)
+                                                 (= [] (:statements ast))
+                                                 (= :fn (-> ast :ret :op)))))
+                                   [nil nil nil]
+                                   ;;[:var (get ast :return-tag) env]
 
-                    :else
-                    (do
-                      ;; Use this to help detect wrong-tag cases I may
-                      ;; be missing completely.
-                      (println (format "eastwood-dbg: wrong-tag-from-analyzer: op=%s name=%s wrong-tag-keys=%s env=%s ast="
-                                       op name wrong-tag-keys env))
-                      (util/pprint-ast-node ast)
-                      (flush)
-                      (assert false)
-                      [nil nil nil]))
-              _ (when (and typ (not (util/has-keys? loc #{:file :line :column})))
-                  (println (format "eastwood-dbg: wrong-tag-no-loc: op=%s name=%s wrong-tag-keys=%s typ=%s tag=%s loc=%s ast="
-                                   op name wrong-tag-keys
-                                   typ tag loc))
-                  (util/pprint-ast-node ast))
-;;              _ (do
-;;                  (println (format "jafinger-dbg2: typ=%s tag=%s loc=%s"
-;;                                   typ tag loc))
-;;                  )
-              ]
-        :when typ]
-    {:loc loc
-     :linter :wrong-tag
-     :msg
-     (case typ
-       :wrong-tag-on-var (format "Wrong tag: %s in def of Var: %s"
-                                 (replace-variable-tag-part (eval tag))
-                                 name)
-       :tag (format "Wrong tag: %s on form: %s"
-                    (replace-variable-tag-part tag)
-                    form)
-       :var (format "Wrong tag: %s for form: %s, probably where the Var %s was def'd in namespace %s"
-                    (replace-variable-tag-part tag)
-                    form
-                    (-> ast :var meta :name)
-                    (-> ast :var meta :ns))
-       :invoke (format "Tag: %s for return type of function %s should be Java class name (fully qualified if not in java.lang package).  It may be defined in another namespace."
-                       (replace-variable-tag-part tag)
-                       (-> form first))
-       :fn-method (format "Tag: %s for return type of function method: %s should be Java class name (fully qualified if not in java.lang package)"
-                          (replace-variable-tag-part tag)
-                          form))}))
+                                   :else
+                                   (do
+                                     ;; Use this to help detect wrong-tag cases I may
+                                     ;; be missing completely.
+                                     (println (format "eastwood-dbg: wrong-tag-from-analyzer: op=%s name=%s wrong-tag-keys=%s env=%s ast="
+                                                      op name wrong-tag-keys env))
+                                     (util/pprint-ast-node ast)
+                                     (flush)
+                                     (assert false)
+                                     [nil nil nil]))
+                             _ (when (and typ (not (util/has-keys? loc #{:file :line :column})))
+                                 (println (format "eastwood-dbg: wrong-tag-no-loc: op=%s name=%s wrong-tag-keys=%s typ=%s tag=%s loc=%s ast="
+                                                  op name wrong-tag-keys
+                                                  typ tag loc))
+                                 (util/pprint-ast-node ast))
+                             ;;              _ (do
+                             ;;                  (println (format "jafinger-dbg2: typ=%s tag=%s loc=%s"
+                             ;;                                   typ tag loc))
+                             ;;                  )
+                             ]
+                       :when typ]
+                   (let [warning {:loc loc
+                                  :linter :wrong-tag
+                                  :wrong-tag {:ast ast}
+                                  :msg
+                                  (case typ
+                                    :wrong-tag-on-var (format "Wrong tag: %s in def of Var: %s"
+                                                              (replace-variable-tag-part (eval tag))
+                                                              name)
+                                    :tag (format "Wrong tag: %s on form: %s"
+                                                 (replace-variable-tag-part tag)
+                                                 form)
+                                    :var (format "Wrong tag: %s for form: %s, probably where the Var %s was def'd in namespace %s"
+                                                 (replace-variable-tag-part tag)
+                                                 form
+                                                 (-> ast :var meta :name)
+                                                 (-> ast :var meta :ns))
+                                    :invoke (format "Tag: %s for return type of function %s should be Java class name (fully qualified if not in java.lang package).  It may be defined in another namespace."
+                                                    (replace-variable-tag-part tag)
+                                                    (-> form first))
+                                    :fn-method (format "Tag: %s for return type of function method: %s should be Java class name (fully qualified if not in java.lang package)"
+                                                       (replace-variable-tag-part tag)
+                                                       form))}]
+                     (when (util/allow-warning warning opt)
+                       warning)))))
 
 (defn fq-classname-to-class [cname-str]
   (try
