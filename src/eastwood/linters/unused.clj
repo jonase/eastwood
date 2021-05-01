@@ -428,76 +428,77 @@ discarded inside null: null'."
 
 (defn unused-ret-val-lint-result [stmt stmt-desc-str action fn-or-method
                                   location]
-  (let [stmt-in-try-body? (util/statement-in-try-body? stmt)
-        extra-msg (if stmt-in-try-body?
-                    " inside body of try"
-                    "")
-        form (:form stmt)
-        loc (or (pass/has-code-loc?
-                 (case stmt-desc-str
-                   "function call" (-> stmt :meta)
-                   "static method call" (-> stmt :form meta)))
-                (pass/code-loc (pass/nearest-ast-with-loc stmt)))
-        ;; If warning-unused-static had no info about method m, but
-        ;; its return type is void, that is a fairly sure sign that it
-        ;; is intended to be called for side effects.
-        action (if (and (= stmt-desc-str "static method call")
-                        (not
-                         (#{:side-effect :lazy-fn :pure-fn
-                            :pure-fn-if-fn-args-pure :warn-if-ret-val-unused}
-                          action)))
-                 (let [m (pass/get-method stmt)]
-                   ;; If pass/get-method could not determine the method,
-                   ;; do not give an unused-ret-val warning for it.  We
-                   ;; may at some point in the future wish to give a
-                   ;; warning that we could not determine which method
-                   ;; it is.
-                   (cond (not (instance? Method m)) :side-effect
-                         (pass/void-method? m) :side-effect
-                         :else :warn-if-ret-val-unused))
-                 action)
-        linter (case location
-                 :outside-try :unused-ret-vals
-                 :inside-try :unused-ret-vals-in-try)]
-    (if (or (and stmt-in-try-body?
-                 (= location :inside-try))
-            (and (not stmt-in-try-body?)
-                 (= location :outside-try)))
-      (case action
-        ;; No warning - function/method is intended to be called for
-        ;; its side effects, and ignoring the return value is normal.
-        :side-effect
-        nil
+  (when-not (util/in-thrown?-call? stmt)
+    (let [stmt-in-try-body? (util/statement-in-try-body? stmt)
+          extra-msg (if stmt-in-try-body?
+                      " inside body of try"
+                      "")
+          form (:form stmt)
+          loc (or (pass/has-code-loc?
+                   (case stmt-desc-str
+                     "function call" (-> stmt :meta)
+                     "static method call" (-> stmt :form meta)))
+                  (pass/code-loc (pass/nearest-ast-with-loc stmt)))
+          ;; If warning-unused-static had no info about method m, but
+          ;; its return type is void, that is a fairly sure sign that it
+          ;; is intended to be called for side effects.
+          action (if (and (= stmt-desc-str "static method call")
+                          (not
+                           (#{:side-effect :lazy-fn :pure-fn
+                              :pure-fn-if-fn-args-pure :warn-if-ret-val-unused}
+                            action)))
+                   (let [m (pass/get-method stmt)]
+                     ;; If pass/get-method could not determine the method,
+                     ;; do not give an unused-ret-val warning for it.  We
+                     ;; may at some point in the future wish to give a
+                     ;; warning that we could not determine which method
+                     ;; it is.
+                     (cond (not (instance? Method m)) :side-effect
+                           (pass/void-method? m) :side-effect
+                           :else :warn-if-ret-val-unused))
+                   action)
+          linter (case location
+                   :outside-try :unused-ret-vals
+                   :inside-try :unused-ret-vals-in-try)]
+      (if (or (and stmt-in-try-body?
+                   (= location :inside-try))
+              (and (not stmt-in-try-body?)
+                   (= location :outside-try)))
+        (case action
+          ;; No warning - function/method is intended to be called for
+          ;; its side effects, and ignoring the return value is normal.
+          :side-effect
+          nil
 
-        (:lazy-fn :pure-fn :pure-fn-if-fn-args-pure :warn-if-ret-val-unused)
-        {:loc loc
-         :linter linter
-         linter {:kind (:op stmt), :action action, :ast stmt}
-         :msg
-         (case action
-           :lazy-fn
-           (format "Lazy %s return value is discarded%s: %s"
-                   stmt-desc-str extra-msg form)
-           :pure-fn
-           (format "Pure %s return value is discarded%s: %s"
-                   stmt-desc-str extra-msg form)
-           :pure-fn-if-fn-args-pure
-           (format "Return value is discarded for a %s that only has side effects if the functions passed to it as args have side effects%s: %s"
-                   stmt-desc-str extra-msg form)
-           :warn-if-ret-val-unused
-           (format "Should use return value of %s, but it is discarded%s: %s"
-                   stmt-desc-str extra-msg form))}
+          (:lazy-fn :pure-fn :pure-fn-if-fn-args-pure :warn-if-ret-val-unused)
+          {:loc loc
+           :linter linter
+           linter {:kind (:op stmt), :action action, :ast stmt}
+           :msg
+           (case action
+             :lazy-fn
+             (format "Lazy %s return value is discarded%s: %s"
+                     stmt-desc-str extra-msg form)
+             :pure-fn
+             (format "Pure %s return value is discarded%s: %s"
+                     stmt-desc-str extra-msg form)
+             :pure-fn-if-fn-args-pure
+             (format "Return value is discarded for a %s that only has side effects if the functions passed to it as args have side effects%s: %s"
+                     stmt-desc-str extra-msg form)
+             :warn-if-ret-val-unused
+             (format "Should use return value of %s, but it is discarded%s: %s"
+                     stmt-desc-str extra-msg form))}
 
-        ;; default case, where we have no information about the type
-        ;; of function or method it is.  Note that for Clojure
-        ;; function invocations on functions that are not known,
-        ;; action will be nil here, and there will be no warning about
-        ;; them.
-        ;; TBD: Consider adding 'opts' to the API for all linters, so
-        ;; this linter can receive options for what to do in this
-        ;; case.
-        (if (= stmt-desc-str "static method call")
-          (debug-unknown-fn-methods fn-or-method stmt-desc-str stmt))))))
+          ;; default case, where we have no information about the type
+          ;; of function or method it is.  Note that for Clojure
+          ;; function invocations on functions that are not known,
+          ;; action will be nil here, and there will be no warning about
+          ;; them.
+          ;; TBD: Consider adding 'opts' to the API for all linters, so
+          ;; this linter can receive options for what to do in this
+          ;; case.
+          (if (= stmt-desc-str "static method call")
+            (debug-unknown-fn-methods fn-or-method stmt-desc-str stmt)))))))
 
 (defn op-desc [op]
   (case op

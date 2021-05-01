@@ -24,3 +24,28 @@
 ;; https://github.com/jonase/eastwood/issues/207
 (deftest b-test
   (is (instance? String (func +))))
+
+;; https://github.com/jonase/eastwood/issues/206
+(deftest a-test-singular
+  ;; a test with a single `is`
+  (is (thrown? Exception (compare [] 1))))
+
+;; https://github.com/jonase/eastwood/issues/206
+(deftest a-test-plural
+  ;; a test with multiple `is`es
+  (is (thrown? Exception (compare [] 1)))
+  (is (thrown? Exception (+ 2 3)))
+  (is (thrown? Exception (Long/parseLong "1"))))
+
+;; https://github.com/jonase/eastwood/issues/206
+(deftest a-test-are-1
+  (are [ex] (thrown? ex (+ 1 2))
+    Exception
+    Error))
+
+;; https://github.com/jonase/eastwood/issues/206
+(deftest a-test-are-2
+  (are [op] (thrown? Exception op)
+    (+ 3 2)
+    (Long/parseLong "31")
+    (compare [] 1)))
