@@ -6,6 +6,8 @@
 
 * Now the `:wrong-tag` linter can also be configured via the [`disable-warning`](https://github.com/jonase/eastwood#eastwood-config-files) mechanism.
   * Related: the `disable-warnings` that Eastwood ships by default now prevent false positives against the [speced.def](https://github.com/nedap/speced.def) lib. 
+* Now the `:suspicious-test` linter can also be configured via the [`disable-warning`](https://github.com/jonase/eastwood#eastwood-config-files) mechanism.
+  * Relatedly, a certain pattern of usage of the `clojure.test/are` macro now does not trigger a linter fault. 
 
 #### Bugfixes
 

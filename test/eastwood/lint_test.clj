@@ -84,11 +84,12 @@
   (let [valid-namespaces   (take 1 eastwood-src-namespaces)
         invalid-namespaces '[invalid.syntax]]
     (are [namespaces rethrow-exceptions? ok?] (testing [namespaces rethrow-exceptions?]
-                                                (try
-                                                  (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces namespaces :rethrow-exceptions? rethrow-exceptions?))
-                                                  ok?
-                                                  (catch Exception _
-                                                    (not ok?))))
+                                                (is (try
+                                                      (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces namespaces :rethrow-exceptions? rethrow-exceptions?))
+                                                      ok?
+                                                      (catch Exception _
+                                                        (not ok?))))
+                                                true)
       []                 false true
       []                 true  true
       invalid-namespaces false true
@@ -102,12 +103,14 @@
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.large-defprotocol}))))))
 
 (deftest ignore-fault?-test
-  (are [input expected] (= expected
-                           (sut/ignore-fault? input
-                                              {:warn-data {:namespace-sym 'some-ns
-                                                           :line 1
-                                                           :column 2
-                                                           :linter :some-linter}}))
+  (are [input expected] (testing input
+                          (is (= expected
+                                 (sut/ignore-fault? input
+                                                    {:warn-data {:namespace-sym 'some-ns
+                                                                 :line 1
+                                                                 :column 2
+                                                                 :linter :some-linter}})))
+                          true)
     nil                                                                        false
     {}                                                                         false
     {:some-linter {'some-ns true}}                                             true
@@ -180,3 +183,23 @@ relative to a specific macroexpansion"
       {}                                                          {:some-warnings true}
       {:builtin-config-files ["disable_wrong_tag.clj"]}           {:some-warnings false}
       {:builtin-config-files ["disable_wrong_tag_unrelated.clj"]} {:some-warnings true})))
+
+(deftest are-true-test
+  (are [desc input expected] (testing input
+                               (is (= expected
+                                      (-> eastwood.lint/default-opts
+                                          (assoc :namespaces input)
+                                          (eastwood.lint/eastwood)))
+                                   desc)
+                               true)
+    "Supports the \"true at tail position\" pattern for `are`"
+    #{'testcases.are-true.green}     {:some-warnings false}
+
+    "does not ruin `(is true)` detection"
+    #{'testcases.are-true.red-one}   {:some-warnings true}
+
+    "does not ruin an edge case"
+    #{'testcases.are-true.red-two}   {:some-warnings true}
+
+    "only `true` is deemed an apt :qualifier value"
+    #{'testcases.are-true.red-three} {:some-warnings true}))
