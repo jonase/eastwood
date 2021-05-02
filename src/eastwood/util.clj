@@ -655,37 +655,32 @@ pprint-meta instead."
                        thrown-form? (cons 'thrown?))))
                  x))
 
-(defn remove-unrelated-is-clauses [maybe-do-form candidate-is-clause]
-  (let [do? (and (sequential? maybe-do-form)
-                 (-> maybe-do-form first #{'do}))]
-    (cond->> maybe-do-form
-      do?
-      rest
-
-      do?
-      (filter #{candidate-is-clause})
-
-      do?
-      distinct ;; for `clojure.test/are`
-
-      do?
-      (cons 'do))))
+(defn remove-unrelated-is-clauses [do-form candidate-is-clause]
+  (->> do-form
+       rest
+       (filter #{candidate-is-clause})
+       (distinct) ;; for `clojure.test/are`
+       (cons 'do)))
 
 (defn in-thrown?
   "Is `statement-form` part of a `thrown?` (per clojure.test semantics) invoked in `ancestor-form`?"
   [statement-form ancestor-form]
   (let [t? (list 'thrown? statement-form)
         candidates #{(list 'is t?)
-                     (list 'clojure.test/is t?)}]
-    (->> candidates
-         (reduce (fn [v candidate]
-                   (if (= (list 'do candidate)
-                          (-> ancestor-form
-                              trim-thrown-form
-                              (remove-unrelated-is-clauses candidate)))
-                     (reduced true)
-                     v))
-                 false))))
+                     (list 'clojure.test/is t?)}
+        do? (and (sequential? ancestor-form)
+                 (-> ancestor-form first #{'do}))]
+    (if-not do?
+      false ;; performance optimization - avoid `walk`ing irrelevant forms
+      (->> candidates
+           (reduce (fn [v candidate]
+                     (if (= (list 'do candidate)
+                            (-> ancestor-form
+                                trim-thrown-form
+                                (remove-unrelated-is-clauses candidate)))
+                       (reduced true)
+                       v))
+                   false)))))
 
 (defn- mark-exprs-in-try-body-post [ast]
   (if-not (= :try (:op ast))

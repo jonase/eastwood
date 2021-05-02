@@ -428,6 +428,7 @@ discarded inside null: null'."
 
 (defn unused-ret-val-lint-result [stmt stmt-desc-str action fn-or-method
                                   location]
+   ;; if a given `stmt` is inside a clojure.test `thrown?` call, then nothing can be considered unused:
   (when-not (util/in-thrown?-call? stmt)
     (let [stmt-in-try-body? (util/statement-in-try-body? stmt)
           extra-msg (if stmt-in-try-body?
