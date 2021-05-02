@@ -523,8 +523,10 @@ Return value:
   (reporting/note reporter (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
                                    warning-count
                                    error-count))
-  {:some-warnings (or (> warning-count 0)
-                      (> error-count 0))})
+  (let [has-errors? (> error-count 0)]
+    {:some-warnings (or (> warning-count 0)
+                        has-errors?)
+     :some-errors has-errors?}))
 
 (defn eastwood
   ([opts] (eastwood opts (reporting/printing-reporter opts)))
@@ -554,7 +556,8 @@ Return value:
        (reporting/show-error reporter (or (ex-data e) e))
        (if rethrow-exceptions?
          (throw e)
-         {:some-warnings true})))))
+         {:some-warnings true
+          :some-errors true})))))
 
 (defn eastwood-from-cmdline [opts]
   (let [ret (eastwood opts)]

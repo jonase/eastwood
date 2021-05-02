@@ -99,7 +99,8 @@
 
 (deftest large-defprotocol-test
   (testing "A large defprotocol doesn't cause a 'Method code too large' exception"
-    (is (= {:some-warnings false}
+    (is (= {:some-warnings false
+            :some-errors false}
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.large-defprotocol}))))))
 
 (deftest ignore-fault?-test
@@ -151,7 +152,7 @@
 (deftest ignored-faults-test
   (testing "A ignored-faults can remove warnings.
 The ignored-faults must match ns (exactly) and file/column (exactly, but only if provided)"
-    (are [input expected] (= expected
+    (are [input expected] (= (assoc expected :some-errors false)
                              (-> eastwood.lint/default-opts
                                  (assoc :namespaces #{'testcases.ignored-faults-example}
                                         :ignored-faults input)
@@ -164,18 +165,20 @@ The ignored-faults must match ns (exactly) and file/column (exactly, but only if
 
 (deftest const-handling
   (testing "Processing a namespace where `^:const` is used results in no exceptions being thrown"
-    (is (= {:some-warnings false}
+    (is (= {:some-warnings false
+            :some-errors false}
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.const}))))))
 
 (deftest test-metadata-handling
   (testing "Processing a vanilla defn where `^:test` is used results in no linter faults"
-    (is (= {:some-warnings false}
+    (is (= {:some-warnings false
+            :some-errors false}
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.test-metadata-example}))))))
 
 (deftest wrong-tag-disabling-test
   (testing "The `:wrong-tag` linter can be selectively disabled via the `disable-warning` mechanism,
 relative to a specific macroexpansion"
-    (are [input expected] (= expected
+    (are [input expected] (= (assoc expected :some-errors false)
                              (-> eastwood.lint/default-opts
                                  (assoc :namespaces #{'testcases.wrong-tag-example})
                                  (merge input)
@@ -186,7 +189,7 @@ relative to a specific macroexpansion"
 
 (deftest are-true-test
   (are [desc input expected] (testing input
-                               (is (= expected
+                               (is (= (assoc expected :some-errors false)
                                       (-> eastwood.lint/default-opts
                                           (assoc :namespaces input)
                                           (eastwood.lint/eastwood)))
@@ -206,5 +209,6 @@ relative to a specific macroexpansion"
 
 (deftest clojure-test-test
   (testing "Some reported false positives against clojure.test"
-    (is (= {:some-warnings false}
+    (is (= {:some-warnings false
+            :some-errors false}
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.clojure-test}))))))
