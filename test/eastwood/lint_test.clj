@@ -10,6 +10,13 @@
   (:import
    (java.io File)))
 
+(when-not (System/getProperty "eastwood.internal.plugin-profile-active")
+  (let [p "eastwood.internal.running-test-suite"
+        v (System/getProperty p)]
+    (assert (= "true" v)
+            (format "The test suite should be running with the %s system property set, for extra test robustness"
+                    p))))
+
 (deftest expand-ns-keywords-test
   (testing ""
     (is (= ["foo" "bar" "baz"] (expand-ns-keywords {:source-paths ["foo"]} [:source-paths "bar" "baz"])))))

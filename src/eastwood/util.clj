@@ -969,8 +969,11 @@ StringWriter."
         (binding [*ns* (the-ns 'eastwood.util)]
           (load-reader (io/reader config-file)))
         (catch Exception e
-          (println (format "Exception while attempting to load config file: %s" config-file))
-          (pst e nil))))
+          (if (= "true" (System/getProperty "eastwood.internal.running-test-suite"))
+            (throw e)
+            (do
+              (println (format "Exception while attempting to load config file: %s" config-file))
+              (pst e nil))))))
     (process-configs @warning-enable-config-atom)))
 
 (defn meets-suppress-condition [ast enclosing-macros qualifier condition]
