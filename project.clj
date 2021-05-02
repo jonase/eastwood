@@ -15,7 +15,8 @@
                  [org.ow2.asm/asm-all "5.2"]]
   :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.5"]
                                   [jafingerhut/dolly "0.1.0"]]}
-             :eastwood-plugin {:source-paths [~plugin-source-path]}
+             :eastwood-plugin {:source-paths [~plugin-source-path]
+                               :jvm-opts ["-Deastwood.internal.plugin-profile-active=true"]}
              :warn-on-reflection {:global-vars {*warn-on-reflection* true}}
              :test {:dependencies
                     ;; NOTE: please don't add non-essential 3rd-party deps here.
@@ -25,9 +26,12 @@
                     :resource-paths ["test-resources"
                                      ;; if wanting the `cases` to be available during development / the default profile,
                                      ;; please simply add `with-profile +test` to your CLI invocation.
-                                     "cases"]}
+                                     "cases"]
+                    :jvm-opts ["-Deastwood.internal.running-test-suite=true"]}
              :test-3rd-party-deps {:test-paths ^:replace ["test-third-party-deps"]
-                                   :dependencies [[com.nedap.staffing-solutions/speced.def "2.0.0"]]}
+                                   :dependencies [[com.nedap.staffing-solutions/speced.def "2.0.0"]
+                                                  [com.taoensso/timbre "5.1.2"]
+                                                  [com.taoensso/tufte "2.2.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
