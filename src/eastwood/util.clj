@@ -939,6 +939,7 @@ StringWriter."
             (case linter
               (:constant-test :redefd-vars :unused-ret-vals
                               :wrong-tag :suspicious-test
+                              :unused-meta-on-macro
                               :unused-ret-vals-in-try)
               (update-in configs [linter]
                          conj (dissoc m :linter))
@@ -1037,7 +1038,7 @@ StringWriter."
            w linter (format " for invocation of macro '%s'" macro-symbol)
            suppress-conditions opt)))
 
-      (:unused-ret-vals :unused-ret-vals-in-try :constant-test :wrong-tag :suspicious-test)
+      (:unused-ret-vals :unused-ret-vals-in-try :constant-test :wrong-tag :suspicious-test :unused-meta-on-macro)
       (let [suppress-conditions (get-in opt [:warning-enable-config linter])]
         (allow-warning-based-on-enclosing-macros
          w linter "" suppress-conditions opt)))))

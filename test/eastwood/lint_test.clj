@@ -187,6 +187,18 @@ relative to a specific macroexpansion"
       {:builtin-config-files ["disable_wrong_tag.clj"]}           {:some-warnings false}
       {:builtin-config-files ["disable_wrong_tag_unrelated.clj"]} {:some-warnings true})))
 
+(deftest unused-meta-on-macro-disabling-test
+  (testing "The `:unused-meta-on-macro` linter can be selectively disabled via the `disable-warning` mechanism,
+relative to a specific macroexpansion"
+    (are [input expected] (= (assoc expected :some-errors false)
+                             (-> eastwood.lint/default-opts
+                                 (assoc :namespaces #{'testcases.wrong-meta-on-macro-example})
+                                 (merge input)
+                                 eastwood.lint/eastwood))
+      {}                                                                     {:some-warnings true}
+      {:builtin-config-files ["disable_unused_meta_on_macro.clj"]}           {:some-warnings false}
+      {:builtin-config-files ["disable_unused_meta_on_macro_unrelated.clj"]} {:some-warnings true})))
+
 (deftest are-true-test
   (are [desc input expected] (testing input
                                (is (= (assoc expected :some-errors false)
