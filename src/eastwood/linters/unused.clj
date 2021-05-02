@@ -624,58 +624,62 @@ discarded inside null: null'."
                            (mapcat ast/nodes)
                            (filter #(and (:raw-forms %)
                                          (-> % :raw-forms first meta))))]
-    (for [ast macro-invokes
-          :let [orig-form (-> ast :raw-forms first)
-                loc (-> orig-form meta)
-                ;; The ::resolved-op key was added recently to t.a(.j)
-                ;; libs to record the resolution of Var names in
-                ;; :raw-forms.
-                non-loc-meta-keys (-> (set (keys loc))
-                                      (set/difference #{:file :line :column
-                                                        :end-line :end-column
-                                                        :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op}))
-                resolved-macro-symbol (-> ast :raw-forms first
-                                          util/fqsym-of-raw-form)
-                removed-meta-keys
-                (cond (= :new (:op ast)) non-loc-meta-keys
+    (->> (for [ast macro-invokes
+               :let [orig-form (-> ast :raw-forms first)
+                     loc (-> orig-form meta)
+                     ;; The ::resolved-op key was added recently to t.a(.j)
+                     ;; libs to record the resolution of Var names in
+                     ;; :raw-forms.
+                     non-loc-meta-keys (-> (set (keys loc))
+                                           (set/difference #{:file :line :column
+                                                             :end-line :end-column
+                                                             :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op}))
+                     resolved-macro-symbol (-> ast :raw-forms first
+                                               util/fqsym-of-raw-form)
+                     removed-meta-keys
+                     (cond (= :new (:op ast)) non-loc-meta-keys
 
-                      (#{:instance-call :static-call
-                         :instance-field :static-field :host-interop} (:op ast))
-                      (disj non-loc-meta-keys :tag)
+                           (#{:instance-call :static-call
+                              :instance-field :static-field :host-interop} (:op ast))
+                           (disj non-loc-meta-keys :tag)
 
-                      ;; No metadata is removed for invocations of
-                      ;; clojure.core/fn -- It is implemented
-                      ;; specially to do this by examining the
-                      ;; metadata of its &form argument.
-                      (= resolved-macro-symbol 'clojure.core/fn) []
+                           ;; No metadata is removed for invocations of
+                           ;; clojure.core/fn -- It is implemented
+                           ;; specially to do this by examining the
+                           ;; metadata of its &form argument.
+                           (= resolved-macro-symbol 'clojure.core/fn) []
 
-                      :else non-loc-meta-keys)
+                           :else non-loc-meta-keys)
 
-                sorted-removed-meta-keys (sort removed-meta-keys)]
-          :when (seq removed-meta-keys)]
+                     sorted-removed-meta-keys (sort removed-meta-keys)]
+               :when (seq removed-meta-keys)
+               :let [warning {:loc loc
+                              :linter :unused-meta-on-macro
+                              :unused-meta-on-macro {:ast ast}
+                              :msg
+                              (cond
+                                (= :new (:op ast))
+                                (format "Java constructor call '%s' has metadata with keys %s.  All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure."
+                                        (first orig-form)
+                                        sorted-removed-meta-keys)
 
-      {:loc loc
-       :linter :unused-meta-on-macro
-       :msg
-       (cond
-         (= :new (:op ast))
-         (format "Java constructor call '%s' has metadata with keys %s.  All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure."
-                 (first orig-form)
-                 sorted-removed-meta-keys)
+                                (#{:instance-call :static-call :instance-field :static-field
+                                   :host-interop} (:op ast))
+                                (format "Java %s '%s' has metadata with keys %s.  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure."
+                                        (case (:op ast)
+                                          :instance-call "instance method call"
+                                          :static-call "static method call"
+                                          :instance-field "instance field access"
+                                          :static-field "static field access"
+                                          :host-interop "instance method/field access")
+                                        (first orig-form)
+                                        sorted-removed-meta-keys)
 
-         (#{:instance-call :static-call :instance-field :static-field
-            :host-interop} (:op ast))
-         (format "Java %s '%s' has metadata with keys %s.  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure."
-                 (case (:op ast)
-                   :instance-call "instance method call"
-                   :static-call "static method call"
-                   :instance-field "instance field access"
-                   :static-field "static field access"
-                   :host-interop "instance method/field access")
-                 (first orig-form)
-                 sorted-removed-meta-keys)
+                                :else
+                                (format "Macro invocation of '%s' has metadata with keys %s that are almost certainly ignored."
+                                        (first orig-form)
+                                        sorted-removed-meta-keys))}]
+               :when (util/allow-warning warning opt)]
+           warning)
 
-         :else
-         (format "Macro invocation of '%s' has metadata with keys %s that are almost certainly ignored."
-                 (first orig-form)
-                 sorted-removed-meta-keys))})))
+         (filter identity))))
