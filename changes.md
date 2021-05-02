@@ -11,6 +11,8 @@
 
 #### Bugfixes
 
+* Fix false positive `unused-ret-vals-in-try` for `clojure.test` 
+  * Fixes https://github.com/jonase/eastwood/issues/206
 * Fix false positive `suspicious-expression` for `clojure.test/is`
   * Fixes https://github.com/jonase/eastwood/issues/207
 * Support `clojure.test/assert-expr` better

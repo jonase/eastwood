@@ -35,7 +35,7 @@
              :1.10.2 {:dependencies [[org.clojure/clojure "1.10.2"]]}
              :1.10.3 {:dependencies [[org.clojure/clojure "1.10.3"]]}}
   :aliases {"test-all" ["with-profile"
-                        ~(->> ["1.7" "1.8" "1.9" "1.10"]
+                        ~(->> ["1.7" "1.8" "1.9" "1.10.1" "1.10.2" "1.10.3"]
                               (map (partial str "-user,-dev,+test,+warn-on-reflection,+"))
                               (clojure.string/join ":"))
                         "test"]}

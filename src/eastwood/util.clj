@@ -4,6 +4,7 @@
    [clojure.pprint :as pp]
    [clojure.repl :as repl]
    [clojure.set :as set]
+   [clojure.walk :as walk]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
    [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
    [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as reader-types])
@@ -643,6 +644,44 @@ pprint-meta instead."
                        stmts)))
     ast))
 
+(defn trim-thrown-form
+  "Given a `(thrown? Exception ...)`, removes the `Exception` symbol, for making `=` comparisons simpler."
+  [x]
+  (walk/postwalk (fn [form]
+                   (let [thrown-form? (and (sequential? form)
+                                           (-> form first #{'thrown?}))]
+                     (cond->> form
+                       thrown-form? (drop 2)
+                       thrown-form? (cons 'thrown?))))
+                 x))
+
+(defn remove-unrelated-is-clauses [do-form candidate-is-clause]
+  (->> do-form
+       rest
+       (filter #{candidate-is-clause})
+       (distinct) ;; for `clojure.test/are`
+       (cons 'do)))
+
+(defn in-thrown?
+  "Is `statement-form` part of a `thrown?` (per clojure.test semantics) invoked in `ancestor-form`?"
+  [statement-form ancestor-form]
+  (let [t? (list 'thrown? statement-form)
+        candidates #{(list 'is t?)
+                     (list 'clojure.test/is t?)}
+        do? (and (sequential? ancestor-form)
+                 (-> ancestor-form first #{'do}))]
+    (if-not do?
+      false ;; performance optimization - avoid `walk`ing irrelevant forms
+      (->> candidates
+           (reduce (fn [v candidate]
+                     (if (= (list 'do candidate)
+                            (-> ancestor-form
+                                trim-thrown-form
+                                (remove-unrelated-is-clauses candidate)))
+                       (reduced true)
+                       v))
+                   false)))))
+
 (defn- mark-exprs-in-try-body-post [ast]
   (if-not (= :try (:op ast))
     ast
@@ -669,7 +708,16 @@ pprint-meta instead."
                         ast)
                       (update-in ast [:body :statements]
                                  (fn [stmts]
-                                   (mapv #(assoc % :eastwood/unused-ret-val-expr-in-try-body true)
+                                   (mapv (fn [m]
+                                           (let [statement-form (-> m :raw-forms first)]
+                                             (cond-> m
+                                               true
+                                               (assoc :eastwood/unused-ret-val-expr-in-try-body true)
+
+                                               (and
+                                                (sequential? statement-form)
+                                                (->> m :eastwood/ancestors (map :form) (some (partial in-thrown? statement-form))))
+                                               (assoc :eastwood/in-thrown?-call true))))
                                          stmts))))
                   ;; Mark the return expression
                 ast (if-not (some #{:ret} (:children body))
@@ -710,6 +758,11 @@ of these kind."
 
 (defn ret-expr-in-try-body? [ast]
   (contains? ast :eastwood/used-ret-val-expr-in-try-body))
+
+(defn in-thrown?-call?
+  "Is `ast` within a clojure.test (thrown?) call?"
+  [ast]
+  (contains? ast :eastwood/in-thrown?-call))
 
 (defn expr-in-try-body? [ast]
   (or (statement-in-try-body? ast)
