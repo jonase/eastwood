@@ -29,7 +29,9 @@
                                      "cases"]
                     :jvm-opts ["-Deastwood.internal.running-test-suite=true"]}
              :test-3rd-party-deps {:test-paths ^:replace ["test-third-party-deps"]
-                                   :dependencies [[com.nedap.staffing-solutions/speced.def "2.0.0"]]}
+                                   :dependencies [[com.nedap.staffing-solutions/speced.def "2.0.0"]
+                                                  [com.taoensso/timbre "5.1.2"]
+                                                  [com.taoensso/tufte "2.2.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
