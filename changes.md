@@ -1,6 +1,6 @@
 # Change log for Eastwood
 
-## Changes from 0.4.0 to 
+## Changes from 0.4.0 to 0.4.1
 
 #### New
 
