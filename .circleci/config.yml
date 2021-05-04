@@ -217,7 +217,7 @@ workflows:
           matrix:
             parameters:
               executor: [openjdk8, openjdk11]
-              clojure-version: ["1.10.3"] #["1.7", "1.8", "1.9", "1.10.1", "1.10.2", "1.10.3"]
+              clojure-version: ["1.7", "1.8", "1.9", "1.10.1", "1.10.2", "1.10.3"]
       # the `test_third_party_deps` profile uses a separate matrix because the contained libs (especially the ones that use clojure.spec)
       # don't target older versions.
       - test_third_party_deps:
@@ -230,6 +230,7 @@ workflows:
       - deploy:
           requires:
             - test
+            - test_third_party_deps
           filters:
             tags:
               only: /Release-.*/
