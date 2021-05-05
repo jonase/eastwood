@@ -190,11 +190,11 @@ jobs:
             chmod 0700 "$GNUPGHOME"
 
             if [ -n "$GPG_KEY" ]; then
-	      echo "$GPG_KEY" \
-                 | base64 --decode --ignore-garbage \
-                 | gpg --batch --allow-secret-key-import --import
+               echo "$GPG_KEY" \
+                    | base64 --decode --ignore-garbage \
+                    | gpg --batch --allow-secret-key-import --import
 
-                 gpg --keyid-format LONG --list-secret-keys
+                    gpg --keyid-format LONG --list-secret-keys
             fi
 
       - save_cache:
