@@ -189,11 +189,13 @@ jobs:
             mkdir -p "$GNUPGHOME"
             chmod 0700 "$GNUPGHOME"
 
-              echo "$GPG_KEY" \
-               | base64 --decode --ignore-garbage \
-               | gpg --batch --allow-secret-key-import --import
+            if [ -n "$GPG_KEY" ]; then
+	      echo "$GPG_KEY" \
+                 | base64 --decode --ignore-garbage \
+                 | gpg --batch --allow-secret-key-import --import
 
-               gpg --keyid-format LONG --list-secret-keys
+                 gpg --keyid-format LONG --list-secret-keys
+            fi
 
       - save_cache:
           paths:
@@ -205,7 +207,9 @@ jobs:
            GPG_TTY=$(tty)
            export GPG_TTY
            echo $GPG_TTY
-           ./circle-maybe-deploy.bb lein with-profile -dev,+eastwood-plugin deploy clojars
+	   if [ -n "$GPG_KEY" ]; then
+              ./circle-maybe-deploy.bb lein with-profile -dev,+eastwood-plugin deploy clojars
+           fi
 
 workflows:
   default:
