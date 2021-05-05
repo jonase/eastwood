@@ -3,7 +3,7 @@
 
 (def plugin-source-path "lein-eastwood")
 
-(defproject jonase/eastwood "0.4.2"
+(defproject jonase/eastwood "0.4.2-SNAPSHOT"
   :description "A Clojure lint tool"
   :url "https://github.com/jonase/eastwood"
   :license {:name "Eclipse Public License"
