@@ -207,7 +207,7 @@ jobs:
            GPG_TTY=$(tty)
            export GPG_TTY
            echo $GPG_TTY
-	   if [ -n "$GPG_KEY" ]; then
+           if [ -n "$GPG_KEY" ]; then
               ./circle-maybe-deploy.bb lein with-profile -dev,+eastwood-plugin deploy clojars
            fi
 
