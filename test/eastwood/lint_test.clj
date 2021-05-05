@@ -1,5 +1,6 @@
 (ns eastwood.lint-test
   (:require
+   [clojure.string :as string]
    [clojure.test :refer :all]
    [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
@@ -90,19 +91,31 @@
 (deftest exceptions-test
   (let [valid-namespaces   (take 1 eastwood-src-namespaces)
         invalid-namespaces '[invalid.syntax]]
-    (are [namespaces rethrow-exceptions? ok?] (testing [namespaces rethrow-exceptions?]
-                                                (is (try
-                                                      (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces namespaces :rethrow-exceptions? rethrow-exceptions?))
-                                                      ok?
-                                                      (catch Exception _
-                                                        (not ok?))))
-                                                true)
-      []                 false true
-      []                 true  true
-      invalid-namespaces false true
-      invalid-namespaces true  false
-      valid-namespaces   true  true
-      valid-namespaces   false true)))
+
+    (testing "Reader-level exceptions are reported as such"
+      (is (= {:some-warnings true :some-errors true}
+             (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces invalid-namespaces)))))
+
+    (testing "Reader-level exceptions are reported as such"
+      (is (string/includes? (with-out-str
+                              (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces invalid-namespaces)))
+                            "Warnings: 0 (not including reflection warnings)  Exceptions thrown: 1")))
+
+    (testing "`:rethrow-exceptions?` option"
+      (are [namespaces rethrow-exceptions? ok?] (testing [namespaces rethrow-exceptions?]
+                                                  (is (try
+                                                        (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces namespaces :rethrow-exceptions? rethrow-exceptions?))
+                                                        ok?
+                                                        (catch Exception _
+                                                          (not ok?))))
+                                                  true)
+        #_namespaces       #_rethrow-exceptions? #_ok?
+        []                 false                 true
+        []                 true                  true
+        invalid-namespaces false                 true
+        invalid-namespaces true                  false
+        valid-namespaces   true                  true
+        valid-namespaces   false                 true))))
 
 (deftest large-defprotocol-test
   (testing "A large defprotocol doesn't cause a 'Method code too large' exception"
@@ -159,11 +172,13 @@
 (deftest ignored-faults-test
   (testing "A ignored-faults can remove warnings.
 The ignored-faults must match ns (exactly) and file/column (exactly, but only if provided)"
-    (are [input expected] (= (assoc expected :some-errors false)
-                             (-> eastwood.lint/default-opts
-                                 (assoc :namespaces #{'testcases.ignored-faults-example}
-                                        :ignored-faults input)
-                                 (eastwood.lint/eastwood)))
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> eastwood.lint/default-opts
+                                       (assoc :namespaces #{'testcases.ignored-faults-example}
+                                              :ignored-faults input)
+                                       (eastwood.lint/eastwood))))
+                            true)
       {}                                                                                  {:some-warnings true}
       {:implicit-dependencies {'testcases.ignored-faults-example true}}                   {:some-warnings false}
       {:implicit-dependencies {'testcases.ignored-faults-example [{:line 4 :column 1}]}}  {:some-warnings false}
@@ -185,11 +200,13 @@ The ignored-faults must match ns (exactly) and file/column (exactly, but only if
 (deftest wrong-tag-disabling-test
   (testing "The `:wrong-tag` linter can be selectively disabled via the `disable-warning` mechanism,
 relative to a specific macroexpansion"
-    (are [input expected] (= (assoc expected :some-errors false)
-                             (-> eastwood.lint/default-opts
-                                 (assoc :namespaces #{'testcases.wrong-tag-example})
-                                 (merge input)
-                                 eastwood.lint/eastwood))
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> eastwood.lint/default-opts
+                                       (assoc :namespaces #{'testcases.wrong-tag-example})
+                                       (merge input)
+                                       eastwood.lint/eastwood)))
+                            true)
       {}                                                          {:some-warnings true}
       {:builtin-config-files ["disable_wrong_tag.clj"]}           {:some-warnings false}
       {:builtin-config-files ["disable_wrong_tag_unrelated.clj"]} {:some-warnings true})))
@@ -197,11 +214,13 @@ relative to a specific macroexpansion"
 (deftest unused-meta-on-macro-disabling-test
   (testing "The `:unused-meta-on-macro` linter can be selectively disabled via the `disable-warning` mechanism,
 relative to a specific macroexpansion"
-    (are [input expected] (= (assoc expected :some-errors false)
-                             (-> eastwood.lint/default-opts
-                                 (assoc :namespaces #{'testcases.wrong-meta-on-macro-example})
-                                 (merge input)
-                                 eastwood.lint/eastwood))
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> eastwood.lint/default-opts
+                                       (assoc :namespaces #{'testcases.wrong-meta-on-macro-example})
+                                       (merge input)
+                                       eastwood.lint/eastwood)))
+                            true)
       {}                                                                     {:some-warnings true}
       {:builtin-config-files ["disable_unused_meta_on_macro.clj"]}           {:some-warnings false}
       {:builtin-config-files ["disable_unused_meta_on_macro_unrelated.clj"]} {:some-warnings true})))
