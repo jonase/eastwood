@@ -3,7 +3,7 @@
 
 (def plugin-source-path "lein-eastwood")
 
-(defproject jonase/eastwood "0.4.1"
+(defproject jonase/eastwood "0.4.2-SNAPSHOT"
   :description "A Clojure lint tool"
   :url "https://github.com/jonase/eastwood"
   :license {:name "Eclipse Public License"
@@ -13,6 +13,10 @@
   :dependencies [[org.clojure/clojure "1.10.2" :scope "provided"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
                  [org.ow2.asm/asm-all "5.2"]]
+  :deploy-repositories [["clojars" {:url "https://repo.clojars.org"
+                                    :username :env/clojars_username
+                                    :password :env/clojars_password
+                                    :sign-releases true}]]
   :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.5"]
                                   [jafingerhut/dolly "0.1.0"]]}
              :eastwood-plugin {:source-paths [~plugin-source-path]
