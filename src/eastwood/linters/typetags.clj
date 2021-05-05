@@ -117,18 +117,11 @@ significance needed by the user."
 
                                    :else
                                    (do
-                                     ;; Use this to help detect wrong-tag cases I may
-                                     ;; be missing completely.
-                                     (println (format "eastwood-dbg: wrong-tag-from-analyzer: op=%s name=%s wrong-tag-keys=%s env=%s ast="
-                                                      op name wrong-tag-keys env))
                                      (util/pprint-ast-node ast)
                                      (flush)
                                      (assert false)
                                      [nil nil nil]))
                              _ (when (and typ (not (util/has-keys? loc #{:file :line :column})))
-                                 (println (format "eastwood-dbg: wrong-tag-no-loc: op=%s name=%s wrong-tag-keys=%s typ=%s tag=%s loc=%s ast="
-                                                  op name wrong-tag-keys
-                                                  typ tag loc))
                                  (util/pprint-ast-node ast))
                              ;;              _ (do
                              ;;                  (println (format "jafinger-dbg2: typ=%s tag=%s loc=%s"
