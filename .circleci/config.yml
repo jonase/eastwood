@@ -188,6 +188,8 @@ jobs:
             export GNUPGHOME
             mkdir -p "$GNUPGHOME"
             chmod 0700 "$GNUPGHOME"
+            echo "no-tty" >> "$GNUGPHOME"/gpg.conf
+            echo "batch" >> "$GNUGPHOME"/gpg.conf
 
             if [ -n "$GPG_KEY" ]; then
                echo "$GPG_KEY" \
