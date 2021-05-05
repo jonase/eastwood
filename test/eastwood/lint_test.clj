@@ -1,6 +1,5 @@
 (ns eastwood.lint-test
   (:require
-   [clojure.string :as string]
    [clojure.test :refer :all]
    [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
@@ -97,9 +96,9 @@
              (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces invalid-namespaces)))))
 
     (testing "Reader-level exceptions are reported as such"
-      (is (string/includes? (with-out-str
-                              (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces invalid-namespaces)))
-                            "Warnings: 0 (not including reflection warnings)  Exceptions thrown: 1")))
+      (is (-> (with-out-str
+                (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces invalid-namespaces)))
+              (.contains "Warnings: 0 (not including reflection warnings)  Exceptions thrown: 1"))))
 
     (testing "`:rethrow-exceptions?` option"
       (are [namespaces rethrow-exceptions? ok?] (testing [namespaces rethrow-exceptions?]
