@@ -829,9 +829,30 @@ warning, that contains the constant value."
        (= :const (-> ast :test :op))
        (contains? #{false nil} (-> ast :test :val))))
 
+(defn seq-call-from-destructuring?
+  "Does `form` contain a `seq` call that was auto-generated from a `let` destructuring macroexpansion?"
+  [form]
+  (boolean
+   (and (sequential? form)
+        (let [[_ seq?-call create-call map-sym] form]
+          (and (sequential? seq?-call)
+               (sequential? create-call)
+               (symbol? map-sym)
+               (-> map-sym name (.startsWith "map__"))
+               (let [[s? m] seq?-call
+                     [create-sym seq-call] create-call]
+                 (and (#{'clojure.core/seq?} s?)
+                      (-> m name (.startsWith "map__"))
+                      (#{'clojure.lang.PersistentHashMap/create} create-sym)
+                      (sequential? seq-call)
+                      (let [[s-call m] seq-call]
+                        (and (#{'clojure.core/seq} s-call)
+                             (-> m name (.startsWith "map__")))))))))))
+
 (defn if-with-predictable-test [ast]
-  (if (and (= :if (:op ast))
-           (not (assert-false-expansion? ast)))
+  (when (and (= :if (:op ast))
+             (not (assert-false-expansion? ast))
+             (not (-> ast :form seq-call-from-destructuring?)))
     (or (constant-ast (-> ast :test))
         (logical-true-test (-> ast :test)))))
 
