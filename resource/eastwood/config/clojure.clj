@@ -78,6 +78,13 @@
    :reason "Allow as-> to have constant tests without warning"})
 
 (disable-warning
+  {:linter :constant-test
+   :if-inside-macroexpansion-of #{'clojure.core/while}
+   :within-depth 3
+   :qualifier true
+   :reason "Allow `(while true)` idiom"})
+
+(disable-warning
   {:linter :wrong-arity
    :function-symbol 'clojure.core/eduction
    :arglists-for-linting '([& xform])

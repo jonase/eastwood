@@ -6,6 +6,8 @@
 
 * Support `(is false)` pattern
   * Closes https://github.com/jonase/eastwood/issues/384
+* Support `(while true)` pattern
+  * Closes https://github.com/jonase/eastwood/issues/386
 
 #### Bugfixes
 
