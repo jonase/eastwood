@@ -59,6 +59,13 @@
 
 (disable-warning
  {:linter :constant-test
+  :if-inside-macroexpansion-of #{'clojure.test/is}
+  :within-depth 3
+  :qualifier false
+  :reason "Support (is false) idiom https://github.com/jonase/eastwood/issues/384"})
+
+(disable-warning
+ {:linter :constant-test
   :if-inside-macroexpansion-of #{'clojure.core/cond-> 'clojure.core/cond->>}
   :qualifier true
   :within-depth 2

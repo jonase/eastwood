@@ -261,6 +261,18 @@ relative to a specific macroexpansion"
       #{'testcases.let.green} {:some-warnings false}
       #{'testcases.let.red}   {:some-warnings true})))
 
+(deftest is-false-test
+  (testing "The `(is false)` idiom is supported"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> eastwood.lint/default-opts
+                                       (assoc :namespaces input)
+                                       (eastwood.lint/eastwood))))
+                            true)
+      #{'testcases.is-false.green} {:some-warnings false}
+      ;; no 'red' case for now, since there isn't one that would make sense today (given git.io/J35fr)
+      )))
+
 (deftest cond-test
   (testing "Some reported false positives against `cond`"
     (are [input expected] (testing input

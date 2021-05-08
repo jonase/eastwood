@@ -2,6 +2,11 @@
 
 ## Changes from 0.4.1 to
 
+#### New
+
+* Support `(is false)` pattern
+  * Closes https://github.com/jonase/eastwood/issues/384
+
 #### Bugfixes
 
 * Fix a false positive for `let` destructuring
