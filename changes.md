@@ -11,6 +11,8 @@
 
 * Fix a false positive for `let` destructuring
   * Closes https://github.com/jonase/eastwood/issues/383
+* Fix a false positive for `extend-protocol`
+  * Closes https://github.com/jonase/eastwood/issues/385
 
 ## Changes from 0.4.0 to 0.4.1
 

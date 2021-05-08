@@ -1247,26 +1247,6 @@ the next."
           :msg "Wrong tag: (class (log-window-proxy nil)) on form: this",
           :file (fname-from-parts "testcases" "wrongtag.clj"),
           :line 153, :column 11}
-         1,
-         {:linter :wrong-tag,
-          :msg "Tag: (Class/forName \"[D\") for return type of function method: ([m] m) should be Java class name (fully qualified if not in java.lang package)",
-          :file (fname-from-parts "testcases" "wrongtag.clj"),
-          :line 208, :column 1}
-         1,
-         {:linter :wrong-tag,
-          :msg "Wrong tag: (Class/forName \"[D\") on form: (do m)",
-          :file (fname-from-parts "testcases" "wrongtag.clj"),
-          :line 208, :column 1}
-         1,
-         {:linter :wrong-tag,
-          :msg "Wrong tag: (Class/forName \"[D\") on form: m",
-          :file (fname-from-parts "testcases" "wrongtag.clj"),
-          :line 210, :column 23}
-         1,
-         {:linter :wrong-tag,
-          :msg "Wrong tag: (Class/forName \"[D\") on form: m",
-          :file (fname-from-parts "testcases" "wrongtag.clj"),
-          :line 211, :column 23}
          1}
 
         ;; These warnings are not needed after CLJ-1232 was fixed in

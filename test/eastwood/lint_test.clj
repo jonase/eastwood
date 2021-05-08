@@ -284,3 +284,8 @@ relative to a specific macroexpansion"
       #{'testcases.cond.green} {:some-warnings false}
       ;; some 'red' cases could be added at some point, there are no reported issues atm though.
       )))
+
+(deftest bytes-class-test
+  (testing "https://github.com/jonase/eastwood/issues/385"
+    (is (= {:some-warnings false :some-errors false}
+           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.bytes-class.green}))))))
