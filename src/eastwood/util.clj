@@ -978,18 +978,21 @@ StringWriter."
     (process-configs @warning-enable-config-atom)))
 
 (defn meets-suppress-condition [ast enclosing-macros qualifier condition]
-  (when (or (= qualifier :eastwood/unset) ;; `nil` can be a qualifier value, so :eastwood/unset conveys an absent value
-            (= qualifier (:qualifier condition)))
-    (let [macro-set (:if-inside-macroexpansion-of condition)
-          depth (:within-depth condition)
-          enclosing-macros (if (number? depth)
-                             (take depth enclosing-macros)
-                             enclosing-macros)]
-      (some (fn [m]
-              (when (macro-set (:macro m))
-                {:matching-condition condition
-                 :matching-macro (:macro m)}))
-            enclosing-macros))))
+  (let [configured-qualifier? (find condition :qualifier)]
+    (when (or (= qualifier :eastwood/unset) ;; `nil` can be a qualifier value, so :eastwood/unset conveys an absent value
+              (not configured-qualifier?)
+              (and configured-qualifier?
+                   (= qualifier (:qualifier condition))))
+      (let [macro-set (:if-inside-macroexpansion-of condition)
+            depth (:within-depth condition)
+            enclosing-macros (if (number? depth)
+                               (take depth enclosing-macros)
+                               enclosing-macros)]
+        (some (fn [m]
+                (when (macro-set (:macro m))
+                  {:matching-condition condition
+                   :matching-macro (:macro m)}))
+              enclosing-macros)))))
 
 (defn allow-warning-based-on-enclosing-macros [w linter suppress-desc
                                                suppress-conditions opt]
