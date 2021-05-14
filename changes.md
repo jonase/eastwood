@@ -1,5 +1,12 @@
 # Change log for Eastwood
 
+## Changes from 0.4.1 to
+
+#### Bugfixes
+
+* Fix a false positive for `let` destructuring
+  * Closes https://github.com/jonase/eastwood/issues/383
+
 ## Changes from 0.4.0 to 0.4.1
 
 #### New

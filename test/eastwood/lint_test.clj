@@ -249,3 +249,14 @@ relative to a specific macroexpansion"
     (is (= {:some-warnings false
             :some-errors false}
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.clojure-test}))))))
+
+(deftest let-test
+  (testing "Some reported false positives against `let`"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> eastwood.lint/default-opts
+                                       (assoc :namespaces input)
+                                       (eastwood.lint/eastwood))))
+                            true)
+      #{'testcases.let.green} {:some-warnings false}
+      #{'testcases.let.red}   {:some-warnings true})))
