@@ -60,8 +60,9 @@
 (disable-warning
  {:linter :constant-test
   :if-inside-macroexpansion-of #{'clojure.core/cond-> 'clojure.core/cond->>}
+  :qualifier true
   :within-depth 2
-  :reason "Allow cond-> and cond->> to have constant tests without warning"})
+  :reason "Allow cond-> and cond->> to have constant tests without warning, only for the `true` condition"})
 
 (disable-warning
   {:linter :constant-test

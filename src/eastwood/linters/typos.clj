@@ -884,6 +884,7 @@ warning, that contains the constant value."
                         (pass/code-loc (pass/nearest-ast-with-loc ast)))
                 w {:loc loc
                    :linter :constant-test
+                   :qualifier (-> ast :form second)
                    :constant-test {:kind :the-only-kind
                                    :ast ast}
                    :msg (format "Test expression is always logical true or always logical false: %s in form %s"

@@ -260,3 +260,15 @@ relative to a specific macroexpansion"
                             true)
       #{'testcases.let.green} {:some-warnings false}
       #{'testcases.let.red}   {:some-warnings true})))
+
+(deftest cond-test
+  (testing "Some reported false positives against `cond`"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> eastwood.lint/default-opts
+                                       (assoc :namespaces input)
+                                       (eastwood.lint/eastwood))))
+                            true)
+      #{'testcases.cond.green} {:some-warnings false}
+      ;; some 'red' cases could be added at some point, there are no reported issues atm though.
+      )))
