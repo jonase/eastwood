@@ -261,6 +261,17 @@ relative to a specific macroexpansion"
       #{'testcases.let.green} {:some-warnings false}
       #{'testcases.let.red}   {:some-warnings true})))
 
+(deftest while-true-test
+  (testing "The `(while true)` idiom is supported"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> eastwood.lint/default-opts
+                                       (assoc :namespaces input)
+                                       (eastwood.lint/eastwood))))
+                            true)
+      #{'testcases.while-true.green} {:some-warnings false}
+      #{'testcases.while-true.red}   {:some-warnings true})))
+
 (deftest is-false-test
   (testing "The `(is false)` idiom is supported"
     (are [input expected] (testing input
