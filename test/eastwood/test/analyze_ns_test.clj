@@ -16,9 +16,9 @@
                           (sut/analyze-ns 'testcases.data-readers))))
 
   (testing "it should not fail when there is a data reader"
-    ; the parser reader uses the same data-readers from clojure.core (which in
-    ; practice are loaded by clojure.core/load-data-readers, but here in tests
-    ; has a manual binding.
+    ;; the parser reader uses the same data-readers from clojure.core (which in
+    ;; practice are loaded by clojure.core/load-data-readers, but here in tests
+    ;; has a manual binding.
     (binding [clojure.core/*data-readers* {'my-int int-reader}]
       (let [result (sut/analyze-ns 'testcases.data-readers)]
         (is (nil? (:exception result)))))))

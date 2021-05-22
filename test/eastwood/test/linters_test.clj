@@ -31,9 +31,9 @@
 
 (defn msg-replace-auto-numbered-symbol-names
   "In warning messages, replace symbols like p__7346 containing
-auto-generated numeric values with p__<num>, so they can be compared
-against expected results that will not change from one run/whatever to
-the next."
+  auto-generated numeric values with p__<num>, so they can be compared
+  against expected results that will not change from one run/whatever to
+  the next."
   [s]
   (str/replace s #"__\d+"
                (str/re-quote-replacement "__<num>")))
@@ -97,7 +97,6 @@ the next."
     :wrong-arity :local-shadows-var :wrong-tag :non-dynamic-earmuffs
     :unused-locals]
    (assoc default-test-opts
-     ;;:debug [:ns :config]
           :config-files
           [(fname-from-parts "cases" "testcases" "eastwood-testing-config.clj")])
    {{:linter :redefd-vars,
@@ -515,7 +514,6 @@ the next."
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
     :local-shadows-var :wrong-tag :unused-locals]
-;;   [:misplaced-docstrings]
    default-opts  ;(merge default-opts {:debug #{:all}})
    {})
   (lint-test
@@ -2107,11 +2105,11 @@ the next."
   ;; lint-test macro that did remove-ns first, but that caused other
   ;; tests to fail for reasons that I did not spend long enough to
   ;; learn the reason for.
-;;  (lint-test
-;;   'testcases.topleveldo
-;;   [:redefd-vars :unlimited-use]
-;;   default-opts
-;;   {})
+  ;;  (lint-test
+  ;;   'testcases.topleveldo
+  ;;   [:redefd-vars :unlimited-use]
+  ;;   default-opts
+  ;;   {})
   )
 
 (deftest test2

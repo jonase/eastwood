@@ -42,8 +42,8 @@
 (defn- use-arg-ok?
   ([arg] (use-arg-ok? arg 0))
   ([arg depth]
-     ;; keyword covers things like :reload or :reload-all typically
-     ;; put at the end of a use or require
+   ;; keyword covers things like :reload or :reload-all typically
+   ;; put at the end of a use or require
    (or (keyword? arg)
        (and (sequential? arg)
             (>= (count arg) 2)
@@ -213,11 +213,6 @@
                                :nested-defs []}]
     (doseq [ast ast-seq]
       (ast/walk ast def-walker-pre1 def-walker-post1)
-;;      (println (format "dbg *def-walker-data* %s"
-;;                       (class *def-walker-data*)))
-;;      (pp/pprint (select-keys *def-walker-data* [:ancestor-op-vec :ancestor-op-set :ancestor-op-set-stack]))
-;;      (pp/pprint (map :var (:top-level-defs *def-walker-data*)))
-;;      (pp/pprint (map :var (:nested-defs *def-walker-data*)))
       (assert (empty? (:ancestor-op-vec *def-walker-data*)))
       (assert (empty? (:ancestor-op-set *def-walker-data*)))
       (assert (empty? (:ancestor-op-set-stack *def-walker-data*)))
@@ -231,10 +226,6 @@
   (let [lca-path (util/longest-common-prefix
                   (:eastwood/path def-ast1)
                   (:eastwood/path def-ast2))]
-;;    (println (format "dbg allow-both-defs:"))
-;;    (println (format "  path1=%s" (:eastwood/path def-ast1)))
-;;    (println (format "  path2=%s" (:eastwood/path def-ast2)))
-;;    (println (format "  lca-path=%s" lca-path))
     (if (empty? lca-path)
       true
       (let [suppress-conditions (get-in opt [:warning-enable-config
@@ -251,31 +242,8 @@
                   [lca-path a])))
             encl-macros (when (seq suppress-conditions)
                           (util/enclosing-macros lca-ast))
-;;            _ (do
-;;                (println (format "dbg (count suppress-conditions)=%d"
-;;                                 (count suppress-conditions)))
-;;                (println (format "  :op=%s" (:op lca-ast)))
-;;                (println (format "  :form=%s" (:form lca-ast)))
-;;                )
             match (some #(util/meets-suppress-condition lca-ast encl-macros :eastwood/unset %)
                         suppress-conditions)]
-        ;; (if (and match (:debug-suppression opt))
-        ;;   ((util/make-msg-cb :debug opt)
-        ;;    (with-out-str
-        ;;      (let [c (:matching-condition match)
-        ;;            depth (:within-depth c)]
-        ;;        (println (format "Ignoring def of Var %s while checking for :redefd-vars warning" defd-var))
-        ;;        (println (format "because it is within%s an expansion of macro"
-        ;;                         (if (number? depth)
-        ;;                           (format " %d steps of" depth)
-        ;;                           "")))
-        ;;        (println (format "'%s'" (:matching-macro match)))
-        ;;        (println "Reason suppression rule was created:" (:reason c))
-        ;;        (pp/pprint (map #(dissoc % :ast :index)
-        ;;                        (if depth
-        ;;                          (take depth encl-macros)
-        ;;                          encl-macros)))
-        ;;        ))))
         (not match)))))
 
 (defn remove-dup-defs [defd-var asts all-asts opt]
@@ -470,17 +438,7 @@
                 lint-arglists (or (-> override-arglists
                                       :arglists-for-linting)
                                   arglists)
-                loc (-> func :form meta)
-;;                _ (println (format "fn=%s (count args)=%d lint-arglists=%s ok=%s arglist-for-arity=%s loc=%s"
-;;                                   fn-sym (count args)
-;;                                   (seq lint-arglists)
-;;                                   (arg-count-compatible-with-arglists
-;;                                    (count args) lint-arglists)
-;;                                   (arglist-for-arity
-;;                                    {:arglists lint-arglists} (count args))
-;;                                   (select-keys loc #{:file :line :column})
-;;                                   ))
-                ]
+                loc (-> func :form meta)]
           :when (not (arg-count-compatible-with-arglists (count args)
                                                          lint-arglists))
           :let [w {:loc loc
@@ -500,8 +458,6 @@
                                                fn-sym (count args)))
                               (println "arglists from metadata on function var:")
                               (pp/pprint arglists)
-;;           (println (format "  argvec-kinds="))
-;;           (pp/pprint (map argvec-kind arglists))
                               (when override-arglists
                                 (println "arglists overridden by Eastwood config to the following:")
                                 (pp/pprint lint-arglists)
@@ -691,30 +647,19 @@
                    meta-arglists (cond (contains? (-> a :meta :val) :arglists)
                                        (maybe-unwrap-quote
                                         (-> a :meta :val :arglists))
-                                 ;; see case 2 notes above
+                                       ;; see case 2 notes above
                                        (and (not (-> a :var meta :arglists))
                                             (contains? (-> a :meta) :keys)
                                             (->> (-> a :meta :keys)
                                                  (some #(= :test (get % :val)))))
                                        [[]]
-                                 ;; see case 3 notes above
+                                       ;; see case 3 notes above
                                        :else nil)
                    fn-arglists (if (and macro? macro-args?)
                                  (map #(subvec % 2) fn-arglists)
                                  fn-arglists)
                    fn-sigs (signature-union fn-arglists)
                    meta-sigs (signature-union meta-arglists)
-;;             _ (do
-;;                 (println (format "dbg bad-arglists (:name a)=%s:" (:name a)))
-;;                 ;;(util/pprint-ast-node a)
-;;                 (println (format "    (:name a)=%s" (:name a)))
-;;                 (println (format "    fn-arglists: %s" fn-arglists))
-;;                 (println (format "    fn-sigs: %s" fn-sigs))
-;;                 (println (format "    meta-arglists: %s" meta-arglists))
-;;                 (println (format "    meta-sigs: %s" meta-sigs))
-;;                 (println (format "    (more-restrictive-sigs? meta-sigs fn-sigs)=%s"
-;;                                  (more-restrictive-sigs? meta-sigs fn-sigs)))
-;;                 )
                    loc (-> a var-of-ast meta)]
                (when (and (not (nil? meta-arglists))
                           (not (more-restrictive-sigs? meta-sigs fn-sigs)))
@@ -785,40 +730,40 @@
 (defn warnings-for-libspec [libspec kw loc]
   (cond
     (symbol? libspec)
-   ;; Clojure 1.6.0 and probably earlier throws an exception for this
-   ;; case during eval of require, so having a check for it in Eastwood
-   ;; is redundant.  Even Eastwood never shows the warning because the
-   ;; eval of the form throws an exception, before linting begins.
-;;   (if-not (nil? (namespace arg))
-;;     [(util/add-loc-info
-;;       loc
-;;       {:linter :wrong-ns-form
-;;        :msg (format "%s has a symbol libspec with a namespace qualifier: %s"
-;;                     kw arg)})])
+    ;; Clojure 1.6.0 and probably earlier throws an exception for this
+    ;; case during eval of require, so having a check for it in Eastwood
+    ;; is redundant.  Even Eastwood never shows the warning because the
+    ;; eval of the form throws an exception, before linting begins.
+    ;;   (if-not (nil? (namespace arg))
+    ;;     [(util/add-loc-info
+    ;;       loc
+    ;;       {:linter :wrong-ns-form
+    ;;        :msg (format "%s has a symbol libspec with a namespace qualifier: %s"
+    ;;                     kw arg)})])
     []
 
-   ;; Clojure 1.6.0 and probably earlier throw an exception during
-   ;; eval for at least some cases of a non-symbol being first in the
-   ;; libspec, so it might not be possible to make a test hitting this
-   ;; case if done after eval.
+    ;; Clojure 1.6.0 and probably earlier throw an exception during
+    ;; eval for at least some cases of a non-symbol being first in the
+    ;; libspec, so it might not be possible to make a test hitting this
+    ;; case if done after eval.
     (not (symbol? (first libspec)))
     [{:loc loc
       :linter :wrong-ns-form
       :msg (format "%s has a vector libspec that begins with a non-symbol: %s"
                    kw (first libspec))}]
 
-   ;; See above for checking for namespace-qualified symbols naming
-   ;; namespaces.
-;;   (not (nil? (namespace (first libspec))))
-;;   [{:loc loc :linter :wrong-ns-form
-;;      :msg (format "%s has a vector libspec beginning with a namespace-qualified symbol: %s"
-;;                   kw (first libspec))}]
+    ;; See above for checking for namespace-qualified symbols naming
+    ;; namespaces.
+    ;;   (not (nil? (namespace (first libspec))))
+    ;;   [{:loc loc :linter :wrong-ns-form
+    ;;      :msg (format "%s has a vector libspec beginning with a namespace-qualified symbol: %s"
+    ;;                   kw (first libspec))}]
 
-   ;; Some of these checks are already preconditions to calling this
-   ;; function from warnings-for-libspec-or-prefix-list, but not if it
-   ;; was called to check libspecs in a prefix list.
+    ;; Some of these checks are already preconditions to calling this
+    ;; function from warnings-for-libspec-or-prefix-list, but not if it
+    ;; was called to check libspecs in a prefix list.
     (= 1 (count libspec))
-    []   ; nothing more to check
+    []   ;; nothing more to check
 
     (even? (count libspec))
     [{:loc loc
@@ -831,14 +776,14 @@
           options (keys libspec-opts)
           allowed-options
           (case kw
-           ;; Note: The documentation for require only mentions :as
-           ;; and :refer as options.  However, Clojure allows and
-           ;; correctly handles :exclude and :rename as options in a
-           ;; :require libspec, and as long as there is a :refer
-           ;; option, they behave correctly as they would for a use
-           ;; with those options.  :only never makes sense for
-           ;; :require, as :refer can be used for that purpose
-           ;; instead.
+            ;; Note: The documentation for require only mentions :as
+            ;; and :refer as options.  However, Clojure allows and
+            ;; correctly handles :exclude and :rename as options in a
+            ;; :require libspec, and as long as there is a :refer
+            ;; option, they behave correctly as they would for a use
+            ;; with those options.  :only never makes sense for
+            ;; :require, as :refer can be used for that purpose
+            ;; instead.
             :require (merge
                       {:as :symbol, :refer :symbol-list-or-all,
                        :include-macros :true, :refer-macros :symbol-list}
@@ -903,19 +848,19 @@
 (defn warnings-for-libspec-or-prefix-list [arg kw loc]
   (let [loc (most-specific-loc loc arg)]
     (cond
-     ;; Even though a prefix list is called a list in the Clojure
-     ;; documentation, it seems to be reasonably common that people
-     ;; use vectors for them.  Clojure 1.6.0 itself distinguishes
-     ;; between libspec or prefix list by considering it a libspec if
-     ;; it has at most 1 item, or the second item is a keyword (see
-     ;; clojure.core/libspec?).  Do the same here.
+      ;; Even though a prefix list is called a list in the Clojure
+      ;; documentation, it seems to be reasonably common that people
+      ;; use vectors for them.  Clojure 1.6.0 itself distinguishes
+      ;; between libspec or prefix list by considering it a libspec if
+      ;; it has at most 1 item, or the second item is a keyword (see
+      ;; clojure.core/libspec?).  Do the same here.
       (libspec? arg)
       (warnings-for-libspec arg kw loc)
 
       (or (list? arg) (vector? arg))
       (cond
-      ;; This case can occur, with no exception from Clojure.  There is a
-      ;; test case for it in testcases.wrongnsform
+        ;; This case can occur, with no exception from Clojure.  There is a
+        ;; test case for it in testcases.wrongnsform
         (and (list? arg) (= 1 (count arg)))
         [{:loc loc
           :linter :wrong-ns-form
@@ -926,8 +871,8 @@
         (mapcat #(warnings-for-libspec % kw loc) (rest arg)))
 
       :else
-     ;; Not sure if there is a test for this case, where Clojure 1.6.0
-     ;; will not throw an exception during eval.
+      ;; Not sure if there is a test for this case, where Clojure 1.6.0
+      ;; will not throw an exception during eval.
       [{:loc loc
         :linter :wrong-ns-form
         :msg (format "%s has an arg that is none of the allowed things of: a keyword, symbol naming a namespace, a libspec (in a vector), a prefix list (in a list or vector): %s"
@@ -984,10 +929,10 @@
                                         " " (sort valid-but-unusual-flags)))}])
                    (mapcat #(warnings-for-libspec-or-prefix-list % kw loc)
                            libspecs-or-prefix-lists)))
-                :import [] ; tbd: no checking yet
-                :refer-clojure [] ; tbd: no checking yet
-                :gen-class [] ; tbd: no checking yet
-                :load []) ; tbd: no checking yet
+                :import [] ;; tbd: no checking yet
+                :refer-clojure [] ;; tbd: no checking yet
+                :gen-class [] ;; tbd: no checking yet
+                :load []) ;; tbd: no checking yet
               )))))
 
 (defn wrong-ns-form [{:keys [asts]} opt]

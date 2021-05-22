@@ -147,54 +147,32 @@ selectively disable such warnings if they wish."
 
 (defn- ignore-local-symbol?
   "Return logical true for let/loop symbols that should never be
-warned about as unused.
+  warned about as unused.
 
-By convention, _ is never reported as unused, and neither is any
-symbol with a name that begins with _.  This gives eastwood users a
-way to selectively disable such warnings if they wish."
+  By convention, _ is never reported as unused, and neither is any
+  symbol with a name that begins with _.  This gives eastwood users a
+  way to selectively disable such warnings if they wish."
   [arg]
   (.startsWith (name arg) "_"))
 
 (defn all-suffixes
   "Given a coll, returns the coll, then (next coll), then (next (next
-coll)), etc., as long as the result is not empty.
+  coll)), etc., as long as the result is not empty.
 
-Example: (all-suffixes [1 2 3])
+  Example: (all-suffixes [1 2 3])
          => ([1 2 3] (2 3) (3))"
   [coll]
   (take-while seq (iterate next coll)))
 
 (defn symbols-from-bindings [expr]
   (map (fn [b]
-;;         (println (format "  name=%s used-locals=%s init="
-;;                          (:name b)
-;;                          (used-locals (ast/nodes (:init b)))))
-;;         (util/pprint-ast-node (:init b))
          (assoc (select-keys b [:form :name :init])
                 :locals-used-in-init-expr (used-locals (ast/nodes (:init b)))))
        (:bindings expr)))
 
 (defn unused-locals* [expr]
   (let [symbols-seq (symbols-from-bindings expr)
-        locals-used-in-body (used-locals (ast/nodes (:body expr)))
-;;        _ (when (seq symbols-seq)
-;;            (println (format "%s-dbg:" (name (:op expr))))
-;;            (doseq [s symbols-seq]
-;;              (let [loc (or (pass/has-code-loc? (-> s :form meta))
-;;                            (pass/code-loc (pass/nearest-ast-with-loc expr)))]
-;;                (println (format "    binding form=%s name=%s line=%s col=%s locals-used-in-init=%s"
-;;                                 (-> s :form)
-;;                                 (-> s :name)
-;;                                 (-> loc :line)
-;;                                 (-> loc :column)
-;;                                 (-> s :locals-used-in-init-expr)))))
-;;            (doseq [s (used-locals (ast/nodes (:body expr)))]
-;;              (println (format "    use     form=%s name=%s line=%s col=%s"
-;;                               (-> s :form)
-;;                               (-> s :name)
-;;                               (-> s :form meta :line)
-;;                               (-> s :form meta :column)))))
-        ]
+        locals-used-in-body (used-locals (ast/nodes (:body expr)))]
     (loop [unused #{}
            symbols symbols-seq]
       (if-let [sym (first symbols)]
@@ -273,28 +251,6 @@ Example: (all-suffixes [1 2 3])
         used-macros (macros-invoked asts)
         used-protocols (protocols-used asts)
         used-classes (classes-used asts)
-;;        _ (do
-;;            (println "dbg: required namespaces:")
-;;            (pp/pprint required)
-;;            (println "dbg: vars used:")
-;;            (pp/pprint (map (juxt #(.getName (.ns %))
-;;                                  #(type (.getName (.ns %)))
-;;                                  #(.sym %))
-;;                            used-vars))
-;;            (println "dbg: symbols used:")
-;;            (pp/pprint (map (juxt identity #(if-let [n (namespace %)]
-;;                                              (symbol n))
-;;                                  #(symbol (name %)))
-;;                            used-symbols))
-;;            (println "dbg: keywords used:")
-;;            (pp/pprint (map (juxt identity #(if-let [n (namespace %)]
-;;                                              (symbol n))
-;;                                  #(symbol (name %)))
-;;                            used-keywords))
-;;            (println "dbg: macros used:")
-;;            (pp/pprint used-macros)
-;;            (println "dbg: protocols used:")
-;;            (pp/pprint used-protocols))
         used-namespaces (set
                          (concat (map #(-> ^clojure.lang.Var % .ns .getName)
                                       used-vars)
@@ -371,12 +327,12 @@ Example: (all-suffixes [1 2 3])
 
 (defn mark-things-in-defprotocol-expansion
   "Return an ast that is identical to the argument, except that
-expressions that appear to have been generated via 'defprotocol' will
-have their 4th subexpression ast node marked specially with the
-key :eastwood/defprotocol-expansion-sigs with the name of the
-protocol.  There does not seem to be an easier way to avoid printing
-out :unused-ret-vals warning messages of the form 'Constant value is
-discarded inside null: null'."
+  expressions that appear to have been generated via 'defprotocol' will
+  have their 4th subexpression ast node marked specially with the
+  key :eastwood/defprotocol-expansion-sigs with the name of the
+  protocol.  There does not seem to be an easier way to avoid printing
+  out :unused-ret-vals warning messages of the form 'Constant value is
+  discarded inside null: null'."
   [ast]
   (ast/postwalk ast mark-things-in-defprotocol-expansion-post))
 
@@ -396,8 +352,7 @@ discarded inside null: null'."
     ;; auto-generated names appearing in the :unused-ret-vals linter
     ;; output during recent testing.  Too noisy to be useful like
     ;; that.  Try without it.
-;    ;; Similarly for let, except everything in its body is unused.
-;    :let (unused-exprs-to-check (:body ast-node))
+    ;; Similarly for let, except everything in its body is unused.
     ;; If a :set node has an unused ret value, then all of its
     ;; elements have unused ret values.
     :set (mapcat unused-exprs-to-check (:items ast-node))
@@ -428,7 +383,7 @@ discarded inside null: null'."
 
 (defn unused-ret-val-lint-result [stmt stmt-desc-str action fn-or-method
                                   location]
-   ;; if a given `stmt` is inside a clojure.test `thrown?` call, then nothing can be considered unused:
+  ;; if a given `stmt` is inside a clojure.test `thrown?` call, then nothing can be considered unused:
   (when-not (util/in-thrown?-call? stmt)
     (let [stmt-in-try-body? (util/statement-in-try-body? stmt)
           extra-msg (if stmt-in-try-body?
@@ -545,18 +500,18 @@ discarded inside null: null'."
                           (util/static-call? %))))]
     (remove nil?
             (for [stmt should-use-ret-val-exprs]
-       ;; See Note 1
+              ;; See Note 1
               (cond
                 (and (#{:const :var :local} (:op stmt))
                      (= location :outside-try))
                 (if (or
-                     (get stmt :eastwood/defprotocol-expansion-interface)  ; Note 2
-                     (get stmt :eastwood/defprotocol-expansion-sigs)  ; Note 3
-                     (util/interface? (:form stmt))  ; Note 4
-                     (and (nil? (:form stmt))  ; Note 5
+                     (get stmt :eastwood/defprotocol-expansion-interface)  ;; Note 2
+                     (get stmt :eastwood/defprotocol-expansion-sigs)  ;; Note 3
+                     (util/interface? (:form stmt))  ;; Note 4
+                     (and (nil? (:form stmt))  ;; Note 5
                           (util/ast-expands-macro stmt #{'clojure.core/comment
                                                          'clojure.core/gen-class})))
-                  nil  ; no warning
+                  nil  ;; no warning
                   (let [name-found? (contains? (-> stmt :env) :name)
                         loc (or
                              (pass/has-code-loc? (-> stmt :raw-forms first meta))
@@ -586,9 +541,9 @@ discarded inside null: null'."
 
                 (util/invoke-expr? stmt)
                 (let [v1 (get-in stmt [:fn :var])
-              ;; Special case for apply.  Issue a warning based upon
-              ;; the 1st arg to apply, not apply itself (if that arg
-              ;; is a var).
+                      ;; Special case for apply.  Issue a warning based upon
+                      ;; the 1st arg to apply, not apply itself (if that arg
+                      ;; is a var).
                       arg1 (first (:args stmt))
                       v (if (and (= (util/var-to-fqsym v1) 'clojure.core/apply)
                                  (= :var (:op arg1)))

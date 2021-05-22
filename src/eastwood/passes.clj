@@ -20,8 +20,6 @@
   (let [cls (:val (:class ast))
         arg-type-vec (mapv :tag (:args ast))
         arg-type-arr (into-array Class arg-type-vec)]
-;;    (println (format "dbgx: get-ctor cls=%s arg-types=%s"
-;;                     cls (arg-type-str arg-type-vec)))
     (try
       (.getConstructor ^Class cls arg-type-arr)
       (catch NoSuchMethodException e
@@ -46,8 +44,6 @@
         method-name (name (:method ast))
         arg-type-vec (mapv :tag (:args ast))
         arg-type-arr (into-array Class arg-type-vec)]
-;;    (println (format "dbgx: get-method cls=%s method=%s arg-types=%s"
-;;                     cls method-name (arg-type-str arg-type-vec)))
     (try
       (.getMethod ^Class cls method-name arg-type-arr)
       (catch NoSuchMethodException e
@@ -181,9 +177,6 @@ add-ancestors."
                                          v)))
                 (assoc m k (add-path-pre* path k v))))
             ast (children* ast))))
-
-;; clojure.tools.analyzer.jvm> (-> (prewalk (analyze '(do 1 (do (identity 2) 3) 4)) add-path) :statements second :statements first :fn :eastwood/path)
-;; [:statements 1 :statements 0 :fn]
 
 (defn add-path
   ([ast]

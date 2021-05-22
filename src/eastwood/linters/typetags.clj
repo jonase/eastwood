@@ -10,16 +10,16 @@
 
 (defn replace-variable-tag-part
   "Wrong tags that were written like (def ^long foo ...) convert to
-strings like clojure.core$long@deadbeef, where the deadbeef part is an
-hex string that changes from one run to the next.  It is usually 8
-digits long in my experience, but does not print leading 0s so can be
-shorter.
+  strings like clojure.core$long@deadbeef, where the deadbeef part is an
+  hex string that changes from one run to the next.  It is usually 8
+  digits long in my experience, but does not print leading 0s so can be
+  shorter.
 
-Replace these strings with @<somehex>, simply to make them consistent
-from one run to the next, thus easier to check for in unit tests, and
-producing fewer lines of output in 'diff' from one Eastwood run to the
-next.  I doubt the exact value of the hex digits has any lasting
-significance needed by the user."
+  Replace these strings with @<somehex>, simply to make them consistent
+  from one run to the next, thus easier to check for in unit tests, and
+  producing fewer lines of output in 'diff' from one Eastwood run to the
+  next.  I doubt the exact value of the hex digits has any lasting
+  significance needed by the user."
   [tag]
   (string/replace (str tag)
                   #"@[0-9a-fA-F]+"
@@ -198,19 +198,7 @@ significance needed by the user."
               private-var? (some #(and %
                                        (= :def (:op %))
                                        (-> % :meta :val :private))
-                                 gp-and-ggp-asts)
-;;              _ (when tag
-;;                  (println (format "jafinger-dbg3: tag=%s (class tag)=%s op=%s gp-op=%s loc=%s"
-;;                                   tag (class tag) op
-;;                                   (:op (first gp-and-ggp-asts))
-;;                                   loc))
-;;                  (println (format "               private-var?=%s in-default-classname-mapping?=%s to-class='%s'"
-;;                                   (pr-str private-var?)
-;;                                   (contains? default-classname-mapping tag)
-;;                                   (pr-str (fq-classname-to-class (str tag)))
-;;                                   ))
-;;                  )
-              ]
+                                 gp-and-ggp-asts)]
         :when (and tag
                    (not private-var?)
                    (symbol? tag)

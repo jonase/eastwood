@@ -39,7 +39,6 @@
                             (not (within-other-ns-macro? expr ns-sym)))
                    (let [implicit-ns-sym (var->ns-symbol (:var expr))]
                      (when (not (namespace-dependency? implicit-ns-sym))
-;                       (println "META " (util/enclosing-macros expr))
                        {:linter :implicit-dependencies
                         :loc (:env expr)
                         :implicit-namespace-sym implicit-ns-sym

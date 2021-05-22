@@ -36,9 +36,9 @@
 
 (defn cmp-seq-lexi
   "Compare sequences x and y in lexicographic order, using comparator
-cmpf to compare elements from x and y to each other.  As a comparator
-function, cmp-seq-lexi returns a negative, 0, or positive integer if x
-is less than, equal to, or greater than y."
+  cmpf to compare elements from x and y to each other.  As a comparator
+  function, cmp-seq-lexi returns a negative, 0, or positive integer if x
+  is less than, equal to, or greater than y."
   [cmpf x y]
   (loop [x x
          y y]
@@ -62,13 +62,13 @@ is less than, equal to, or greater than y."
 
 (defn cmp-vec-lexi
   "Compare vectors x and y in lexicographic order, using comparator
-cmpf to compare elements from x and y to each other.  As a comparator
-function, cmp-seq-lexi returns a negative, 0, or positive integer if x
-is less than, equal to, or greater than y.
+  cmpf to compare elements from x and y to each other.  As a comparator
+  function, cmp-seq-lexi returns a negative, 0, or positive integer if x
+  is less than, equal to, or greater than y.
 
-It is possible to use cmp-seq-lexi on vectors, too, but this function
-should be faster and allocate less memory than cmp-seq-lexi, but only
-works for vectors."
+  It is possible to use cmp-seq-lexi on vectors, too, but this function
+  should be faster and allocate less memory than cmp-seq-lexi, but only
+  works for vectors."
   [cmpf x y]
   (let [x-len (count x)
         y-len (count y)
@@ -104,41 +104,41 @@ integer if x is less than, equal to, or greater than y."
 
 (defn cc-cmp
   "cc-cmp compares two values x and y.  As a comparator, it returns a
-negative, 0, or positive integer if x is less than, equal to, or
-greater than y.
+  negative, 0, or positive integer if x is less than, equal to, or
+  greater than y.
 
-cc-cmp can compare values of many types, including numbers, strings,
-symbols, keywords, vectors, lists, sequences, sets, maps, records,
-Java arrays, anything that implements the Java Comparable
-interface (including booleans, characters, File, URL, UUID, Clojure
-refs), and nil.
+  cc-cmp can compare values of many types, including numbers, strings,
+  symbols, keywords, vectors, lists, sequences, sets, maps, records,
+  Java arrays, anything that implements the Java Comparable
+  interface (including booleans, characters, File, URL, UUID, Clojure
+  refs), and nil.
 
-Unlike the function compare, it sorts vectors in lexicographic order.
-It also sorts lists, sequences, and Java arrays in lexicographic
-order, on which compare throws exceptions.
+  Unlike the function compare, it sorts vectors in lexicographic order.
+  It also sorts lists, sequences, and Java arrays in lexicographic
+  order, on which compare throws exceptions.
 
-Also unlike compare, cc-cmp can compare values of different types to
-each other without throwing an exception, if it can compare them at
-all.  Values of different types are sorted relative to each other by a
-string that is the name of their class.  Note that all numbers use the
-string \"java.lang.Number\" so that numbers are sorted together,
-rather than separated out by type, and for a similar reason all
-vectors, lists, and sequences use the string
-\"clojure.lang.Sequential\".  All sets use the string
-\"clojure.lang.IPersistentSet\", and all maps and records use the
-string \"clojure.lang.IPersistentMap\".  All Java arrays use the
-string \"java.util.Arrays\" (that is not the name of any instantiable
-class -- it is simply used for sorting Java arrays versus other
-objects).
+  Also unlike compare, cc-cmp can compare values of different types to
+  each other without throwing an exception, if it can compare them at
+  all.  Values of different types are sorted relative to each other by a
+  string that is the name of their class.  Note that all numbers use the
+  string \"java.lang.Number\" so that numbers are sorted together,
+  rather than separated out by type, and for a similar reason all
+  vectors, lists, and sequences use the string
+  \"clojure.lang.Sequential\".  All sets use the string
+  \"clojure.lang.IPersistentSet\", and all maps and records use the
+  string \"clojure.lang.IPersistentMap\".  All Java arrays use the
+  string \"java.util.Arrays\" (that is not the name of any instantiable
+  class -- it is simply used for sorting Java arrays versus other
+  objects).
 
-cc-cmp throws an exception if given any type of value not mentioned
-above, e.g. Java arrays."
+  cc-cmp throws an exception if given any type of value not mentioned
+  above, e.g. Java arrays."
 
   [x y]
   (let [x-cls (comparison-class x)
         y-cls (comparison-class y)
         c (compare x-cls y-cls)]
-    (cond (not= c 0) c  ; different classes
+    (cond (not= c 0) c  ;; different classes
 
           ;; Compare Class instances by their names as converted to
           ;; strings.

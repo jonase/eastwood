@@ -11,7 +11,7 @@
     false
     (let [^String x (if (symbol? x) (str x) x)]
       (and (>= (count x) 1)
-           (== (.indexOf x ".") -1)   ; no dots
+           (== (.indexOf x ".") -1)   ;; no dots
            (Character/isJavaIdentifierStart ^Character (nth x 0))
            (= (subs x 0 1)
               (str/upper-case (subs x 0 1)))))))

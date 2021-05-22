@@ -147,14 +147,6 @@ the value of File/separator for the platform."
   (let [tag (if (= t :name/tag)
               (-> ast :name meta :tag)
               (get ast t))]
-;;    (println (format "\nWrong tag: t=%s %s (%s) in %s"
-;;                     t tag (class tag)
-;;                     (:name ast)))
-;;    (println (format "  op=%s form=%s" (:op ast) (:form ast)))
-;;    (println (meta (:form ast)))
-;;    (pp/pprint (:form ast))
-;;    (util/pprint-ast-node ast)
-;;    (flush)
 
     ;; Key/value pairs to be merged into ast for later code to find
     ;; and issue warnings.  We use a different map key for each

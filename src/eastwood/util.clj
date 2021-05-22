@@ -15,7 +15,7 @@
 
 (defmacro timeit
   "Evaluates expr and returns a vector containing the expression's
-return value followed by the time it took to evaluate in millisec."
+  return value followed by the time it took to evaluate in millisec."
   {:style/indent 0}
   [expr]
   `(let [start# (. System (nanoTime))
@@ -66,7 +66,7 @@ return value followed by the time it took to evaluate in millisec."
                      nil))
       nil)))
 
- ; first char is upper-case
+;; first char is upper-case
 
 (defn ^java.net.URI to-uri [x]
   (cond (instance? java.net.URI x) x
@@ -200,35 +200,35 @@ more interesting keys earlier."
                              ;; vectors, given in the same relative
                              ;; order as I saw them.
                              :statements
-                             :ret     ; after :statements
+                             :ret     ;; after :statements
                              :test
-                             :then    ; after :test
-                             :else    ; after :else
-                             :tests   ; after :test
-                             :thens   ; after :tests
-                             :default ; after :thens
+                             :then    ;; after :test
+                             :else    ;; after :else
+                             :tests   ;; after :test
+                             :thens   ;; after :tests
+                             :default ;; after :thens
                              :fields
                              :class
-                             :local    ; after :class
-                             :methods  ; after :local :fields
+                             :local    ;; after :class
+                             :methods  ;; after :local :fields
                              :protocol-fn
                              :keyword
-                             :target   ; after :keyword :protocol-fn
-                             :val      ; after :target
+                             :target   ;; after :keyword :protocol-fn
+                             :val      ;; after :target
                              :fn
                              :instance
-                             :args     ; after :fn :instance :class :target
+                             :args     ;; after :fn :instance :class :target
                              :this
-                             :params   ; after :this
+                             :params   ;; after :this
                              :bindings
-                             :body     ; after :params :bindings :local
-                             :catches  ; after :body
-                             :finally  ; after :catches
+                             :body     ;; after :params :bindings :local
+                             :catches  ;; after :body
+                             :finally  ;; after :catches
                              :meta
-                             :expr     ; after :meta
-                             :init     ; after :meta
+                             :expr     ;; after :meta
+                             :init     ;; after :meta
                              :keys
-                             :vals     ; after :keys
+                             :vals     ;; after :keys
                              ])]
     (ast/postwalk ast (fn [ast]
                         (if (every? keyword? (keys ast))
@@ -719,7 +719,7 @@ pprint-meta instead."
                                                 (->> m :eastwood/ancestors (map :form) (some (partial in-thrown? statement-form))))
                                                (assoc :eastwood/in-thrown?-call true))))
                                          stmts))))
-                  ;; Mark the return expression
+                ;; Mark the return expression
                 ast (if-not (some #{:ret} (:children body))
                       (do
                         (println (format "Found :try node with :body child that is :do, but do has no :ret in children (only %s)"
@@ -1025,8 +1025,8 @@ StringWriter."
                            (if depth
                              (take depth encl-macros)
                              encl-macros)))
-;;           (println "Debug AST contents:")
-;;           (pprint-ast-node ast)
+           ;;           (println "Debug AST contents:")
+           ;;           (pprint-ast-node ast)
            ))))
     ;; allow the warning if there was no match
     (not match)))
@@ -1141,77 +1141,3 @@ StringWriter."
             (println (format "            In file but not loaded:"))
             (doseq [name (sort file-but-not-loaded)]
               (println (format "            %s" name)))))))))
-
-(comment
-
-;; This version tends to be much slower due to the size of the :env
-;; data, and converting it all to strings.
-  (def a2 (update-in a [:analyze-results :asts] (fn [ast] (mapv #(util/clean-ast % :with-env) ast))))
-
-;; Older versions that may not be so useful any more, but kept here in
-;; case there remains something useful.
-
-  (def fn1 (:init (nth a 1)))
-  (def locs1 (->> fn1 util/ast-nodes (filter (util/op= :local))))
-  (#'un/unused-fn-args* fn1)
-  (#'un/params (-> fn1 :methods first))
-  (#'un/used-locals (-> fn1 :methods first :body util/ast-nodes))
-
-  (def fn4 (:init (nth a 4)))
-  (def locs4 (->> fn4 util/ast-nodes (filter (util/op= :local))))
-
-  (require '[eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as aj])
-  (def form (read-string "
-(defn fn-with-unused-args3 [x y z]
-  (let [foo (fn [y z]
-              (* y z))]
-    (foo x y)))
-"))
-  (def env (aj/empty-env))
-  (def an (aj/analyze form env))
-  (def meth1 (-> an :init :methods first))
-  (def ret-expr-args (-> meth1 :body :ret :body :ret :args))
-
-  (map :name (:params meth1))
-;;=> (x__#0 y__#0 z__#0)
-  (map :name ret-expr-args)
-;;=> (x__#0 y__#-1)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
-;; Some code useful for copying and pasting into a REPL for debugging
-;; AST contents with clojure.inspector.
-
-  (require '[clojure.inspector :as insp])
-  (require '[eastwood.analyze-ns :as ana] :reload)
-  (require '[eastwood.util :as util] :reload)
-  (require '[eastwood.linters.unused :as un] :reload)
-  (require '[eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast])
-
-  (defn has-resolved-op? [ast]
-    (contains? (-> ast :raw-forms first meta)
-               :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op))
-
-  (defn resolved-op-asts [asts]
-    (->> asts
-         (mapcat ast/nodes)
-         (filter has-resolved-op?)))
-
-  (defn resolved-ops [ast]
-    (map (fn [rf]
-           (-> rf meta
-               :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op))
-         (:raw-forms ast)))
-
-  (defn add-resolved-ops [ast]
-    (assoc ast
-           :resolved-ops-on-raw-forms
-           (resolved-ops ast)))
-
-  (def nssym 'testcases.f06)
-  (def a (ana/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}}))
-  (def a2 (update-in a [:analyze-results :asts]
-                     (fn [asts]
-                       (mapv (fn [ast] (-> ast add-resolved-ops util/clean-ast))
-                             asts))))
-  (insp/inspect-tree a2))
