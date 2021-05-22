@@ -198,14 +198,3 @@
   "Returns a copy of a double array"
   (^doubles [^doubles arr]
     (Arrays/copyOf arr (int (alength arr)))))
-
-
-(defprotocol PDoubleArrayOutput
-  (to-double-array [m])
-  (as-double-array [m]))
-
-
-(extend-protocol PDoubleArrayOutput
-  (Class/forName "[D")
-    (to-double-array [m] (copy-double-array m))
-    (as-double-array [m] m))

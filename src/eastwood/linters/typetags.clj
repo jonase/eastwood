@@ -128,7 +128,12 @@ significance needed by the user."
                              ;;                                   typ tag loc))
                              ;;                  )
                              ]
-                       :when typ]
+                       :when (and typ
+                                  (if-not tag
+                                    true
+                                    (if-not (sequential? tag)
+                                      true
+                                      (not (-> tag first #{'Class/forName 'java.lang.Class/forName})))))]
                    (let [warning {:loc loc
                                   :linter :wrong-tag
                                   :wrong-tag {:ast ast}
