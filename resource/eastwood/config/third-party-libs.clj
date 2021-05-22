@@ -317,7 +317,8 @@
                                   nedap.speced.def/defprotocol
                                   nedap.speced.def/let
                                   nedap.speced.def/letfn
-                                  nedap.speced.def/fn}
+                                  nedap.speced.def/fn
+                                  unit.nedap.speced.def.impl.parsing.instance-spec/instance-spec}
   :within-depth 13
   :reason "The emitted code emits an (if (class? x) ...) where x may be a class or a protocol. The result cannot be known at compile-time (especially as classes and protocols can be defined in runtime)."})
 
@@ -329,3 +330,8 @@
                                   nedap.speced.def/letfn
                                   nedap.speced.def/fn}
   :reason "The speced.def library uses an extended meaning for tag syntax."})
+
+(disable-warning
+ {:linter :unused-ret-vals
+  :if-inside-macroexpansion-of #{'nedap.utils.spec.api/check!}
+  :within-depth 2})

@@ -66,10 +66,21 @@
 
 (disable-warning
  {:linter :constant-test
+  :if-inside-macroexpansion-of #{'clojure.test/are}
+  :reason "`are` can template arbitrary expressions. Therefore one cannot (easily) know if a given expression came from a template, and therefore, whether it's a truly 'constant' expression."})
+
+(disable-warning
+ {:linter :constant-test
   :if-inside-macroexpansion-of #{'clojure.core/cond-> 'clojure.core/cond->>}
   :qualifier true
   :within-depth 2
   :reason "Allow cond-> and cond->> to have constant tests without warning, only for the `true` condition"})
+
+(disable-warning
+ {:linter :unused-ret-vals
+  :if-inside-macroexpansion-of #{'clojure.core/with-out-str}
+  :reason "Arbitrary expressions within `with-out-str` can have side-effects,
+their intention being to write to stdout and therefore have the `with-out-str` result affected."})
 
 (disable-warning
   {:linter :constant-test
