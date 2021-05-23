@@ -2,8 +2,6 @@
   (:require
    [clojure.test :refer [are deftest testing]]))
 
-;; `=` within `testing` within `are`, at least as shown in this example, is correct.
-;; Eastwood should not trigger a warning for it:
 (deftest are-with-testing
   (are [f] (testing f
              ;; should trigger a warning:
