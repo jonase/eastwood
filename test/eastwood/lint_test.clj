@@ -188,7 +188,7 @@ The ignored-faults must match ns (exactly) and file/column (exactly, but only if
     (is (= {:some-warnings false
             :some-errors false}
            (sut/eastwood (assoc sut/default-opts :namespaces '#{testcases.const
-                                                                                    testcases.const.unused-namespaces.consumer}))))))
+                                                                testcases.const.unused-namespaces.consumer}))))))
 
 (deftest test-metadata-handling
   (testing "Processing a vanilla defn where `^:test` is used results in no linter faults"
@@ -310,3 +310,17 @@ relative to a specific macroexpansion"
   (testing "https://github.com/jonase/eastwood/issues/188"
     (is (= {:some-warnings false :some-errors false}
            (sut/eastwood (assoc sut/default-opts :namespaces #{'testcases.byte-array.green}))))))
+
+(deftest unknown-reify-test
+  (testing "https://github.com/jonase/eastwood/issues/205"
+    (let [opts (assoc sut/default-opts :namespaces #{'testcases.unknown-reify})]
+
+      (is (= {:some-warnings true :some-errors true}
+             (sut/eastwood opts))
+          "A non-compilable form is reported as an error")
+
+      (is (-> (with-out-str
+                (sut/eastwood opts))
+              (.contains "The following form was being processed during the exception:
+(def foo (reify Unknown (foo [this])))"))
+          "The culprit form is reported accuratel."))))
