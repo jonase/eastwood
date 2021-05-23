@@ -188,7 +188,8 @@ The ignored-faults must match ns (exactly) and file/column (exactly, but only if
   (testing "Processing a namespace where `^:const` is used results in no exceptions being thrown"
     (is (= {:some-warnings false
             :some-errors false}
-           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.const}))))))
+           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces '#{testcases.const
+                                                                                    testcases.const.unused-namespaces.consumer}))))))
 
 (deftest test-metadata-handling
   (testing "Processing a vanilla defn where `^:test` is used results in no linter faults"
