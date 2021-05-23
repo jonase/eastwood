@@ -37,10 +37,6 @@
   (keep identity (for [{:keys [op name form env] :as ast} (->> (mapcat ast/nodes asts)
                                                                (filter has-wrong-tag?))
                        :let [wrong-tag-keys (util/keys-in-map keys-indicating-wrong-tag ast)
-                             ;;              _ (do
-                             ;;                  (when wrong-tag-keys
-                             ;;                    (println (format "jafinger-dbg1: op=%s name=%s wrong-tag-keys=%s"
-                             ;;                                     op name wrong-tag-keys))))
                              [typ tag loc]
                              (cond (= wrong-tag-keys #{:eastwood/name-tag})
                                    [:wrong-tag-on-var (-> name meta :tag) env]
@@ -95,7 +91,6 @@
                                    ;; don't issue warnings for this case.
                                    (and (= wrong-tag-keys #{:eastwood/o-tag})
                                         (#{:local} op))
-                                   ;;[:tag (get ast :o-tag) (meta form)]
                                    [nil nil nil]
 
                                    (and (= wrong-tag-keys #{:eastwood/return-tag})
@@ -113,21 +108,11 @@
                                                  (= [] (:statements ast))
                                                  (= :fn (-> ast :ret :op)))))
                                    [nil nil nil]
-                                   ;;[:var (get ast :return-tag) env]
 
                                    :else
-                                   (do
-                                     (util/pprint-ast-node ast)
-                                     (flush)
-                                     (assert false)
-                                     [nil nil nil]))
+                                   [nil nil nil])
                              _ (when (and typ (not (util/has-keys? loc #{:file :line :column})))
-                                 (util/pprint-ast-node ast))
-                             ;;              _ (do
-                             ;;                  (println (format "jafinger-dbg2: typ=%s tag=%s loc=%s"
-                             ;;                                   typ tag loc))
-                             ;;                  )
-                             ]
+                                 (util/pprint-ast-node ast))]
                        :when (and typ
                                   (if-not tag
                                     true
