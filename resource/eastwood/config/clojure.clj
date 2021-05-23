@@ -96,6 +96,11 @@ their intention being to write to stdout and therefore have the `with-out-str` r
   :reason "Allow `(while true)` idiom"})
 
 (disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'nedap.utils.spec.impl.check/throw-validation-error
+                                 'nedap.utils.spec.impl.check/check!}})
+
+(disable-warning
  {:linter :wrong-arity
   :function-symbol 'clojure.core/eduction
   :arglists-for-linting '([& xform])
