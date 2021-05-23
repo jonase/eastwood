@@ -217,8 +217,10 @@
 
 (defn predicate-forms [opt subexpr-maps form-type]
   (let [var-info-map @var-info-map-delayed
-        result (for [{:keys [subexpr ast]} subexpr-maps
-                     :let [f subexpr]]
+        result (for [{:keys [subexpr ast] :as subexpr-map} subexpr-maps
+                     :let [f subexpr
+                           omit-because-of-are? (and (::within-are? subexpr-map)
+                                                     (::in-last-position? subexpr-map))]]
                  (cond
                    (and (not (list? f))
                         (constant-expr? f))
@@ -245,13 +247,17 @@
                          var-info (and cc-sym (var-info-map cc-sym))
                          loc (-> ff meta)]
                      (cond
-                       (and var-info (get var-info :predicate))
+                       (and var-info
+                            (get var-info :predicate)
+                            (not omit-because-of-are?))
                        [{:loc loc
                          :linter :suspicious-test,
                          :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
                                       ff form-type ff)}]
 
-                       (and var-info (get var-info :pure-fn))
+                       (and var-info
+                            (get var-info :pure-fn)
+                            (not omit-because-of-are?))
                        [{:loc loc
                          :linter :suspicious-test,
                          :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
@@ -262,6 +268,25 @@
     (->> result
          (keep identity)
          (apply concat))))
+
+(defn assoc-subexprs [formasts pred]
+  (->> formasts
+       (filter (comp pred util/fqsym-of-raw-form :raw-form))
+       (mapcat (fn [formast]
+                 (let [within-are? (->> formast
+                                        :ast
+                                        util/enclosing-macros
+                                        (map :macro)
+                                        (some #{'clojure.test/are})
+                                        (boolean))
+                       raw-forms (-> formast :raw-form (nthnext 2))
+                       last-indicator (-> raw-forms count dec)]
+                   (->> raw-forms
+                        (map-indexed (fn [i subexpr]
+                                       (assoc formast
+                                              :subexpr subexpr
+                                              ::within-are? within-are?
+                                              ::in-last-position? (= i last-indicator))))))))))
 
 ;; suspicious-test used to do its job only examining source forms, but
 ;; now it goes through the forms on the :raw-forms lists of the AST
@@ -300,24 +325,11 @@
         ;; clojure.test/deftest, then get of the first 2 symbols from
         ;; each, which are the deftest and the Var name following
         ;; deftest.
-        pr-deftest-subexprs
-        (->> formasts
-             (filter #(= 'clojure.test/deftest
-                         (util/fqsym-of-raw-form (:raw-form %))))
-             (mapcat (fn [formast]
-                       (for [subexpr (nthnext (:raw-form formast) 2)]
-                         (assoc formast :subexpr subexpr)))))
+        pr-deftest-subexprs (assoc-subexprs formasts #{'clojure.test/deftest})
 
         ;; Similarly for testing subexprs as for deftest subexprs.
-        ;; TBD: Make a helper function to eliminate the nearly
-        ;; duplicated code between deftest and testing.
         pr-testing-subexprs
-        (->> formasts
-             (filter #(= 'clojure.test/testing
-                         (util/fqsym-of-raw-form (:raw-form %))))
-             (mapcat (fn [formast]
-                       (for [subexpr (nthnext (:raw-form formast) 2)]
-                         (assoc formast :subexpr subexpr)))))
+        (assoc-subexprs formasts #{'clojure.test/testing})
 
         pr-is-formasts pr-first-is-formasts]
     (concat (suspicious-is-forms pr-is-formasts)
@@ -692,10 +704,10 @@
 
 (defn logical-true-test
   "Return the ast to report a warning for, if the 'ast' argument
-represents not necessarily a constant expression, but definitely an
-expression that evaluates as logical true in an if test, e.g. vectors,
-maps, and sets, even if they have contents that vary at run time, are
-always logical true.  Otherwise, return nil."
+  represents not necessarily a constant expression, but definitely an
+  expression that evaluates as logical true in an if test, e.g. vectors,
+  maps, and sets, even if they have contents that vary at run time, are
+  always logical true.  Otherwise, return nil."
   [ast]
   (cond (#{:vector :map :set :quote} (:op ast)) ast
         (= :with-meta (:op ast)) (logical-true-test (:expr ast))
@@ -721,10 +733,10 @@ always logical true.  Otherwise, return nil."
 
 (defn constant-ast
   "Return nil if 'ast' is not one that we can determine to be a
-constant value.  Does not do all compile-time evaluation that would be
-possible, to keep things relatively simple.  If we can determine it to
-be a constant value, return an ast that can be used to issue a
-warning, that contains the constant value."
+  constant value.  Does not do all compile-time evaluation that would be
+  possible, to keep things relatively simple.  If we can determine it to
+  be a constant value, return an ast that can be used to issue a
+  warning, that contains the constant value."
   [ast]
   (cond (= :with-meta (:op ast))    (constant-ast (:expr ast))
 
@@ -1202,13 +1214,13 @@ warning, that contains the constant value."
 
 (defn dont-warn-for-symbol?
   "Return logical true for symbols in arg vectors that should never be
-warned about as duplicates.
+  warned about as duplicates.
 
-By convention, _ is a parameter intended to be ignored, and often
-occurs multiple times in the same arg vector when it is used.  Also do
-not warn about any other symbols that begin with _.  This gives
-Eastwood users a way to selectively disable such warnings if they
-wish."
+  By convention, _ is a parameter intended to be ignored, and often
+  occurs multiple times in the same arg vector when it is used.  Also do
+  not warn about any other symbols that begin with _.  This gives
+  Eastwood users a way to selectively disable such warnings if they
+  wish."
   [sym]
   (.startsWith (name sym) "_"))
 

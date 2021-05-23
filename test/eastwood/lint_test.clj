@@ -246,9 +246,14 @@ relative to a specific macroexpansion"
 
 (deftest clojure-test-test
   (testing "Some reported false positives against clojure.test"
-    (is (= {:some-warnings false
-            :some-errors false}
-           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.clojure-test}))))))
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> eastwood.lint/default-opts
+                                       (assoc :namespaces input)
+                                       (eastwood.lint/eastwood))))
+                            true)
+      #{'testcases.clojure-test}         {:some-warnings false}
+      #{'testcases.clojure-test.are.red} {:some-warnings true})))
 
 (deftest let-test
   (testing "Some reported false positives against `let`"

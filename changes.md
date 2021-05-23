@@ -15,6 +15,8 @@
   * Closes https://github.com/jonase/eastwood/issues/383
 * Fix a false positive for `extend-protocol`
   * Closes https://github.com/jonase/eastwood/issues/385
+* Fix various false positives
+  * These could be triggered, under certian conditions, by `are`, `with-out-str`, some external libraries, etc.
 
 ## Changes from 0.4.0 to 0.4.1
 
