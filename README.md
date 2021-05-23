@@ -42,7 +42,7 @@ released to fix that problem.
 Merge the following into your `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.4.2"]] }}
+{:user {:plugins [[jonase/eastwood "0.4.3"]]}}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -445,7 +445,7 @@ If you use Leiningen, merge this into your project's `project.clj`
 file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.4.2" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.4.3" :exclusions [org.clojure/clojure]]]}}
 ```
 
 If you use a different build tool, you will need to add the dependency

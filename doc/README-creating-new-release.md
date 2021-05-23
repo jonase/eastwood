@@ -8,6 +8,7 @@ Places where version number should be updated:
 
 * project.clj just after jonase/eastwood
 * README.md in install instructions, and instructions for developers
+* changes.md (header)
 * src/eastwood/lint.clj var *eastwood-version*
   * (happens automatically)
 * src/leiningen/eastwood.clj var eastwood-version-string

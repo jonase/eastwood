@@ -3,14 +3,14 @@
 
 (def plugin-source-path "lein-eastwood")
 
-(defproject jonase/eastwood "0.4.2"
+(defproject jonase/eastwood "0.4.3"
   :description "A Clojure lint tool"
   :url "https://github.com/jonase/eastwood"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ~(cond-> ["src" "copied-deps"]
                    eval-in-leiningen? (conj plugin-source-path))
-  :dependencies [[org.clojure/clojure "1.10.2" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.10.3" :scope "provided"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
                  [org.ow2.asm/asm-all "5.2"]]
   :deploy-repositories [["clojars" {:url "https://repo.clojars.org"
