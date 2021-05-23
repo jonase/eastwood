@@ -305,3 +305,8 @@ relative to a specific macroexpansion"
   (testing "https://github.com/jonase/eastwood/issues/385"
     (is (= {:some-warnings false :some-errors false}
            (sut/eastwood (assoc sut/default-opts :namespaces #{'testcases.bytes-class.green}))))))
+
+(deftest bytes-array-test
+  (testing "https://github.com/jonase/eastwood/issues/188"
+    (is (= {:some-warnings false :some-errors false}
+           (sut/eastwood (assoc sut/default-opts :namespaces #{'testcases.byte-array.green}))))))
