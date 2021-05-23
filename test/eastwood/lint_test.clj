@@ -1,10 +1,10 @@
 (ns eastwood.lint-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [are deftest is testing]]
    [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
-   [eastwood.lint :as sut :refer :all]
+   [eastwood.lint :as sut]
    [eastwood.reporting-callbacks :as reporting]
    [eastwood.util :as util])
   (:import
@@ -18,31 +18,30 @@
                     p))))
 
 (deftest expand-ns-keywords-test
-  (testing ""
-    (is (= ["foo" "bar" "baz"] (expand-ns-keywords {:source-paths ["foo"]} [:source-paths "bar" "baz"])))))
+  (is (= ["foo" "bar" "baz"] (sut/expand-ns-keywords {:source-paths ["foo"]} [:source-paths "bar" "baz"]))))
 
 (deftest last-options-map-adjustments-test
-  (let [reporter (reporting/silent-reporter default-opts)]
+  (let [reporter (reporting/silent-reporter sut/default-opts)]
     (testing "default-options are added"
-      (is (= default-opts
-             (dissoc (last-options-map-adjustments nil reporter)
+      (is (= sut/default-opts
+             (dissoc (sut/last-options-map-adjustments nil reporter)
                      :warning-enable-config))))
     (testing "passed options are respected. So are the type and sort order of :namespaces."
-      (is (= (assoc default-opts
+      (is (= (assoc sut/default-opts
                     :namespaces ["foo" "bar"])
-             (dissoc (last-options-map-adjustments {:namespaces ["foo" "bar"]} reporter)
+             (dissoc (sut/last-options-map-adjustments {:namespaces ["foo" "bar"]} reporter)
                      :warning-enable-config)))
-      (is (= (assoc default-opts
+      (is (= (assoc sut/default-opts
                     :namespaces #{"foo"})
-             (dissoc (last-options-map-adjustments {:namespaces #{"foo"}} reporter)
+             (dissoc (sut/last-options-map-adjustments {:namespaces #{"foo"}} reporter)
                      :warning-enable-config)))
-      (is (= (assoc default-opts
+      (is (= (assoc sut/default-opts
                     :namespaces '("foo" "bar"))
-             (dissoc (last-options-map-adjustments {:namespaces '("foo" "bar")} reporter)
+             (dissoc (sut/last-options-map-adjustments {:namespaces '("foo" "bar")} reporter)
                      :warning-enable-config))))
     (testing "all the things are sets (except :namespaces, which keep their original class)"
       (is (empty? (->>
-                   (select-keys (last-options-map-adjustments {:namespaces []} reporter) [:debug :source-paths :test-paths :exclude-namespaces])
+                   (select-keys (sut/last-options-map-adjustments {:namespaces []} reporter) [:debug :source-paths :test-paths :exclude-namespaces])
                    (vals)
                    (remove set?)))))))
 
@@ -50,18 +49,18 @@
   (testing "non-empty source/test paths is respected"
     (is (= {:source-paths #{"lol"}
             :test-paths #{}}
-           (setup-lint-paths #{"lol"} nil)))
+           (sut/setup-lint-paths #{"lol"} nil)))
     (is (= {:source-paths #{}
             :test-paths #{"lol"}}
-           (setup-lint-paths nil #{"lol"})))
+           (sut/setup-lint-paths nil #{"lol"})))
     (is (= {:source-paths #{"lol"}
             :test-paths #{"bar"}}
-           (setup-lint-paths #{"lol"} #{"bar"}))))
+           (sut/setup-lint-paths #{"lol"} #{"bar"}))))
   (testing "empty source/test paths yields classpath-directories"
     (with-redefs [classpath/classpath-directories (fn [] [(File. "lol")])]
       (is (= {:source-paths #{(File. "lol")}
               :test-paths #{}}
-             (setup-lint-paths nil nil))))))
+             (sut/setup-lint-paths nil nil))))))
 
 (def eastwood-src-namespaces (::track/load (dir/scan-dirs (track/tracker) #{"src"})))
 (def eastwood-test-namespaces (::track/load (dir/scan-dirs (track/tracker) #{"test"})))
@@ -72,7 +71,7 @@
     (testing "basic functionality"
       (is (= {:dirs (set (map util/canonical-filename dirs))
               :namespaces eastwood-src-namespaces}
-             (select-keys (nss-in-dirs dirs 0) [:dirs :namespaces]))))))
+             (select-keys (sut/nss-in-dirs dirs 0) [:dirs :namespaces]))))))
 
 (deftest effective-namespaces-test
   (let [source-paths #{"src"}
@@ -81,10 +80,10 @@
       (is (= {:dirs (concat (map util/canonical-filename source-paths)
                             (map util/canonical-filename test-paths))
               :namespaces eastwood-all-namespaces}
-             (select-keys (effective-namespaces #{}
-                                                #{:source-paths :test-paths}
-                                                {:source-paths source-paths
-                                                 :test-paths test-paths} 0)
+             (select-keys (sut/effective-namespaces #{}
+                                                    #{:source-paths :test-paths}
+                                                    {:source-paths source-paths
+                                                     :test-paths test-paths} 0)
                           [:dirs :namespaces]))))))
 
 (deftest exceptions-test
@@ -93,17 +92,17 @@
 
     (testing "Reader-level exceptions are reported as such"
       (is (= {:some-warnings true :some-errors true}
-             (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces invalid-namespaces)))))
+             (sut/eastwood (assoc sut/default-opts :namespaces invalid-namespaces)))))
 
     (testing "Reader-level exceptions are reported as such"
       (is (-> (with-out-str
-                (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces invalid-namespaces)))
+                (sut/eastwood (assoc sut/default-opts :namespaces invalid-namespaces)))
               (.contains "Warnings: 0 (not including reflection warnings)  Exceptions thrown: 1"))))
 
     (testing "`:rethrow-exceptions?` option"
       (are [namespaces rethrow-exceptions? ok?] (testing [namespaces rethrow-exceptions?]
                                                   (is (try
-                                                        (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces namespaces :rethrow-exceptions? rethrow-exceptions?))
+                                                        (sut/eastwood (assoc sut/default-opts :namespaces namespaces :rethrow-exceptions? rethrow-exceptions?))
                                                         ok?
                                                         (catch Exception _
                                                           (not ok?))))
@@ -120,7 +119,7 @@
   (testing "A large defprotocol doesn't cause a 'Method code too large' exception"
     (is (= {:some-warnings false
             :some-errors false}
-           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.large-defprotocol}))))))
+           (sut/eastwood (assoc sut/default-opts :namespaces #{'testcases.large-defprotocol}))))))
 
 (deftest ignore-fault?-test
   (are [input expected] (testing input
@@ -173,10 +172,10 @@
 The ignored-faults must match ns (exactly) and file/column (exactly, but only if provided)"
     (are [input expected] (testing input
                             (is (= (assoc expected :some-errors false)
-                                   (-> eastwood.lint/default-opts
+                                   (-> sut/default-opts
                                        (assoc :namespaces #{'testcases.ignored-faults-example}
                                               :ignored-faults input)
-                                       (eastwood.lint/eastwood))))
+                                       (sut/eastwood))))
                             true)
       {}                                                                                  {:some-warnings true}
       {:implicit-dependencies {'testcases.ignored-faults-example true}}                   {:some-warnings false}
@@ -188,24 +187,24 @@ The ignored-faults must match ns (exactly) and file/column (exactly, but only if
   (testing "Processing a namespace where `^:const` is used results in no exceptions being thrown"
     (is (= {:some-warnings false
             :some-errors false}
-           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces '#{testcases.const
+           (sut/eastwood (assoc sut/default-opts :namespaces '#{testcases.const
                                                                                     testcases.const.unused-namespaces.consumer}))))))
 
 (deftest test-metadata-handling
   (testing "Processing a vanilla defn where `^:test` is used results in no linter faults"
     (is (= {:some-warnings false
             :some-errors false}
-           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.test-metadata-example}))))))
+           (sut/eastwood (assoc sut/default-opts :namespaces #{'testcases.test-metadata-example}))))))
 
 (deftest wrong-tag-disabling-test
   (testing "The `:wrong-tag` linter can be selectively disabled via the `disable-warning` mechanism,
 relative to a specific macroexpansion"
     (are [input expected] (testing input
                             (is (= (assoc expected :some-errors false)
-                                   (-> eastwood.lint/default-opts
+                                   (-> sut/default-opts
                                        (assoc :namespaces #{'testcases.wrong-tag-example})
                                        (merge input)
-                                       eastwood.lint/eastwood)))
+                                       sut/eastwood)))
                             true)
       {}                                                          {:some-warnings true}
       {:builtin-config-files ["disable_wrong_tag.clj"]}           {:some-warnings false}
@@ -216,10 +215,10 @@ relative to a specific macroexpansion"
 relative to a specific macroexpansion"
     (are [input expected] (testing input
                             (is (= (assoc expected :some-errors false)
-                                   (-> eastwood.lint/default-opts
+                                   (-> sut/default-opts
                                        (assoc :namespaces #{'testcases.wrong-meta-on-macro-example})
                                        (merge input)
-                                       eastwood.lint/eastwood)))
+                                       sut/eastwood)))
                             true)
       {}                                                                     {:some-warnings true}
       {:builtin-config-files ["disable_unused_meta_on_macro.clj"]}           {:some-warnings false}
@@ -228,9 +227,9 @@ relative to a specific macroexpansion"
 (deftest are-true-test
   (are [desc input expected] (testing input
                                (is (= (assoc expected :some-errors false)
-                                      (-> eastwood.lint/default-opts
+                                      (-> sut/default-opts
                                           (assoc :namespaces input)
-                                          (eastwood.lint/eastwood)))
+                                          (sut/eastwood)))
                                    desc)
                                true)
     "Supports the \"true at tail position\" pattern for `are`"
@@ -249,9 +248,9 @@ relative to a specific macroexpansion"
   (testing "Some reported false positives against clojure.test"
     (are [input expected] (testing input
                             (is (= (assoc expected :some-errors false)
-                                   (-> eastwood.lint/default-opts
+                                   (-> sut/default-opts
                                        (assoc :namespaces input)
-                                       (eastwood.lint/eastwood))))
+                                       (sut/eastwood))))
                             true)
       #{'testcases.clojure-test}         {:some-warnings false}
       #{'testcases.clojure-test.are.red} {:some-warnings true})))
@@ -260,9 +259,9 @@ relative to a specific macroexpansion"
   (testing "Some reported false positives against `let`"
     (are [input expected] (testing input
                             (is (= (assoc expected :some-errors false)
-                                   (-> eastwood.lint/default-opts
+                                   (-> sut/default-opts
                                        (assoc :namespaces input)
-                                       (eastwood.lint/eastwood))))
+                                       (sut/eastwood))))
                             true)
       #{'testcases.let.green} {:some-warnings false}
       #{'testcases.let.red}   {:some-warnings true})))
@@ -271,9 +270,9 @@ relative to a specific macroexpansion"
   (testing "The `(while true)` idiom is supported"
     (are [input expected] (testing input
                             (is (= (assoc expected :some-errors false)
-                                   (-> eastwood.lint/default-opts
+                                   (-> sut/default-opts
                                        (assoc :namespaces input)
-                                       (eastwood.lint/eastwood))))
+                                       (sut/eastwood))))
                             true)
       #{'testcases.while-true.green} {:some-warnings false}
       #{'testcases.while-true.red}   {:some-warnings true})))
@@ -282,9 +281,9 @@ relative to a specific macroexpansion"
   (testing "The `(is false)` idiom is supported"
     (are [input expected] (testing input
                             (is (= (assoc expected :some-errors false)
-                                   (-> eastwood.lint/default-opts
+                                   (-> sut/default-opts
                                        (assoc :namespaces input)
-                                       (eastwood.lint/eastwood))))
+                                       (sut/eastwood))))
                             true)
       #{'testcases.is-false.green} {:some-warnings false}
       ;; no 'red' case for now, since there isn't one that would make sense today (given git.io/J35fr)
@@ -294,9 +293,9 @@ relative to a specific macroexpansion"
   (testing "Some reported false positives against `cond`"
     (are [input expected] (testing input
                             (is (= (assoc expected :some-errors false)
-                                   (-> eastwood.lint/default-opts
+                                   (-> sut/default-opts
                                        (assoc :namespaces input)
-                                       (eastwood.lint/eastwood))))
+                                       (sut/eastwood))))
                             true)
       #{'testcases.cond.green} {:some-warnings false}
       ;; some 'red' cases could be added at some point, there are no reported issues atm though.
@@ -305,4 +304,4 @@ relative to a specific macroexpansion"
 (deftest bytes-class-test
   (testing "https://github.com/jonase/eastwood/issues/385"
     (is (= {:some-warnings false :some-errors false}
-           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.bytes-class.green}))))))
+           (sut/eastwood (assoc sut/default-opts :namespaces #{'testcases.bytes-class.green}))))))
