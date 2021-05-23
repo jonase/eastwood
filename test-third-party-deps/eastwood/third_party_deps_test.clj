@@ -17,3 +17,8 @@
   (testing "Is able to process usages of the `taoensso.tufte` library without false positives"
     (is (= {:some-warnings false :some-errors false}
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.tufte-example}))))))
+
+(deftest manifold-example
+  (testing "Is able to process usages of the `manifold` library without false positives"
+    (is (= {:some-warnings false :some-errors false}
+           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.manifold-example}))))))

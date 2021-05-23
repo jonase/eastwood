@@ -335,3 +335,8 @@
  {:linter :unused-ret-vals
   :if-inside-macroexpansion-of #{'nedap.utils.spec.api/check!}
   :within-depth 2})
+
+(disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'manifold.deferred/let-flow}
+  :qualifier :else})

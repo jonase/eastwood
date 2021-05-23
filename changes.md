@@ -15,6 +15,8 @@
   * Closes https://github.com/jonase/eastwood/issues/383
 * Fix a false positive for `extend-protocol`
   * Closes https://github.com/jonase/eastwood/issues/385
+* Support Manifold's `let-flow`
+  * Closes https://github.com/jonase/eastwood/issues/197
 * Fix various false positives
   * These could be triggered, under certain conditions, by `are`, `with-out-str`, some external libraries, etc.
 
