@@ -90,18 +90,18 @@
           :let [loc (meta pvar)]]
       {:loc loc
        :linter :unused-private-vars
-       :msg (format "Private var '%s' is never used"
+       :msg (format "Private var '%s' is never used."
                     (-> pvar util/var-to-fqsym name))})))
 
 ;; Unused fn args
 
 (defn- ignore-arg?
   "Return logical true for args that should never be warned about as
-unused, such as &form and &env that are 'hidden' args of macros.
+  unused, such as &form and &env that are 'hidden' args of macros.
 
-By convention, _ is never reported as unused, and neither is any arg
-with a name that begins with _.  This gives eastwood users a way to
-selectively disable such warnings if they wish."
+  By convention, _ is never reported as unused, and neither is any arg
+  with a name that begins with _.  This gives eastwood users a way to
+  selectively disable such warnings if they wish."
   [arg]
   (or (contains? #{'&env '&form} arg)
       (.startsWith (name arg) "_")))
@@ -136,7 +136,7 @@ selectively disable such warnings if they wish."
           :let [loc (-> unused-sym meta)]]
       {:loc loc
        :linter :unused-fn-args
-       :msg (format "Function arg %s never used" unused-sym)})))
+       :msg (format "Function arg %s never used." unused-sym)})))
 
 ;; Symbols in let or loop bindings that are unused
 
@@ -216,7 +216,7 @@ selectively disable such warnings if they wish."
                         (pass/code-loc (pass/nearest-ast-with-loc expr)))]]
       {:loc loc
        :linter :unused-locals
-       :msg (format "%s bound symbol '%s' never used"
+       :msg (format "%s bound symbol '%s' never used."
                     (-> expr :op name)
                     unused-sym)})))
 
@@ -270,7 +270,7 @@ selectively disable such warnings if they wish."
       {:loc loc
        :unused-namespace-sym ns
        :linter :unused-namespaces
-       :msg (format "Namespace %s is never used in %s" ns curr-ns)})))
+       :msg (format "Namespace %s is never used in %s." ns curr-ns)})))
 
 ;; Unused return values
 
@@ -433,16 +433,16 @@ selectively disable such warnings if they wish."
            :msg
            (case action
              :lazy-fn
-             (format "Lazy %s return value is discarded%s: %s"
+             (format "Lazy %s return value is discarded%s: %s."
                      stmt-desc-str extra-msg form)
              :pure-fn
-             (format "Pure %s return value is discarded%s: %s"
+             (format "Pure %s return value is discarded%s: %s."
                      stmt-desc-str extra-msg form)
              :pure-fn-if-fn-args-pure
-             (format "Return value is discarded for a %s that only has side effects if the functions passed to it as args have side effects%s: %s"
+             (format "Return value is discarded for a %s that only has side effects if the functions passed to it as args have side effects%s: %s."
                      stmt-desc-str extra-msg form)
              :warn-if-ret-val-unused
-             (format "Should use return value of %s, but it is discarded%s: %s"
+             (format "Should use return value of %s, but it is discarded%s: %s."
                      stmt-desc-str extra-msg form))}
 
           ;; default case, where we have no information about the type
@@ -521,7 +521,7 @@ selectively disable such warnings if they wish."
                     {:loc loc
                      :linter :unused-ret-vals
                      :unused-ret-vals {:kind (:op stmt), :ast stmt}
-                     :msg (format "%s value is discarded%s: %s"
+                     :msg (format "%s value is discarded%s: %s."
                                   (op-desc (:op stmt))
                                   (if name-found?
                                     (str " inside " (-> stmt :env :name))

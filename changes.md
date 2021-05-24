@@ -1,5 +1,12 @@
 # Change log for Eastwood
 
+## Changes from 0.4.3 to
+
+#### New
+
+* Consistently use puctuation in linting messages
+  * Closes https://github.com/jonase/eastwood/issues/146
+  
 ## Changes from 0.4.1 to 0.4.3
 
 #### New

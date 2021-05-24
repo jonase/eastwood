@@ -179,13 +179,13 @@
          (and (= n 2) (string? is-arg1))
          [{:loc is-loc
            :linter :suspicious-test,
-           :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test")}]
+           :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.")}]
 
          (and (constant-expr-logical-true? is-arg1)
               (not (list? is-arg1)))
          [{:loc is-loc
            :linter :suspicious-test,
-           :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test")}]
+           :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test.")}]
 
          (and (= n 2)
               (not= message-tag java.lang.String))
@@ -835,7 +835,7 @@
                    :qualifier (-> constant-test-ast :form)
                    :constant-test {:kind :the-only-kind
                                    :ast ast}
-                   :msg (format "Test expression is always logical true or always logical false: %s in form %s"
+                   :msg (format "Test expression is always logical true or always logical false: %s in form %s."
                                 (pr-str test-form) (pr-str form))}
                 allow? (util/allow-warning w opt)]
           :when allow?]
@@ -916,7 +916,7 @@
 (defn wrong-pre-post-messages [opt kind conditions method-num ast
                                condition-desc-begin condition-desc-middle]
   (if (not (vector? conditions))
-    [(format "All function %s should be in a vector.  Found: %s"
+    [(format "All function %s should be in a vector.  Found: %s."
              condition-desc-middle (pr-str conditions))]
 
     (remove nil?
@@ -928,12 +928,12 @@
                                conditions)]
               (cond
                 (= :const (:op test-ast))
-                (format "%s found that is always logical true or always logical false.  Should be changed to function call?  %s"
+                (format "%s found that is always logical true or always logical false.  Should be changed to function call?  %s."
                         condition-desc-begin (pr-str condition))
 
                 (and (-> test-ast :op #{:var})
                      (-> test-ast :var meta :dynamic not))
-                (format "%s found that is probably always logical true or always logical false.  Should be changed to function call?  %s"
+                (format "%s found that is probably always logical true or always logical false.  Should be changed to function call?  %s."
                         condition-desc-begin (pr-str condition))
 
                 ;; In this case, probably the developer wanted to assert that
@@ -1248,7 +1248,7 @@
                   [{:loc loc
                     :linter :duplicate-params
                     :duplicate-params {}
-                    :msg (format "Unrecognized argument vector syntax %s" arg-vec)}]
+                    :msg (format "Unrecognized argument vector syntax %s." arg-vec)}]
                   (let [dups (->> (duplicate-local-names local-names)
                                   (remove #(dont-warn-for-symbol? (:local-name %))))]
                     (concat
@@ -1257,9 +1257,9 @@
                              :linter :duplicate-params
                              :duplicate-params {}
                              :msg (if (= (:source-name dup) (:local-name dup))
-                                    (format "Local name `%s` occurs multiple times in the same argument vector"
+                                    (format "Local name `%s` occurs multiple times in the same argument vector."
                                             (:source-name dup))
-                                    (format "Local name `%s` (part of full name `%s`) occurs multiple times in the same argument vector"
+                                    (format "Local name `%s` (part of full name `%s`) occurs multiple times in the same argument vector."
                                             (:local-name dup) (:source-name dup)))})
                           dups)
                      warnings)))))))))
