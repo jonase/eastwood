@@ -1,13 +1,13 @@
 (ns eastwood.linters.unused
   (:require
    [clojure.java.io :as io]
-   [clojure.pprint :as pp]
+   [clojure.pprint :as pprint]
    [clojure.set :as set]
    [clojure.string :as str]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
    [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.parse :as parse]
-   [eastwood.passes :as pass]
+   [eastwood.passes :as passes]
    [eastwood.util :as util])
   (:import
    (java.lang.reflect Method)))
@@ -212,8 +212,8 @@
                             (map :form)
                             (remove ignore-local-symbol?))]
           unused-sym unused
-          :let [loc (or (pass/has-code-loc? (-> unused-sym meta))
-                        (pass/code-loc (pass/nearest-ast-with-loc expr)))]]
+          :let [loc (or (passes/has-code-loc? (-> unused-sym meta))
+                        (passes/code-loc (passes/nearest-ast-with-loc expr)))]]
       {:loc loc
        :linter :unused-locals
        :msg (format "%s bound symbol '%s' never used."
@@ -242,7 +242,7 @@
 
 (defn unused-namespaces [{:keys [asts]} opt]
   (let [ns-asts (util/ns-form-asts asts)
-        loc (pass/code-loc (first ns-asts))
+        loc (passes/code-loc (first ns-asts))
         curr-ns (-> ns-asts first :form second second second)
         required (required-namespaces ns-asts)
         used-vars (vars-used asts)
@@ -262,7 +262,8 @@
                                       (map namespace)
                                       (remove nil?)
                                       (map symbol))
-                                 (keep #(if-let [n (namespace %)] (symbol n))
+                                 (keep #(when-let [n (namespace %)]
+                                          (symbol n))
                                        used-macros)
                                  (map namespace-for used-protocols)
                                  (map namespace-for used-classes)))]
@@ -310,7 +311,7 @@
     (make-static-method-val-unused-action-map "jvm-method-info.edn")))
 
 (defn- mark-things-in-defprotocol-expansion-post [ast]
-  (if (not (util/ast-expands-macro ast #{'clojure.core/defprotocol}))
+  (if-not (util/ast-expands-macro ast #{'clojure.core/defprotocol})
     ast
     (let [defprotocol-var (get-in ast [:ret :expr :val])
           ;; Mark the second statement, the interface
@@ -320,7 +321,7 @@
           sigs (get-in ast [:statements 3])]
       ;; If the 4th statement, the signatures, is nil, mark that ast
       ;; node, too.
-      (if (nil? (:form sigs))
+      (if (-> sigs :form nil?)
         (update-in ast [:statements 3 :eastwood/defprotocol-expansion-sigs]
                    (constantly defprotocol-var))
         ast))))
@@ -378,7 +379,7 @@
   (binding [*print-level* 7
             *print-length* 50
             *print-meta* true]
-    (pp/pprint stmt))
+    (pprint/pprint stmt))
   (println (format "   ^^^ ast-node=")))
 
 (defn unused-ret-val-lint-result [stmt stmt-desc-str action fn-or-method
@@ -390,36 +391,36 @@
                       " inside body of try"
                       "")
           form (:form stmt)
-          loc (or (pass/has-code-loc?
+          loc (or (passes/has-code-loc?
                    (case stmt-desc-str
                      "function call" (-> stmt :meta)
                      "static method call" (-> stmt :form meta)))
-                  (pass/code-loc (pass/nearest-ast-with-loc stmt)))
+                  (passes/code-loc (passes/nearest-ast-with-loc stmt)))
           ;; If warning-unused-static had no info about method m, but
           ;; its return type is void, that is a fairly sure sign that it
           ;; is intended to be called for side effects.
-          action (if (and (= stmt-desc-str "static method call")
-                          (not
-                           (#{:side-effect :lazy-fn :pure-fn
-                              :pure-fn-if-fn-args-pure :warn-if-ret-val-unused}
-                            action)))
-                   (let [m (pass/get-method stmt)]
-                     ;; If pass/get-method could not determine the method,
+          action (if-not (and (= stmt-desc-str "static method call")
+                              (not
+                               (#{:side-effect :lazy-fn :pure-fn
+                                  :pure-fn-if-fn-args-pure :warn-if-ret-val-unused}
+                                action)))
+                   action
+                   (let [m (passes/get-method stmt)]
+                     ;; If passes/get-method could not determine the method,
                      ;; do not give an unused-ret-val warning for it.  We
                      ;; may at some point in the future wish to give a
                      ;; warning that we could not determine which method
                      ;; it is.
                      (cond (not (instance? Method m)) :side-effect
-                           (pass/void-method? m) :side-effect
-                           :else :warn-if-ret-val-unused))
-                   action)
+                           (passes/void-method? m) :side-effect
+                           :else :warn-if-ret-val-unused)))
           linter (case location
                    :outside-try :unused-ret-vals
                    :inside-try :unused-ret-vals-in-try)]
-      (if (or (and stmt-in-try-body?
-                   (= location :inside-try))
-              (and (not stmt-in-try-body?)
-                   (= location :outside-try)))
+      (when (or (and stmt-in-try-body?
+                     (= location :inside-try))
+                (and (not stmt-in-try-body?)
+                     (= location :outside-try)))
         (case action
           ;; No warning - function/method is intended to be called for
           ;; its side effects, and ignoring the return value is normal.
@@ -453,7 +454,7 @@
           ;; TBD: Consider adding 'opts' to the API for all linters, so
           ;; this linter can receive options for what to do in this
           ;; case.
-          (if (= stmt-desc-str "static method call")
+          (when (= stmt-desc-str "static method call")
             (debug-unknown-fn-methods fn-or-method stmt-desc-str stmt)))))))
 
 (defn op-desc [op]
@@ -514,10 +515,10 @@
                   nil  ;; no warning
                   (let [name-found? (contains? (-> stmt :env) :name)
                         loc (or
-                             (pass/has-code-loc? (-> stmt :raw-forms first meta))
+                             (passes/has-code-loc? (-> stmt :raw-forms first meta))
                              (if name-found?
                                (-> stmt :env :name meta)
-                               (pass/code-loc (pass/nearest-ast-with-loc stmt))))]
+                               (passes/code-loc (passes/nearest-ast-with-loc stmt))))]
                     {:loc loc
                      :linter :unused-ret-vals
                      :unused-ret-vals {:kind (:op stmt), :ast stmt}
@@ -526,12 +527,12 @@
                                   (if name-found?
                                     (str " inside " (-> stmt :env :name))
                                     "")
-                                  (if (nil? (:form stmt))
+                                  (if (-> stmt :form nil?)
                                     "nil"
                                     (str/trim-newline
                                      (with-out-str
-                                       (binding [pp/*print-right-margin* nil]
-                                         (pp/pprint (:form stmt)))))))}))
+                                       (binding [pprint/*print-right-margin* nil]
+                                         (pprint/pprint (:form stmt)))))))}))
 
                 (util/static-call? stmt)
                 (let [m (select-keys stmt [:class :method])

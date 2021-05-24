@@ -1,12 +1,12 @@
 (ns eastwood.linters.typos
   (:require
    [clojure.java.io :as io]
-   [clojure.pprint :as pp]
+   [clojure.pprint :as pprint]
    [clojure.set :as set]
    [clojure.string :as str]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
    [eastwood.copieddeps.dep10.clojure.tools.reader.edn :as edn]
-   [eastwood.passes :as pass]
+   [eastwood.passes :as passes]
    [eastwood.util :as util])
   (:import
    (name.fraser.neil.plaintext diff_match_patch)))
@@ -76,7 +76,7 @@
                    frequencies)]
     (when debug-keywords-found
       (println "dbx: keyword-typos frequencies:")
-      (pp/pprint (into (sorted-map) freqs)))
+      (pprint/pprint (into (sorted-map) freqs)))
     (for [[kw1 n] freqs
           [kw2 _] freqs
           :let [s1 (name kw1)
@@ -171,7 +171,7 @@
                                 :map (util/get-val-in-map-ast
                                       (get-in first-invoke-do-report-ast [:args 0])
                                       :message))
-           message-tag (if message-val-or-ast
+           message-tag (when message-val-or-ast
                          (case (:op const-or-map-ast)
                            :const (class message-val-or-ast)
                            :map (:tag message-val-or-ast)))]
@@ -225,17 +225,21 @@
                    (and (not (list? f))
                         (constant-expr? f))
                    (let [meta-loc (-> f meta)
-                         loc (or (pass/has-code-loc? meta-loc)
-                                 (pass/code-loc (pass/nearest-ast-with-loc ast)))
+                         loc (or (passes/has-code-loc? meta-loc)
+                                 (passes/code-loc (passes/nearest-ast-with-loc ast)))
                          warning {:loc loc
                                   :linter :suspicious-test
                                   :suspicious-test {:ast ast}
                                   :qualifier f
                                   :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
-                                               (cond (-> meta-loc :line) ""
-                                                     (string? f) (str " \"" f "\"")
-                                                     :else (str " " f))
-                                               (if f (.getName (class f)) "nil") form-type)}]
+                                               (cond
+                                                 (-> meta-loc :line) ""
+                                                 (string? f) (str " \"" f "\"")
+                                                 :else (str " " f))
+                                               (if f
+                                                 (.getName (class f))
+                                                 "nil")
+                                               form-type)}]
                      (when (util/allow-warning warning opt)
                        [warning]))
 
@@ -524,8 +528,8 @@
           raw-form (filter #(raw-form-of-interest? % core-macros-that-do-little)
                            (:raw-forms ast))
           :let [macro-sym (util/fqsym-of-raw-form raw-form)
-                loc (or (pass/has-code-loc? (-> ast :raw-forms first meta))
-                        (pass/code-loc (pass/nearest-ast-with-loc ast)))
+                loc (or (passes/has-code-loc? (-> ast :raw-forms first meta))
+                        (passes/code-loc (passes/nearest-ast-with-loc ast)))
                 num-args (dec (count raw-form))
                 suspicious-args (get core-macros-that-do-little macro-sym)
                 info (get suspicious-args num-args)]
@@ -633,7 +637,7 @@
               loc (-> form meta)
               suspicious-args (core-fns-that-do-little fn-fqsym)
               info (get suspicious-args num-args)]
-          (if (contains? suspicious-args num-args)
+          (when (contains? suspicious-args num-args)
             {:loc loc
              :linter :suspicious-expression,
              :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
@@ -717,7 +721,7 @@
   (and (= :var (:op ast))
        (var? (:var ast))
        (let [sym (util/var-to-fqsym (:var ast))]
-         (if (:pure-fn (@var-info-map-delayed sym))
+         (when (:pure-fn (@var-info-map-delayed sym))
            sym))))
 
 (declare constant-ast)
@@ -743,14 +747,14 @@
         (= :local (:op ast))
         (let [local-sym (:form ast)
               bound-val-binding (-> ast :env :locals local-sym)
-              bound-val-ast (if (and (= :binding (:op bound-val-binding))
-                                     ;; loop and fn arg bindings can
-                                     ;; never be constants.  Only
-                                     ;; examine let bindings, which
-                                     ;; might be constants.
-                                     (= :let (:local bound-val-binding)))
+              bound-val-ast (when (and (= :binding (:op bound-val-binding))
+                                       ;; loop and fn arg bindings can
+                                       ;; never be constants.  Only
+                                       ;; examine let bindings, which
+                                       ;; might be constants.
+                                       (= :let (:local bound-val-binding)))
                               (:init bound-val-binding))]
-          (if bound-val-ast
+          (when bound-val-ast
             (constant-ast bound-val-ast)))
 
         (#{:const :quote} (:op ast))  ast
@@ -823,13 +827,13 @@
                          (mapcat ast/nodes)
                          (keep #(if (default-case-at-end-of-cond? %)
                                   nil
-                                  (if-let [x (if-with-predictable-test %)]
+                                  (when-let [x (if-with-predictable-test %)]
                                     [% x]))))]
     (for [[ast constant-test-ast] const-tests
           :let [test-form (-> constant-test-ast :form)
                 form (-> ast :form)
-                loc (or (pass/has-code-loc? (-> ast :form meta))
-                        (pass/code-loc (pass/nearest-ast-with-loc ast)))
+                loc (or (passes/has-code-loc? (-> ast :form meta))
+                        (passes/code-loc (passes/nearest-ast-with-loc ast)))
                 w {:loc loc
                    :linter :constant-test
                    :qualifier (-> constant-test-ast :form)
@@ -844,12 +848,15 @@
         w))))
 
 (defn fn-form-with-pre-post [form ast]
-  (if (and (sequential? form)
-           (not (vector? form))  ;; TBD: Is this needed for anything?
-           (#{'clojure.core/fn 'fn} (first form)))
-    (let [name (if (symbol? (second form)) (second form))
-          sigs (if name (nnext form) (next form))
-          sigs (if (vector? (first sigs))
+  (when (and (sequential? form)
+             (not (vector? form))  ;; TBD: Is this needed for anything?
+             (#{'clojure.core/fn 'fn} (first form)))
+    (let [name (when (-> form second symbol?)
+                 (second form))
+          sigs (if name
+                 (nnext form)
+                 (next form))
+          sigs (if (-> sigs first vector?)
                  (list sigs)
                  sigs)
           psig (fn [sig]
@@ -859,13 +866,17 @@
                        conds (or conds (meta params))
                        pre (:pre conds)
                        post (:post conds)]
-                   (if (or pre post)
+                   (when (or pre post)
                      (merge {:form form, :name name, :params params, :ast ast}
-                            (if pre {:pre pre})
-                            (if post {:post post})))))]
+                            (when pre
+                              {:pre pre})
+                            (when post
+                              {:post post})))))]
       (->> sigs
            (map psig)
-           (map-indexed (fn [idx m] (if m (assoc m :method-num idx))))
+           (map-indexed (fn [idx m]
+                          (when m
+                            (assoc m :method-num idx))))
            (remove nil?)))))
 
 (defn fn-ast-with-pre-post [ast]
@@ -988,8 +999,8 @@
        w))))
 
 (defn arg-vecs-of-fn-raw-form [fn-raw-form]
-  (if (and (sequential? fn-raw-form)
-           (#{'fn 'clojure.core/fn} (first fn-raw-form)))
+  (when (and (sequential? fn-raw-form)
+             (#{'fn 'clojure.core/fn} (first fn-raw-form)))
     (let [fn-bodies (rest fn-raw-form)
           ;; remove symbol fn name if present
           fn-bodies (if (symbol? (first fn-bodies))
@@ -1004,8 +1015,8 @@
       (map first fn-bodies))))
 
 (defn arg-vecs-of-ast [ast]
-  (if (and (contains? ast :raw-forms)
-           (sequential? (:raw-forms ast)))
+  (when (and (contains? ast :raw-forms)
+             (sequential? (:raw-forms ast)))
     (mapcat arg-vecs-of-fn-raw-form (:raw-forms ast))))
 
 ;; Copied a few functions from Clojure 1.9.0, and renamed with 'my-'
@@ -1052,12 +1063,11 @@
    :loc (better-loc loc x)})
 
 (defn local-name-info [x loc]
-  (if (my-local-name? x)
+  (if-not (my-local-name? x)
+    non-matching-info
     {:result true
      :kind :local-name
-     :local-names [(local-name-with-loc x loc)]}
-    ;; else
-    non-matching-info))
+     :local-names [(local-name-with-loc x loc)]}))
 
 ;; Adapted from core.spec.alpha spec ::seq-binding-form
 
@@ -1080,11 +1090,11 @@
           ;; _Do_ allow & in top level arg vector of a fn
           has-amp? (and (>= n 2)
                         (= '& (x (- n 2))))
-          amp-form-info (if has-amp?
+          amp-form-info (if-not has-amp?
+                          {}
                           (let [amp-form (x (- n 1))]
                             (binding-form-info amp-form
-                                               (better-loc loc amp-form)))
-                          {})
+                                               (better-loc loc amp-form))))
           x (if has-amp?
               (subvec x 0 (- n 2))
               x)
@@ -1108,10 +1118,11 @@
        :warnings warnings})))
 
 (defn map-binding-value-for-keys-syms-strs [v pred loc]
-  (if (and (vector? v) (every? pred v))
+  (if-not (and (vector? v)
+               (every? pred v))
+    non-matching-info
     {:result true, :local-names (map #(local-name-with-loc % loc) v),
-     :kind :map-keys-syms-strs}
-    non-matching-info))
+     :kind :map-keys-syms-strs}))
 
 (defn one-map-binding-form-info [[k v] loc]
   (cond
@@ -1122,7 +1133,10 @@
          (-> k name #{"keys" "syms"})) (map-binding-value-for-keys-syms-strs
                                         v my-simple-symbol? loc)
 
-    (= k :or) (if (and (map? v) (every? my-simple-symbol? (keys v)))
+    (= k :or) (if (and (map? v)
+                       (->> v
+                            keys
+                            (every? my-simple-symbol?)))
                 {:result true, :or-map v, :kind :map-or}
                 non-matching-info)
 
@@ -1159,7 +1173,7 @@
         (let [{:keys [map-bind-local-name map-keys-syms-strs
                       map-sub-destructure map-or map-as]}
               (group-by :kind infos)
-              as-local-name (if map-as (-> map-as first :as-name))
+              as-local-name (some-> map-as first :as-name)
               or-names (if map-or
                          (-> map-or first :or-map keys)
                          [])
@@ -1169,8 +1183,8 @@
                                      (mapcat :local-names)
                                      (map :local-name))
               as-or-warning
-              (if (and as-local-name
-                       (contains? or-names-set as-local-name))
+              (when (and as-local-name
+                         (contains? or-names-set as-local-name))
                 [{:loc (better-loc loc as-local-name)
                   :linter :unused-or-default
                   :unused-or-default {}
@@ -1256,7 +1270,8 @@
                             {:loc (:loc dup)
                              :linter :duplicate-params
                              :duplicate-params {}
-                             :msg (if (= (:source-name dup) (:local-name dup))
+                             :msg (if (= (:source-name dup)
+                                         (:local-name dup))
                                     (format "Local name `%s` occurs multiple times in the same argument vector."
                                             (:source-name dup))
                                     (format "Local name `%s` (part of full name `%s`) occurs multiple times in the same argument vector."

@@ -1,6 +1,6 @@
 (ns eastwood.linters.misc
   (:require
-   [clojure.pprint :as pp]
+   [clojure.pprint :as pprint]
    [clojure.set :as set]
    [clojure.string :as string]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
@@ -313,8 +313,8 @@
                               (doseq [[i ast] (map-indexed vector ast-list)]
                                 (println (format "enclosing macros for def #%d of %d for Var %s"
                                                  (inc i) num-defs redefd-var))
-                                (pp/pprint (->> (util/enclosing-macros ast)
-                                                (map #(dissoc % :ast :index)))))))
+                                (pprint/pprint (->> (util/enclosing-macros ast)
+                                                    (map #(dissoc % :ast :index)))))))
         w))))
 
 ;; Def-in-def
@@ -457,10 +457,10 @@
                               (println (format "was generated because of a function call on '%s' with %d args"
                                                fn-sym (count args)))
                               (println "arglists from metadata on function var:")
-                              (pp/pprint arglists)
+                              (pprint/pprint arglists)
                               (when override-arglists
                                 (println "arglists overridden by Eastwood config to the following:")
-                                (pp/pprint lint-arglists)
+                                (pprint/pprint lint-arglists)
                                 (println "Reason:" (-> override-arglists :reason)))))
         w))))
 

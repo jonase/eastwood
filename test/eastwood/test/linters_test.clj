@@ -1,11 +1,11 @@
 (ns eastwood.test.linters-test
   (:require
    [clojure.data :as data]
-   [clojure.pprint :as pp]
+   [clojure.pprint :as pprint]
    [clojure.string :as str]
-   [clojure.test :refer :all]
-   [eastwood.lint :refer :all]
-   [eastwood.reporting-callbacks :as reporting]
+   [clojure.test :refer [deftest is]]
+   [eastwood.lint]
+   [eastwood.reporting-callbacks :as reporting-callbacks]
    [eastwood.util :as util])
   (:import
    (java.io File)))
@@ -54,7 +54,7 @@
 (defn lint-ns-noprint [ns-sym linters opts]
   (let [opts (assoc opts :linters linters
                     :debug #{})
-        opts (last-options-map-adjustments opts (reporting/silent-reporter opts))
+        opts (eastwood.lint/last-options-map-adjustments opts (reporting-callbacks/silent-reporter opts))
         cb (fn cb [info]
              (case (:kind info)
                (:eval-out :eval-err) (println (:msg info))
@@ -62,7 +62,7 @@
                ;;((:callback opts) info)
                ))
         opts (assoc opts :callback cb)
-        {:keys [exception lint-results]} (lint-ns ns-sym linters opts)]
+        {:keys [exception lint-results]} (eastwood.lint/lint-ns ns-sym linters opts)]
     (if-not exception
       (->> lint-results
            (mapcat :lint-warning)
@@ -84,7 +84,7 @@
                                      m#)))))]
      (when (not= diffs# [nil nil])
        (println "Pretty-printed diffs between actual and expected lint results:")
-       (pp/pprint diffs#))
+       (pprint/pprint diffs#))
      (is (= diffs# [nil nil]))))
 
 (defn fname-from-parts [& parts]
@@ -185,7 +185,7 @@
    'testcases.f02
    [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity
     :local-shadows-var :wrong-tag :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :redefd-vars,
      :msg (str "Var i-am-defonced-and-defmultid def'd 2 times at line:col locations: "
                (fname-from-parts "testcases" "f02.clj") ":8:10 "
@@ -211,13 +211,13 @@
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try :wrong-arity
     :wrong-tag :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {})
   (lint-test
    'testcases.f04
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :local-shadows-var,
      :msg "local: replace invoked as function shadows var: #'clojure.core/replace.",
      :file (fname-from-parts "testcases" "f04.clj"),
@@ -247,13 +247,13 @@
      'testcases.f05
      [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
       :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
-     default-opts
+     eastwood.lint/default-opts
      {}))
   (lint-test
    'testcases.f06
    [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :unused-fn-args,
      :msg "Function arg y never used.",
      :file (fname-from-parts "testcases" "f06.clj"),
@@ -475,17 +475,17 @@
      'testcases.f07
      [:unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
       :local-shadows-var :wrong-tag :unused-locals]
-     default-opts
+     eastwood.lint/default-opts
      (merge common-expected-warnings
             (if (util/clojure-1-6-or-later)
               clojure-1-6-or-later-additional-expected-warnings
               clojure-1-5-additional-expected-warnings)
-            (if (util/clojure-1-8-or-later)
+            (when (util/clojure-1-8-or-later)
               clojure-1-8-or-later-additional-expected-warnings))))
   (lint-test
    'testcases.deprecated
    [:deprecations :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :deprecations,
      :msg
      "Constructor 'public java.util.Date(int,int,int)' is deprecated.",
@@ -514,20 +514,20 @@
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
     :local-shadows-var :wrong-tag :unused-locals]
-   default-opts  ;(merge default-opts {:debug #{:all}})
+   eastwood.lint/default-opts
    {})
   (lint-test
    'testcases.tanal-27
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
     :local-shadows-var :wrong-tag :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {})
   (lint-test
    'testcases.keyword-typos
    [:keyword-typos :unused-ret-vals :unused-ret-vals-in-try
     :deprecations :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :keyword-typos,
      :msg "Possible keyword typo: :occuption instead of :occupation ?"}
     1})
@@ -535,13 +535,13 @@
    'testcases.isformsok
    [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag
     :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {})
   (lint-test
    'testcases.testtest
    [:keyword-typos :suspicious-test :suspicious-expression
     :local-shadows-var :wrong-tag]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :suspicious-test,
      :msg "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.",
      :file (fname-from-parts "testcases" "testtest.clj"),
@@ -1131,7 +1131,7 @@
     (lint-test
      'testcases.suspicious
      [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
-     default-opts
+     eastwood.lint/default-opts
      expected-warnings))
 
   ;; It is strange that the :unlimited-use linter has nil for :line
@@ -1140,7 +1140,7 @@
   (lint-test
    'testcases.unlimiteduse
    [:unlimited-use :local-shadows-var :wrong-tag :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :unlimited-use,
      :msg "Unlimited use of ([clojure.reflect] [clojure inspector] [clojure [set]] [clojure.java.io :as io]) in testcases.unlimiteduse.",
      :file (fname-from-parts "testcases" "unlimiteduse.clj"),
@@ -1154,7 +1154,7 @@
   (lint-test
    'testcases.in-ns-switching
    [:unlimited-use :local-shadows-var :wrong-tag :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :unlimited-use,
      :msg "Unlimited use of (clojure.set [testcases.f01 :as t1]) in testcases.in-ns-switching.",
      :file (fname-from-parts "testcases" "in_ns_switching.clj"),
@@ -1277,7 +1277,7 @@
     (lint-test
      'testcases.wrongtag
      (concat @#'eastwood.lint/default-linters [:unused-locals])
-     default-opts
+     eastwood.lint/default-opts
      (cond (util/clojure-1-8-or-later) common-expected-warnings
 
            ;; This is actually the expected result only for 1.7.0-alpha2
@@ -1292,7 +1292,7 @@
    'testcases.macrometa
    [:unlimited-use :local-shadows-var :wrong-tag :unused-meta-on-macro
     :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :unused-meta-on-macro,
      :msg "Java constructor call 'StringWriter.' has metadata with keys (:foo).  All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
@@ -1585,13 +1585,13 @@
     (lint-test
      'testcases.constanttestexpr
      [:constant-test :unused-locals]
-     default-opts
+     eastwood.lint/default-opts
      expected-warnings))
 
   (lint-test
    'testcases.unusedlocals
    [:unused-locals :unused-private-vars]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :unused-locals,
      :msg "let bound symbol 'unused-first-should-warn' never used.",
      :file (fname-from-parts "testcases" "unusedlocals.clj"),
@@ -1648,26 +1648,26 @@
      :line 164, :column 1}
     1})
   ;; No faults expected:
-  (lint-test 'testcases.unusednsimport.consumer1 [:unused-namespaces] default-opts {})
+  (lint-test 'testcases.unusednsimport.consumer1 [:unused-namespaces] eastwood.lint/default-opts {})
   ;; Fault expected (since the refered type is in a `comment` form):
   (lint-test 'testcases.unusednsimport.consumer2
              [:unused-namespaces]
-             default-opts
+             eastwood.lint/default-opts
              {{:linter :unused-namespaces
                :msg "Namespace testcases.unusednsimport.defrecord is never used in testcases.unusednsimport.consumer2."
                :file "testcases/unusednsimport/consumer2.clj"
                :line 1
                :column 1} 1})
   ;; No faults expected:
-  (lint-test 'testcases.unusednsimport.consumer3 [:unused-namespaces] default-opts {})
+  (lint-test 'testcases.unusednsimport.consumer3 [:unused-namespaces] eastwood.lint/default-opts {})
   ;; No faults expected:
-  (lint-test 'testcases.unusednsimport.consumer4 [:unused-namespaces] default-opts {})
+  (lint-test 'testcases.unusednsimport.consumer4 [:unused-namespaces] eastwood.lint/default-opts {})
   ;; No faults expected:
-  (lint-test 'testcases.unusednsimport.consumer5 [:unused-namespaces] default-opts {})
+  (lint-test 'testcases.unusednsimport.consumer5 [:unused-namespaces] eastwood.lint/default-opts {})
   (lint-test
    'testcases.unusednss
    [:unused-namespaces :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :unused-namespaces,
      :msg "Namespace clojure.string is never used in testcases.unusednss.",
      :file (fname-from-parts "testcases" "unusednss.clj"),
@@ -1676,12 +1676,12 @@
   (lint-test
    'testcases.unusednss3
    [:unused-namespaces :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {})
   (lint-test
    'testcases.unusednss4
    [:unused-namespaces :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :unused-namespaces,
      :msg "Namespace testcases.unusednss2 is never used in testcases.unusednss4.",
      :file (fname-from-parts "testcases" "unusednss4.clj"),
@@ -1690,7 +1690,7 @@
   (lint-test
    'testcases.wrongnsform
    [:wrong-ns-form :unused-locals]
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :wrong-ns-form,
      :msg "ns reference starts with ':println' - should be one one of the keywords: :gen-class :import :load :refer-clojure :require :use.",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
@@ -1749,7 +1749,7 @@
   (lint-test
    'testcases.wrongprepost
    (concat @#'eastwood.lint/default-linters [:unused-locals])
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :wrong-pre-post,
      :msg "All function preconditions should be in a vector.  Found: (pos? x).",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
@@ -1857,7 +1857,7 @@
   (lint-test
    'testcases.arglists
    (concat @#'eastwood.lint/default-linters [:unused-locals])
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :bad-arglists,
      :msg "Function on var fn-with-arglists1 defined taking # args [1] but :arglists metadata has # args [2].",
      :file (fname-from-parts "testcases" "arglists.clj"),
@@ -1871,7 +1871,7 @@
   (lint-test
    'testcases.duplicateparams
    (concat @#'eastwood.lint/default-linters [:unused-locals])
-   default-opts
+   eastwood.lint/default-opts
    {{:linter :duplicate-params,
      :msg
      "Local name `a` occurs multiple times in the same argument vector.",
@@ -2117,12 +2117,12 @@
     (lint-test
      'testcases.wrongprepost2
      (concat @#'eastwood.lint/default-linters [:unused-locals])
-     default-opts
+     eastwood.lint/default-opts
      {})
     (lint-test
      'testcases.duplicateparams2
      (concat @#'eastwood.lint/default-linters [:unused-locals])
-     default-opts
+     eastwood.lint/default-opts
      {{:linter :duplicate-params,
        :msg
        "Local name `a` occurs multiple times in the same argument vector.",

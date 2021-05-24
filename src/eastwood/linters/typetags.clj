@@ -2,7 +2,7 @@
   (:require
    [clojure.string :as string]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
-   [eastwood.passes :as pass]
+   [eastwood.passes :as passes]
    [eastwood.util :as util]))
 
 (def default-classname-mapping
@@ -43,8 +43,8 @@
 
                                    (and (= wrong-tag-keys #{:eastwood/tag :eastwood/o-tag})
                                         (= op :fn-method))
-                                   (let [m (or (pass/has-code-loc? (meta form))
-                                               (pass/code-loc (pass/nearest-ast-with-loc ast)))]
+                                   (let [m (or (passes/has-code-loc? (meta form))
+                                               (passes/code-loc (passes/nearest-ast-with-loc ast)))]
                                      [:fn-method (-> ast :eastwood/tag) m])
 
                                    ;; This set of wrong-tag-keys sometimes occurs for
@@ -81,8 +81,8 @@
                                        (and (= wrong-tag-keys #{:eastwood/tag})
                                             (#{:local :const :var} op)))
                                    [:tag (get ast :tag)
-                                    (or (pass/has-code-loc? (meta form))
-                                        (pass/code-loc (pass/nearest-ast-with-loc ast)))]
+                                    (or (passes/has-code-loc? (meta form))
+                                        (passes/code-loc (passes/nearest-ast-with-loc ast)))]
 
                                    ;; So far I have only seen this case in ztellman's
                                    ;; byte-streams library, and the warnings from a
