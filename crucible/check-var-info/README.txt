@@ -6,5 +6,7 @@ info about them defined in the file `resource/var-info.edn`, and those
 that do not.
 
 ```bash
-lein eastwood '{:debug [:var-info]}'
+lein with-profile -user eastwood '{:debug [:var-info]}'
 ```
+
+...be sure to have its :plugins and :dependencies sections updated.
