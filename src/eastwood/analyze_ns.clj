@@ -24,8 +24,8 @@
 
 (defn ^:private ns-resource-name
   "clojure.java.io/resource and Java in general expects components of
-a resource path name to be separated by '/' characters, regardless of
-the value of File/separator for the platform."
+  a resource path name to be separated by '/' characters, regardless of
+  the value of File/separator for the platform."
   [ns-sym extension]
   (-> (name ns-sym)
       (string/replace "." "/")
@@ -95,28 +95,41 @@ the value of File/separator for the platform."
 (def ^:dynamic *forms-analyzed-writer* nil)
 (def ^:dynamic *forms-emitted-writer* nil)
 
-(defn- initialize-debug-forms! [opt]
-  (when (util/debug? :compare-forms opt)
-    (set! *forms-read-writer* (io/writer "forms-read.txt"))
-    (set! *forms-analyzed-writer* (io/writer "forms-analyzed.txt"))
-    (set! *forms-emitted-writer* (io/writer "forms-emitted.txt"))))
+(defn- with-form-writers [opt f]
+  (if-not (util/debug? :compare-forms opt)
+    (f)
+    (binding [*forms-read-writer* (io/writer "forms-read.txt")
+              *forms-analyzed-writer* (io/writer "forms-analyzed.txt")
+              *forms-emitted-writer* (io/writer "forms-emitted.txt")]
+      (f))))
 
 (defn- debug-forms [form ast]
-  (binding [*out* *forms-read-writer*]
-    (util/pprint-form form))
-  (binding [*out* *forms-analyzed-writer*]
-    (util/pprint-form (:form ast)))
-  (binding [*out* *forms-emitted-writer*]
-    (util/pprint-form (emit-form ast))))
+  (when *forms-read-writer*
+    (binding [*out* *forms-read-writer*]
+      (util/pprint-form form)))
+
+  (when *forms-analyzed-writer*
+    (binding [*out* *forms-analyzed-writer*]
+      (util/pprint-form (:form ast))))
+
+  (when *forms-emitted-writer*
+    (binding [*out* *forms-emitted-writer*]
+      (util/pprint-form (emit-form ast)))))
 
 (defn- debug-forms-new-file [filename]
   (let [s (format "\n\n== Analyzing file '%s'\n" filename)]
-    (binding [*out* *forms-read-writer*]
-      (println s))
-    (binding [*out* *forms-analyzed-writer*]
-      (println s))
-    (binding [*out* *forms-emitted-writer*]
-      (println s))))
+
+    (when *forms-read-writer*
+      (binding [*out* *forms-read-writer*]
+        (println s)))
+
+    (when *forms-analyzed-writer*
+      (binding [*out* *forms-analyzed-writer*]
+        (println s)))
+
+    (when *forms-emitted-writer*
+      (binding [*out* *forms-emitted-writer*]
+        (println s)))))
 
 (defn post-analyze-debug [filename asts form ast ns opt]
   (when (util/debug? :ns opt)
@@ -204,12 +217,12 @@ the value of File/separator for the platform."
 
 (defn asts-with-eval-exception
   "tools.analyzer.jvm/analyze+eval returns an AST with a :result key
-being a specific class of Exception object, if an exception occurred
-while eval'ing the corresponding expression.  This is easy to check at
-the top level of an AST, but since analyze+eval recurses into
-top-level do forms, analyzing and eval'ing each independently,
-checking whether any of them threw an exception during eval requires
-recursing into ASTs with :op equal to :do"
+  being a specific class of Exception object, if an exception occurred
+  while eval'ing the corresponding expression.  This is easy to check at
+  the top level of an AST, but since analyze+eval recurses into
+  top-level do forms, analyzing and eval'ing each independently,
+  checking whether any of them threw an exception during eval requires
+  recursing into ASTs with :op equal to :do"
   [ast]
   (filter #(wrapped-exception? (:result %))
           (ast/nodes ast)))
@@ -369,12 +382,14 @@ recursing into ASTs with :op equal to :do"
 
   eg. (analyze-ns 'my-ns :opt {} :reader (pb-reader-for-ns 'my.ns))"
   [source-nsym & {:keys [reader opt] :or {reader (pb-reader-for-ns source-nsym)}}]
-  (let [source-path (#'move/ns-file-name source-nsym)
-        m (analyze-file source-path :reader reader :opt opt)]
-    (initialize-debug-forms! opt)
-    (assoc (dissoc m :forms :asts)
-           :analyze-results {:source (slurp (uri-for-ns source-nsym))
-                             :namespace source-nsym
-                             :exeption-form (:exception-form m)
-                             :forms (:forms m)
-                             :asts (:asts m)})))
+  (with-form-writers opt
+    (fn []
+      (let [source-path (#'move/ns-file-name source-nsym)
+            m (analyze-file source-path :reader reader :opt opt)]
+
+        (assoc (dissoc m :forms :asts)
+               :analyze-results {:source (slurp (uri-for-ns source-nsym))
+                                 :namespace source-nsym
+                                 :exeption-form (:exception-form m)
+                                 :forms (:forms m)
+                                 :asts (:asts m)})))))
