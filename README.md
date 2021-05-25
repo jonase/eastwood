@@ -1943,50 +1943,6 @@ using the version that is not fully qualified only works if it is in
 the `java.lang` package, or you have imported the package into the
 Clojure namespace.
 
-Such type hints on function return values can also help avoid
-reflection in Java interop calls, but in this case the places where it
-can help are wherever the function is called, and its return value is
-used in a Java interop call.  If that is in the same namespace where
-the function is defined, then the same rules apply as for function
-arguments.  Note: You should consider putting the type hint on the Var
-name rather than on the argument vector if it is a Java class, as
-shown above, since this avoids the problems described below.
-
-If:
-
-* the Java class type tag is on the argument vector, and
-* the class name is not fully qualified, i.e. it is `LinkedList`
-  rather than `java.util.LinkedList`, and
-* the function is called in a different namespace where you have not
-  imported the class, and
-* the Java class is not imported by default by Clojure, i.e. it is
-  outside the `java.lang` package,
-
-then Clojure will give an error (see Clojure ticket
-[CLJ-1232](http://dev.clojure.org/jira/browse/CLJ-1232)).  For this
-reason, Eastwood will give a warning for function definitions that
-have a type tag on the argument vector that is not in `java.lang`, and
-is not fully qualified.
-
-```clojure
-;; Eastwood issues a warning for this
-(defn linklist1 ^LinkedList [coll] (java.util.LinkedList. coll))
-
-;; no warning for this because the tag is on the Var name, not the
-;; argument vector, and the CLJ-1232 behavior does not apply
-(defn ^LinkedList linklist2 [coll] (java.util.LinkedList. coll))
-
-;; no warning for this since it is fully qualified
-(defn linklist3 ^java.util.LinkedList [coll] (java.util.LinkedList. coll))
-
-;; no warning for this because it is private
-(defn ^:private linklist4 ^LinkedList [coll] (java.util.LinkedList. coll))
-
-;; no warning for this because Class is in java.lang package
-(defn cls ^Class [obj] (class obj))
-```
-
-
 #### `:wrong-tag` warnings in uses of `extend-type` and `extend-protocol` macro
 
 
