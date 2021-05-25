@@ -816,28 +816,28 @@ of these kind."
 (defn debug? [debug-options opt]
   (when-let [d (:debug opt)]
     (or (contains? d :all)
-        (and (set? debug-options)
-             (some debug-options d))
-        (contains? d debug-options))))
+        (and (coll? debug-options)
+             (some (set debug-options) d))
+        (contains? (set d) debug-options))))
 
 (defn make-msg-cb
   "Tiny helper function to create a simple way to call the Eastwood callback function with only a message string.
 
-Given an option map opt that should have a key :callback whose value
-is a callback function (which takes a certain kind of map as its only
-argument), return a function that takes only a string, and then calls
-the callback function with a proper kind of map, including that
-message string."
+  Given an option map opt that should have a key :callback whose value
+  is a callback function (which takes a certain kind of map as its only
+  argument), return a function that takes only a string, and then calls
+  the callback function with a proper kind of map, including that
+  message string."
   [kind opt]
   (fn [msg-str]
     ((:callback opt) {:kind kind, :msg msg-str, :opt opt})))
 
 (defmacro with-out-str2
   "Like with-out-str, but returns a map m.  (:val m) is the return
-value of the last expression in the body.  (:out m) is the string
-normally returned by with-out-str.  (:err m) is the string that would
-be returned by with-out-str if it bound *err* instead of *out* to a
-StringWriter."
+  value of the last expression in the body.  (:out m) is the string
+  normally returned by with-out-str.  (:err m) is the string that would
+  be returned by with-out-str if it bound *err* instead of *out* to a
+  StringWriter."
   {:style/indent 0}
   [& body]
   `(let [s# (new java.io.StringWriter)
