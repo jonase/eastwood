@@ -42,7 +42,52 @@
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
              :1.10.1 {:dependencies [[org.clojure/clojure "1.10.1"]]}
              :1.10.2 {:dependencies [[org.clojure/clojure "1.10.2"]]}
-             :1.10.3 {:dependencies [[org.clojure/clojure "1.10.3"]]}}
+             :1.10.3 {:dependencies [[org.clojure/clojure "1.10.3"]]}
+             ;; NOTE: if adding a new Clojure version here, please be sure var-info.edn remains up-to-date.
+             ;; you can use the `:check-var-info` Lein profile for that.
+
+             ;; the `:check-var-info` profile helps keeping the var-info.edn up to date. You can exercise it with:
+             ;; lein with-profile -user,-dev,+eastwood-plugin,+check-var-info eastwood '{:debug [:var-info]}'
+             ;; ...among other things, it will print stubs of the missing entries so that one can copy/paste them (after due adaptations)
+             :check-var-info {:dependencies [;; Latest as of May 25 2021
+                                             ;; (copied from `crucible/check-var-info`)
+                                             ;; algo.generic
+                                             ;; algo.graph
+                                             ;; cheshire
+                                             ;; clj-http
+                                             ;; compojure
+                                             [org.clojure/core.async "1.3.618"]
+                                             [org.clojure/core.cache "1.0.207"]
+                                             [org.clojure/core.memoize "1.0.236"]
+                                             [org.clojure/data.codec "0.1.1"]
+                                             [org.clojure/data.csv "1.0.0"]
+                                             [org.clojure/data.json "2.3.1"]
+                                             [org.clojure/data.priority-map "1.0.0"]
+                                             ;; data.xml
+                                             ;; data.zip
+                                             ;; loom?
+                                             ;; instaparse
+                                             [org.clojure/java.jdbc "0.7.12"]
+                                             ;; math.combinatorics
+                                             [org.clojure/math.numeric-tower "0.0.4"]
+                                             ;; medley
+                                             ;; plumbing
+                                             ;; potemkin
+                                             ;; ring
+                                             ;; schema
+                                             ;; timbre
+                                             ;; tools.analyzer
+                                             ;; tools.analyzer.jvm
+                                             ;; tools.cli
+                                             ;; tools.logging
+                                             ;; tools.macro
+                                             ;; tools.namespace
+                                             ;; tools.nrepl
+                                             [org.clojure/tools.reader "1.3.4"]
+                                             [org.clojure/tools.trace "0.7.11"]
+                                             ;; useful
+                                             ]}
+             :var-info-test {:test-paths ^:replace ["var-info-test"]}}
   :aliases {"test-all" ["with-profile"
                         ~(->> ["1.7" "1.8" "1.9" "1.10.1" "1.10.2" "1.10.3"]
                               (map (partial str "-user,-dev,+test,+warn-on-reflection,+"))

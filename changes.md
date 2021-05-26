@@ -4,6 +4,9 @@
 
 #### New
 
+* Update var-info.edn
+  * This increases overall accurancy.
+  * Closes https://github.com/jonase/eastwood/issues/236
 * Consistently use puctuation in linting messages
   * Closes https://github.com/jonase/eastwood/issues/146
   

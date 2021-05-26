@@ -544,7 +544,7 @@ Return value:
                                                  (setup-lint-paths source-paths test-paths) modified-since)
            linter-info (select-keys opts [:linters :exclude-linters :add-linters :disable-linter-name-checks])]
        (reporting/debug reporter :var-info (with-out-str
-                                             (util/print-var-info-summary @typos/var-info-map-delayed opts)))
+                                             (util/print-var-info-summary @typos/var-info-map-delayed)))
        (reporting/debug reporter :compare-forms
                         "Writing files forms-read.txt and forms-emitted.txt")
        (->> (effective-linters linter-info linter-name->info default-linters)

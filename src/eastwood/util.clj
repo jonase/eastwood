@@ -4,6 +4,7 @@
    [clojure.pprint :as pp]
    [clojure.repl :as repl]
    [clojure.set :as set]
+   [clojure.string :as string]
    [clojure.walk :as walk]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
    [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
@@ -1084,12 +1085,16 @@ of these kind."
 ;; For each namespace returned by (all-ns), list the ones
 ;; that have no symbols mentioned in var-info.edn at all.
 
-(defn print-var-info-summary [var-info-map opts]
+(def loaded-but-not-in-file-marker "        Loaded but not in file:")
+
+(defn print-var-info-summary [var-info-map]
   (let [file-vars-by-ns (->> (keys var-info-map)
                              (group-by #(namespace %))
                              (map-vals #(set (map name %))))
         ;; Try to require the namespaces mentioned in the file, but
         ;; mask any exceptions that occur when trying.
+        ;; TBD: figure out extra namespaces from each .jar that may not be reflected in var-info.edn
+        ;; ...use simply (all-ns) after performing a first batch of `require`s
         _ (doseq [ns-name (keys file-vars-by-ns)]
             (try
               (println "require " ns-name "...")
@@ -1114,11 +1119,35 @@ of these kind."
                          macro? (if (-> var-ref meta :macro)
                                   true
                                   nil)
-                         predicate? (-> var-name str (.endsWith "?"))]
-                     (if (some-> var-ref meta :dynamic)
-                       ;; to date, all dyn vars lack any interesting information. So maintainers shouldn't have to think much when adding them:
+                         ctor? (or (->> var-name str (re-find #"^->[A-Z]"))
+                                   (and (->> var-name str (re-find #"^map->[A-Z]"))
+                                        (let [fqs (symbol (str ns-name)
+                                                          (-> var-name str (string/replace #"^map" "")))]
+                                          (try
+                                            (find-var fqs)
+                                            (catch Exception _
+                                              nil))))
+                                   (->> var-name str (re-find #"^make-"))
+                                   (->> var-name str (re-find #"-factory$")))
+                         predicate? (-> var-name str (.endsWith "?"))
+                         uninteresting? (or (some-> var-ref deref protocol?)
+                                            (and var-ref
+                                                 (or (nil? @var-ref)
+                                                     (instance? clojure.lang.Var$Unbound @var-ref)
+                                                     (coll? @var-ref)
+                                                     (not (ifn? @var-ref)))))]
+                     (cond
+                       uninteresting?
                        (format "%s {:var-kind nil, :macro nil}"
                                fqs)
+
+                       ctor?
+                       (format "%s {:var-kind nil, :macro %s, :predicate %s, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}"
+                               fqs
+                               (pr-str macro?)
+                               predicate?)
+
+                       true
                        ;; this format includes all keys, so as to invite maintainers to think of all relevant info.
                        (format "%s {:var-kind nil, :macro %s, :predicate %s, :side-effect , :pure-fn , :warn-if-ret-val-unused , :lazy , :pure-if-fn-args-pure , :io-fn , :evals-exprs }"
                                fqs
@@ -1153,7 +1182,7 @@ of these kind."
                  ns-name))
         (when (> (count file-vars) 0)
           (when (> (count loaded-but-not-file) 0)
-            (println (format "        Loaded but not in file:"))
+            (println (format loaded-but-not-in-file-marker))
             (doseq [name (sort loaded-but-not-file)]
               (println (template ns-name name))))
           (when (> (count file-but-not-loaded) 0)

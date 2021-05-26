@@ -95,6 +95,14 @@ jobs:
           name: Run test suite that exercises 3rd-party libs
           command: lein with-profile -user,-dev,+test,+warn-on-reflection,+test-3rd-party-deps,+<< parameters.clojure-version >> do clean, test
 
+      - run:
+          name: Prevent any form of caching, for the next step
+          command:  git clean -fdx
+          
+      - run:
+          name: Run test suite that exercises var-info.edn
+          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+var-info-test,+<< parameters.clojure-version >> do clean, test
+
 
   build:
     docker:
@@ -219,6 +227,8 @@ workflows:
           matrix:
             parameters:
               executor: [openjdk8, openjdk11]
+              # NOTE: if adding a new Clojure version here, please be sure var-info.edn remains up-to-date.
+              # you can use the :check-var-info Lein profile for that.
               clojure-version: ["1.7", "1.8", "1.9", "1.10.1", "1.10.2", "1.10.3"]
       # the `test_third_party_deps` profile uses a separate matrix because the contained libs (especially the ones that use clojure.spec)
       # don't target older versions.
