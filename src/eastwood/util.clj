@@ -1104,7 +1104,26 @@ of these kind."
                                             set)]))
                                (into {}))
         ns-names (into (sorted-set) (concat (keys file-vars-by-ns)
-                                            (keys loaded-vars-by-ns)))]
+                                            (keys loaded-vars-by-ns)))
+        ;; returns a handy string that can easily be copied into var-info.edn:
+        template (fn [ns-name var-name]
+                   (let [fqs (symbol (str ns-name)
+                                     (str var-name))
+                         var-ref (when (-> ns-name str symbol find-ns)
+                                   (find-var fqs))
+                         macro? (if (-> var-ref meta :macro)
+                                  true
+                                  nil)
+                         predicate? (-> var-name str (.endsWith "?"))]
+                     (if (some-> var-ref meta :dynamic)
+                       ;; to date, all dyn vars lack any interesting information. So maintainers shouldn't have to think much when adding them:
+                       (format "%s {:var-kind nil, :macro nil}"
+                               fqs)
+                       ;; this format includes all keys, so as to invite maintainers to think of all relevant info.
+                       (format "%s {:var-kind nil, :macro %s, :predicate %s, :side-effect , :pure-fn , :warn-if-ret-val-unused , :lazy , :pure-if-fn-args-pure , :io-fn , :evals-exprs }"
+                               fqs
+                               (pr-str macro?)
+                               predicate?))))]
     (println "Clojure version " (clojure-version))
     (println)
     (println "Summary of contents of var-info.edn file:")
@@ -1136,7 +1155,7 @@ of these kind."
           (when (> (count loaded-but-not-file) 0)
             (println (format "        Loaded but not in file:"))
             (doseq [name (sort loaded-but-not-file)]
-              (println (format "        %s" name))))
+              (println (template ns-name name))))
           (when (> (count file-but-not-loaded) 0)
             (println (format "            In file but not loaded:"))
             (doseq [name (sort file-but-not-loaded)]
