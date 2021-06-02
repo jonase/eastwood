@@ -735,6 +735,23 @@
   (and (#{:vector :set} (:op ast))
        (every? constant-ast (:items ast))))
 
+(defn inlined-identical-test
+  "Iff `ast` denotes a call to `(clojure.lang.Util/identical x nil)`, where `x` is a symbol,
+  returns `x`.
+
+  These calls typically originate from inlined forms of `clojure.core/nil?`."
+  [ast]
+  (let [v (and (= :static-call (:op ast))
+               (-> ast :form seq?)
+               (-> ast :form first #{'.})
+               (-> ast :form second #{clojure.lang.Util 'clojure.lang.Util})
+               (-> ast :form last seq?)
+               (-> ast :form last first #{'identical})
+               (-> ast :form last last (= nil))
+               (-> ast :form last second))]
+    (when (symbol? v)
+      v)))
+
 (defn constant-ast
   "Return nil if 'ast' is not one that we can determine to be a
   constant value.  Does not do all compile-time evaluation that would be
@@ -742,36 +759,39 @@
   be a constant value, return an ast that can be used to issue a
   warning, that contains the constant value."
   [ast]
-  (cond (= :with-meta (:op ast))    (constant-ast (:expr ast))
+  (let [identical-test (inlined-identical-test ast)]
+    (cond (= :with-meta (:op ast))    (constant-ast (:expr ast))
 
-        (= :local (:op ast))
-        (let [local-sym (:form ast)
-              bound-val-binding (-> ast :env :locals local-sym)
-              bound-val-ast (when (and (= :binding (:op bound-val-binding))
-                                       ;; loop and fn arg bindings can
-                                       ;; never be constants.  Only
-                                       ;; examine let bindings, which
-                                       ;; might be constants.
-                                       (= :let (:local bound-val-binding)))
-                              (:init bound-val-binding))]
-          (when bound-val-ast
-            (constant-ast bound-val-ast)))
+          (or (= :local (:op ast))
+              identical-test)
+          (let [local-sym (or identical-test
+                              (:form ast))
+                bound-val-binding (-> ast :env :locals local-sym)
+                bound-val-ast (when (and (= :binding (:op bound-val-binding))
+                                         ;; loop and fn arg bindings can
+                                         ;; never be constants.  Only
+                                         ;; examine let bindings, which
+                                         ;; might be constants.
+                                         (= :let (:local bound-val-binding)))
+                                (:init bound-val-binding))]
+            (when bound-val-ast
+              (constant-ast bound-val-ast)))
 
-        (#{:const :quote} (:op ast))  ast
-        (constant-map? ast)           ast
-        (constant-vector-or-set? ast) ast
+          (#{:const :quote} (:op ast))  ast
+          (constant-map? ast)           ast
+          (constant-vector-or-set? ast) ast
 
-        (= :invoke (:op ast))
-        (let [pfn (pure-fn-ast? (:fn ast))]
-          (cond (and pfn (every? constant-ast (:args ast)))
-                ast
+          (= :invoke (:op ast))
+          (let [pfn (pure-fn-ast? (:fn ast))]
+            (cond (and pfn (every? constant-ast (:args ast)))
+                  ast
 
-                (= 'clojure.core/not pfn)
-                (logical-true-test (-> ast :args first))
+                  (= 'clojure.core/not pfn)
+                  (logical-true-test (-> ast :args first))
 
-                :else nil))
+                  :else nil))
 
-        :else nil))
+          :else nil)))
 
 (defn assert-false-expansion? [ast]
   (and (= :if (:op ast))

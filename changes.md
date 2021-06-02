@@ -4,10 +4,12 @@
 
 #### New
 
+* Make the `:constant-test` linter available for `if-some`, `when-some`
+ * Closes https://github.com/jonase/eastwood/issues/110
 * Update var-info.edn
   * This increases overall accurancy.
   * Closes https://github.com/jonase/eastwood/issues/236
-* Consistently use puctuation in linting messages
+* Consistently use punctuation in linting messages
   * Closes https://github.com/jonase/eastwood/issues/146
   
 ## Changes from 0.4.1 to 0.4.3

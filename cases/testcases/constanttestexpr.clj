@@ -71,8 +71,8 @@
 (and (nil? nil) 7 (inc 2))
 (or false 2)
 
-(compile-if (resolve 'clojure.core/if-some) (if-some [x {:a 1}] "w" "v"))  ; tbd: needs (nil? const) handling as in-line
-(compile-if (resolve 'clojure.core/when-some) (when-some [x "w"] nil))       ; tbd: same as if-some
+(compile-if (resolve 'clojure.core/if-some) (if-some [x {:a 1}] "w" "v"))
+(compile-if (resolve 'clojure.core/when-some) (when-some [x "w"] nil))
 
 (if shrouded-false
   (assert nil "string"))

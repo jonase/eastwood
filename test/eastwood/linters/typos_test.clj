@@ -29,3 +29,18 @@
       "Using a naming other than `map__`"
       '(if (clojure.core/seq? map__413572) (clojure.lang.PersistentHashMap/create (clojure.core/seq map__413572)) m0p__413572)
       false)))
+
+(deftest inlined-identical-test
+  (let [any-sym (gensym)]
+    (are [input expected] (testing input
+                            (is (= expected
+                                   (sut/inlined-identical-test {:op :static-call
+                                                                :form input})))
+                            true)
+      nil                                               nil
+      42                                                nil
+      '(. clojure.lang.Util (identical x nil))          'x
+      `(. clojure.lang.Util (~'identical ~any-sym nil)) any-sym
+      '(. clojure.lang.Util (identical 42 nil))         nil
+      '(. clojure.lang.Other (identical x nil))         nil
+      '(. clojure.lang.Util (identical x 42))           nil)))

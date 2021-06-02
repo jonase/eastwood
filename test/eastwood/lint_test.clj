@@ -323,4 +323,18 @@ relative to a specific macroexpansion"
                 (sut/eastwood opts))
               (.contains "The following form was being processed during the exception:
 (def foo (reify Unknown (foo [this])))"))
-          "The culprit form is reported accuratel."))))
+          "The culprit form is reported accurately."))))
+
+(deftest constant-test-test
+  (testing "The :constant-test linter for if-some/when-some, per https://github.com/jonase/eastwood/issues/110"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> sut/default-opts
+                                       (assoc :namespaces input)
+                                       (sut/eastwood))))
+                            true)
+      #{'testcases.constant-test.if-some.green}   {:some-warnings false}
+      #{'testcases.constant-test.if-some.red}     {:some-warnings true}
+
+      #{'testcases.constant-test.when-some.green} {:some-warnings false}
+      #{'testcases.constant-test.when-some.red}   {:some-warnings true})))

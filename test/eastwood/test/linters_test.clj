@@ -1511,6 +1511,20 @@
           :line 72, :column 1}
          1,
          {:linter :constant-test,
+          :msg
+          "Test expression is always logical true or always logical false: {:a 1} in form (if (clojure.core/nil? temp__<num>__auto__) \"v\" (clojure.core/let [x temp__<num>__auto__] \"w\")).",
+          :file "testcases/constanttestexpr.clj",
+          :line 74,
+          :column 1}
+         1,
+         {:linter :constant-test,
+          :msg
+          "Test expression is always logical true or always logical false: \"w\" in form (if (clojure.core/nil? temp__<num>__auto__) nil (clojure.core/let [x temp__<num>__auto__] nil)).",
+          :file "testcases/constanttestexpr.clj",
+          :line 75,
+          :column 1}
+         1
+         {:linter :constant-test,
           :msg "Test expression is always logical true or always logical false: true in form (if true nil (do (throw (new java.lang.AssertionError (clojure.core/str \"Assert failed: \" \"string\" \"\\n\" (clojure.core/pr-str (quote true))))))).",
           :file (fname-from-parts "testcases" "constanttestexpr.clj"),
           :line 84, :column 1}
