@@ -338,3 +338,15 @@ relative to a specific macroexpansion"
 
       #{'testcases.constant-test.when-some.green} {:some-warnings false}
       #{'testcases.constant-test.when-some.red}   {:some-warnings true})))
+
+(deftest unused-fn-args-test
+  (testing "fn args within defmulti, see https://github.com/jonase/eastwood/issues/1"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> sut/default-opts
+                                       (assoc :namespaces input)
+                                       (update :linters conj :unused-fn-args)
+                                       (sut/eastwood))))
+                            true)
+      #{'testcases.unused-fn-args.multimethods.green}   {:some-warnings false}
+      #{'testcases.unused-fn-args.multimethods.red}     {:some-warnings true})))

@@ -9,6 +9,9 @@
 * Update var-info.edn
   * This increases overall accurancy.
   * Closes https://github.com/jonase/eastwood/issues/236
+* Make the `:unused-fn-args` linter omittable via the `disable-warning` mechanism
+* Make the `:unused-fn-args` play better with multimethods
+  * Closes https://github.com/jonase/eastwood/issues/1
 * Consistently use punctuation in linting messages
   * Closes https://github.com/jonase/eastwood/issues/146
   

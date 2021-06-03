@@ -133,10 +133,13 @@
                             (remove ignore-arg?)
                             set)]
           unused-sym unused
-          :let [loc (-> unused-sym meta)]]
-      {:loc loc
-       :linter :unused-fn-args
-       :msg (format "Function arg %s never used." unused-sym)})))
+          :let [loc (-> unused-sym meta)
+                w {:loc loc
+                   :linter :unused-fn-args
+                   :unused-fn-args {:ast expr}
+                   :msg (format "Function arg %s never used." unused-sym)}]
+          :when (util/allow-warning w opt)]
+      w)))
 
 ;; Symbols in let or loop bindings that are unused
 

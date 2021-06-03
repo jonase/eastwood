@@ -11,6 +11,11 @@
   :reason "defonce, defmulti expand to code with multiple def's for the same Var."})
 
 (disable-warning
+ {:linter :unused-fn-args
+  :if-inside-macroexpansion-of #{'clojure.core/defmulti}
+  :within-depth 4})
+
+(disable-warning
  {:linter :suspicious-expression
   ;; specifically, those detected in function suspicious-macro-invocations
   :for-macro 'clojure.core/let
