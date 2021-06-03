@@ -3,7 +3,23 @@
 
 (def plugin-source-path "lein-eastwood")
 
-(defproject jonase/eastwood "0.4.3"
+(require '[clojure.java.io :as io]
+         '[clojure.string :as string])
+
+(binding [*read-eval* false]
+  (let [f (->> [(io/file "resources" "EASTWOOD_VERSION")
+                ;; support Eastwood for Lein checkouts:
+                (io/file (System/getProperty "user.home") "eastwood" "resources" "EASTWOOD_VERSION")]
+               (filter (fn [^java.io.File f]
+                         (-> f .exists)))
+               (first))]
+    (def version (-> f slurp read-string))
+    (def major (-> version :major (doto assert)))
+    (def minor (-> version :minor (doto assert)))
+    (def patch (-> version :patch (doto assert)))
+    (def version-string (string/join "." [major minor patch]))))
+
+(defproject jonase/eastwood version-string
   :description "A Clojure lint tool"
   :url "https://github.com/jonase/eastwood"
   :license {:name "Eclipse Public License"
@@ -96,8 +112,6 @@
   :eastwood {:source-paths ["src"]
              :test-paths ["test"]
              :debug #{}}
-  :plugins [[net.assum/lein-ver "1.2.0"]]
-  :lein-ver {:version-file "resources/EASTWOOD_VERSION"}
   ;; Eastwood may work with earlier Leiningen versions, but this is
   ;; close to the earliest version that it was most tested with.
   :min-lein-version "2.3.0"

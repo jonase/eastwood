@@ -4,23 +4,19 @@
    [clojure.string :refer [join]])
   (:import
    (java.io PushbackReader)))
+
 (let [version-file (resource "EASTWOOD_VERSION")]
   (when version-file
     (with-open [rdr (reader version-file)]
       (binding [*read-eval* false]
         (def version (read (PushbackReader. rdr)))
-        (def major (:major version))
-        (def minor (:minor version))
-        (def patch (:patch version))
-        (def pre-release (:pre-release version))
-        (def build (:build version))
-        (def sha (:sha version))
-        (def string (str (join "." (filter identity [major minor patch]))
-                         (when pre-release (str "-" pre-release))
-                         (when build (str "+" build))))))))
+        (def major (-> version :major (doto assert)))
+        (def minor (-> version :minor (doto assert)))
+        (def patch (-> version :patch (doto assert)))
+        (def string (join "." [major minor patch]))))))
 
 (def ^:dynamic *eastwood-version*
-  {:major major, :minor minor, :incremental patch, :qualifier pre-release})
+  {:major major, :minor minor, :incremental patch})
 
 (defn eastwood-version [] string)
 

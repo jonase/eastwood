@@ -1,3 +1,10 @@
+Please don't create "snapshot" releases. Consider instead:
+
+* can you / people perform `lein install` instead?
+* can one gain confidence through better tests instead?
+
+---
+
 Steps to prepare in making a new release:
 
 Make sure CI is green.
@@ -6,7 +13,7 @@ Update changes.md with any differences in behavior.
 
 Places where version number should be updated:
 
-* project.clj just after jonase/eastwood
+* `resources/EASTWOOD_VERSION`
 * README.md in install instructions, and instructions for developers
 * changes.md (header)
 * src/eastwood/lint.clj var *eastwood-version*
