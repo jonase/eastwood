@@ -348,5 +348,20 @@ relative to a specific macroexpansion"
                                        (update :linters conj :unused-fn-args)
                                        (sut/eastwood))))
                             true)
-      #{'testcases.unused-fn-args.multimethods.green}   {:some-warnings false}
-      #{'testcases.unused-fn-args.multimethods.red}     {:some-warnings true})))
+      #{'testcases.unused-fn-args.multimethods.green} {:some-warnings false}
+      #{'testcases.unused-fn-args.multimethods.red}   {:some-warnings true})))
+
+(deftest implicit-dependencies-test
+  (testing "Explicit `require` calls are accounted for. See https://github.com/jonase/eastwood/issues/22"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> sut/default-opts
+                                       (assoc :namespaces input)
+                                       (sut/eastwood))))
+                            true)
+      #{'testcases.implicit-dependencies.explicit-require.green1} {:some-warnings false}
+      #{'testcases.implicit-dependencies.explicit-require.green2} {:some-warnings false}
+      #{'testcases.implicit-dependencies.explicit-require.green3} {:some-warnings false}
+      #{'testcases.implicit-dependencies.explicit-require.green4} {:some-warnings false}
+      #{'testcases.implicit-dependencies.explicit-require.green5} {:some-warnings false}
+      #{'testcases.implicit-dependencies.explicit-require.red}    {:some-warnings true})))

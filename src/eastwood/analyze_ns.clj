@@ -385,11 +385,16 @@
   (with-form-writers opt
     (fn []
       (let [source-path (#'move/ns-file-name source-nsym)
-            m (analyze-file source-path :reader reader :opt opt)]
-
+            m           (analyze-file source-path :reader reader :opt opt)
+            source      (-> source-nsym uri-for-ns slurp)]
         (assoc (dissoc m :forms :asts)
-               :analyze-results {:source (slurp (uri-for-ns source-nsym))
-                                 :namespace source-nsym
+               :analyze-results {:source        source
+                                 :namespace     source-nsym
                                  :exeption-form (:exception-form m)
-                                 :forms (:forms m)
-                                 :asts (:asts m)})))))
+                                 :forms         (:forms m)
+                                 :asts          (->> m
+                                                     :asts
+                                                     (mapv (fn [m]
+                                                             (assoc m
+                                                                    :eastwood/ns-source source
+                                                                    :eastwood/ns-sym source-nsym))))})))))

@@ -15,7 +15,12 @@
   * Closes https://github.com/jonase/eastwood/issues/1
 * Consistently use punctuation in linting messages
   * Closes https://github.com/jonase/eastwood/issues/146
-  
+
+#### Bugfixes
+
+* Make the `:implicit-requires` linter work corectly in presence of dynamic `require` forms
+  * Closes https://github.com/jonase/eastwood/issues/22
+
 ## Changes from 0.4.1 to 0.4.3
 
 #### New
