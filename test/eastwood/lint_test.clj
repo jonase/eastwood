@@ -365,3 +365,15 @@ relative to a specific macroexpansion"
       #{'testcases.implicit-dependencies.explicit-require.green4} {:some-warnings false}
       #{'testcases.implicit-dependencies.explicit-require.green5} {:some-warnings false}
       #{'testcases.implicit-dependencies.explicit-require.red}    {:some-warnings true})))
+
+(deftest deprecations-test
+  (testing "type-overloaded Java arities, see https://github.com/jonase/eastwood/issues/329"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> sut/default-opts
+                                       (assoc :namespaces input)
+                                       (sut/eastwood))))
+                            true)
+      #{'testcases.deprecations.overloading.green1} {:some-warnings false}
+      #{'testcases.deprecations.overloading.green2} {:some-warnings false}
+      #{'testcases.deprecations.overloading.red}    {:some-warnings true})))
