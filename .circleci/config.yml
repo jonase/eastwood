@@ -6,6 +6,9 @@ executor_defaults: &executor_defaults
   resource_class: xlarge
   working_directory: ~/repo
 
+# We exercise the following JVMs:
+# * those officially supported by Clojure (atm: 8 and 11)
+# * plus, whatever the latest version is.
 executors:
   openjdk8:
     docker:
@@ -17,6 +20,13 @@ executors:
   openjdk11:
     docker:
       - image: circleci/clojure:openjdk-11-lein-2.9.5
+    environment:
+      LEIN_ROOT: "true"
+      JVM_OPTS: -Xmx3200m --illegal-access=deny
+    <<: *executor_defaults
+  openjdk16:
+    docker:
+      - image: circleci/clojure:openjdk-16-lein-2.9.5-buster
     environment:
       LEIN_ROOT: "true"
       JVM_OPTS: -Xmx3200m --illegal-access=deny
@@ -226,7 +236,7 @@ workflows:
               only: /.*/
           matrix:
             parameters:
-              executor: [openjdk8, openjdk11]
+              executor: [openjdk8, openjdk11, openjdk16]
               # NOTE: if adding a new Clojure version here, please be sure var-info.edn remains up-to-date.
               # you can use the :check-var-info Lein profile for that.
               clojure-version: ["1.7", "1.8", "1.9", "1.10.1", "1.10.2", "1.10.3"]
@@ -235,7 +245,7 @@ workflows:
       - test_third_party_deps:
           matrix:
             parameters:
-              executor: [openjdk8, openjdk11]
+              executor: [openjdk8, openjdk11, openjdk16]
               # Run just the latest version. This saves resources trusts that the main test suite already exercises clojure compat sufficiently:
               clojure-version: ["1.10.3"]
 
