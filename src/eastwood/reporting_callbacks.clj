@@ -7,7 +7,7 @@
 
 (def last-cwd-shown (atom nil))
 
-(defn print-warning [{:keys [warn-data] :as info} cwd]
+(defn print-warning [{:keys [warn-data]} cwd]
   (when (not= cwd @last-cwd-shown)
     (reset! last-cwd-shown cwd)
     (println (format "Entering directory `%s'" cwd)))
@@ -41,7 +41,7 @@
   (when (util/debug? thing (:opts reporter))
     (println msg)))
 
-(defn error [reporter e]
+(defn error [_reporter e]
   (println "Linting failed:")
   (util/pst e nil)
   (flush)
@@ -59,26 +59,26 @@
     (print-warning warning (-> reporter :opts :cwd))
     (flush)))
 
-(defmethod analyzer-exception PrintingReporter [reporter exception]
+(defmethod analyzer-exception PrintingReporter [_reporter exception]
   (println (str/join "\n" (:msgs exception)))
   (flush))
 
-(defmethod note PrintingReporter [reporter msg]
+(defmethod note PrintingReporter [_reporter msg]
   (print (str msg "\n"))
   (flush))
 
-(defmethod note SilentReporter [reporter msg])
+(defmethod note SilentReporter [_reporter _msg])
 
-(defmethod lint-warning SilentReporter [reporter warning])
+(defmethod lint-warning SilentReporter [_reporter _warning])
 
-(defmethod analyzer-exception SilentReporter [reporter exception])
+(defmethod analyzer-exception SilentReporter [_reporter _exception])
 
 (defn lint-warnings [reporter warnings]
   (doseq [warning warnings]
     (lint-warning reporter warning)))
 
 (defn lint-errors [reporter namespace errors]
-  (doseq [{:keys [exception warn-data] :as error} errors]
+  (doseq [{:keys [exception]} errors]
     (when exception
       (let [{:keys [msgs]} (msgs/format-exception namespace exception)]
         (doseq [msg msgs]
@@ -91,8 +91,8 @@
       (when (instance? Exception error-data)
         (.printStackTrace ^Exception error-data)))))
 
-(defn show-analyzer-exception [reporter namespace exception]
-  (when-let [error (first exception)]
+(defn show-analyzer-exception [reporter _namespace exception]
+  (when (first exception)
     (doseq [msg (:msgs (first exception))]
       (note reporter msg))))
 

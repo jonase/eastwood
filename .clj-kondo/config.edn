@@ -1,0 +1,1 @@
+{:linters {:duplicate-set-key {:level :off}}} ;; https://github.com/clj-kondo/clj-kondo/issues/1296

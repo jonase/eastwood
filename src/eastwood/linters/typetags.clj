@@ -147,7 +147,7 @@
 (defn fq-classname-to-class [cname-str]
   (try
     (Class/forName cname-str)
-    (catch ClassNotFoundException e
+    (catch ClassNotFoundException _
       nil)))
 
 ;; These tags are ok, and the Clojure compiler uses them in a way that
@@ -158,7 +158,7 @@
                        floats doubles
                        objects})
 
-(defn wrong-tag-clj-1232 [{:keys [asts]} opt]
+(defn wrong-tag-clj-1232 [{:keys [asts]} _opt]
   (for [{:keys [op form] :as ast} (mapcat ast/nodes asts)
         :when (= op :fn-method)
         :let [tag (-> form first meta :tag)]

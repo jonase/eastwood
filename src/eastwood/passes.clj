@@ -22,10 +22,10 @@
         arg-type-arr (into-array Class arg-type-vec)]
     (try
       (.getConstructor ^Class cls arg-type-arr)
-      (catch NoSuchMethodException e
+      (catch NoSuchMethodException _
         (try
           (.getDeclaredConstructor ^Class cls arg-type-arr)
-          (catch NoSuchMethodException e
+          (catch NoSuchMethodException _
             {:class cls, :arg-types arg-type-vec}))))))
 
 (defn get-field [ast]
@@ -33,10 +33,10 @@
         fld-name (name (:field ast))]
     (try
       (.getField ^Class cls fld-name)
-      (catch NoSuchFieldException e
+      (catch NoSuchFieldException _
         (try
           (.getDeclaredField ^Class cls fld-name)
-          (catch NoSuchFieldException e
+          (catch NoSuchFieldException _
             {:class cls, :field-name fld-name}))))))
 
 (defn get-method [ast]
@@ -46,10 +46,10 @@
         arg-type-arr (into-array Class arg-type-vec)]
     (try
       (.getMethod ^Class cls method-name arg-type-arr)
-      (catch NoSuchMethodException e
+      (catch NoSuchMethodException _
         (try
           (.getDeclaredMethod ^Class cls method-name arg-type-arr)
-          (catch NoSuchMethodException e
+          (catch NoSuchMethodException _
             {:class cls, :method-name method-name,
              :arg-types arg-type-vec}))))))
 

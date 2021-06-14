@@ -82,7 +82,7 @@
        (remove nil?)
        set))
 
-(defn unused-private-vars [{:keys [asts]} opt]
+(defn unused-private-vars [{:keys [asts]} _opt]
   (let [pdefs (private-non-const-defs asts)
         vars-used-set (vars-used asts)]
     (for [pvar pdefs
@@ -198,7 +198,7 @@
        (= 'clojure.core/loop
           (-> ast :raw-forms first util/fqsym-of-raw-form))))
 
-(defn unused-locals [{:keys [asts]} opt]
+(defn unused-locals [{:keys [asts]} _opt]
   (let [exprs (->> asts
                    (mapcat ast/nodes)
                    (filter (fn [ast]
@@ -243,7 +243,7 @@
 ;; the namespace where it was read.  At worst, it should get the
 ;; beginning of the ns form it is in.
 
-(defn unused-namespaces [{:keys [asts]} opt]
+(defn unused-namespaces [{:keys [asts]} _opt]
   (let [ns-asts (util/ns-form-asts asts)
         loc (passes/code-loc (first ns-asts))
         curr-ns (-> ns-asts first :form second second second)
@@ -488,7 +488,7 @@
 ;; Note 5: Do not report an unused nil return value if it was caused
 ;; by a comment or gen-class macro invocation.
 
-(defn unused-ret-vals-2 [location {:keys [asts]} opt]
+(defn unused-ret-vals-2 [location {:keys [asts]} _opt]
   (let [warning-unused-invoke @warning-unused-invoke-delayed
         warning-unused-static @warning-unused-static-delayed
         unused-ret-val-exprs (->> asts
@@ -557,7 +557,7 @@
                   (unused-ret-val-lint-result stmt "function call"
                                               action v location)))))))
 
-(defn unused-ret-vals* [location {:keys [asts] :as m} opt]
+(defn unused-ret-vals* [location m opt]
   (let [warnings (unused-ret-vals-2 location m opt)]
     (for [w warnings
           :let [linter (:linter w)

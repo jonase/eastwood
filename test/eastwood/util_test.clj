@@ -1,6 +1,6 @@
 (ns eastwood.util-test
   (:require
-   [clojure.test :refer [are deftest is join-fixtures testing use-fixtures]]
+   [clojure.test :refer [are deftest is testing]]
    [eastwood.util :as sut]))
 
 (deftest trim-thrown-form

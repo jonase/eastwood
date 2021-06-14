@@ -69,7 +69,7 @@
 
 ;; first char is upper-case
 
-(defn ^java.net.URI to-uri [x]
+(defn to-uri ^URI [x]
   (cond (instance? java.net.URI x) x
         (instance? java.io.File x) (.toURI ^java.io.File x)
         (instance? java.net.URL x) (.toURI ^java.net.URL x)
@@ -89,9 +89,10 @@
         ;; file-or-nil will be nil if uri is a URI like the following,
         ;; which cannot be converted to a File:
         ;; #<URI jar:file:/Users/jafinger/.m2/repository/org/clojure/clojure/1.6.0/clojure-1.6.0.jar!/clojure/test/junit.clj>
-        file-or-nil (try (File. uri)
-                         (catch IllegalArgumentException e
-                           nil))
+        file-or-nil (try
+                      (File. uri)
+                      (catch IllegalArgumentException _
+                        nil))
         uri-or-rel-file-str
         (if (nil? file-or-nil)
           uri
@@ -103,37 +104,37 @@
 
 (defn canonical-filename
   "Returns the canonical file name for the given file name.  A
-canonical file name is platform dependent, but is both absolute and
-unique.  See the Java docs for getCanonicalPath for some more details,
-and the examples below.
+  canonical file name is platform dependent, but is both absolute and
+  unique.  See the Java docs for getCanonicalPath for some more details,
+  and the examples below.
 
     http://docs.oracle.com/javase/7/docs/api/java/io/File.html#getCanonicalPath%28%29
 
-Examples:
+  Examples:
 
-Context: A Linux or Mac OS X system, where the current working
-directory is /Users/jafinger/clj/dolly
+  Context: A Linux or Mac OS X system, where the current working
+  directory is /Users/jafinger/clj/dolly
 
-user=> (canonical-filename \"README.md\")
-\"/Users/jafinger/clj/dolly/README.md\"
+  user=> (canonical-filename \"README.md\")
+  \"/Users/jafinger/clj/dolly/README.md\"
 
-user=> (canonical-filename \"../../Documents/\")
-\"/Users/jafinger/Documents\"
+  user=> (canonical-filename \"../../Documents/\")
+  \"/Users/jafinger/Documents\"
 
-user=> (canonical-filename \"../.././clj/../Documents/././\")
-\"/Users/jafinger/Documents\"
+  user=> (canonical-filename \"../.././clj/../Documents/././\")
+  \"/Users/jafinger/Documents\"
 
-Context: A Windows 7 system, where the current working directory is
-C:\\Users\\jafinger\\clj\\dolly
+  Context: A Windows 7 system, where the current working directory is
+  C:\\Users\\jafinger\\clj\\dolly
 
-user=> (canonical-filename \"README.md\")
-\"C:\\Users\\jafinger\\clj\\dolly\\README.md\"
+  user=> (canonical-filename \"README.md\")
+  \"C:\\Users\\jafinger\\clj\\dolly\\README.md\"
 
-user=> (canonical-filename \"..\\..\\Documents\\\")
-\"C:\\Users\\jafinger\\Documents\"
+  user=> (canonical-filename \"..\\..\\Documents\\\")
+  \"C:\\Users\\jafinger\\Documents\"
 
-user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
-\"C:\\Users\\jafinger\\Documents\""
+  user=> (canonical-filename \"..\\..\\.\\clj\\..\\Documents\\.\\.\\\")
+  \"C:\\Users\\jafinger\\Documents\""
   [fname]
   (let [^java.io.File f (if (instance? java.io.File fname)
                           fname
@@ -632,19 +633,6 @@ pprint-meta instead."
 (defn replace-comments-and-quotes-with-nil [form]
   (replace-subforms-with-first-in-set form #{'comment 'quote} (constantly nil)))
 
-(defn- mark-statements-in-try-body-post [ast]
-  (if (and (= :try (:op ast))
-           (some #{:body} (:children ast))
-           (let [body (:body ast)]
-             (and (= :do (:op body))
-                  (some #{:statements} (:children body))
-                  (vector? (:statements body)))))
-    (update-in ast [:body :statements]
-               (fn [stmts]
-                 (mapv #(assoc % :eastwood/unused-ret-val-expr-in-try-body true)
-                       stmts)))
-    ast))
-
 (defn trim-thrown-form
   "Given a `(thrown? Exception ...)`, removes the `Exception` symbol, for making `=` comparisons simpler."
   [x]
@@ -865,7 +853,7 @@ of these kind."
       (println (format "  raw-form %2d first=%s"
                        j (try
                            (first f)
-                           (catch Exception e
+                           (catch Exception _
                              (str f " (actual :raw-forms element, not its first)"))))))
     (println (format "  form=%s" (:form a)))
     (println (format "  op=%s" (:op a)))))
@@ -982,7 +970,7 @@ of these kind."
               (pst e nil))))))
     (process-configs @warning-enable-config-atom)))
 
-(defn meets-suppress-condition [ast enclosing-macros qualifier condition]
+(defn meets-suppress-condition [enclosing-macros qualifier condition]
   (let [configured-qualifier? (find condition :qualifier)]
     (when (or (= qualifier :eastwood/unset) ;; `nil` can be a qualifier value, so :eastwood/unset conveys an absent value
               (not configured-qualifier?)
@@ -1009,8 +997,7 @@ of these kind."
         ;; no suppress-conditions to check, to save time.
         encl-macros (when (seq suppress-conditions)
                       (enclosing-macros ast))
-        match (some #(meets-suppress-condition ast
-                                               encl-macros
+        match (some #(meets-suppress-condition encl-macros
                                                (:qualifier w :eastwood/unset)
                                                %)
                     suppress-conditions)]
@@ -1109,7 +1096,7 @@ of these kind."
             (try
               (println "require " ns-name "...")
               (require (symbol ns-name))
-              (catch Throwable t)))
+              (catch Throwable _)))
         loaded-vars-by-ns (->> (all-ns)
                                (map (fn [ns]
                                       [(str ns)
@@ -1157,7 +1144,7 @@ of these kind."
                                (pr-str macro?)
                                predicate?)
 
-                       true
+                       :else
                        ;; this format includes all keys, so as to invite maintainers to think of all relevant info.
                        (format "%s {:var-kind nil, :macro %s, :predicate %s, :side-effect , :pure-fn , :warn-if-ret-val-unused , :lazy , :pure-if-fn-args-pure , :io-fn , :evals-exprs }"
                                fqs

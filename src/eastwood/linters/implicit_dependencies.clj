@@ -25,7 +25,7 @@
         seq
         boolean)))
 
-(defn implicit-dependencies [{:keys [asts forms]} _]
+(defn implicit-dependencies [{:keys [asts]} _]
   (let [explicit-requires (atom [])
         _ (when-let [s (some->> asts (keep :eastwood/ns-source) first)]
             (when-let [n (some->> asts (keep :eastwood/ns-sym) first find-ns)]

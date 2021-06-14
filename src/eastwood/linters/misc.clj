@@ -66,7 +66,7 @@
     (second x)
     x))
 
-(defn unlimited-use [{:keys [asts]} opt]
+(defn unlimited-use [{:keys [asts]} _opt]
   (for [ast (mapcat ast/nodes asts)
         :when (use? ast)
         :let [use-args (map remove-quote-wrapper (rest (-> ast :form)))
@@ -104,7 +104,7 @@
                 :let [first-expr (-> body :statements first)]]
             (string? (-> first-expr :form))))))
 
-(defn misplaced-docstrings [{:keys [asts]} opt]
+(defn misplaced-docstrings [{:keys [asts]} _opt]
   (for [ast (mapcat ast/nodes asts)
         :when (and (= (:op ast) :def)
                    (misplaced-docstring? ast))
@@ -121,7 +121,7 @@
          (.startsWith s "*")
          (.endsWith s "*"))))
 
-(defn non-dynamic-earmuffs [{:keys [asts]} opt]
+(defn non-dynamic-earmuffs [{:keys [asts]} _opt]
   (for [expr (mapcat ast/nodes asts)
         :when (= (:op expr) :def)
         :let [^clojure.lang.Var v (:var expr)
@@ -222,7 +222,7 @@
 (defn- defd-vars [exprs]
   (:top-level-defs (def-walker exprs)))
 
-(defn allow-both-defs? [def-ast1 def-ast2 defd-var all-asts opt]
+(defn allow-both-defs? [def-ast1 def-ast2 all-asts opt]
   (let [lca-path (util/longest-common-prefix
                   (:eastwood/path def-ast1)
                   (:eastwood/path def-ast2))]
@@ -232,7 +232,7 @@
                                              :redefd-vars])
             ;; Don't bother calculating enclosing-macros if there are
             ;; no suppress-conditions to check, to save time.
-            [lca-path lca-ast]
+            [_lca-path lca-ast]
             (when (seq suppress-conditions)
               (let [a (get-in all-asts lca-path)]
                 ;; If the lowest common ancestor is a vector, back up
@@ -242,17 +242,16 @@
                   [lca-path a])))
             encl-macros (when (seq suppress-conditions)
                           (util/enclosing-macros lca-ast))
-            match (some #(util/meets-suppress-condition lca-ast encl-macros :eastwood/unset %)
+            match (some #(util/meets-suppress-condition encl-macros :eastwood/unset %)
                         suppress-conditions)]
         (not match)))))
 
-(defn remove-dup-defs [defd-var asts all-asts opt]
+(defn remove-dup-defs [asts all-asts opt]
   (loop [ret []
          asts asts]
     (if (seq asts)
       (let [ast (first asts)
-            keep-new-ast? (every? #(allow-both-defs? % ast defd-var
-                                                     all-asts opt)
+            keep-new-ast? (every? #(allow-both-defs? % ast all-asts opt)
                                   ret)]
         (recur (if keep-new-ast? (conj ret ast) ret)
                (next asts)))
@@ -283,7 +282,7 @@
         defd-var-groups (into {}
                               (map (fn [[defd-var def-asts]]
                                      [defd-var
-                                      (remove-dup-defs defd-var def-asts asts opt)])
+                                      (remove-dup-defs def-asts asts opt)])
                                    defd-var-groups))]
     (for [[_defd-var ast-list] defd-var-groups
           :when (> (count ast-list) 1)
@@ -327,7 +326,7 @@
 (defn- def-in-def-vars [exprs]
   (:nested-defs (def-walker exprs)))
 
-(defn def-in-def [{:keys [asts]} opt]
+(defn def-in-def [{:keys [asts]} _opt]
   (let [nested-vars (def-in-def-vars asts)]
     (for [nested-var-ast nested-vars
           :let [loc (-> nested-var-ast var-of-ast meta)]]
@@ -628,7 +627,7 @@
     (second x)
     x))
 
-(defn bad-arglists [{:keys [asts]} opt]
+(defn bad-arglists [{:keys [asts]} _opt]
   (let [def-fn-asts (->> asts
                          (mapcat ast/nodes)
                          (filter (fn [a]
@@ -674,7 +673,7 @@
 ;; TBD: Consider also looking for local symbols in positions of forms
 ;; where they appeared to be used as functions, e.g. as the second arg
 ;; to map, apply, etc.
-(defn local-shadows-var [{:keys [asts]} opt]
+(defn local-shadows-var [{:keys [asts]} _opt]
   (for [{:keys [op fn env]} (mapcat ast/nodes asts)
         :when (and (= op :invoke)
                    ;; In the examples I have looked at, (:o-tag fn) is
@@ -881,12 +880,12 @@
 (defn warnings-for-one-ns-form [ns-ast]
   (let [loc (:env ns-ast)
         references (-> ns-ast :raw-forms first nnext)
-        [docstring references] (if (string? (first references))
+        [_docstring references] (if (string? (first references))
+                                  [(first references) (next references)]
+                                  [nil references])
+        [_attr-map references] (if (map? (first references))
                                  [(first references) (next references)]
                                  [nil references])
-        [attr-map references] (if (map? (first references))
-                                [(first references) (next references)]
-                                [nil references])
         non-lists (remove list? references)
         references (filter list? references)
         good-kw? #(allowed-ns-reference-keywords (first %))
@@ -935,7 +934,7 @@
                 :load []) ;; tbd: no checking yet
               )))))
 
-(defn wrong-ns-form [{:keys [asts]} opt]
+(defn wrong-ns-form [{:keys [asts]} _opt]
   (let [ns-asts (util/ns-form-asts asts)
         warnings (mapcat warnings-for-one-ns-form ns-asts)]
     (if (> (count ns-asts) 1)

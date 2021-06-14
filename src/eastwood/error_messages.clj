@@ -35,7 +35,7 @@
     [strings (fn [str]
                (swap! strings conj str))]))
 
-(defn print-ex-data-details [ns-sym ^Throwable exc]
+(defn print-ex-data-details [_ns-sym ^Throwable exc]
   (let [[strings error-cb] (string-builder)
         dat (ex-data exc)
         msg (.getMessage exc)]
@@ -57,16 +57,14 @@
     (error-cb (with-out-str (util/pst exc nil)))
     @strings))
 
-(defn handle-values-of-env [ns-sym ^Throwable exc]
-  (let [[strings error-cb] (string-builder)
-        dat (ex-data exc)
-        {:keys [form]} dat]
+(defn handle-values-of-env [_ns-sym ^Throwable _exc]
+  (let [[strings error-cb] (string-builder)]
     (error-cb (format "Eastwood cannot analyze code that uses the values of &env in a macro expansion."))
     (error-cb (format "See https://github.com/jonase/eastwood#explicit-use-of-clojure-environment-env"))
     {:info :show-more-details
      :msgs @strings}))
 
-(defn handle-bad-dot-form [ns-sym  ^Throwable exc]
+(defn handle-bad-dot-form [_ns-sym ^Throwable exc]
   (let [[strings error-cb] (string-builder)
         dat (ex-data exc)
         {:keys [form]} dat]
@@ -225,9 +223,8 @@ curious." eastwood-url))
              :msgs @strings})))
 
       :else
-      (do
-        {:info :show-more-details
-         :msgs (print-ex-data-details ns-sym exc)}))))
+      {:info :show-more-details
+       :msgs (print-ex-data-details ns-sym exc)})))
 
 (defn format-exception [ns-sym ^Throwable exc]
   (let [dat (ex-data exc)

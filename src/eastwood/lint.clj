@@ -133,7 +133,7 @@
      {:namespace-sym ns-sym}
      (util/file-warn-info uri cwd-file))))
 
-(defn- handle-lint-result [linter ns-info {:keys [msg loc] :as result}]
+(defn- handle-lint-result [linter ns-info {:keys [loc] :as result}]
   {:kind :lint-warning,
    :warn-data (merge result
                      ns-info
@@ -141,8 +141,7 @@
                      (when-let [url (:url linter)]
                        {"warning-details-url" url}))})
 
-(defn ignore-fault? [ignored-faults {{:keys [namespace-sym column line linter]} :warn-data
-                                     :as linter-result}]
+(defn ignore-fault? [ignored-faults {{:keys [namespace-sym column line linter]} :warn-data}]
   (let [matches (get-in ignored-faults [linter namespace-sym])
         matches (cond-> matches
                   (not (sequential? matches))
@@ -335,7 +334,7 @@
 
 (defn effective-linters
   [{:keys [linters exclude-linters add-linters disable-linter-name-checks]}
-   linter-name->info default-linters]
+   linter-name->info _default-linters]
   (let [linters-orig (linter-seq->set linters)
         excluded-linters (linter-seq->set exclude-linters)
         add-linters (linter-seq->set add-linters)
@@ -364,7 +363,7 @@
          (str/join " ")
          (reporting/note reporter))))
 
-(defn- lint-namespace [reporter namespace linters opts]
+(defn- lint-namespace [_reporter namespace linters opts]
   (try
     (let [{:keys [analyzer-exception lint-results analysis-time]} (lint-ns namespace linters opts)]
       {:namespace [namespace]
@@ -385,7 +384,7 @@
 
 (defmulti lint-namespaces (fn [& args] (first args)))
 
-(defmethod lint-namespaces :none [parallel? reporter {:keys [namespaces]} linters opts]
+(defmethod lint-namespaces :none [_parallel? reporter {:keys [namespaces]} linters opts]
   (let [stop-on-exception? (not (:continue-on-exception opts))]
     (reduce (fn [results namespace]
               (reporting/note reporter (str "== Linting " namespace " =="))
@@ -413,29 +412,29 @@
 (defn eastwood-core
   "Lint a sequence of namespaces using a specified collection of linters.
 
-Prerequisites:
-+ eastwood.lint namespace is in your classpath
-+ TBD: Eastwood resources directory is in your classpath
-+ eastwood.lint namespace and its dependencies have been loaded.
+  Prerequisites:
+  + eastwood.lint namespace is in your classpath
+  + TBD: Eastwood resources directory is in your classpath
+  + eastwood.lint namespace and its dependencies have been loaded.
 
-Arguments:
-+ TBD: to be documented
+  Arguments:
+  + TBD: to be documented
 
-Side effects:
-+ Reads source files, analyzes them, generates Clojure forms from
+  Side effects:
+  + Reads source files, analyzes them, generates Clojure forms from
   analysis results, and eval's those forms (which if there are bugs in
   tools.analyzer or tools.analyzer.jvm, may not be identical to the
   original forms read.  If require'ing your source files launches the
   missiles, so will this.
-+ Does create-ns on all namespaces specified, even if an exception
+  + Does create-ns on all namespaces specified, even if an exception
   during linting causes this function to return before reading all of
   them.  See the code for why.
-+ Should not print output to any output files/streams/etc., unless
+  + Should not print output to any output files/streams/etc., unless
   this occurs due to eval'ing the code being linted.
 
-Return value:
-+ TBD
-"
+  Return value:
+  + TBD
+  "
   [reporter opts cwd {:keys [namespaces dirs files file-map
                              non-clojure-files] :as effective-namespaces} linters]
   (dirs-scanned reporter cwd dirs)
@@ -476,7 +475,7 @@ Return value:
                    :ignored-faults {}})
 
 (defn last-options-map-adjustments [opts reporter]
-  (let [{:keys [namespaces] :as opts} (merge default-opts opts)
+  (let [{:keys [_namespaces] :as opts} (merge default-opts opts)
         distinct* (fn [x] ;; distinct but keeps original coll type
                     (->> (into (empty x) (distinct) x)
                          (into (empty x)))) ;; restore list order
@@ -517,7 +516,7 @@ Return value:
    :lint-time (apply + (mapcat vals (:lint-times summary)))
    :analysis-time (apply + (:analysis-time summary))})
 
-(defn make-report [reporter start-time {:keys [warning-count error-count] :as result}]
+(defn make-report [reporter start-time {:keys [warning-count error-count]}]
   (reporting/note reporter (format "== Linting done in %d ms ==" (- (System/currentTimeMillis)
                                                                     start-time)))
   (reporting/note reporter (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
@@ -574,7 +573,7 @@ Return value:
 
 (defn lint
   "Invoke Eastwood from REPL or other Clojure code, and return a map
-containing these keys:
+  containing these keys:
 
   :warnings - a sequence of maps representing individual warnings.
       The warning map contents are documented below.
@@ -597,7 +596,7 @@ containing these keys:
   :versions - A nested map with its own keys containing information
       about JVM, Clojure, and Eastwood versions.
 
-Keys in a warning map:
+  Keys in a warning map:
 
   :uri-or-file-name - string containing file name where warning
       occurs, relative to :cwd directory of options map, if it is a
@@ -643,7 +642,7 @@ Keys in a warning map:
            linter-info (select-keys opts [:linters :exclude-linters :add-linters :disable-linter-name-checks])
            {:keys [error error-data
                    lint-warnings
-                   namespace] :as ret}
+                   namespace]}
            (->> (effective-linters linter-info linter-name->info default-linters)
                 (eastwood-core reporter opts cwd namespaces-info)
                 summary)]
@@ -658,12 +657,12 @@ Keys in a warning map:
 
 (defn insp
   "Read, analyze, and eval a file specified by namespace as a symbol,
-e.g. 'testcases.f01.  Return a value that has been 'cleaned up', by
-removing some keys from ASTs, so that it is more convenient to call
-clojure.inspector/inspect-tree on it.  Example in REPL:
+  e.g. 'testcases.f01.  Return a value that has been 'cleaned up', by
+  removing some keys from ASTs, so that it is more convenient to call
+  clojure.inspector/inspect-tree on it.  Example in REPL:
 
-(require '[eastwood.lint :as l] '[clojure.inspector :as i])
-(i/inspect-tree (l/insp 'testcases.f01))"
+  (require '[eastwood.lint :as l] '[clojure.inspector :as i])
+  (i/inspect-tree (l/insp 'testcases.f01))"
   [nssym]
   (let [a (analyze-ns/analyze-ns nssym :opt {:callback (fn [_]) :debug #{}})]
     (update-in a [:analyze-results :asts]

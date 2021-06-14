@@ -32,9 +32,10 @@
       (string/replace "-" "_")
       (str extension)))
 
-(defn ^java.net.URL uri-for-ns
+(defn uri-for-ns
   "Returns a URI representing the namespace. Throws an
   exception if URI not found."
+  ^URL
   [ns-sym]
   (let [rsrc-path-clj (ns-resource-name ns-sym ".clj")
         rsrc-path-cljc (ns-resource-name ns-sym ".cljc")
@@ -131,7 +132,7 @@
       (binding [*out* *forms-emitted-writer*]
         (println s)))))
 
-(defn post-analyze-debug [filename asts form ast ns opt]
+(defn post-analyze-debug [_filename asts form ast ns opt]
   (when (util/debug? :ns opt)
     (let [show-ast? (util/debug? :ast opt)]
       (when (or show-ast? (util/debug? :progress opt))
@@ -145,7 +146,7 @@
       (when (util/debug? :compare-forms opt)
         (debug-forms form ast)))))
 
-(defn begin-file-debug [filename ns opt]
+(defn begin-file-debug [filename _ns opt]
   (when (and (util/debug? :ns opt)
              (util/debug? :compare-forms opt))
     (debug-forms-new-file filename)))

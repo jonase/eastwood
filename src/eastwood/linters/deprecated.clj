@@ -7,7 +7,7 @@
    (java.lang.reflect Constructor Field Method)))
 
 (defn no-constructor-found [ctor-info]
-  (if (map? ctor-info)
+  (when (map? ctor-info)
     (let [{:keys [arg-types]} ctor-info]
       (println (format "Error: Eastwood found no constructor for class %s taking %d args with types (%s).  This may occur because Eastwood does not yet do type matching in the same way that Clojure does."
                        (.getName ^Class (:class ctor-info))
@@ -15,7 +15,7 @@
                        (pass/arg-type-str arg-types))))))
 
 (defn no-method-found [kind method-info]
-  (if (map? method-info)
+  (when (map? method-info)
     (let [{:keys [arg-types]} method-info]
       (println (format "Error: Eastwood found no %s method named %s for class %s taking %d args with types (%s).  This may occur because Eastwood does not yet do type matching in the same way that Clojure does."
                        (name kind)
@@ -25,7 +25,7 @@
                        (pass/arg-type-str arg-types))))))
 
 (defn no-field-found [kind field-info]
-  (if (map? field-info)
+  (when (map? field-info)
     (println (format "Error: Eastwood found no %s field for %s with name %s"
                      (name kind)
                      (.getName ^Class (:class field-info))

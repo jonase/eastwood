@@ -63,7 +63,7 @@
 ;; on the linter argument, in a way that will not attach this :line
 ;; :column etc. metadata, implemented in string->forms.
 
-(defn keyword-typos [{:keys [asts source]} opt]
+(defn keyword-typos [{:keys [asts source]} _opt]
   ;; Hack alert: Assumes that the first form in the file is an ns
   ;; form, and that the namespace remains the same throughout the
   ;; source file.
@@ -145,8 +145,6 @@
            is-arg1 (first is-args)
            thrown? (and (sequential? is-arg1)
                         (= 'thrown? (first is-arg1)))
-           thrown-with-msg? (and (sequential? is-arg1)
-                                 (= 'thrown-with-msg? (first is-arg1)))
            thrown-args (and thrown? (rest is-arg1))
            thrown-arg2 (and thrown? (nth is-arg1 2))
            is-loc (-> isf first meta)
@@ -617,7 +615,7 @@
    'clojure.core/comp     '{0 {:args [] :ret-val identity}}
    'clojure.core/partial  '{1 {:args [f] :ret-val f}}})
 
-(defn suspicious-fn-calls [{:keys [asts]} opt]
+(defn suspicious-fn-calls [{:keys [asts]} _opt]
   (let [fn-sym-set (set (keys core-fns-that-do-little))
         invoke-asts (->> asts
                          (mapcat ast/nodes)
@@ -655,7 +653,7 @@
 ;; expression like a macro invocation, which already seems to be
 ;; handled well by suspicious-macro-invocations.
 
-(defn suspicious-is-try-expr [{:keys [asts]} opt]
+(defn suspicious-is-try-expr [{:keys [asts]} _opt]
   (let [try-expr-asts
         (->> asts
              (mapcat ast/nodes)
@@ -921,7 +919,7 @@
                                  [[:body] :do]])))
 
 (defn ast-of-condition-test
-  [kind fn-ast method-num condition-idx condition-form]
+  [_kind fn-ast method-num _condition-idx condition-form]
   (let [{do-body-ast :ast, s :stop-reason}
         (get-do-body-from-fn-or-with-meta-ast fn-ast method-num)]
     (assert (nil? s))
@@ -990,7 +988,7 @@
                                (mapcat ast/nodes)
                                (mapcat fn-ast-with-pre-post))]
     (concat
-     (for [{:keys [ast form name pre method-num]} fns-with-pre-post
+     (for [{:keys [ast pre method-num]} fns-with-pre-post
            :when pre
            :let [loc (meta pre)
                  msgs (wrong-pre-post-messages opt
@@ -1003,7 +1001,7 @@
                     :wrong-pre-post {:kind :pre, :ast ast}
                     :msg msg}]]
        w)
-     (for [{:keys [ast form name post method-num]} fns-with-pre-post
+     (for [{:keys [ast post method-num]} fns-with-pre-post
            :when post
            :let [loc (meta post)
                  msgs (wrong-pre-post-messages opt
@@ -1268,7 +1266,7 @@
        ;; the first.
        (map second)))
 
-(defn duplicate-params [{:keys [asts]} opt]
+(defn duplicate-params [{:keys [asts]} _opt]
   (let [arg-vecs (->> asts
                       (mapcat ast/nodes)
                       (mapcat arg-vecs-of-ast))]
@@ -1276,7 +1274,7 @@
      (apply concat
             (for [arg-vec arg-vecs
                   :let [loc (meta arg-vec)]]
-              (let [{:keys [result local-names warnings] :as info}
+              (let [{:keys [result local-names warnings]}
                     (seq-binding-form-info arg-vec loc true)]
                 (if-not result
                   [{:loc loc

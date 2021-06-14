@@ -1,6 +1,6 @@
 (ns eastwood.linter-executor-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [are deftest is testing]]
    [eastwood.lint]))
 
 (def proof (atom []))

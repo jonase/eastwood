@@ -1,6 +1,6 @@
 (ns eastwood.test.analyze-ns-test
   (:require
-   [clojure.test :refer :all]
+   [clojure.test :refer [deftest is testing]]
    [eastwood.analyze-ns :as sut]))
 
 (deftest test3
