@@ -53,6 +53,8 @@
                                                   [com.taoensso/timbre "5.1.2"]
                                                   [com.taoensso/tufte "2.2.0"]
                                                   [manifold "0.1.9-alpha4"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2021.06.01"]]}
+             :antq {:plugins [[com.github.liquidz/antq "0.15.2"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
@@ -99,7 +101,7 @@
                                              ;; tools.macro
                                              ;; tools.namespace
                                              ;; tools.nrepl
-                                             [org.clojure/tools.reader "1.3.4"]
+                                             [org.clojure/tools.reader "1.3.5"]
                                              [org.clojure/tools.trace "0.7.11"]
                                              ;; useful
                                              ]}

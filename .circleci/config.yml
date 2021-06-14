@@ -1,10 +1,24 @@
 version: 2.1
 
+orbs:
+  shellcheck: circleci/shellcheck@2.2.3
+  
 executor_defaults: &executor_defaults
   # xlarge: use as many CPU cores as possible, to exercise parallelism as realistically as possible
   # xlarge is only applied in paid accounts and gracefully degrades to a compatible resource_class in regular accounts
   resource_class: xlarge
   working_directory: ~/repo
+
+env_defaults: &env_defaults
+  LEIN_DEPS_COMMAND: "lein with-profile +test,+test-3rd-party-deps,+antq,+clj-kondo deps"
+  LEIN_ROOT: "true"
+  LINT_SCRIPT: ".circleci/lint.sh"
+
+older_jdk_env_defaults: &older_jdk_env_defaults
+  JVM_OPTS: -Xmx3200m
+
+newer_jdk_env_defaults: &newer_jdk_env_defaults
+  JVM_OPTS: -Xmx3200m --illegal-access=deny
 
 # We exercise the following JVMs:
 # * those officially supported by Clojure (atm: 8 and 11)
@@ -14,22 +28,22 @@ executors:
     docker:
       - image: circleci/clojure:openjdk-8-lein-2.9.5
     environment:
-      LEIN_ROOT: "true"
-      JVM_OPTS: -Xmx3200m
+      <<: *env_defaults
+      <<: *older_jdk_env_defaults
     <<: *executor_defaults
   openjdk11:
     docker:
       - image: circleci/clojure:openjdk-11-lein-2.9.5
     environment:
-      LEIN_ROOT: "true"
-      JVM_OPTS: -Xmx3200m --illegal-access=deny
+      <<: *env_defaults
+      <<: *newer_jdk_env_defaults
     <<: *executor_defaults
   openjdk16:
     docker:
       - image: circleci/clojure:openjdk-16-lein-2.9.5-buster
     environment:
-      LEIN_ROOT: "true"
-      JVM_OPTS: -Xmx3200m --illegal-access=deny
+      <<: *env_defaults
+      <<: *newer_jdk_env_defaults
     <<: *executor_defaults
 
 jobs:
@@ -42,15 +56,13 @@ jobs:
     executor: << parameters.executor >>
     steps:
       - checkout
-
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "project.clj" }}
 
       - run:
           name: Fetch dependencies
-          command: |
-            lein with-profile +test,+test-3rd-party-deps, deps
+          command: "$LEIN_DEPS_COMMAND"
 
       - save_cache:
           paths:
@@ -89,8 +101,7 @@ jobs:
 
       - run:
           name: Fetch dependencies
-          command: |
-            lein with-profile +test,+test-3rd-party-deps, deps
+          command: "$LEIN_DEPS_COMMAND"
 
       - save_cache:
           paths:
@@ -112,7 +123,41 @@ jobs:
       - run:
           name: Run test suite that exercises var-info.edn
           command: lein with-profile -user,-dev,+test,+warn-on-reflection,+var-info-test,+<< parameters.clojure-version >> do clean, test
+          
+  lint:
+    parameters:
+      executor:
+        type: executor
+      clojure-version:
+        type: string
+    executor: << parameters.executor >>
+    steps:
+      - checkout
+      - shellcheck/install
 
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "project.clj" }}
+            
+      - restore_cache:
+          keys:
+            - v2-dependencies-LINT-{{ checksum "project.clj" }}
+
+      - run:
+          name: Fetch dependencies
+          command: "$LEIN_DEPS_COMMAND"
+
+      - run:
+          name: Fetch NVD dependencies
+          command: cd .circleci/nvd; lein deps
+
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: v2-dependencies-LINT-{{ checksum "project.clj" }}
+
+      - run: "shellcheck $LINT_SCRIPT"
+      - run: "$LINT_SCRIPT"
 
   build:
     docker:
@@ -141,7 +186,7 @@ jobs:
             # fallback to using the latest cache if no exact match is found
             - v1-dependencies-
 
-      - run: lein deps
+      - run: "$LEIN_DEPS_COMMAND"
 
       - save_cache:
           paths:
@@ -197,7 +242,7 @@ jobs:
             curl -s https://raw.githubusercontent.com/clj-commons/infra/main/deployment/circle-maybe-deploy.bb -o circle-maybe-deploy.bb
             chmod a+x circle-maybe-deploy.bb
 
-      - run: lein deps
+      - run: "$LEIN_DEPS_COMMAND"
 
       - run:
           name: Setup GPG signing key
@@ -228,6 +273,23 @@ jobs:
            ./circle-maybe-deploy.bb lein with-profile -dev,+eastwood-plugin deploy clojars
 
 workflows:
+  nvd:
+    triggers:
+      - schedule:
+          cron: "0 0 * * 0"
+          filters:
+            branches:
+              only:
+                - master
+                - dev
+    jobs:
+      - lint:
+          matrix:
+            parameters:
+              # Just one executor - linting results are not expected to vary per platform:
+              executor: [openjdk11]
+              # Just one version - linting results are not expected to vary per version:
+              clojure-version: ["1.10.3"]
   default:
     jobs:
       - test:
@@ -248,11 +310,23 @@ workflows:
               executor: [openjdk8, openjdk11, openjdk16]
               # Run just the latest version. This saves resources trusts that the main test suite already exercises clojure compat sufficiently:
               clojure-version: ["1.10.3"]
+      - lint:
+          # add some requires for not running nvd-clojure so often:
+          requires:
+            - test
+            - test_third_party_deps
+          matrix:
+            parameters:
+              # Just one executor - linting results are not expected to vary per platform:
+              executor: [openjdk11]
+              # Just one version - linting results are not expected to vary per version:
+              clojure-version: ["1.10.3"]
 
       - deploy:
           requires:
             - test
             - test_third_party_deps
+            - lint
           filters:
             tags:
               only: /Release-.*/
