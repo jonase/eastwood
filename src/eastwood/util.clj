@@ -605,7 +605,7 @@ pprint-meta instead."
                 (reader-types/string-push-back-reader s))
           eof (reify)]
       (loop [forms []]
-        (let [x (reader/read rdr nil eof)]
+        (let [x (reader/read {:eof eof :read-cond :allow :features #{:clj}} rdr)]
           (if (identical? x eof)
             forms
             (recur (conj forms x))))))))

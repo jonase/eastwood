@@ -364,7 +364,10 @@ relative to a specific macroexpansion"
       #{'testcases.implicit-dependencies.explicit-require.green3} {:some-warnings false}
       #{'testcases.implicit-dependencies.explicit-require.green4} {:some-warnings false}
       #{'testcases.implicit-dependencies.explicit-require.green5} {:some-warnings false}
-      #{'testcases.implicit-dependencies.explicit-require.red}    {:some-warnings true})))
+      #{'testcases.implicit-dependencies.explicit-require.red}    {:some-warnings true}
+
+      #{'testcases.implicit-dependencies.cljc.green}              {:some-warnings false}
+      #{'testcases.implicit-dependencies.cljc.red}                {:some-warnings true})))
 
 (deftest deprecations-test
   (testing "type-overloaded Java arities, see https://github.com/jonase/eastwood/issues/329"

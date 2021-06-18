@@ -1,5 +1,11 @@
 # Change log for Eastwood
 
+## Changes from 0.5.0 to 0.5.1
+
+#### Bugfixes
+
+* Fix an implementation detail which could throw exceptions over .cljc files.
+
 ## Changes from 0.4.3 to 0.5.0
 
 #### New
