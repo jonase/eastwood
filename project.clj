@@ -53,7 +53,7 @@
                                                   [com.taoensso/timbre "5.1.2"]
                                                   [com.taoensso/tufte "2.2.0"]
                                                   [manifold "0.1.9-alpha4"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2021.06.01"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2021.06.18"]]}
              :antq {:plugins [[com.github.liquidz/antq "0.15.3"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}

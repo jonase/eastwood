@@ -6,7 +6,7 @@ classpath="$(lein with-profile -user,+test classpath)"
 lein with-profile -user,+test,+clj-kondo run -m clj-kondo.main --lint "$classpath" --dependencies --parallel --copy-configs
 lein with-profile -user,+test,+clj-kondo run -m clj-kondo.main --lint src test lein-eastwood var-info-test
 
-lein with-profile -user,-dev,+antq trampoline antq
+lein with-profile -user,-dev,+antq,+clj-kondo trampoline antq
 lein with-profile -user,-dev,+antq,+check-var-info trampoline antq
 
 NVD_SCRIPT=".circleci/nvd/run.sh"
