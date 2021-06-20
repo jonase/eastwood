@@ -3,7 +3,7 @@
 [![Dependencies Status](https://versions.deps.co/jonase/eastwood/status.svg)](https://versions.deps.co/jonase/eastwood)
 [![Downloads](https://versions.deps.co/jonase/eastwood/downloads.svg)](https://versions.deps.co/jonase/eastwood)
 [![Build Status](https://circleci.com/gh/jonase/eastwood/tree/master.svg?style=shield&circle-token=26d8d2fa593675196734ac6c28ee16e0a9183806)](https://circleci.com/gh/jonase/eastwood)
-[![Clojars Project](https://img.shields.io/clojars/v/jonase/eastwood.svg)](https://clojars.org/jonase/eastwood) [![Join the chat at https://gitter.im/eastwood-linter/Lobby](https://badges.gitter.im/eastwood-linter/Lobby.svg)](https://gitter.im/eastwood-linter/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Clojars Project](https://img.shields.io/clojars/v/jonase/eastwood.svg)](https://clojars.org/jonase/eastwood)
 
 <img src="doc/Clint_Eastwood_-_1960s_small.jpg"
  alt="Picture of Clint Eastwood in 'A Fistful of Dollars' (1964)" title="Clint Eastwood in 'A Fistful of Dollars' (1964)"
@@ -42,7 +42,7 @@ released to fix that problem.
 Merge the following into your `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.5.1"]]}}
+{:user {:plugins [[jonase/eastwood "0.5.2"]]}}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -445,7 +445,7 @@ If you use Leiningen, merge this into your project's `project.clj`
 file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.5.1" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.5.2" :exclusions [org.clojure/clojure]]]}}
 ```
 
 If you use a different build tool, you will need to add the dependency
@@ -2318,7 +2318,7 @@ The following are acceptable `target`s:
 > Please, if encountering an issue in Eastwood, consider reporting it in addition to (or instead of) silencing it.
 > This way Eastwood can continue to be a precise linter, having as few false positives as possible.
 
-## Change log
+## Changelog
 
 See the
 [changes.md](https://github.com/jonase/eastwood/blob/master/changes.md)
@@ -2334,7 +2334,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein with-profile +eastwood-plugin install
 
-Then add `[jonase/eastwood "0.2.8"]` (or whatever is the
+Then add `[jonase/eastwood "0.5.2"]` (or whatever is the
 current version number in the defproject line of `project.clj`) to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `$HOME/.lein/profiles.clj` file.
@@ -2350,6 +2350,8 @@ The source code of the following libraries has been copied into
 Eastwood's source code, and each of their copyright and license info
 is given below.  They are all distributed under the Eclipse Public
 License 1.0.
+
+<details>
 
 ### core.cache
 
@@ -2431,3 +2433,5 @@ software.
 Copyright © 2013-2014 Nicola Mometto, Rich Hickey & contributors.
 
 Licensed under the EPL. (See the file epl.html.)
+
+</details>
