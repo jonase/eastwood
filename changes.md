@@ -1,5 +1,12 @@
 # Change log for Eastwood
 
+## Changes from 0.5.1 to 0.5.2
+
+#### Bugfixes
+
+* Fix false positives for `some->`, `some->>`
+  * Closes https://github.com/jonase/eastwood/issues/397
+
 ## Changes from 0.5.0 to 0.5.1
 
 #### Bugfixes

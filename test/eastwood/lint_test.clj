@@ -337,7 +337,22 @@ relative to a specific macroexpansion"
       #{'testcases.constant-test.if-some.red}     {:some-warnings true}
 
       #{'testcases.constant-test.when-some.green} {:some-warnings false}
-      #{'testcases.constant-test.when-some.red}   {:some-warnings true})))
+      #{'testcases.constant-test.when-some.red}   {:some-warnings true}))
+
+  (testing "The :constant-test linter for some->/some->>, per https://github.com/jonase/eastwood/issues/397"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> sut/default-opts
+                                       (assoc :namespaces input)
+                                       (sut/eastwood))))
+                            true)
+      ;; Unfortunately, no red cases are exercised because I don't think this can be fixed.
+      ;; (some-> "") will check nilness of "" even when "" is a value known at compile time.
+      ;; I believe that can be considered a (minor) issue in clojure.core, and working around it seems arduous.
+      ;; Suggested an improvement upstream here:
+      ;; https://ask.clojure.org/index.php/10712/minor-performance-improvement-initial-values-known-compile
+      #{'testcases.constant-test.some-thread-first.green} {:some-warnings false}
+      #{'testcases.constant-test.some-thread-last.green}  {:some-warnings false})))
 
 (deftest unused-fn-args-test
   (testing "fn args within defmulti, see https://github.com/jonase/eastwood/issues/1"

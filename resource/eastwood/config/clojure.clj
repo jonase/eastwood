@@ -95,6 +95,11 @@ their intention being to write to stdout and therefore have the `with-out-str` r
 
 (disable-warning
  {:linter :constant-test
+  :if-inside-macroexpansion-of #{'clojure.core/some-> 'clojure.core/some->>}
+  :within-depth 2})
+
+(disable-warning
+ {:linter :constant-test
   :if-inside-macroexpansion-of #{'clojure.core/while}
   :within-depth 3
   :qualifier true
