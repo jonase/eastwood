@@ -1,0 +1,3 @@
+[submodule ".circleci/core.async"]
+	path = .circleci/core.async
+	url = git@github.com:clojure/core.async.git

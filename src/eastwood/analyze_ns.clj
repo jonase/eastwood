@@ -4,6 +4,7 @@
    [clojure.java.io :as io]
    [clojure.pprint :as pp]
    [clojure.string :as string]
+   [clojure.walk :as walk]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes :refer [schedule]]
@@ -17,6 +18,7 @@
    [eastwood.passes :as pass]
    [eastwood.util :as util])
   (:import
+   (clojure.lang Namespace)
    (java.net URL)))
 
 ;; uri-for-ns, pb-reader-for-ns were copied from library
@@ -268,6 +270,14 @@
       should-change? (update 1 vary-meta dissoc :const)
       should-change? seq)))
 
+(defn var->symbol [var]
+  (if (util/clojure-1-10-or-later)
+    ;; use the most accurate method (as it can't be deceived by external metadata mutation):
+    (-> var symbol)
+    (let [^Namespace ns (-> var meta :ns)]
+      (symbol (-> ns .-name name)
+              (-> var meta :name name)))))
+
 (defn analyze-file
   "Takes a file path and optionally a pushback reader.  Returns a map
   with at least the following keys:
@@ -299,6 +309,9 @@
   Options:
   - :reader  a pushback reader to use to read the namespace forms
   - :opt     a map of analyzer options
+    - `:abort-on-core-async-exceptions?` (default: falsey)
+      - if true, analyze+eval exceptions stemming from `go` usage will abort execution.`
+      - currently, execution is not aborted, rationale being https://github.com/jonase/eastwood/issues/395
     - :debug A set of keywords.
       - :all Enable all of the following debug messages.
       - :progress Print simple progress messages as analysis proceeds.
@@ -336,31 +349,81 @@
                       (let [{:keys [val out err]}
                             (util/with-out-str2
                               (binding [jvm/run-passes run-passes]
-                                (jvm/analyze+eval
-                                 form (jvm/empty-env)
-                                 {:passes-opts eastwood-passes-opts})))]
+                                (let [{:keys [result] :as v} (jvm/analyze+eval form
+                                                                               (jvm/empty-env)
+                                                                               {:passes-opts eastwood-passes-opts})]
+                                  (when (and (var? result)
+                                             (-> result meta :arglists vector?)
+                                             (some-> result meta :arglists first seq?)
+                                             (some-> result meta :arglists first first #{'quote}))
+                                    ;; Cleanup odd arglists such as git.io/Jnidv
+                                    ;; (as they have unexpected quotes, and a swapped choice of vectors/lists):
+                                    (alter-meta! result (fn [{:keys [arglists]
+                                                              :as m}]
+                                                          (assoc m
+                                                                 :arglists
+                                                                 (->> arglists
+                                                                      (mapv (fn [x]
+                                                                              (cond-> x
+                                                                                (and (seq? x)
+                                                                                     (-> x count #{2})
+                                                                                     (-> x first #{'quote}))
+                                                                                last)))
+                                                                      (list))))))
+                                  v)))]
                         (do-eval-output-callbacks out err (:cwd opt))
                         [nil val])
                       (catch Exception e
-                        [e nil]))]
+                        (let [had-go-call? (atom false)]
+                          (when-not (:abort-on-core-async-exceptions? opt)
+                            (->> form
+                                 (walk/postwalk (fn [x]
+                                                  (when (and (not @had-go-call?) ;; performance optimization
+                                                             (seq? x)
+                                                             (-> x first symbol?)
+                                                             (= 'clojure.core.async/go
+                                                                (try
+                                                                  (some->> x
+                                                                           first
+                                                                           (ns-resolve *ns*)
+                                                                           var->symbol)
+                                                                  ;; ns-resolve can fail pre Clojure 1.10:
+                                                                  (catch Exception _
+                                                                    nil))))
+                                                    (reset! had-go-call? true))
+                                                  x))))
+                          (if @had-go-call?
+                            (try
+                              ;; eval the form (without tools.analyzer),
+                              ;; increasing the chances that its result can be useful, queried, etc
+                              (eval form)
+                              [nil ::omit]
+                              (catch Exception _
+                                ;; if the `eval` failed, return the tools.analyzer exception - not the `eval` one:
+                                [e nil]))
+                            [e nil]))))]
                 (if exc
                   {:forms nil
-                   :asts asts, :exception exc, :exception-phase :analyze+eval,
+                   :asts asts,
+                   :exception exc,
+                   :exception-phase :analyze+eval,
                    :exception-form form}
+
                   (if-let [first-exc-ast (first (asts-with-eval-exception ast))]
                     {:forms (remaining-forms reader (conj forms form)),
                      :asts asts,
-                     :exception (wrapped-exception? (:result first-exc-ast)),
+                     :exception (-> first-exc-ast :result wrapped-exception?),
                      :exception-phase :eval,
-                     :exception-form (if-let [f (first (:raw-forms first-exc-ast))]
+                     :exception-form (if-let [f (-> first-exc-ast :raw-forms first)]
                                        f
                                        (:form first-exc-ast))}
-                    (do
+                    (let [conj? (not= ast ::omit)]
                       (post-analyze-debug source-path asts form ast *ns* opt)
-                      (recur (conj forms form)
-                             (conj asts
-                                   (eastwood-ast-additions
-                                    ast (count asts)))))))))))))))
+                      (recur (cond-> forms
+                               conj? (conj form))
+                             (cond-> asts
+                               conj? (conj (eastwood-ast-additions
+                                            ast (count asts))))))))))))))))
 
 (defn analyze-ns
   "Takes an IndexingReader and a namespace symbol.
