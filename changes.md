@@ -1,5 +1,11 @@
 # Change log for Eastwood
 
+## Changes from 0.5.2 to
+
+#### Bugfixes
+
+* Fix the `eastwood.lint` `-main` program when invoked with no arguments.
+
 ## Changes from 0.5.1 to 0.5.2
 
 #### Bugfixes

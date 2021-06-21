@@ -85,6 +85,11 @@ jobs:
           name: Run normal test suite
           command: lein with-profile -user,-dev,+test,+warn-on-reflection,+<< parameters.clojure-version >> do clean, test
 
+      - run:
+          # Aims to exercise that the plugin can be run in external projects, and that the `-main` program works:
+          name: minimal integration test against example projects
+          command: JVM_OPTS= .circleci/integration_test.sh
+
   test_third_party_deps:
     parameters:
       executor:

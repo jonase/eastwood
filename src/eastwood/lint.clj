@@ -669,7 +669,28 @@
                (fn [ast] (mapv util/clean-ast ast)))))
 
 (defn -main
-  ([] (-main (pr-str default-opts)))
+  ([]
+   (-> (->> default-opts
+            (keep (fn [[k v]]
+                    (when-not (->> [File]
+                                   (some (fn [c]
+                                           (instance? c v))))
+                      [k v])))
+            (into {}))
+       ;; It's better to try setting :source-paths/:test-paths explicitly.
+       ;; Otherwise, in newer JDKs nothing may be analysed.
+       ;; (this is exercised in CI)
+       (assoc :source-paths (->> ["src" "dev"]
+                                 (filter (fn [^String s]
+                                           (-> s File. .exists)))
+                                 (into #{})))
+       (assoc :test-paths (->> ["test"]
+                               (filter (fn [^String s]
+                                         (-> s File. .exists)))
+                               (into #{})))
+       pr-str
+       -main))
+
   ([& opts]
    (if (and
         (= 1 (count opts))

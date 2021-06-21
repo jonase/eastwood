@@ -8,3 +8,5 @@ pom.xml
 .lein-repl-history
 *~
 /target/
+/.circleci/example-red-project/output
+/.circleci/example-green-project/output
