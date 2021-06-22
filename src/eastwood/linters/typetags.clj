@@ -118,7 +118,8 @@
                                     true
                                     (if-not (sequential? tag)
                                       true
-                                      (not (-> tag first #{'Class/forName 'java.lang.Class/forName})))))]
+                                      (not (-> tag first #{'Class/forName 'java.lang.Class/forName
+                                                           'class `class})))))]
                    (let [warning {:loc loc
                                   :linter :wrong-tag
                                   :wrong-tag {:ast ast}

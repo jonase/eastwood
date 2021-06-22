@@ -7,11 +7,12 @@
 * Omit exceptions coming from individual top-level forms, if they made use of the `clojure.core.async/go` macro.
   * Closes https://github.com/jonase/eastwood/issues/395
   * This makes Eastwood more capable of analyzing core.async -based projects. It's a temporary measure though, as it ideally this would be simply fixed in the tools.analyzer project. 
-  * You can revert to the old behavior (which most likely will result in errors by passing `:abort-on-core-async-exceptions? true`) as a top-level Eastwood option. 
+  * You can revert to the old behavior (which most likely will result in errors) by passing `:abort-on-core-async-exceptions? true` as a top-level Eastwood option. 
 
 #### Bugfixes
 
 * Fix the `eastwood.lint` `-main` program when invoked with no arguments.
+* Support `(class (byte-array 0))` as an `extend-protocol` target without it triggering `:wrong-tag`.
 
 ## Changes from 0.5.1 to 0.5.2
 

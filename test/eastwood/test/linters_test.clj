@@ -1236,16 +1236,7 @@
           :file (fname-from-parts "testcases" "wrongtag.clj"),
           :line 125, :column 14}
          1,
-         {:linter :wrong-tag,
-          :msg "Wrong tag: (class (log-window-proxy nil)) on form: this.",
-          :file (fname-from-parts "testcases" "wrongtag.clj"),
-          :line 151, :column 9}
-         1,
-         {:linter :wrong-tag,
-          :msg "Wrong tag: (class (log-window-proxy nil)) on form: this.",
-          :file (fname-from-parts "testcases" "wrongtag.clj"),
-          :line 153, :column 11}
-         1}
+         }
 
         ;; These warnings are not needed after CLJ-1232 was fixed in
         ;; Clojure 1.8.0.
