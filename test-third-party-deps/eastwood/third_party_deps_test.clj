@@ -23,6 +23,11 @@
     (is (= {:some-warnings false :some-errors false}
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.manifold-example}))))))
 
+(deftest spec-tools-example
+  (testing "Is able to process usages of the `spec-tools` library without false positives"
+    (is (= {:some-warnings false :some-errors false}
+           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.spec-tools-example}))))))
+
 (deftest core-async-example
   (let [opts (assoc eastwood.lint/default-opts :namespaces #{'testcases.core-async-example})]
 

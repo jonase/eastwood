@@ -340,3 +340,7 @@
  {:linter :constant-test
   :if-inside-macroexpansion-of #{'manifold.deferred/let-flow}
   :qualifier :else})
+
+(disable-warning
+ {:linter :constant-test
+  :if-inside-macroexpansion-of #{'spec-tools.core/spec}})
