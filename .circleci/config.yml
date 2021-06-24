@@ -333,5 +333,7 @@ workflows:
             - test_third_party_deps
             - lint
           filters:
+            branches:
+              ignore: /.*/
             tags:
               only: /Release-.*/
