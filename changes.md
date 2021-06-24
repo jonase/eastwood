@@ -1,6 +1,6 @@
 # Change log for Eastwood
 
-## Changes from 0.5.2 to
+## Changes from 0.5.2 to 0.6.0
 
 #### New
 
