@@ -107,6 +107,7 @@
                                              [org.clojure/tools.trace "0.7.11"]
                                              ;; useful
                                              ]}
+             :clojure-core-test {:test-paths ^:replace ["clojure-core-test"]}
              :var-info-test {:test-paths ^:replace ["var-info-test"]}}
   :aliases {"test-all" ["with-profile"
                         ~(->> ["1.7" "1.8" "1.9" "1.10.1" "1.10.2" "1.10.3"]

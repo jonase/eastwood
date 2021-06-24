@@ -146,7 +146,7 @@
 
 (defn pst
   "'Prints' a stack trace of the exception,  to the depth requested (the
-entire stack trace if depth is nil).  Does not print ex-data."
+  entire stack trace if depth is nil).  Does not print ex-data."
   [^Throwable e depth]
   (println (str (-> e class .getSimpleName) " "
                 (.getMessage e)))
@@ -924,28 +924,33 @@ of these kind."
   (reset! linter-executor-atom executor))
 
 (defn process-configs [warning-enable-config]
-  (reduce (fn [configs {:keys [linter] :as m}]
-            (case linter
-              (:constant-test
-               :redefd-vars
-               :suspicious-test
-               :unused-fn-args
-               :unused-meta-on-macro
-               :unused-ret-vals
-               :unused-ret-vals-in-try
-               :wrong-tag)
-              (update-in configs [linter]
-                         conj (dissoc m :linter))
-              :suspicious-expression
-              (update-in configs [linter (:for-macro m)]
-                         conj (dissoc m :linter :for-macro))
-              :wrong-arity
-              (assoc-in configs [linter (:function-symbol m)]
-                        (dissoc m :linter :function-symbol))
-              :deprecations
-              (update-in configs [linter :symbol-matches]
-                         into (:symbol-matches m))))
-          {} warning-enable-config))
+  (->> warning-enable-config
+       (reduce (fn [configs {:keys [linter] :as m}]
+                 (let [[path op obj] (case linter
+                                       (:constant-test
+                                        :redefd-vars
+                                        :suspicious-test
+                                        :unused-fn-args
+                                        :unused-meta-on-macro
+                                        :unused-ret-vals
+                                        :unused-ret-vals-in-try
+                                        :wrong-arity
+                                        :wrong-tag)
+                                       [[linter]
+                                        conj
+                                        (dissoc m :linter)]
+
+                                       :suspicious-expression
+                                       [[linter (:for-macro m)]
+                                        conj
+                                        (dissoc m :linter :for-macro)]
+
+                                       :deprecations
+                                       [[linter :symbol-matches]
+                                        into
+                                        (:symbol-matches m)])]
+                   (update-in configs path op obj)))
+               {})))
 
 (defn builtin-config-to-resource [name]
   (io/resource (str "eastwood/config/" name)))
@@ -976,13 +981,12 @@ of these kind."
               (not configured-qualifier?)
               (and configured-qualifier?
                    (= qualifier (:qualifier condition))))
-      (let [macro-set (:if-inside-macroexpansion-of condition)
+      (let [macro-set (-> condition :if-inside-macroexpansion-of (doto assert))
             depth (:within-depth condition)
-            enclosing-macros (if (number? depth)
-                               (take depth enclosing-macros)
-                               enclosing-macros)]
+            enclosing-macros (cond->> enclosing-macros
+                               (number? depth) (take depth))]
         (some (fn [m]
-                (when (macro-set (:macro m))
+                (when (-> m :macro macro-set)
                   {:matching-condition condition
                    :matching-macro (:macro m)}))
               enclosing-macros)))))
@@ -995,12 +999,13 @@ of these kind."
                 (doto (assert "The given warning should provide an `:ast` under its linter key. Else this mechanism cannot work properly.")))
         ;; Don't bother calculating enclosing-macros if there are
         ;; no suppress-conditions to check, to save time.
-        encl-macros (when (seq suppress-conditions)
+        encl-macros (when (some :if-inside-macroexpansion-of suppress-conditions)
                       (enclosing-macros ast))
-        match (some #(meets-suppress-condition encl-macros
-                                               (:qualifier w :eastwood/unset)
-                                               %)
-                    suppress-conditions)]
+        match (->> suppress-conditions
+                   (filter :if-inside-macroexpansion-of)
+                   (some #(meets-suppress-condition encl-macros
+                                                    (:qualifier w :eastwood/unset)
+                                                    %)))]
     (when (and match (:debug-suppression opt))
       ((make-msg-cb :debug opt)
        (with-out-str
@@ -1042,10 +1047,10 @@ of these kind."
        :unused-meta-on-macro
        :unused-ret-vals
        :unused-ret-vals-in-try
+       :wrong-arity
        :wrong-tag)
       (let [suppress-conditions (get-in opt [:warning-enable-config linter])]
-        (allow-warning-based-on-enclosing-macros
-         w linter "" suppress-conditions opt)))))
+        (allow-warning-based-on-enclosing-macros w linter "" suppress-conditions opt)))))
 
 ;; Linters that use the info in resource file var-info.edn as of
 ;; Eastwood 0.2.2:

@@ -11,6 +11,7 @@
 * Don't exit succesfully when no namespaces were linted.
   * This could happen on misconfigured `:source-paths`, etc.
   * Closes https://github.com/jonase/eastwood/issues/400
+* Make the `:wrong-arity` linter omittable via the `disable-warning` mechanism.
 
 #### Bugfixes
 

@@ -126,6 +126,10 @@ jobs:
           command:  git clean -fdx
           
       - run:
+          name: Run test suite that exercises clojure.core
+          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+clojure-core-test,+<< parameters.clojure-version >> do clean, test
+          
+      - run:
           name: Run test suite that exercises var-info.edn
           command: lein with-profile -user,-dev,+test,+warn-on-reflection,+var-info-test,+<< parameters.clojure-version >> do clean, test
           

@@ -3,6 +3,13 @@
    [clojure.test :refer [deftest is testing]]
    [eastwood.lint]))
 
+(when-not (System/getProperty "eastwood.internal.plugin-profile-active")
+  (let [p "eastwood.internal.running-test-suite"
+        v (System/getProperty p)]
+    (assert (= "true" v)
+            (format "The test suite should be running with the %s system property set, for extra test robustness"
+                    p))))
+
 (deftest speced-def-handling
   (testing "Is able to process usages of the `nedap.speced.def` library without false positives"
     (is (= {:some-warnings false :some-errors false}
