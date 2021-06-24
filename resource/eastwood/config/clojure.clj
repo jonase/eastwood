@@ -118,6 +118,11 @@ their intention being to write to stdout and therefore have the `with-out-str` r
   :reason "eduction takes a sequence of transducer with a collection as the last item"})
 
 (disable-warning
+ {:linter :wrong-arity
+  :if-inside-macroexpansion-of #{'clojure.core.reducers/rfn}
+  :reason "`'clojure.core.reducers/rfn` assumes arity 0 even if it doesn't exist"})
+
+(disable-warning
  {:linter :suspicious-test
   :if-inside-macroexpansion-of #{'clojure.test/are}
   ;; only omit the warning if :suspicious-test failed due to a `true` value:

@@ -414,8 +414,6 @@
               (= arg-count (first ak))))
           argvec-kinds)))
 
-;; Wrong arity
-
 (defn wrong-arity [{:keys [asts]} opt]
   (let [invoke-asts (->> asts
                          (mapcat ast/nodes)
@@ -432,8 +430,12 @@
                   :local [nil (-> func :form)]
                   [nil 'no-name])
                 arglists (:arglists func)
-                override-arglists (-> opt :warning-enable-config
-                                      :wrong-arity fn-sym)
+                override-arglists (->> opt
+                                       :warning-enable-config
+                                       :wrong-arity
+                                       (filter (fn [{:keys [function-symbol]}]
+                                                 (= function-symbol fn-sym)))
+                                       (first))
                 lint-arglists (or (-> override-arglists
                                       :arglists-for-linting)
                                   arglists)
@@ -444,12 +446,14 @@
                    :linter :wrong-arity
                    :wrong-arity {:kind :the-only-kind
                                  :fn-var fn-var
-                                 :call-args args}
+                                 :call-args args
+                                 :ast ast}
                    :msg (format "Function on %s %s called with %s args, but it is only known to take one of the following args: %s."
                                 (name fn-kind)
                                 (if (= :var fn-kind) fn-var fn-sym)
                                 (count args)
-                                (string/join "  " lint-arglists))}]]
+                                (string/join "  " lint-arglists))}]
+          :when (util/allow-warning w opt)]
       (do
         (util/debug-warning w ast opt #{:enclosing-macros}
                             (fn []
