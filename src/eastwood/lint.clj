@@ -417,9 +417,6 @@
   + TBD: Eastwood resources directory is in your classpath
   + eastwood.lint namespace and its dependencies have been loaded.
 
-  Arguments:
-  + TBD: to be documented
-
   Side effects:
   + Reads source files, analyzes them, generates Clojure forms from
   analysis results, and eval's those forms (which if there are bugs in
@@ -430,11 +427,7 @@
   during linting causes this function to return before reading all of
   them.  See the code for why.
   + Should not print output to any output files/streams/etc., unless
-  this occurs due to eval'ing the code being linted.
-
-  Return value:
-  + TBD
-  "
+  this occurs due to eval'ing the code being linted."
   [reporter opts cwd {:keys [namespaces dirs files file-map
                              non-clojure-files] :as effective-namespaces} linters]
   (dirs-scanned reporter cwd dirs)
@@ -516,15 +509,19 @@
    :lint-time (apply + (mapcat vals (:lint-times summary)))
    :analysis-time (apply + (:analysis-time summary))})
 
-(defn make-report [reporter start-time {:keys [warning-count error-count]}]
+(defn make-report [reporter start-time {:keys [namespaces]} {:keys [warning-count error-count]}]
   (reporting/note reporter (format "== Linting done in %d ms ==" (- (System/currentTimeMillis)
                                                                     start-time)))
   (reporting/note reporter (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
                                    warning-count
                                    error-count))
-  (let [has-errors? (> error-count 0)]
+  (let [has-errors? (> error-count 0)
+        nothing-was-linted? (-> namespaces count zero?)]
+    (when nothing-was-linted?
+      (reporting/note reporter "== No namespaces were linted. This might indicate a misconfiguration."))
     {:some-warnings (or (> warning-count 0)
-                        has-errors?)
+                        has-errors?
+                        nothing-was-linted?)
      :some-errors has-errors?}))
 
 (defn eastwood
@@ -550,7 +547,7 @@
             (eastwood-core reporter opts cwd namespaces-info)
             summary
             counted-summary
-            (make-report reporter start-time)))
+            (make-report reporter start-time namespaces-info)))
      (catch Exception e
        (reporting/show-error reporter (or (ex-data e) e))
        (if rethrow-exceptions?

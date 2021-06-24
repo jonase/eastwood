@@ -8,6 +8,9 @@
   * Closes https://github.com/jonase/eastwood/issues/395
   * This makes Eastwood more capable of analyzing core.async -based projects. It's a temporary measure though, as it ideally this would be simply fixed in the tools.analyzer project. 
   * You can revert to the old behavior (which most likely will result in errors) by passing `:abort-on-core-async-exceptions? true` as a top-level Eastwood option. 
+* Don't exit succesfully when no namespaces were linted.
+  * This could happen on misconfigured `:source-paths`, etc.
+  * Closes https://github.com/jonase/eastwood/issues/400
 
 #### Bugfixes
 

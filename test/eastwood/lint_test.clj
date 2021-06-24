@@ -115,6 +115,12 @@
         valid-namespaces   true                  true
         valid-namespaces   false                 true))))
 
+(deftest empty-corpus-set
+  (testing "If no ns will be linted, Eastwood will fail"
+    (is (= {:some-warnings true
+            :some-errors false}
+           (sut/eastwood (assoc sut/default-opts :namespaces #{}))))))
+
 (deftest large-defprotocol-test
   (testing "A large defprotocol doesn't cause a 'Method code too large' exception"
     (is (= {:some-warnings false
