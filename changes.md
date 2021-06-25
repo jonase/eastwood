@@ -1,4 +1,9 @@
-# Change log for Eastwood
+## Changes from 0.6.0 to
+
+#### New
+
+* One now can override the exit code with the `:forced-exit-code 0` option.
+  * That can be helpful when wanting to see the results of linting merely for informative purposes.
 
 ## Changes from 0.5.2 to 0.6.0
 

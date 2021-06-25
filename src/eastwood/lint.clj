@@ -561,7 +561,7 @@
       ;; Exit with non-0 exit status for the benefit of any shell
       ;; scripts invoking Eastwood that want to know if there were no
       ;; errors, warnings, or exceptions.
-      ((exit-fn) 1)
+      ((exit-fn) (:forced-exit-code opts 1))
       ;; Eastwood does not use future, pmap, or clojure.shell/sh now
       ;; (at least not yet), but it may evaluate code that does when
       ;; linting a project.  Call shutdown-agents to avoid the

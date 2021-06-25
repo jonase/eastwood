@@ -112,10 +112,8 @@ Eastwood quits due to some internal error that throws an exception,
 you will typically see much more voluminous output about what went
 wrong, often including a stack trace.
 
-See section [For Eastwood developers](#for-eastwood-developers) below
-for instructions on trying out the latest unreleased version of
-Eastwood.
-
+You can override the exit code with the `:forced-exit-code 0` option.
+That can be helpful when wanting to see the results of linting merely for informative purposes. 
 
 ## What's there?
 
@@ -180,18 +178,18 @@ linter can be selectively disabled via Eastwood config files.  See
 | `:non-clojure-file`      |  |  |
 | `:redefd-vars`           | yes | yes |
 | `:suspicious-expression` | yes, for those involving macros | yes |
-| `:suspicious-test`       |  |  |
+| `:suspicious-test`       |  | yes |
 | `:unlimited-use`         |  |  |
-| `:unused-fn-args`        |  |  |
+| `:unused-fn-args`        |  | yes  |
 | `:unused-locals`         |  |  |
-| `:unused-meta-on-macro`  |  |  |
+| `:unused-meta-on-macro`  |  | yes |
 | `:unused-namespaces`     |  |  |
 | `:unused-private-vars`   |  |  |
 | `:unused-ret-vals` and `:unused-ret-vals-in-try` | yes | yes |
 | `:wrong-arity`           | yes | yes |
 | `:wrong-ns-form`         |  |  |
 | `:wrong-pre-post`        |  |  |
-| `:wrong-tag`             |  |  |
+| `:wrong-tag`             |  | yes |
 
 
 ## Usage

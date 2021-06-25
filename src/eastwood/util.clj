@@ -926,6 +926,8 @@ of these kind."
 (defn process-configs [warning-enable-config]
   (->> warning-enable-config
        (reduce (fn [configs {:keys [linter] :as m}]
+                 ;; NOTE: if adding items here, make sure to update the
+                 ;; `Linter name | debug | suppress` table in README.
                  (let [[path op obj] (case linter
                                        (:constant-test
                                         :redefd-vars
