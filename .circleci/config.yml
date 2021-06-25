@@ -165,8 +165,12 @@ jobs:
             - ~/.m2
           key: v2-dependencies-LINT-{{ checksum "project.clj" }}
 
-      - run: "shellcheck $LINT_SCRIPT"
+      - run: "shellcheck .circleci/*.sh"
       - run: "$LINT_SCRIPT"
+          
+      - run:
+          name: Run against a variety of real-world projects
+          command: JVM_OPTS= .circleci/crucible.sh
 
   build:
     docker:

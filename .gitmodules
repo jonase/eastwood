@@ -1,3 +1,6 @@
 [submodule ".circleci/core.async"]
 	path = .circleci/core.async
 	url = git@github.com:clojure/core.async.git
+[submodule ".circleci/crux"]
+	path = .circleci/crux
+	url = git@github.com:juxt/crux.git
