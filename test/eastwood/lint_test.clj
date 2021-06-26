@@ -404,3 +404,17 @@ relative to a specific macroexpansion"
       #{'testcases.deprecations.overloading.green1} {:some-warnings false}
       #{'testcases.deprecations.overloading.green2} {:some-warnings false}
       #{'testcases.deprecations.overloading.red}    {:some-warnings true})))
+
+(deftest unused-ret-vals
+  (testing "Method calls"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> sut/default-opts
+                                       (assoc :namespaces input)
+                                       (sut/eastwood))))
+                            true)
+      #{'testcases.unused-ret-vals.green1} {:some-warnings false}
+      #{'testcases.unused-ret-vals.red1}   {:some-warnings true}
+      #{'testcases.unused-ret-vals.red2}   {:some-warnings true}
+      #{'testcases.unused-ret-vals.red3}   {:some-warnings true}
+      #{'testcases.unused-ret-vals.red4}   {:some-warnings true})))

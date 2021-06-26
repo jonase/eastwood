@@ -4,6 +4,11 @@
 
 * One now can override the exit code with the `:forced-exit-code 0` option.
   * That can be helpful when wanting to see the results of linting merely for informative purposes.
+* Now `:unused-ret-vals`/`:unused-ret-val-on-try` don't trigger warnings so easily for static method calls.
+  * For static method calls (i.e. Java interop), these linters are based on a hardcoded list (`jvm-method-info.edn`) describing their side-effects. Now, if a method isn't found in said list it will be considered side-effectful, favoring false negatives over false positives.
+* Now `:unused-ret-vals`/`:unused-ret-val-on-try` also lint instance method calls.
+  * Before, they only linted static method calls (aside from vanilla Clojure calls/exprs)
+  * Similarly to the previous bullet point, these new linters won't fail easily in face of missing method information. 
 
 ## Changes from 0.5.2 to 0.6.0
 

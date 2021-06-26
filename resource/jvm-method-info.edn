@@ -3,6 +3,13 @@
 ;; others were added because they were called in code bases analyzed
 ;; while testing Eastwood.
 
+;; NOTE: contains both static and instance method information.
+
+;; NOTE: since unknown information defaults to being deemed side-effectful,
+;; it's not particularly worthwhile to expand this mapping with additional side-effectful methods.
+;; It *is* useful, however, to side-effect-free add methods here
+;; (as they will allow :unused-ret-vals to avoid false negatives)
+
 {
  {:class clojure.lang.LockingTransaction, :method runInTransaction} {:side-effect true},
  {:class clojure.lang.Numbers, :method addP} {:lazy false, :pure-fn true} ; +'
@@ -104,4 +111,13 @@
  {:class java.lang.System, :method setErr} {:side-effect true},
  {:class java.lang.System, :method setProperty} {:side-effect true},
  {:class java.lang.Thread, :method sleep} {:side-effect true},
+ {:class java.lang.Object, :method getClass} {:pure-fn true}
+ {:class java.lang.Object, :method hashCode} {:pure-fn true}
+ {:class java.lang.Object, :method equals} {:pure-fn true}
+ {:class java.lang.Object, :method clone} {:pure-fn true}
+ {:class java.lang.Object, :method toString} {:pure-fn true}
+ {:class java.lang.Object, :method notify} {:side-effect true}
+ {:class java.lang.Object, :method notifyAll} {:side-effect true}
+ {:class java.lang.Object, :method wait} {:side-effect true}
+ {:class java.lang.Object, :method finalize} {:side-effect true}
  }

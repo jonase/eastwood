@@ -349,6 +349,9 @@
     :static-call (if (util/static-call? ast-node)
                    [ast-node]
                    [])
+    :instance-call (if (util/instance-call? ast-node)
+                     [ast-node]
+                     [])
     ;; If a do node has an unused ret value, then even its return
     ;; value is unused.
     :do (unused-exprs-to-check (:ret ast-node))
@@ -385,8 +388,7 @@
     (pprint/pprint stmt))
   (println (format "   ^^^ ast-node=")))
 
-(defn unused-ret-val-lint-result [stmt stmt-desc-str action fn-or-method
-                                  location]
+(defn unused-ret-val-lint-result [stmt stmt-desc-str action fn-or-method location]
   ;; if a given `stmt` is inside a clojure.test `thrown?` call, then nothing can be considered unused:
   (when-not (util/in-thrown?-call? stmt)
     (let [stmt-in-try-body? (util/statement-in-try-body? stmt)
@@ -397,26 +399,27 @@
           loc (or (passes/has-code-loc?
                    (case stmt-desc-str
                      "function call" (-> stmt :meta)
-                     "static method call" (-> stmt :form meta)))
+                     ("static method call" "instance method call") (-> stmt :form meta)))
                   (passes/code-loc (passes/nearest-ast-with-loc stmt)))
           ;; If warning-unused-static had no info about method m, but
           ;; its return type is void, that is a fairly sure sign that it
           ;; is intended to be called for side effects.
-          action (if-not (and (= stmt-desc-str "static method call")
-                              (not
-                               (#{:side-effect :lazy-fn :pure-fn
-                                  :pure-fn-if-fn-args-pure :warn-if-ret-val-unused}
-                                action)))
+          action (if-not (and (-> stmt-desc-str
+                                  #{"static method call"
+                                    "instance method call"})
+                              (not (#{:lazy-fn
+                                      :pure-fn
+                                      :pure-fn-if-fn-args-pure
+                                      :side-effect
+                                      :warn-if-ret-val-unused}
+                                    action)))
                    action
                    (let [m (passes/get-method stmt)]
-                     ;; If passes/get-method could not determine the method,
-                     ;; do not give an unused-ret-val warning for it.  We
-                     ;; may at some point in the future wish to give a
-                     ;; warning that we could not determine which method
-                     ;; it is.
                      (cond (not (instance? Method m)) :side-effect
                            (passes/void-method? m) :side-effect
-                           :else :warn-if-ret-val-unused)))
+                           ;; if the method's side-effectfulness could not be determined,
+                           ;; we consider it side-effectful as we prefer a false negative to a false positive:
+                           :else :side-effect)))
           linter (case location
                    :outside-try :unused-ret-vals
                    :inside-try :unused-ret-vals-in-try)]
@@ -457,7 +460,9 @@
           ;; TBD: Consider adding 'opts' to the API for all linters, so
           ;; this linter can receive options for what to do in this
           ;; case.
-          (when (= stmt-desc-str "static method call")
+          (when (-> stmt-desc-str
+                    #{"static method call"
+                      "instance method call"})
             (debug-unknown-fn-methods fn-or-method stmt-desc-str stmt)))))))
 
 (defn op-desc [op]
@@ -501,61 +506,79 @@
         (->> unused-ret-val-exprs
              (filter #(or (#{:const :var :local} (:op %))
                           (util/invoke-expr? %)
-                          (util/static-call? %))))]
-    (remove nil?
-            (for [stmt should-use-ret-val-exprs]
-              ;; See Note 1
-              (cond
-                (and (#{:const :var :local} (:op stmt))
-                     (= location :outside-try))
-                (if (or
-                     (get stmt :eastwood/defprotocol-expansion-interface)  ;; Note 2
-                     (get stmt :eastwood/defprotocol-expansion-sigs)  ;; Note 3
-                     (util/interface? (:form stmt))  ;; Note 4
-                     (and (nil? (:form stmt))  ;; Note 5
-                          (util/ast-expands-macro stmt #{'clojure.core/comment
-                                                         'clojure.core/gen-class})))
-                  nil  ;; no warning
-                  (let [name-found? (contains? (-> stmt :env) :name)
-                        loc (or
-                             (passes/has-code-loc? (-> stmt :raw-forms first meta))
-                             (if name-found?
-                               (-> stmt :env :name meta)
-                               (passes/code-loc (passes/nearest-ast-with-loc stmt))))]
-                    {:loc loc
-                     :linter :unused-ret-vals
-                     :unused-ret-vals {:kind (:op stmt), :ast stmt}
-                     :msg (format "%s value is discarded%s: %s."
-                                  (op-desc (:op stmt))
-                                  (if name-found?
-                                    (str " inside " (-> stmt :env :name))
-                                    "")
-                                  (if (-> stmt :form nil?)
-                                    "nil"
-                                    (str/trim-newline
-                                     (with-out-str
-                                       (binding [pprint/*print-right-margin* nil]
-                                         (pprint/pprint (:form stmt)))))))}))
+                          (util/static-call? %)
+                          (util/instance-call? %))))]
+    (->> (for [stmt should-use-ret-val-exprs]
+           ;; See Note 1
+           (cond
+             (and (#{:const :var :local} (:op stmt))
+                  (= location :outside-try))
+             (if (or
+                  (get stmt :eastwood/defprotocol-expansion-interface) ;; Note 2
+                  (get stmt :eastwood/defprotocol-expansion-sigs) ;; Note 3
+                  (util/interface? (:form stmt)) ;; Note 4
+                  (and (nil? (:form stmt))       ;; Note 5
+                       (util/ast-expands-macro stmt #{'clojure.core/comment
+                                                      'clojure.core/gen-class})))
+               nil ;; no warning
+               (let [name-found? (contains? (-> stmt :env) :name)
+                     loc (or
+                          (passes/has-code-loc? (-> stmt :raw-forms first meta))
+                          (if name-found?
+                            (-> stmt :env :name meta)
+                            (passes/code-loc (passes/nearest-ast-with-loc stmt))))]
+                 {:loc loc
+                  :linter :unused-ret-vals
+                  :unused-ret-vals {:kind (:op stmt), :ast stmt}
+                  :msg (format "%s value is discarded%s: %s."
+                               (op-desc (:op stmt))
+                               (if name-found?
+                                 (str " inside " (-> stmt :env :name))
+                                 "")
+                               (if (-> stmt :form nil?)
+                                 "nil"
+                                 (str/trim-newline
+                                  (with-out-str
+                                    (binding [pprint/*print-right-margin* nil]
+                                      (pprint/pprint (:form stmt)))))))}))
 
-                (util/static-call? stmt)
-                (let [m (select-keys stmt [:class :method])
-                      action (warning-unused-static m)]
-                  (unused-ret-val-lint-result stmt "static method call"
-                                              action m location))
+             (util/static-call? stmt)
+             (let [m (select-keys stmt [:class :method])
+                   action (warning-unused-static m)]
+               (unused-ret-val-lint-result stmt
+                                           "static method call"
+                                           action
+                                           m
+                                           location))
+             (util/instance-call? stmt)
+             (let [{:keys [method] :as m} (select-keys stmt [:class :method])
+                   action (or (get warning-unused-static m)
+                              (when method
+                                (get warning-unused-static {:class Object
+                                                            :method method})))]
+               (unused-ret-val-lint-result stmt
+                                           "instance method call"
+                                           action
+                                           m
+                                           location))
 
-                (util/invoke-expr? stmt)
-                (let [v1 (get-in stmt [:fn :var])
-                      ;; Special case for apply.  Issue a warning based upon
-                      ;; the 1st arg to apply, not apply itself (if that arg
-                      ;; is a var).
-                      arg1 (first (:args stmt))
-                      v (if (and (= (util/var-to-fqsym v1) 'clojure.core/apply)
-                                 (= :var (:op arg1)))
-                          (:var arg1)
-                          v1)
-                      action (warning-unused-invoke (util/var-to-fqsym v))]
-                  (unused-ret-val-lint-result stmt "function call"
-                                              action v location)))))))
+             (util/invoke-expr? stmt)
+             (let [v1 (get-in stmt [:fn :var])
+                   ;; Special case for apply.  Issue a warning based upon
+                   ;; the 1st arg to apply, not apply itself (if that arg
+                   ;; is a var).
+                   arg1 (first (:args stmt))
+                   v (if (and (= (util/var-to-fqsym v1) 'clojure.core/apply)
+                              (= :var (:op arg1)))
+                       (:var arg1)
+                       v1)
+                   action (warning-unused-invoke (util/var-to-fqsym v))]
+               (unused-ret-val-lint-result stmt
+                                           "function call"
+                                           action
+                                           v
+                                           location))))
+         (remove nil?))))
 
 (defn unused-ret-vals* [location m opt]
   (let [warnings (unused-ret-vals-2 location m opt)]

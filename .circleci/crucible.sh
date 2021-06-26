@@ -23,20 +23,27 @@ cd ../crux || exit 1
 
 # Assert that no exceptions are thrown, and that useful insights are found:
 ex_marker=" Exceptions thrown:"
-grep --silent "Warnings: 1 (not including reflection warnings) $ex_marker 0" output  || exit 1
-grep --silent "Warnings: 2 (not including reflection warnings) $ex_marker 0" output  || exit 1
-grep --silent "Warnings: 3 (not including reflection warnings) $ex_marker 0" output  || exit 1
-grep --silent "Warnings: 4 (not including reflection warnings) $ex_marker 0" output  || exit 1
-grep --silent "Warnings: 16 (not including reflection warnings) $ex_marker 0" output  || exit 1
-grep --silent "Warnings: 18 (not including reflection warnings) $ex_marker 0" output  || exit 1
-grep --silent "Warnings: 42 (not including reflection warnings) $ex_marker 0" output  || exit 1
+
 if grep --silent "$ex_marker [1-9]" output; then
   echo "Should not have thrown an exception!"
   exit 1
 fi
 
+grep --silent "Warnings: 1 (not including reflection warnings) $ex_marker 0" output  || exit 1
+grep --silent "Warnings: 2 (not including reflection warnings) $ex_marker 0" output  || exit 1
+grep --silent "Warnings: 3 (not including reflection warnings) $ex_marker 0" output  || exit 1
+grep --silent "Warnings: 4 (not including reflection warnings) $ex_marker 0" output  || exit 1
+grep --silent "Warnings: 42 (not including reflection warnings) $ex_marker 0" output  || exit 1
+
+sixteen_warns=$(grep -c "Warnings: 16 (not including reflection warnings) $ex_marker 0" output)
+sixteen_warns=${sixteen_warns// /}
+if [ "$sixteen_warns" != "2" ]; then
+  exit 1
+fi
+
 zero_warns=$(grep -c "Warnings: 0 (not including reflection warnings) $ex_marker 0" output)
-if [ "$zero_warns" != "10" ]; then
+zero_warns=${zero_warns// /}
+if [ "$zero_warns" != "11" ]; then
   exit 1
 fi
 

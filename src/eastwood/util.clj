@@ -584,6 +584,11 @@ pprint-meta instead."
        (contains? ast-node :class)
        (contains? ast-node :method)))
 
+(defn instance-call? [ast-node]
+  (and (= :instance-call (:op ast-node))
+       (contains? ast-node :class)
+       (contains? ast-node :method)))
+
 (defn string->forms
   "Treat a string as a sequence of 0 or more Clojure forms, and read
   all of them.  No line or column number metadata will be attached to

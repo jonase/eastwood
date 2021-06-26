@@ -229,7 +229,7 @@
  clojure.core/delay? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/deliver {:var-kind nil, :macro nil, :side-effect true},
  clojure.core/denominator {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/deref {:var-kind nil, :macro nil},
+ clojure.core/deref {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/derive {:var-kind nil, :macro nil, :side-effect true},
  clojure.core/descendants {:var-kind nil, :macro nil},
  clojure.core/destructure {:var-kind nil, :macro nil},

@@ -1686,17 +1686,7 @@ values of functions.
   a b)   ; b is returned.  a's value is ignored
 ```
 
-`comment` and `gen-class` expressions in Clojure (or `:gen-class`
-inside of an `ns` form) always return nil.  Starting with Eastwood
-0.1.4, it should no longer warn if this nil value is ignored.
-
-Many of Clojure's core functions are 'pure' functions, meaning that
-they do not modify any state of the system other than perhaps
-allocating memory and heating up the CPU.  A pure function calculates
-a value that depends only on the value of its arguments, and returns
-it.
-
-Calling such a function in a place where its return value is not used
+Calling a side-effect-free function in a place where its return value is not used
 is likely to be a mistake, and Eastwood issues warnings for this.
 
 ```clojure
@@ -1751,10 +1741,6 @@ being discarded based upon the properties of the function passed as
 its first argument, so `(apply print args)` will not cause a warning
 because `print` is known by Eastwood to have side effects.
 
-In the future, Eastwood might be enhanced to avoid warning about such
-cases for other HOFs besides `apply`, if it is clear that the
-functions given as arguments have side effects, such as I/O.
-
 It is not commonly done, but it can be useful to invoke what we have
 called a pure function, even if its return value is discarded.  The
 only reason to do so (known to this author) is when the 'pure'
@@ -1789,11 +1775,7 @@ other linter gives too many false warnings for your code.
 Implementation note: Eastwood does not automatically determine whether
 a function is pure, conditionally pure, a HOF, etc.  All of these
 properties were determined by manual inspection and recorded in a map
-of data about Clojure core functions.  It would be possible to enhance
-Eastwood so that developers can add to this map, so their own
-functions will cause similar warnings, but right now any function not
-in this map will never cause one of these warnings.
-
+of data about Clojure core functions.
 
 ### `:local-shadows-var`
 
