@@ -343,4 +343,5 @@
 
 (disable-warning
  {:linter :constant-test
-  :if-inside-macroexpansion-of #{'spec-tools.core/spec}})
+  :if-inside-macroexpansion-of #{'spec-tools.core/spec
+                                 'borkdude.dynaload/dynaload}})
