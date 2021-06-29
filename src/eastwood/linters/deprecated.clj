@@ -31,42 +31,49 @@
                      (.getName ^Class (:class field-info))
                      (:field-name field-info)))))
 
-(defmulti deprecated :op)
+(defmulti deprecated? (fn [_ {:keys [op]}]
+                        op))
 
-(defmethod deprecated :default [_] false)
+(defmethod deprecated? :default [_ _] false)
 
-(defmethod deprecated :var [ast]
-  (-> ast :var meta :deprecated))
+(defmethod deprecated? :var [current-ns-str ast]
+  (let [{:keys [deprecated]
+         ns-obj :ns} (-> ast :var meta)]
+    (and deprecated
+         (if-not ns-obj ;; this piece of metadata should generally be here, but might be dissoced for whatever reason
+           true
+           (not= current-ns-str
+                 (str ns-obj))))))
 
-(defmethod deprecated :new [ast]
+(defmethod deprecated? :new [_ ast]
   (when-let [ctor (:reflected-ctor ast)]
     (if (instance? Constructor ctor)
       (.isAnnotationPresent ^Constructor ctor Deprecated)
       (do (no-constructor-found ctor)
           false))))
 
-(defmethod deprecated :instance-field [ast]
+(defmethod deprecated? :instance-field [_ ast]
   (when-let [fld (:reflected-field ast)]
     (if (instance? Field fld)
       (.isAnnotationPresent ^Field fld Deprecated)
       (do (no-field-found :instance fld)
           false))))
 
-(defmethod deprecated :instance-call [ast]
+(defmethod deprecated? :instance-call [_ ast]
   (when-let [method (:reflected-method ast)]
     (if (instance? Method method)
       (.isAnnotationPresent ^Method method Deprecated)
       (do (no-method-found :instance method)
           false))))
 
-(defmethod deprecated :static-field [ast]
+(defmethod deprecated? :static-field [_ ast]
   (when-let [fld (:reflected-field ast)]
     (if (instance? Field fld)
       (.isAnnotationPresent ^Field (:reflected-field ast) Deprecated)
       (do (no-field-found :static fld)
           false))))
 
-(defmethod deprecated :static-call [ast]
+(defmethod deprecated? :static-call [_ ast]
   (when-let [method (:reflected-method ast)]
     (if (instance? Method method)
       (.isAnnotationPresent ^Method method Deprecated)
@@ -103,8 +110,12 @@
       (some #(re-matches % offending-var) regexes))))
 
 (defn deprecations [{:keys [asts]} opt]
-  (for [ast (map #(ast/postwalk % pass/reflect-validated) asts)
-        dexpr (filter deprecated (ast/nodes ast))
+  (for [{ns-sym :eastwood/ns-sym
+         :as ast} (map #(ast/postwalk % pass/reflect-validated) asts)
+        :let [ns-str (str ns-sym)]
+        dexpr (->> ast
+                   ast/nodes
+                   (filter (partial deprecated? ns-str)))
         :let [loc (pass/code-loc (pass/nearest-ast-with-loc dexpr))
               w {:loc loc
                  :linter :deprecations

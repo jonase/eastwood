@@ -9,6 +9,8 @@
 * Now `:unused-ret-vals`/`:unused-ret-val-on-try` also lint instance method calls.
   * Before, they only linted static method calls (aside from vanilla Clojure calls/exprs)
   * Similarly to the previous bullet point, these new linters won't fail easily in face of missing method information. 
+* Now the `:deprecations` linter won't emit faults if the deprecated defn and a given consumer defn belong to the same ns.
+  * Closes https://github.com/jonase/eastwood/issues/402
 
 ## Changes from 0.5.2 to 0.6.0
 

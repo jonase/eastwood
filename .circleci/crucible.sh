@@ -15,7 +15,7 @@ if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"
   exit 1
 fi
 
-grep --silent "== Warnings: 39 (not including reflection warnings)  Exceptions thrown: 0" output  || exit 1
+grep --silent "== Warnings: 30 (not including reflection warnings)  Exceptions thrown: 0" output  || exit 1
 
 cd ../crux || exit 1
 ./lein-sub install

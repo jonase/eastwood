@@ -403,7 +403,18 @@ relative to a specific macroexpansion"
                             true)
       #{'testcases.deprecations.overloading.green1} {:some-warnings false}
       #{'testcases.deprecations.overloading.green2} {:some-warnings false}
-      #{'testcases.deprecations.overloading.red}    {:some-warnings true})))
+      #{'testcases.deprecations.overloading.red}    {:some-warnings true}))
+
+  (testing "Deprecations where producer and consumer defns belong to the same ns.
+See https://github.com/jonase/eastwood/issues/402"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> sut/default-opts
+                                       (assoc :namespaces input)
+                                       (sut/eastwood))))
+                            true)
+      #{'testcases.deprecations.own-ns.green} {:some-warnings false}
+      #{'testcases.deprecations.own-ns.red}   {:some-warnings true})))
 
 (deftest unused-ret-vals
   (testing "Method calls"
