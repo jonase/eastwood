@@ -165,8 +165,21 @@ jobs:
             - ~/.m2
           key: v2-dependencies-LINT-{{ checksum "project.clj" }}
 
+      # aides creating a cache key that will last 24h.
+      # This speeds up the nvd-clojure script fast/stable while also keeping it reasonable up-to-date:
+      - run: date +'%m/%d/%Y' > today
+
+      - restore_cache:
+          keys:
+            - v2-nvd-data-{{ checksum "project.clj" }}-{{checksum "today"}}
+
       - run: "shellcheck .circleci/*.sh"
       - run: "$LINT_SCRIPT"
+
+      - save_cache:
+          paths:
+            - ~/.m2/repository/org/owasp/dependency-check-utils/6.2.2/data
+          key: v2-nvd-data-{{ checksum "project.clj" }}-{{checksum "today"}}
           
       - run:
           name: Run against a variety of real-world projects
