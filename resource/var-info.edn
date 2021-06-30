@@ -476,7 +476,10 @@
  clojure.core/re-matches {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/re-pattern {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/re-seq {:var-kind nil, :macro nil, :lazy true, :pure-fn true},
- clojure.core/read {:var-kind nil, :macro nil, :io-fn true, :evals-exprs true, :lazy false, :warn-if-ret-val-unused true},
+
+ ;; :warn-if-ret-val-unused was changed for `read` from `true` to `false`,
+ ;; because `read` can be used for advancing positions in a pushbackreader, or to implicitly eval forms, etc:
+ clojure.core/read {:var-kind nil, :macro nil, :predicate false :side-effect true :io-fn true, :pure-fn false :evals-exprs true, :pure-if-fn-args-pure false :lazy false, :warn-if-ret-val-unused true},
  clojure.core/read-line {:var-kind nil, :macro nil, :io-fn true, :evals-exprs false, :lazy false, :warn-if-ret-val-unused true}, ;; Note that it never evals anything, only returns a string read from a stream
  clojure.core/read-string {:var-kind nil, :macro nil, :evals-exprs true, :lazy false, :warn-if-ret-val-unused true},
  clojure.core/reader-conditional? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},

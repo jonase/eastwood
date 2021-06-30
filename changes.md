@@ -12,6 +12,11 @@
 * Now the `:deprecations` linter won't emit faults if the deprecated defn and a given consumer defn belong to the same ns.
   * Closes https://github.com/jonase/eastwood/issues/402
 
+#### Bugfixes
+
+* Fix false positive `:unused-ret-vals` for `clojure.core/read`
+  * Closes https://github.com/jonase/eastwood/issues/403
+
 ## Changes from 0.5.2 to 0.6.0
 
 #### New
