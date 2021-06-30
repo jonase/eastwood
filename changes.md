@@ -1,4 +1,4 @@
-## Changes from 0.6.0 to
+## Changes from 0.6.0 to 0.7.0
 
 #### New
 

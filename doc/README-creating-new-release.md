@@ -16,12 +16,8 @@ Places where version number should be updated:
 * `resources/EASTWOOD_VERSION`
 * README.md in install instructions, and instructions for developers
 * changes.md (header)
-* src/eastwood/lint.clj var *eastwood-version*
-  * (happens automatically)
-* src/leiningen/eastwood.clj var eastwood-version-string
-  * (happens automatically)
 
-Update the change log in changes.md
+Update the changelog in changes.md
 
 Commit all of those changes.
 
