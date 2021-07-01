@@ -440,3 +440,19 @@ See https://github.com/jonase/eastwood/issues/402"
       #{'testcases.unused-ret-vals.red2}   {:some-warnings true}
       #{'testcases.unused-ret-vals.red3}   {:some-warnings true}
       #{'testcases.unused-ret-vals.red4}   {:some-warnings true})))
+
+(deftest unhinted-reflective-call
+  (testing "A non-type-hinted reflective call returns no errors
+(and typically no warnings; atm reflection warnings aren't a linter)"
+    (are [input expected] (testing input
+                            (binding [*warn-on-reflection* true]
+                              (let [options (-> sut/default-opts
+                                                (assoc :namespaces input))
+                                    warn-output (with-out-str
+                                                  (sut/eastwood options))]
+                                (assert (-> warn-output (.contains "cases/testcases/unhinted_reflective_call/green.clj:4:4: Reflection warning - reference to field theReflectiveCall can't be resolved.")))
+                                (assert (-> warn-output (.contains "cases/testcases/unhinted_reflective_call/green.clj:5:4: Reflection warning - call to method theReflectiveCall can't be resolved (target class is unknown).")))
+                                (is (= (assoc expected :some-errors false)
+                                       (sut/eastwood options)))))
+                            true)
+      #{'testcases.unhinted-reflective-call.green} {:some-warnings false})))
