@@ -2,6 +2,8 @@
 
 #### Bugfixes
 
+* Fix a NullPointerException.
+  * Closes https://github.com/jonase/eastwood/issues/404
 
 ## Changes from 0.6.0 to 0.7.0
 
