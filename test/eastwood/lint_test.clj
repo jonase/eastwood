@@ -405,6 +405,17 @@ relative to a specific macroexpansion"
       #{'testcases.deprecations.overloading.green2} {:some-warnings false}
       #{'testcases.deprecations.overloading.red}    {:some-warnings true}))
 
+  (testing "Disabling warnings via :symbol-matches"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> sut/default-opts
+                                       (assoc :namespaces #{'testcases.deprecations.overloading.red}
+                                              :builtin-config-files input)
+                                       (sut/eastwood))))
+                            true)
+      []                               {:some-warnings true}
+      ["disable_date_deprecation.clj"] {:some-warnings false}))
+
   (testing "Deprecations where producer and consumer defns belong to the same ns.
 See https://github.com/jonase/eastwood/issues/402"
     (are [input expected] (testing input

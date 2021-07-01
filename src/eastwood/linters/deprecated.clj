@@ -103,10 +103,12 @@
   (let [[var type] (deprecated-var expr)]
     (format "%s '%s' is deprecated." type var)))
 
-(defn allow-warning [w opt]
+(defn omit-warning? [w opt]
   (when-let [regexes (get-in opt [:warning-enable-config :deprecations :symbol-matches])]
     (let [offending-var (-> w :var first str)]
-      (some #(re-matches % offending-var) regexes))))
+      (->> regexes
+           (some (fn [re]
+                   (re-find re offending-var)))))))
 
 (defn deprecations [{:keys [asts]} opt]
   (for [{ns-sym :eastwood/ns-sym
@@ -119,7 +121,6 @@
               w {:loc loc
                  :linter :deprecations
                  :msg (msg dexpr)
-                 :var (deprecated-var dexpr)}
-              allow? (not (allow-warning w opt))]
-        :when allow?]
+                 :var (deprecated-var dexpr)}]
+        :when (not (omit-warning? w opt))]
     w))
