@@ -1,5 +1,4 @@
 (ns eastwood.linters.deprecated
-  (:refer-clojure :exclude [get-method])
   (:require
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
    [eastwood.passes :as pass])

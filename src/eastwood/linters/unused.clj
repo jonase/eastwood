@@ -404,9 +404,8 @@
           ;; If warning-unused-static had no info about method m, but
           ;; its return type is void, that is a fairly sure sign that it
           ;; is intended to be called for side effects.
-          action (if-not (and (-> stmt-desc-str
-                                  #{"static method call"
-                                    "instance method call"})
+          action (if-not (and (#{"static method call"
+                                 "instance method call"} stmt-desc-str)
                               (not (#{:lazy-fn
                                       :pure-fn
                                       :pure-fn-if-fn-args-pure
@@ -414,12 +413,15 @@
                                       :warn-if-ret-val-unused}
                                     action)))
                    action
+                   ;; NOTE: the code below is a bit redundant because all branches have `:side-effect` as their result;
+                   ;; this is not ideal but it's good to reflect (more or less) the same logic that has resided here for years.
                    (let [m (passes/get-method stmt)]
-                     (cond (not (instance? Method m)) :side-effect
-                           (passes/void-method? m) :side-effect
-                           ;; if the method's side-effectfulness could not be determined,
-                           ;; we consider it side-effectful as we prefer a false negative to a false positive:
-                           :else :side-effect)))
+                     (cond
+                       (not (instance? Method m)) :side-effect
+                       (passes/void-method? m) :side-effect
+                       ;; if the method's side-effectfulness could not be determined,
+                       ;; we consider it side-effectful as we prefer a false negative to a false positive:
+                       :else :side-effect)))
           linter (case location
                    :outside-try :unused-ret-vals
                    :inside-try :unused-ret-vals-in-try)]

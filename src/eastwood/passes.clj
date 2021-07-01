@@ -40,12 +40,12 @@
             {:class cls, :field-name fld-name}))))))
 
 (defn get-method [ast]
-  (let [cls (:class ast)
-        method-name (name (:method ast))
-        arg-type-vec (mapv :tag (:args ast))
+  (let [^Class cls (:class ast)
+        method-name (-> ast :method name)
+        arg-type-vec (->> ast :args (mapv :tag))
         arg-type-arr (into-array Class arg-type-vec)]
     (try
-      (.getMethod ^Class cls method-name arg-type-arr)
+      (some-> cls (.getMethod method-name arg-type-arr))
       (catch NoSuchMethodException _
         (try
           (.getDeclaredMethod ^Class cls method-name arg-type-arr)
