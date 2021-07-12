@@ -1,3 +1,12 @@
+## Changes from 0.7.1 to 0.8.0
+
+#### New
+
+* Linter warnings ultimately coming from third-party macroexpansions (that is, the given macro resides outside `src/` `test/` or such) will be silenced, for most linters where doing so is low-risk.
+  * This way, Eastwood defaults to linting _your_ code, not code from your dependencies.
+  * You can revert to the old behavior by setting the `:ignore-faults-from-foreign-macroexpansions? false` global option.
+  * Closes https://github.com/jonase/eastwood/issues/394
+
 ## Changes from 0.7.0  to 0.7.1
 
 #### Bugfixes

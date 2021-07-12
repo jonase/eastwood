@@ -982,7 +982,16 @@ of these kind."
               (pst e nil))))))
     (process-configs @warning-enable-config-atom)))
 
-(defn meets-suppress-condition [enclosing-macros qualifier condition]
+(defn meets-suppress-condition [linter-id
+                                enclosing-macros
+                                qualifier
+                                condition
+                                {:keys [ignore-faults-from-foreign-macroexpansions?]
+                                 project-namespaces :eastwood/project-namespaces
+                                 linter-info :eastwood/linter-info}]
+  {:pre [(set? project-namespaces)
+         (instance? Boolean ignore-faults-from-foreign-macroexpansions?)
+         (vector? linter-info)]}
   (let [configured-qualifier? (find condition :qualifier)]
     (when (or (= qualifier :eastwood/unset) ;; `nil` can be a qualifier value, so :eastwood/unset conveys an absent value
               (not configured-qualifier?)
@@ -990,16 +999,30 @@ of these kind."
                    (= qualifier (:qualifier condition))))
       (let [macro-set (-> condition :if-inside-macroexpansion-of (doto assert))
             depth (:within-depth condition)
-            enclosing-macros (cond->> enclosing-macros
-                               (number? depth) (take depth))]
-        (some (fn [m]
-                (when (-> m :macro macro-set)
-                  {:matching-condition condition
-                   :matching-macro (:macro m)}))
-              enclosing-macros)))))
+            limited-enclosing-macros (cond->> enclosing-macros
+                                       (number? depth) (take depth))]
+        (or (->> limited-enclosing-macros
+                 (some (fn [{:keys [macro]}]
+                         (when (macro-set macro)
+                           {:matching-condition condition
+                            :matching-macro macro}))))
+            (when (and ignore-faults-from-foreign-macroexpansions? ;; global option
+                       ;; per-linter option:
+                       (some->> linter-info
+                                (filter (comp #{linter-id} :name))
+                                first
+                                :ignore-faults-from-foreign-macroexpansions?))
+              (->> enclosing-macros
+                   (some (fn [{:keys [macro]}]
+                           (let [macro-ns (-> macro namespace)
+                                 macro-sym (-> macro-ns symbol)]
+                             (when (and (not (project-namespaces macro-sym))
+                                        ;; macroexpansions generally bottom out at clojure.* stuff:
+                                        (not (-> macro-ns (.startsWith "clojure."))))
+                               {:matching-condition :ignored-fault-from-foreign-macroexpansions
+                                :matching-macro macro})))))))))))
 
-(defn allow-warning-based-on-enclosing-macros [w linter suppress-desc
-                                               suppress-conditions opt]
+(defn allow-warning-based-on-enclosing-macros [w linter suppress-desc suppress-conditions opt]
   (let [ast (-> w
                 linter
                 :ast
@@ -1010,9 +1033,11 @@ of these kind."
                       (enclosing-macros ast))
         match (->> suppress-conditions
                    (filter :if-inside-macroexpansion-of)
-                   (some #(meets-suppress-condition encl-macros
+                   (some #(meets-suppress-condition linter
+                                                    encl-macros
                                                     (:qualifier w :eastwood/unset)
-                                                    %)))]
+                                                    %
+                                                    opt)))]
     (when (and match (:debug-suppression opt))
       ((make-msg-cb :debug opt)
        (with-out-str
@@ -1028,10 +1053,7 @@ of these kind."
            (pp/pprint (map #(dissoc % :ast :index)
                            (if depth
                              (take depth encl-macros)
-                             encl-macros)))
-           ;;           (println "Debug AST contents:")
-           ;;           (pprint-ast-node ast)
-           ))))
+                             encl-macros)))))))
     ;; allow the warning if there was no match
     (not match)))
 
@@ -1044,9 +1066,11 @@ of these kind."
         (let [macro-symbol (-> w linter :macro-symbol)
               suppress-conditions (get-in opt [:warning-enable-config
                                                linter macro-symbol])]
-          (allow-warning-based-on-enclosing-macros
-           w linter (format " for invocation of macro '%s'" macro-symbol)
-           suppress-conditions opt)))
+          (allow-warning-based-on-enclosing-macros w
+                                                   linter
+                                                   (format " for invocation of macro '%s'" macro-symbol)
+                                                   suppress-conditions
+                                                   opt)))
 
       (:constant-test
        :suspicious-test
@@ -1057,7 +1081,11 @@ of these kind."
        :wrong-arity
        :wrong-tag)
       (let [suppress-conditions (get-in opt [:warning-enable-config linter])]
-        (allow-warning-based-on-enclosing-macros w linter "" suppress-conditions opt)))))
+        (allow-warning-based-on-enclosing-macros w
+                                                 linter
+                                                 ""
+                                                 suppress-conditions
+                                                 opt)))))
 
 ;; Linters that use the info in resource file var-info.edn as of
 ;; Eastwood 0.2.2:

@@ -76,15 +76,15 @@
 (deftest effective-namespaces-test
   (let [source-paths #{"src"}
         test-paths #{"test"}]
-    (testing ""
-      (is (= {:dirs (concat (map util/canonical-filename source-paths)
-                            (map util/canonical-filename test-paths))
-              :namespaces eastwood-all-namespaces}
-             (select-keys (sut/effective-namespaces #{}
-                                                    #{:source-paths :test-paths}
-                                                    {:source-paths source-paths
-                                                     :test-paths test-paths} 0)
-                          [:dirs :namespaces]))))))
+    (is (= {:dirs (concat (map util/canonical-filename source-paths)
+                          (map util/canonical-filename test-paths))
+            :namespaces (sort eastwood-all-namespaces)}
+           (-> (sut/effective-namespaces #{}
+                                         #{:source-paths :test-paths}
+                                         {:source-paths source-paths
+                                          :test-paths test-paths} 0)
+               (select-keys [:dirs :namespaces])
+               (update :namespaces sort))))))
 
 (deftest exceptions-test
   (let [valid-namespaces   (take 1 eastwood-src-namespaces)
@@ -222,7 +222,8 @@ relative to a specific macroexpansion"
     (are [input expected] (testing input
                             (is (= (assoc expected :some-errors false)
                                    (-> sut/default-opts
-                                       (assoc :namespaces #{'testcases.wrong-meta-on-macro-example})
+                                       (assoc :namespaces #{'testcases.wrong-meta-on-macro-example}
+                                              :ignore-faults-from-foreign-macroexpansions? false)
                                        (merge input)
                                        sut/eastwood)))
                             true)
@@ -432,7 +433,8 @@ See https://github.com/jonase/eastwood/issues/402"
     (are [input expected] (testing input
                             (is (= (assoc expected :some-errors false)
                                    (-> sut/default-opts
-                                       (assoc :namespaces input)
+                                       (assoc :namespaces input
+                                              :ignore-faults-from-foreign-macroexpansions? false)
                                        (sut/eastwood))))
                             true)
       #{'testcases.unused-ret-vals.green1} {:some-warnings false}
@@ -456,3 +458,14 @@ See https://github.com/jonase/eastwood/issues/402"
                                        (sut/eastwood options)))))
                             true)
       #{'testcases.unhinted-reflective-call.green} {:some-warnings false})))
+
+(deftest ignore-faults-from-foreign-macroexpansions?
+  (are [input expected] (testing input
+                          (is (= (assoc expected :some-errors false)
+                                 (-> sut/default-opts
+                                     (assoc :namespaces #{'testcases.foreign-macroexpansions.red}
+                                            :ignore-faults-from-foreign-macroexpansions? input)
+                                     sut/eastwood)))
+                          true)
+    false {:some-warnings true}
+    true  {:some-warnings false}))

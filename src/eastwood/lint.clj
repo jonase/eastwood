@@ -25,6 +25,8 @@
   (:import
    (java.io File)))
 
+(declare effective-namespaces setup-lint-paths)
+
 ;; Note: Linters below with nil for the value of the key :fn,
 ;; e.g. :no-ns-form-found, can be enabled/disabled from the opt map
 ;; like other linters, but they are a bit different in their
@@ -32,86 +34,158 @@
 ;; namespace.  They are done very early, and are not specific to a
 ;; namespace.
 
+;; :ignore-faults-from-foreign-macroexpansions? is selectively added here for the specific linters where:
+;;   * the warning can plausibly arise from a foreign macroexpansion, and
+;;   * the warning isn't too important to omit.
 (def linter-info
-  [{:name :no-ns-form-found,          :enabled-by-default true,
+  [{:name :no-ns-form-found
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#no-ns-form-found",
     :fn (constantly nil)}
-   {:name :non-clojure-file,          :enabled-by-default false,
+
+   {:name :non-clojure-file,
+    :enabled-by-default false,
     :url "https://github.com/jonase/eastwood#non-clojure-file",
     :fn (constantly nil)}
-   {:name :misplaced-docstrings,      :enabled-by-default true,
+
+   {:name :misplaced-docstrings,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#misplaced-docstrings",
     :fn misc/misplaced-docstrings}
-   {:name :deprecations,              :enabled-by-default true,
+
+   {:name :deprecations,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#deprecations",
-    :fn deprecated/deprecations}
-   {:name :duplicate-params,          :enabled-by-default true,
+    :fn deprecated/deprecations
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :duplicate-params,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#duplicate-params",
-    :fn typos/duplicate-params}
-   {:name :redefd-vars,               :enabled-by-default true,
+    :fn typos/duplicate-params
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :redefd-vars,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#redefd-vars",
-    :fn misc/redefd-vars}
-   {:name :def-in-def,                :enabled-by-default true,
+    :fn misc/redefd-vars
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :def-in-def,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#def-in-def",
-    :fn misc/def-in-def}
-   {:name :wrong-arity,               :enabled-by-default true,
+    :fn misc/def-in-def
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :wrong-arity,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#wrong-arity",
-    :fn misc/wrong-arity}
-   {:name :bad-arglists,              :enabled-by-default true,
+    :fn misc/wrong-arity
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :bad-arglists,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#bad-arglists",
-    :fn misc/bad-arglists}
-   {:name :local-shadows-var,         :enabled-by-default true,
+    :fn misc/bad-arglists
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :local-shadows-var,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#local-shadows-var",
-    :fn misc/local-shadows-var}
-   {:name :suspicious-test,           :enabled-by-default true,
+    :fn misc/local-shadows-var
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :suspicious-test,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#suspicious-test",
     :fn typos/suspicious-test}
-   {:name :suspicious-expression,     :enabled-by-default true,
+
+   {:name :suspicious-expression,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#suspicious-expression",
-    :fn typos/suspicious-expression}
-   {:name :constant-test,             :enabled-by-default true,
+    :fn typos/suspicious-expression
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :constant-test,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#constant-test",
-    :fn typos/constant-test}
-   {:name :unused-ret-vals,           :enabled-by-default true,
+    :fn typos/constant-test
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :unused-ret-vals,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#unused-ret-vals",
-    :fn unused/unused-ret-vals}
-   {:name :unused-ret-vals-in-try,    :enabled-by-default true,
+    :fn unused/unused-ret-vals
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :unused-ret-vals-in-try,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#unused-ret-vals",
-    :fn unused/unused-ret-vals-in-try}
-   {:name :unused-private-vars,       :enabled-by-default false,
+    :fn unused/unused-ret-vals-in-try
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :unused-private-vars,
+    :enabled-by-default false,
     :url "https://github.com/jonase/eastwood#unused-private-vars",
     :fn unused/unused-private-vars}
-   {:name :unused-fn-args,            :enabled-by-default false,
+
+   {:name :unused-fn-args,
+    :enabled-by-default false,
     :url "https://github.com/jonase/eastwood#unused-fn-args",
-    :fn unused/unused-fn-args}
-   {:name :unused-locals,             :enabled-by-default false,
+    :fn unused/unused-fn-args
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :unused-locals,
+    :enabled-by-default false,
     :url "https://github.com/jonase/eastwood#unused-locals",
-    :fn unused/unused-locals}
-   {:name :unused-namespaces,         :enabled-by-default false,
+    :fn unused/unused-locals
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :unused-namespaces,
+    :enabled-by-default false,
     :url "https://github.com/jonase/eastwood#unused-namespaces",
     :fn unused/unused-namespaces}
-   {:name :unused-meta-on-macro,      :enabled-by-default true,
+
+   {:name :unused-meta-on-macro,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#unused-meta-on-macro",
-    :fn unused/unused-meta-on-macro}
-   {:name :unlimited-use,             :enabled-by-default true,
+    :fn unused/unused-meta-on-macro
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :unlimited-use,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#unlimited-use",
     :fn misc/unlimited-use}
-   {:name :wrong-ns-form,             :enabled-by-default true,
+
+   {:name :wrong-ns-form,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#wrong-ns-form",
     :fn misc/wrong-ns-form}
-   {:name :wrong-pre-post,            :enabled-by-default true,
+
+   {:name :wrong-pre-post,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#wrong-pre-post",
     :fn typos/wrong-pre-post}
-   {:name :wrong-tag,                 :enabled-by-default true,
+
+   {:name :wrong-tag,
+    :enabled-by-default true,
     :url "https://github.com/jonase/eastwood#wrong-tag",
     :fn typetags/wrong-tag}
-   {:name :keyword-typos,             :enabled-by-default false,
+
+   {:name :keyword-typos,
+    :enabled-by-default false,
     :url "https://github.com/jonase/eastwood#keyword-typos",
-    :fn typos/keyword-typos}
-   {:name :non-dynamic-earmuffs,      :enabled-by-default false,
+    :fn typos/keyword-typos
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :non-dynamic-earmuffs,
+    :enabled-by-default false,
     :url nil,
-    :fn misc/non-dynamic-earmuffs}
-   {:name :implicit-dependencies,     :enabled-by-default true,
+    :fn misc/non-dynamic-earmuffs
+    :ignore-faults-from-foreign-macroexpansions? true}
+
+   {:name :implicit-dependencies,
+    :enabled-by-default true,
     :url nil,
     :fn implicit-dependencies/implicit-dependencies}])
 
@@ -177,8 +251,22 @@
          (merge {:elapsed elapsed
                  :linter linter}))))
 
-(defn lint-ns [ns-sym linters opts]
-  (let [[result elapsed] (util/timeit (analyze-ns/analyze-ns ns-sym :opt opts))
+(defn lint-ns [ns-sym linters {:keys [exclude-namespaces
+                                      namespaces
+                                      source-paths
+                                      test-paths] :as opts}]
+  (let [opts (cond-> opts
+               ;; this key is generally present, except when invoking `lint-ns` directly (which is a less usual API):
+               (not (:eastwood/project-namespaces opts))
+               (assoc :eastwood/project-namespaces (:project-namespaces (effective-namespaces exclude-namespaces
+                                                                                              namespaces
+                                                                                              (setup-lint-paths source-paths
+                                                                                                                test-paths)
+                                                                                              0)))
+               ;; same
+               (not (:eastwood/linter-info opts))
+               (assoc :eastwood/linter-info linter-info))
+        [result elapsed] (util/timeit (analyze-ns/analyze-ns ns-sym :opt opts))
         {:keys [analyze-results exception exception-phase exception-form]} result]
     {:ns ns-sym
      :analysis-time elapsed
@@ -268,8 +356,18 @@
   are empty then `:source-path` is set to all the directories on the classpath,
   while `:test-paths` is the empty set."
   [source-paths test-paths]
-  (if-not (or (seq source-paths) (seq test-paths))
-    {:source-paths (set (classpath/classpath-directories))
+  (if-not (or (seq source-paths)
+              (seq test-paths))
+    {:source-paths (->> (or (seq (classpath/classpath-directories))
+                            ;; fallback, because the above can fail in presence of certain libs or scenarios:
+                            (->> (classpath/system-classpath)
+                                 (filter (fn [^File f]
+                                           (-> f .isDirectory)))))
+                        ;; resources (whether vanilla, dev-only or test-only) should not be analyzed,
+                        ;; or account for `:ignore-faults-from-foreign-macroexpansions?`:
+                        (remove (fn [^File f]
+                                  (-> f .toString (.contains "resources"))))
+                        (set ))
      :test-paths #{}}
     {:source-paths (set source-paths)
      :test-paths (set test-paths)}))
@@ -309,11 +407,32 @@
         expanded-namespaces {:source-paths (:namespaces sp)
                              :test-paths (:namespaces tp)}
         excluded-namespaces (set (expand-ns-keywords expanded-namespaces
-                                                     exclude-namespaces))]
-    {:namespaces (->> namespaces
-                      (expand-ns-keywords expanded-namespaces)
-                      distinct
-                      (remove excluded-namespaces))
+                                                     exclude-namespaces))
+        corpus (->> namespaces
+                    (expand-ns-keywords expanded-namespaces)
+                    (set))]
+    { ;; what will be linted:
+     :namespaces (->> corpus (remove excluded-namespaces))
+     ;; the set of project namespaces. Linter faults caused by namespaces outside this set may be ignored:
+     :project-namespaces (set/union corpus ;; namespaces explicitly asked to be linted
+                                    (some-> source-paths ;; source-paths per Eastwood/Lein config
+                                            seq
+                                            (nss-in-dirs 0)
+                                            :namespaces
+                                            set)
+                                    (some-> test-paths ;; test-paths per Eastwood/Lein config
+                                            seq
+                                            (nss-in-dirs 0)
+                                            :namespaces
+                                            set)
+                                    ;; t.n integration:
+                                    (some-> 'clojure.tools.namespace.repl/refresh-dirs
+                                            resolve
+                                            deref
+                                            seq
+                                            (nss-in-dirs 0)
+                                            :namespaces
+                                            set))
      :test-deps (:deps tp)
      :src-deps (:deps sp)
      :dirs (concat (:dirs sp) (:dirs tp))
@@ -412,11 +531,6 @@
 (defn eastwood-core
   "Lint a sequence of namespaces using a specified collection of linters.
 
-  Prerequisites:
-  + eastwood.lint namespace is in your classpath
-  + TBD: Eastwood resources directory is in your classpath
-  + eastwood.lint namespace and its dependencies have been loaded.
-
   Side effects:
   + Reads source files, analyzes them, generates Clojure forms from
   analysis results, and eval's those forms (which if there are bugs in
@@ -428,24 +542,40 @@
   them.  See the code for why.
   + Should not print output to any output files/streams/etc., unless
   this occurs due to eval'ing the code being linted."
-  [reporter opts cwd {:keys [namespaces dirs files file-map
-                             non-clojure-files] :as effective-namespaces} linters]
+  [reporter
+   opts
+   cwd
+   {:keys [namespaces dirs files file-map non-clojure-files project-namespaces]
+    :as effective-namespaces}
+   linters]
   (dirs-scanned reporter cwd dirs)
   (let [no-ns-forms (misc/no-ns-form-found-files dirs files file-map linters cwd)
         non-clojure-files (misc/non-clojure-files non-clojure-files linters cwd)]
+
+    (assert (seq linters) "No :linters configured")
+
     (reporting/report-result reporter no-ns-forms)
     (reporting/report-result reporter non-clojure-files)
-    (when (seq linters)
-      (spit ".eastwood" (System/currentTimeMillis))
-      (reporting/debug-namespaces reporter namespaces)
-      ;; Create all namespaces to be analyzed.  This can help in some
-      ;; (unusual) situations, such as when namespace A requires B,
-      ;; so Eastwood analyzes B first, but eval'ing B assumes that
-      ;; A's namespace has been created first because B contains
-      ;; (alias 'x 'A)
-      (doseq [n namespaces] (create-ns n))
-      (into [no-ns-forms non-clojure-files]
-            (lint-namespaces (:parallel? opts) reporter effective-namespaces linters opts)))))
+
+    (spit ".eastwood" (System/currentTimeMillis))
+
+    (reporting/debug-namespaces reporter namespaces)
+
+    ;; Create all namespaces to be analyzed.  This can help in some
+    ;; (unusual) situations, such as when namespace A requires B,
+    ;; so Eastwood analyzes B first, but eval'ing B assumes that
+    ;; A's namespace has been created first because B contains (alias 'x 'A):
+    (doseq [n namespaces]
+      (create-ns n))
+
+    (->> (lint-namespaces (:parallel? opts)
+                          reporter
+                          effective-namespaces
+                          linters
+                          (assoc opts
+                                 :eastwood/project-namespaces project-namespaces
+                                 :eastwood/linter-info linter-info))
+         (into [no-ns-forms non-clojure-files]))))
 
 (def default-builtin-config-files
   ["clojure.clj"
@@ -465,7 +595,8 @@
                    :config-files #{}
                    :builtin-config-files default-builtin-config-files
                    :rethrow-exceptions? false
-                   :ignored-faults {}})
+                   :ignored-faults {}
+                   :ignore-faults-from-foreign-macroexpansions? true})
 
 (defn last-options-map-adjustments [opts reporter]
   (let [{:keys [_namespaces] :as opts} (merge default-opts opts)
