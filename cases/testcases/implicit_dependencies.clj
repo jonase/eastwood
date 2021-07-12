@@ -1,4 +1,4 @@
-(ns testcase.implicit-dependencies)
+(ns testcases.implicit-dependencies)
 
 (def x 
   clojure.string/join)

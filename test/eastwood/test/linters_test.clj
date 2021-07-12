@@ -52,15 +52,14 @@
 ;; cause any test written that calls lint-ns-noprint to fail, unless
 ;; it expects the exception.
 (defn lint-ns-noprint [ns-sym linters opts]
-  (let [opts (assoc opts :linters linters
+  (let [opts (assoc opts
+                    :linters linters
                     :debug #{})
         opts (eastwood.lint/last-options-map-adjustments opts (reporting-callbacks/silent-reporter opts))
-        cb (fn cb [info]
+        cb (fn [info]
              (case (:kind info)
                (:eval-out :eval-err) (println (:msg info))
-               :default-do-nothing
-               ;;((:callback opts) info)
-               ))
+               :default-do-nothing))
         opts (assoc opts :callback cb)
         {:keys [exception lint-results]} (eastwood.lint/lint-ns ns-sym linters opts)]
     (if-not exception

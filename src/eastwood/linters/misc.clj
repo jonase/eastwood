@@ -222,7 +222,7 @@
 (defn- defd-vars [exprs]
   (:top-level-defs (def-walker exprs)))
 
-(defn allow-both-defs? [def-ast1 def-ast2 all-asts opt]
+(defn allow-both-defs? [linter-id def-ast1 def-ast2 all-asts opt]
   (let [lca-path (util/longest-common-prefix
                   (:eastwood/path def-ast1)
                   (:eastwood/path def-ast2))]
@@ -242,16 +242,20 @@
                   [lca-path a])))
             encl-macros (when (seq suppress-conditions)
                           (util/enclosing-macros lca-ast))
-            match (some #(util/meets-suppress-condition encl-macros :eastwood/unset %)
+            match (some #(util/meets-suppress-condition linter-id
+                                                        encl-macros
+                                                        :eastwood/unset
+                                                        %
+                                                        opt)
                         suppress-conditions)]
         (not match)))))
 
-(defn remove-dup-defs [asts all-asts opt]
+(defn remove-dup-defs [linter-id asts all-asts opt]
   (loop [ret []
          asts asts]
     (if (seq asts)
       (let [ast (first asts)
-            keep-new-ast? (every? #(allow-both-defs? % ast all-asts opt)
+            keep-new-ast? (every? #(allow-both-defs? linter-id % ast all-asts opt)
                                   ret)]
         (recur (if keep-new-ast? (conj ret ast) ret)
                (next asts)))
@@ -274,7 +278,8 @@
          (:line loc) ":" (:column loc))))
 
 (defn redefd-vars [{:keys [asts]} opt]
-  (let [defd-var-asts (defd-vars asts)
+  (let [linter-id :redefd-vars
+        defd-var-asts (defd-vars asts)
         defd-var-groups (group-by #(-> % :form second) defd-var-asts)
         ;; Remove any def's for Vars that are inside the same macro
         ;; expansion (from Eastwood configuration) as another def for
@@ -282,7 +287,7 @@
         defd-var-groups (into {}
                               (map (fn [[defd-var def-asts]]
                                      [defd-var
-                                      (remove-dup-defs def-asts asts opt)])
+                                      (remove-dup-defs linter-id def-asts asts opt)])
                                    defd-var-groups))]
     (for [[_defd-var ast-list] defd-var-groups
           :when (> (count ast-list) 1)
@@ -291,7 +296,7 @@
                 redefd-var (var-of-ast ast2)
                 num-defs (count ast-list)
                 w {:loc loc2
-                   :linter :redefd-vars
+                   :linter linter-id
                    :msg (format "Var %s def'd %d times at line:col locations: %s."
                                 redefd-var num-defs
                                 (string/join
