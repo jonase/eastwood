@@ -32,12 +32,7 @@ tools you may use.  See the [instructions
 here](#running-eastwood-in-a-repl).
 
 Eastwood can be run from the command line as a
-[Leiningen](http://leiningen.org) plugin.  As a Leiningen plugin,
-Eastwood has been tested most with Leiningen versions 2.4 and later.
-Eastwoods support for Leiningen 1.x was dropped at version 0.3.0.
-There is a known bug in Leiningen 2.6.0 where many plugins, including
-Eastwood, often cause exceptions to be thrown -- Leiningen 2.6.1 was
-released to fix that problem.
+[Leiningen](http://leiningen.org) plugin.
 
 Merge the following into your `$HOME/.lein/profiles.clj` file:
 
@@ -86,10 +81,6 @@ be checked for.  You may wish to enable those for your project.  See
 the [Usage](#usage) section for options to enable or disable types of
 warnings for your entire project.
 
-See [Editor Support](#editor-support) below for instructions on using
-a text editor or IDE to quickly take you to the file, line, and column
-of each warning message.
-
 See the [Usage](#usage) section below for more notes on side effects
 in test code, and instructions on [running Eastwood in a REPL
 session](#running-eastwood-in-a-repl).
@@ -124,31 +115,31 @@ enabled by default unless they have '(disabled)' after their name.
 
 | Linter name | Description | Docs |
 | ----------- | ----------- | ---- |
-| no name* | Inconsistencies between file names and the namespaces declared within them.  * Cannot be disabled. (added 0.1.1) | [[more]](#check-consistency-of-namespace-and-file-names) |
-| `:bad-arglists` | Function/macro `:arglists` metadata that does not match the number of args it is defined with (added 0.1.1). | [[more]](#bad-arglists) |
-| `:constant-test` | A test expression always evaluates as true, or always false (added 0.2.0). | [[more]](#constant-test) |
+| no name* | Inconsistencies between file names and the namespaces declared within them.  * Cannot be disabled. | [[more]](#check-consistency-of-namespace-and-file-names) |
+| `:bad-arglists` | Function/macro `:arglists` metadata that does not match the number of args it is defined with. | [[more]](#bad-arglists) |
+| `:constant-test` | A test expression always evaluates as true, or always false. | [[more]](#constant-test) |
 | `:def-in-def` | def's nested inside other def's. | [[more]](#def-in-def) |
 | `:deprecations` | Deprecated Clojure Vars, and deprecated Java constructors, methods, and fields. | [[more]](#deprecations) |
 | `:implicit-dependencies` | A fully-qualified var refers to a namespace that hasn't been listed in `:require`. | [[more]](#implicit-dependencies) |
 | `:keyword-typos` (disabled) | Keyword names that may be typos because they occur only once in the source code and are slight variations on other keywords. | [[more]](#keyword-typos) |
-| `:local-shadows-var` | A local name, e.g. a function arg or let binding, has the same name as a global Var, and is called as a function (added 0.1.5). | [[more]](#local-shadows-var) |
+| `:local-shadows-var` | A local name, e.g. a function arg or let binding, has the same name as a global Var, and is called as a function. | [[more]](#local-shadows-var) |
 | `:misplaced-docstrings` | Function or macro doc strings placed after the argument vector, instead of before the argument vector where they belong. | [[more]](#misplaced-docstrings) |
-| `:no-ns-form-found` | Warn about Clojure files where no `ns` form could be found (added 0.2.0). | [[more]](#no-ns-form-found) |
-| `:non-clojure-file` (disabled) | Warn about files that will not be linted because they are not Clojure source files, i.e. their name does not end with '.clj' (added 0.2.0). | [[more]](#non-clojure-file) |
+| `:no-ns-form-found` | Warn about Clojure files where no `ns` form could be found. | [[more]](#no-ns-form-found) |
+| `:non-clojure-file` (disabled) | Warn about files that will not be linted because they are not Clojure source files, i.e. their name does not end with '.clj'. | [[more]](#non-clojure-file) |
 | `:redefd-vars` | Redefinitions of the same name in the same namespace. | [[more]](#redefd-vars) |
 | `:suspicious-expression` | Suspicious expressions that appear incorrect, because they always return trivial values. | [[more]](#suspicious-expression) |
 | `:suspicious-test` | Tests using `clojure.test` that may be written incorrectly. | [[more]](#suspicious-test) |
 | `:unlimited-use` | Unlimited `(:use ...)` without `:refer` or `:only` to limit the symbols referred by it. | [[more]](#unlimited-use) |
 | `:unused-fn-args` (disabled) | Unused function arguments. | [[more]](#unused-fn-args) |
-| `:unused-locals` (disabled) | Symbols bound with `let` or `loop` that are never used (added 0.2.0). | [[more]](#unused-locals) |
-| `:unused-meta-on-macro` | Metadata on a macro invocation is ignored by Clojure (added 0.2.0). | [[more]](#unused-meta-on-macro) |
+| `:unused-locals` (disabled) | Symbols bound with `let` or `loop` that are never used. | [[more]](#unused-locals) |
+| `:unused-meta-on-macro` | Metadata on a macro invocation is ignored by Clojure. | [[more]](#unused-meta-on-macro) |
 | `:unused-namespaces` (disabled) | Warn if a namespace is given in an `ns` form after `:use` or `:require`, but the namespace is not actually used. | [[more]](#unused-namespaces) |
-| `:unused-private-vars` (disabled) | Unused private vars (updated in version 0.2.0). | [[more]](#unused-private-vars) |
+| `:unused-private-vars` (disabled) | Unused private vars. | [[more]](#unused-private-vars) |
 | `:unused-ret-vals` and `:unused-ret-vals-in-try` | Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value. | [[more]](#unused-ret-vals) |
 | `:wrong-arity` | Function calls that seem to have the wrong number of arguments. | [[more]](#wrong-arity) |
-| `:wrong-ns-form` | ns forms containing incorrect syntax or options (added 0.2.1). | [[more]](#wrong-ns-form) |
-| `:wrong-pre-post` | function has preconditions or postconditions that are likely incorrect (added 0.2.2). | [[more]](#wrong-pre-post) |
-| `:wrong-tag` | An incorrect type tag for which the Clojure compiler does not give an error (added 0.1.5). | [[more]](#wrong-tag) |
+| `:wrong-ns-form` | ns forms containing incorrect syntax or options. | [[more]](#wrong-ns-form) |
+| `:wrong-pre-post` | function has preconditions or postconditions that are likely incorrect. | [[more]](#wrong-pre-post) |
+| `:wrong-tag` | An incorrect type tag for which the Clojure compiler does not give an error. | [[more]](#wrong-tag) |
 
 The following table gives some additional detail about each linter.
 
@@ -221,8 +212,7 @@ project, or your project's dependencies:
 Adding `:out "warn.txt"` to the options map will cause all of the
 Eastwood warning lines and 'Entering directory' lines, but no others,
 to be written to the file `warn.txt`.  This file is useful for
-stepping through warnings as described in the [Editor
-Support](#editor-support) section.
+stepping through warnings.
 
     # This works on bash shell in Linux and Mac OS X, and also in
     # Windows cmd shell
@@ -279,20 +269,12 @@ wish.  See [How the Eastwood options map is
 determined](#how-the-eastwood-options-map-is-determined) for more
 details.
 
-## Parallelism
-
-As of version 0.3.4, you can now add parallelism to your linting.
-Currently only a `:naive` form of parallelism is supported, which just uses
-`pmap` to run the linters over your namespaces. You can specify
-`:parallelism?` in your options map, currently `:none` and `:naive` are valid options.
-
-> :parallelism? performs AST analysis/evaluation in parallel and might cause issues.
 
 ## Only lint files modified since last run
 
-As of version 0.3.5, you can now instruct eastwood to only lint the files
-changed since the last run. This feature is pr 0.3.5 to be considered
-alpha and subject to change.
+You can now instruct eastwood to only lint the files
+changed since the last run.
+
 If passed `:only-modified` with the value true, Eastwood will only lint the 
 files which are modified since the timestamp stored in `.eastwood`.
 
@@ -378,7 +360,7 @@ value that is a list or vector of keywords, e.g.
 
 ### Eastwood config files
 
-Starting with version 0.2.1, Eastwood `eval`s several config files in
+Eastwood `eval`s several config files in
 its internal resources.  You can see the latest versions
 [here](https://github.com/jonase/eastwood/tree/master/resource/eastwood/config).
 It also supports command line options to change which of these files
@@ -457,8 +439,7 @@ depending upon the kind of results you want.
   finishes.
 
 * `lint` returns a map containing data structures describing any
-  warnings or errors encountered.  This result is likely more useful
-  for further processing by editors and IDEs.  For example, file
+  warnings or errors encountered. For example, file
   names, line numbers, and column numbers are all available
   separately, requiring no parsing of strings containing those things
   combined together.  See the doc string of `eastwood.lint/lint` for
@@ -531,101 +512,6 @@ versions of namespaces from a JVM process.  If you have instructions
 that you have used with Eastwood and component or a similar tool,
 please file a GitHub issue so they can be included here.
 
-
-### Editor Support
-
-See the section for the development environment you use for specific
-instructions:
-
-* [Eclipse+Counterclockwise](#eclipse--counterclockwise)
-* [Emacs+Cider](#emacs--cider)
-* [Emacs](#emacs)
-* [Vim](#vim)
-
-Below are instructions to create a text file of warnings that can be
-useful for at least the Emacs and Vim cases, but are not needed for
-the others.
-
-As of Eastwood version 0.2.0, the new default warning message format
-is no longer a Clojure map, but lines of the form:
-
-    <file>:<line>:<col>: <linter> <msg>
-
-You can still get the older map format by setting the option
-`:warning-format` to `:map-v2` (`:map-v1` is the style used in
-Eastwood 0.1.4 and earlier).  The new default format can be specified
-explicitly by setting `:warning-format` to `:location-list-v1`.
-
-You can put only the warning lines into a file using the option `:out`
-followed by a file name in a double-quoted string, or when running
-Eastwood from the REPL, anything convertible to a writer via
-`clojure.java.io/writer`.
-
-Note: If you try to mix reflection warnings from the Clojure compiler
-in such a file, those messages contain relative path names from a
-directory on your classpath, whereas Eastwood warnings contain
-relative path names from the current directory.  For example, if the
-directory `src` is on your classpath, as it is by default in Leiningen
-projects, then Eastwood warnings will contain file names like
-`src/your/ns/core.clj`, whereas reflection warnings will not have the
-`src/` at the beginning.  If someone knows a good way to mingle
-Eastwood and Clojure messages in the same file, please open a GitHub
-issue for Eastwood.
-
-
-### Eclipse + Counterclockwise
-
-As of Dec 2014 this [Eastwood
-plugin](https://github.com/laurentpetit/ccw-plugin-eastwood) for
-[Eclipse+Counterclockwise](https://github.com/laurentpetit/ccw) was
-still in early development, but may be usable for you.
-
-
-#### Emacs + Cider
-
-If you use Emacs+Cider, take a look at the
-[`squiggly-clojure`](https://github.com/clojure-emacs/squiggly-clojure)
-project, which can run Eastwood and `core.typed` in the background on
-your project using Emacs Flycheck, and displays the warnings as
-annotations in your source code.
-
-
-#### Emacs
-
-(without Cider)
-
-If you open a file with the warnings in their default format in Emacs,
-then do the command `M-x compilation-mode`, you can use `next-error`
-and `previous-error` commands to step through the warnings, and the
-other buffer will jump to the specified file, line, and column.
-Adding lines like the following to your Emacs init file
-(`$HOME/.emacs.d/init.el` with recent versions of Emacs) is one way to
-create convenient function key bindings for `next-error` and
-`previous-error`.  Use `C-h f next-error RET` to see the current key
-bindings for `next-error`, since you may not mind the defaults.
-
-    (global-set-key [f9]  'previous-error)
-    (global-set-key [f10] 'next-error)
-
-
-#### Vim
-
-A file containing default-format Eastwood warnings can be opened in
-vim 'quickfix' mode with the command:
-
-    vim -q filename
-
-The warnings tend to be longer than one screen width.  You can use
-`:copen 3` to increase the size of the window displaying locations to
-3 lines, for example.  `:cn` jumps to the next warning, `:cp` to the
-previous.  See the Vim documentation for more details,
-e.g. [here](http://vimdoc.sourceforge.net/htmldoc/quickfix.html).
-
-If you have [Syntastic](https://github.com/scrooloose/syntastic) and
-[vim-fireplace](https://github.com/tpope/vim-fireplace/) installed,
-you can use [vim-eastwood](https://github.com/venantius/vim-eastwood)
-to automatically run Eastwood on the namespace in your current buffer.
-
 ### How the Eastwood options map is determined
 
 If you start Eastwood from a REPL using the function
@@ -676,7 +562,7 @@ can be used to modify this merging behavior.
 For example, if your user-wide `profiles.clj` file contains this:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.2.8"]]
+{:user {:plugins [[jonase/eastwood "0.7.1"]]
         :eastwood {:exclude-linters [:unlimited-use]
                    :debug [:time]}
         }}
@@ -709,13 +595,12 @@ Leiningen also calculates values for the `:source-paths` and
 `:test-paths` keys (and all other keys, but only these 3 are ever used
 later to calculate Eastwood options).
 
-
 ### Options map adjustments made by Eastwood when invoked from command line
 
 After the Leiningen option map is calculated, Eastwood starts making
 new modified versions.
 
-Starting with Eastwood version 0.2.1, it 'normal merges' the three
+It 'normal merges' the three
 maps below, in the order given.  Thus values for the same key in later
 maps override earlier ones, with no special Leiningen merging behavior
 for collections:
@@ -728,20 +613,6 @@ for collections:
    this may contain values for `:source-paths` and/or `:test-paths`
    that override the ones above.
 3. command line option map
-
-
-With Eastwood version 0.2.0 and most earlier versions, it was similar,
-except the order of items 1 and 2 were swapped.  Since Leiningen
-always has values for `:source-paths` and `:test-paths`, this meant
-that the values for these keys in the Leiningen option map were always
-ignored.
-
-Eastwood version 0.2.0 and earlier also had special handling to
-recognize the older `:source-path` key (note singular, not pluarl)
-from Leiningen projects, and use it, but only if no `:source-paths`
-keys were given in any Leiningen profiles, nor on the Eastwood command
-line.  Similarly for the old `:test-path` key.
-
 
 #### Last options map adjustments
 
@@ -773,33 +644,13 @@ following _before_ the supplied options map.  See
 ## Known issues
 
 
-### Known libraries Eastwood has difficulty with
-
-[`potemkin`](https://github.com/ztellman/potemkin) version 0.3.4 and
-earlier, and libraries that depend on it now throw exceptions during
-linting as of Eastwood 0.1.3 (and 0.1.2).  A suggested change to
-`potemkin` was made in version 0.3.5 that should eliminate this issue.
-The change in Eastwood behavior was due to a conscious design choice
-in `tools.analyzer`.
-
-With Eastwood 0.1.4 and earlier, the Clojure Contrib libraries
-[`data.fressian`](https://github.com/clojure/data.fressian) and
-[`test.generative`](https://github.com/clojure/test.generative) cannot
-be analyzed due to a known bug in `tools.analyzer.jvm`:
-[TANAL-24](http://dev.clojure.org/jira/browse/TANAL-24).  With
-Eastwood 0.1.5, `tools.analyzer.jvm` has been enhanced to enable
-Eastwood to issue warnings instead, which it does as part of the
-`:wrong-tag` linter.
-
-
 ### Code analysis engine is more picky than the Clojure compiler
 
 Eastwood uses
 [`tools.analyzer`](https://github.com/clojure/tools.analyzer) and
 [`tools.analyzer.jvm`](https://github.com/clojure/tools.analyzer.jvm)
 to analyze Clojure source code.  It performs some sanity checks on the
-source code that the Clojure compiler does not (at least as of Clojure
-versions 1.5.1 and 1.6.0).
+source code that the Clojure compiler generally does not.
 
 
 ### Explicit use of Clojure environment `&env`
@@ -820,53 +671,9 @@ this issue:
     Exception thrown during phase :analyze+eval of linting namespace immutable-bitset
     ClassCastException clojure.lang.PersistentArrayMap cannot be cast to clojure.lang.Compiler$LocalBinding
 
-
-### Unreliable reflection warnings during linting
-
-For additional testing of the `tools.analyzer.jvm` library, while
-analyzing your source code it is read into an intermediate abstract
-syntax tree (AST) data structure, and then forms are generated from
-the AST and evaluated.  There are some issues with type hints being
-different or missing from these forms, such that when Clojure is used
-to eval the forms, the reflection warnings produced (if they are
-enabled) will be different than what you get from compiling your code
-normally.
-
-This issue was worse in Eastwood 0.1.0, and has been improved in
-versions 0.1.1 through 0.1.3.  There are likely to be a few
-differences in reflection warnings from `lein eastwood` that remain,
-so trust the `lein check` output if there are differences.
-
-
-### Interaction between namespaces
-
-TBD: This issue might no longer be true as of Eastwood 0.1.1 and
-later.  Need to verify before editing this issue, though.
-
-If more than one namespace is analyzed in a single command, settings
-like (set! *warn-on-reflection* true) will be preserved from one
-namespace to the next.  There are some projects with multiple
-namespaces where similar (but different) effects can cause Eastwood to
-throw exceptions.  Feel free to report such problems, but as a
-workaround it may help to do multiple runs with a subset of the
-namespaces, e.g. if only one namespace seems to be causing problems,
-use these two commands to analyze one problem namespace separately:
-
-    $ lein eastwood '{:namespaces [trouble.nspace]}'
-    $ lein eastwood '{:exclude-namespaces [trouble.nspace]}'
-
-
 ## Notes on linter warnings
 
-A lint warning is not always a sign of a problem with your program.
-Your code may be doing exactly what it needs to do, but the lint tool
-is not able to figure that out.  It often errs on the side of being
-too noisy.
-
-
 ### Check consistency of namespace and file names
-
-New in Eastwood version 0.1.1
 
 This is not a linter like the others, in that it has no name, cannot
 be disabled, and the check is always performed by Eastwood before any
@@ -907,14 +714,10 @@ wrongly-given namespace once, not multiple times.  In both cases, such
 a wrong namespace is easy to create by copying a Clojure file and
 editing it, forgetting to edit the namespace.
 
-(This behavior was verified as of Leiningen version 2.5.0)
-
 
 ### `:non-clojure-file`
 
 #### Files that will not be linted because they are not Clojure source files
-
-New in Eastwood version 0.2.0
 
 This linter is disabled by default, because it warns even about
 ClojureScript and Java source files it finds, and these are relatively
@@ -931,8 +734,6 @@ i.e. if its file name does not end with '.clj'.
 ### `:no-ns-form-found`
 
 #### Warn about Clojure files where no `ns` form could be found
-
-New in Eastwood version 0.2.0.  Updated in Eastwood version 0.2.3.
 
 If you explicitly specify `:source-paths` or `:test-paths`, or use the
 default Eastwood options from the command line that cause it to scan
@@ -954,16 +755,6 @@ common between Clojure/Java and ClojureScript, and you use `load` to
 include it from two or more other source files.  Starting with Clojure
 1.7.0, this purpose is better satisfied with `.cljc` files (see
 [Reader Conditions](http://clojure.org/reader#The%20Reader--Reader%20Conditionals)).
-
-Before Eastwood 0.2.3, files named `data_readers.clj` that are in the
-root directory of a source or test path directory and contained no
-`ns` form would cause a warning when this linter was enabled.  Such
-files should not contain an `ns` form.  See
-[The Reader - Tagged Literals](http://clojure.org/reader#The%20Reader--Tagged%20Literals)
-for the purpose and contents of these files.  Starting with Eastwood
-0.2.3, no warning will be generated for these files (their contents
-will still not be linted, as before Eastwood version 0.2.3).
-
 
 ### `:misplaced-docstrings`
 
@@ -1201,7 +992,7 @@ This is known to affect several functions in
 created with the [Hiccup](https://github.com/weavejester/hiccup)
 library's macro `defelem`.
 
-Starting with Eastwood version 0.2.1, you can create a [config
+You can create a [config
 file](#eastwood-config-files) for Eastwood that specifies the arglists
 to use for this linter.  An example for the function `query` in the
 [`java.jdbc`](https://github.com/clojure/java.jdbc) Clojure contrib
@@ -1226,9 +1017,6 @@ via metadata.
 ### `:bad-arglists`
 
 #### Function/macro `:arglists` metadata that does not match the number of args it is defined with
-
-New in Eastwood version 0.1.1.  Significant bug fixes made in version
-0.2.2.
 
 Clearly this linter needs to be better documented.
 
@@ -1278,8 +1066,6 @@ have been defined.
 ### `:wrong-ns-form`
 
 #### ns forms containing incorrect syntax or options
-
-New in Eastwood version 0.2.1
 
 Clojure will accept and correctly execute `ns` forms with references
 in vectors, as shown in this example:
@@ -1332,8 +1118,6 @@ common in the many Clojure projects on which Eastwood is tested.
 ### `:wrong-pre-post`
 
 #### function has preconditions or postconditions that are likely incorrect
-
-New in Eastwood version 0.2.2
 
 Preconditions and postconditions that throw exceptions if they are
 false can be specified for any Clojure function by putting a map after
@@ -1481,41 +1265,9 @@ test.
 
 #### Suspicious expressions that appear incorrect, because they always return trivial values.
 
-TBD.  Explain and give a few examples.
-
-This linter was updated in Eastwood version 0.2.0 so that it always
-examines forms after macroexpansion.  Eastwood 0.1.5 and earlier had a
-mix of some cases caught by examining code after macroexpansion, but
-some before.
-
-The cases checked for before macroexpansion could produce false
-positives, e.g. it could warn about the `(= 1)` part of `(-> 1 (=
-1))`, even though that clearly expands to `(= 1 1)`, which should not
-be warned about.
-
-The good news is that with Eastwood version 0.2.0, those incorrect
-warnings are gone.
-
-The bad news is that with some libraries, there can be many incorrect
-warnings from this linter, because it is macroexpanding before
-checking.
-
-For example, if you use the `core.match` library with Eastwood version
-0.2.0, you may find warnings from this linter that have nothing
-obvious to do with your code, about expressions of the form `(and x)`
-with only one argument.  They are due to the way that macros in
-`core.match` are written.  Starting with version 0.2.1, Eastwood's
-built-in [config files](#eastwood-config-files) contain code that
-should disable these warnings for `core.match` and macros in several
-other libraries.  Search those config files for
-`:suspicious-expression` to find them.
-
-
 ### `:constant-test`
 
 #### A test expression always evaluates as true, or always false
-
-New in Eastwood version 0.2.0
 
 Warn if you have a test expression in `if`, `cond`, `if-let`,
 `when-let`, etc. that is obviously a constant, or it is a literal
@@ -1536,12 +1288,6 @@ For example:
 (defn foo [x]
   (if {:a (inc x)} 1 2))
 ```
-
-Like most Eastwood linters, these checks are performed after
-macroexpansion, so at times the code that causes the warning may not
-be in your source file.  Users of the `core.match` library may see
-many such warnings with Eastwood version 0.2.0 that are not directly
-in their code, but in the way `core.match` macros expand.
 
 The blanket approach to disabling all `:constant-test` warnings is to
 use the `:exclude-linters` keyword in the Eastwood options map, or
@@ -1576,8 +1322,6 @@ forms.  It is also not able to determine that expressions like `(/ 84
 ### `:unused-meta-on-macro`
 
 #### Metadata on a macro invocation is ignored by Clojure
-
-New in Eastwood version 0.2.0
 
 When you invoke a macro and annotate it with metadata, in most cases
 that metadata will be discarded when the macro is expanded, unless the
@@ -1660,13 +1404,6 @@ Clojure's `clojure.core/fn` macro uses the hidden `&form` argument to
 all Clojure macros to explicitly preserve the metadata on any `(fn
 ...)` forms.  Eastwood has a special case not to warn about those
 cases.
-
-The macro `schema.core/fn` in Prismatic's
-[Schema](https://github.com/Prismatic/schema) library also has special
-handling similar to `clojure.core/fn`, but at least as of Eastwood
-0.2.0 and 0.2.1 there is no special handling of this case, so it will
-warn if metadata annotates an invocation of this macro.
-
 
 ### `:unused-ret-vals`
 
@@ -1779,8 +1516,6 @@ of data about Clojure core functions.
 
 #### A local name, e.g. a function arg, let binding, or record field name, has the same name as a global Var, and is called as a function
 
-New in Eastwood version 0.1.5
-
 Many functions in `clojure.core` have names that you might like to use
 as local names, such as function arguments or let bindings.  This is
 not necessarily a mistake, and Clojure certainly allows it, but it is
@@ -1847,8 +1582,6 @@ namespace as created by `:as` in a `require` form.
 ### `:wrong-tag`
 
 #### An incorrect type tag for which the Clojure compiler does not give an error
-
-New in Eastwood version 0.1.5
 
 You can use a type tag on a Var name, like in the examples below.
 This does not force the type of the value assigned to the Var, but
@@ -2059,19 +1792,10 @@ warnings.
 
 #### Symbols bound with `let` or `loop` that are never used
 
-New in Eastwood version 0.2.0
-
 This linter is disabled by default, because it often produces a large
 number of warnings, and even the ones that are correct can be
 annoying, and usually just vestigial code that isn't really a bug (it
 might hurt your performance).
-
-Also, there are currently many warnings of this kind produced for
-`core.async`, `core.match`, and Prismatic Schema code, and probably
-also code that uses those libraries (judging from a small sample set
-which in some case only includes test code for the library).  Perhaps
-in the future Eastwood will be improved, but it is not there as of
-version 0.2.1.
 
 However, for many projects tested, the warnings are correct.  If you
 wish to eliminate such symbols from your code using these warnings,
@@ -2114,8 +1838,6 @@ from the list of keywords completely.
 
 #### A namespace you use/require could be removed
 
-Significant bug fixes made in version 0.2.5.
-
 This linter is disabled by default, because it can be fairly noisy.
 You must explicitly enable it if you wish to see these warnings.
 
@@ -2133,8 +1855,6 @@ these issues:
 ### `:unused-private-vars`
 
 #### A Var declared to be private is not used in the namespace where it is def'd
-
-Updated in Eastwood version 0.2.0
 
 This linter is disabled by default, but at least with a collection of
 projects on which Eastwood is frequently tested, it is an uncommon
