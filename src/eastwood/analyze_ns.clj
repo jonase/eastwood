@@ -330,11 +330,21 @@
         reader-opts {:read-cond :allow :features #{:clj} :eof eof}]
     (before-analyze-file-debug source-path opt)
 
-    ;; If we eval a form that changes *ns*, I want it to go back to
-    ;; the original before returning.
-    (binding [reader/*data-readers* *data-readers*
+    ;; prevent t.ana from possibly altering *ns* or such:
+    (binding [*assert* *assert*
+              *command-line-args* *command-line-args*
+              *compile-path* *compile-path*
+              *data-readers* *data-readers*
+              *default-data-reader-fn* *default-data-reader-fn*
+              *file* (str source-path)
+              *math-context* *math-context*
               *ns* *ns*
-              *file* (str source-path)]
+              *print-length* *print-length*
+              *print-level* *print-level*
+              *print-meta* *print-meta*
+              *unchecked-math* *unchecked-math*
+              *warn-on-reflection* *warn-on-reflection*
+              reader/*data-readers* *data-readers*]
       (env/with-env (jvm/global-env)
         (begin-file-debug *file* *ns* opt)
         (loop [forms []
