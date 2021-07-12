@@ -23,10 +23,7 @@ Commit all of those changes.
 
 Tag it with a version tag, e.g.:
 
-    % git tag -a Release-0.1.2
-
-I don't put much into the commit comments other than 'Eastwood version
-0.1.2'
+    % git tag -a Release-0.1.2 -m "0.1.2"
 
 'git push' by default does not push tags to the remote server.  To
 cause that to happen, use:

@@ -1,4 +1,4 @@
-## Changes from 0.7.1 to 0.8.0
+## Changes from 0.7.1 to 0.8.1
 
 #### New
 
