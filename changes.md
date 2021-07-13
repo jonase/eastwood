@@ -1,3 +1,9 @@
+## Changes from 0.8.1 to
+
+#### Bugfixes
+
+* Consider `doall` side-effectful (for the `:unused-ret-vals` linter).
+
 ## Changes from 0.7.1 to 0.8.1
 
 #### New

@@ -239,7 +239,7 @@
  clojure.core/dissoc! {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},
  clojure.core/distinct {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/distinct? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
- clojure.core/doall {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true}, ;; TBD: Consider making a special warning just for this one, suggesting to use dorun instead if the return value is not needed, potentially saving memory
+ clojure.core/doall {:var-kind nil, :macro nil, :predicate false, :side-effect true :pure-fn false :warn-if-ret-val-unused false :lazy false, :pure-if-fn-args-pure false :io-fn false :evals-exprs false}, ;; TBD: Consider making a special warning just for this one, suggesting to use dorun instead if the return value is not needed, potentially saving memory
  clojure.core/dorun {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused false},
  clojure.core/doseq {:var-kind nil, :macro true},
  clojure.core/dosync {:var-kind nil, :macro true},
