@@ -56,7 +56,7 @@
                                                   [metosin/spec-tools "0.10.5"]
                                                   [org.clojure/core.async "1.3.618"]]}
              :clj-kondo {:dependencies [[clj-kondo "2021.06.18"]]}
-             :antq {:plugins [[com.github.liquidz/antq "0.15.3"]]}
+             :antq {:plugins [[com.github.liquidz/antq "0.16.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
@@ -81,7 +81,7 @@
                                              [org.clojure/core.memoize "1.0.236"]
                                              [org.clojure/data.codec "0.1.1"]
                                              [org.clojure/data.csv "1.0.0"]
-                                             [org.clojure/data.json "2.3.1"]
+                                             [org.clojure/data.json "2.4.0"]
                                              [org.clojure/data.priority-map "1.0.0"]
                                              ;; data.xml
                                              ;; data.zip
@@ -103,7 +103,7 @@
                                              ;; tools.macro
                                              ;; tools.namespace
                                              ;; tools.nrepl
-                                             [org.clojure/tools.reader "1.3.5"]
+                                             [org.clojure/tools.reader "1.3.6"]
                                              [org.clojure/tools.trace "0.7.11"]
                                              ;; useful
                                              ]}
