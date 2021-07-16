@@ -21,6 +21,7 @@
    [eastwood.linters.unused :as unused]
    [eastwood.reporting-callbacks :as reporting]
    [eastwood.util :as util]
+   [eastwood.util.ns :refer [topo-sort]]
    [eastwood.version :as version])
   (:import
    (java.io File)))
@@ -390,8 +391,10 @@
 ;; TBD: Abort with an easily understood error message if a namespace
 ;; is given that cannot be found.
 
-(defn effective-namespaces [exclude-namespaces namespaces
-                            {:keys [source-paths test-paths]} modified-since]
+(defn effective-namespaces [exclude-namespaces
+                            namespaces
+                            {:keys [source-paths test-paths]}
+                            modified-since]
   ;; If keyword :source-paths occurs in namespaces or
   ;; excluded-namespaces, replace it with all namespaces found in
   ;; the directories in (:source-paths opts), in an order that
@@ -410,29 +413,32 @@
                                                      exclude-namespaces))
         corpus (->> namespaces
                     (expand-ns-keywords expanded-namespaces)
-                    (set))]
+                    (set))
+        project-namespaces (set/union corpus ;; namespaces explicitly asked to be linted
+                                      (some-> source-paths ;; source-paths per Eastwood/Lein config
+                                              seq
+                                              (nss-in-dirs 0)
+                                              :namespaces
+                                              set)
+                                      (some-> test-paths ;; test-paths per Eastwood/Lein config
+                                              seq
+                                              (nss-in-dirs 0)
+                                              :namespaces
+                                              set)
+                                      ;; t.n integration:
+                                      (some-> 'clojure.tools.namespace.repl/refresh-dirs
+                                              resolve
+                                              deref
+                                              seq
+                                              (nss-in-dirs 0)
+                                              :namespaces
+                                              set))]
     {;; what will be linted:
-     :namespaces (->> corpus (remove excluded-namespaces))
+     :namespaces (->> corpus
+                      (remove excluded-namespaces)
+                      (topo-sort project-namespaces))
      ;; the set of project namespaces. Linter faults caused by namespaces outside this set may be ignored:
-     :project-namespaces (set/union corpus ;; namespaces explicitly asked to be linted
-                                    (some-> source-paths ;; source-paths per Eastwood/Lein config
-                                            seq
-                                            (nss-in-dirs 0)
-                                            :namespaces
-                                            set)
-                                    (some-> test-paths ;; test-paths per Eastwood/Lein config
-                                            seq
-                                            (nss-in-dirs 0)
-                                            :namespaces
-                                            set)
-                                    ;; t.n integration:
-                                    (some-> 'clojure.tools.namespace.repl/refresh-dirs
-                                            resolve
-                                            deref
-                                            seq
-                                            (nss-in-dirs 0)
-                                            :namespaces
-                                            set))
+     :project-namespaces project-namespaces
      :test-deps (:deps tp)
      :src-deps (:deps sp)
      :dirs (concat (:dirs sp) (:dirs tp))

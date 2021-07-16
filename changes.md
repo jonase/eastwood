@@ -5,6 +5,10 @@
 * Consider `doall` side-effectful (for the `:unused-ret-vals` linter).
 * Omit the `:no-ns-form-found` linter for Eastwood config files.
   * Closes https://github.com/jonase/eastwood/issues/406
+* Analyze files in topographical order.
+  * This generally happens naturally, but now is emphasized.
+  * This way, it is less likely that `defprotocol` analysis causes issues.
+  * Closes https://github.com/jonase/eastwood/issues/407
 
 ## Changes from 0.7.1 to 0.8.1
 

@@ -7,6 +7,7 @@ cd .circleci || exit 1
 
 git submodule update --init --recursive
 
+# Exercise core.async because it's been historically a difficult-to-analyse one
 cd ./core.async || exit 1
 
 if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
@@ -15,8 +16,22 @@ if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"
   exit 1
 fi
 
-grep --silent "== Warnings: 30 (not including reflection warnings)  Exceptions thrown: 0" output  || exit 1
+grep --silent "== Warnings: 30 (not including reflection warnings)  Exceptions thrown: 0" output || exit 1
 
+# Exercise malli because Eastwood used to choke on that project due to lack of explicit topo order for ns analysis
+cd ../malli || exit 1
+
+cp ../deps_project.clj project.clj
+
+if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
+  echo "Should have failed! Emitted output:"
+  cat output
+  exit 1
+fi
+
+grep --silent "== Warnings: 111 (not including reflection warnings)  Exceptions thrown: 0" output || exit 1
+
+# Exercise crux simply because it's a large project with plenty of Java hints, interop etc
 cd ../crux || exit 1
 ./lein-sub install
 ./lein-sub with-profile -user,+test update-in :dependencies conj "[jonase/eastwood \"RELEASE\"]" -- run -m eastwood.lint "{:source-paths [\"src\"], :test-paths [\"test\"], :forced-exit-code 0}" | tee output
@@ -29,11 +44,11 @@ if grep --silent "$ex_marker [1-9]" output; then
   exit 1
 fi
 
-grep --silent "Warnings: 1 (not including reflection warnings) $ex_marker 0" output  || exit 1
-grep --silent "Warnings: 2 (not including reflection warnings) $ex_marker 0" output  || exit 1
-grep --silent "Warnings: 3 (not including reflection warnings) $ex_marker 0" output  || exit 1
-grep --silent "Warnings: 4 (not including reflection warnings) $ex_marker 0" output  || exit 1
-grep --silent "Warnings: 42 (not including reflection warnings) $ex_marker 0" output  || exit 1
+grep --silent "Warnings: 1 (not including reflection warnings) $ex_marker 0" output || exit 1
+grep --silent "Warnings: 2 (not including reflection warnings) $ex_marker 0" output || exit 1
+grep --silent "Warnings: 3 (not including reflection warnings) $ex_marker 0" output || exit 1
+grep --silent "Warnings: 4 (not including reflection warnings) $ex_marker 0" output || exit 1
+grep --silent "Warnings: 42 (not including reflection warnings) $ex_marker 0" output || exit 1
 
 sixteen_warns=$(grep -c "Warnings: 16 (not including reflection warnings) $ex_marker 0" output)
 sixteen_warns=${sixteen_warns// /}
