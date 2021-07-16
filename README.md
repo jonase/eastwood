@@ -411,7 +411,7 @@ such file names are only looked for in Eastwood's built-in config
 files.
 
 Similarly you can specify `:config-files` in the options map to give
-additional files to read.  These are file names that can be anywhere
+additional files to read.  These are file names (or Java resource names) that can be anywhere
 in your file system, specified as strings, or if Eastwood is invoked
 from the REPL, anything that can be passed to
 `clojure.java.io/reader`.

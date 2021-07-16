@@ -1,5 +1,6 @@
 (ns eastwood.linters.misc
   (:require
+   [clojure.java.io :as io]
    [clojure.pprint :as pprint]
    [clojure.set :as set]
    [clojure.string :as string]
@@ -962,16 +963,22 @@
                                (:uri-or-file-name inf))}
                  inf))})
 
-(defn no-ns-form-found-files [dir-name-strs files filemap linters cwd]
+(defn no-ns-form-found-files [dir-name-strs files filemap linters cwd {:keys [config-files
+                                                                              builtin-config-files]}]
   (when (some #{:no-ns-form-found} linters)
-    (let [tfilemap (-> filemap keys set)
+    (let [omit (->> config-files
+                    (into builtin-config-files)
+                    (keep (some-fn io/resource io/file))
+                    (map str)
+                    (seq))
+          tfilemap (-> filemap keys set)
           maybe-data-readers (->> dir-name-strs
                                   (map #(File.
                                          (str % File/separator
                                               "data_readers.clj")))
                                   set)]
       {:lint-warnings
-       (->> (set/difference files tfilemap maybe-data-readers)
+       (->> (set/difference files tfilemap maybe-data-readers omit)
             (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" cwd)))})))
 
 (defn non-clojure-files [non-clojure-files linters cwd]
