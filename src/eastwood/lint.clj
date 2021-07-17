@@ -14,6 +14,7 @@
    [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
    [eastwood.error-messages :as msgs]
    [eastwood.exit :refer [exit-fn]]
+   [eastwood.linters.boxed-math :as boxed-math]
    [eastwood.linters.deprecated :as deprecated]
    [eastwood.linters.implicit-dependencies :as implicit-dependencies]
    [eastwood.linters.misc :as misc]
@@ -197,10 +198,20 @@
     :url "https://github.com/jonase/eastwood#reflection",
     ;; NOTE :ignore-faults-from-foreign-macroexpansions? is useless for this specific linter,
     ;; since reflection detection doesn't work at tools.analyzer level, so one doesn't get to inspect macroexpasions for this purpose.
-    :fn reflection/linter}])
+    :fn reflection/linter}
 
-(def linter-name->info (into {} (for [{:keys [name] :as info} linter-info]
-                                  [name info])))
+   {:name :boxed-math
+    ;; Disabled by default as it's not customary or excessively justified to always fix these:
+    :enabled-by-default false,
+    :url "https://github.com/jonase/eastwood#boxed-math",
+    ;; NOTE :ignore-faults-from-foreign-macroexpansions? is useless for this specific linter,
+    ;; since reflection detection doesn't work at tools.analyzer level, so one doesn't get to inspect macroexpasions for this purpose.
+    :fn boxed-math/linter}])
+
+(def linter-name->info
+  (->> (for [{:keys [name] :as info} linter-info]
+         [name info])
+       (into {})))
 
 (def default-linters
   (->> linter-info
@@ -284,7 +295,10 @@
                                       namespaces
                                       source-paths
                                       test-paths] :as opts}]
-  (let [opts (cond-> opts
+  (let [effective-linters (some->> linters
+                                   (remove (set exclude-linters))
+                                   (keep linter-name->info))
+        opts (cond-> opts
                ;; this key is generally present, except when invoking `lint-ns` directly (which is a less usual API):
                (not (:eastwood/project-namespaces opts))
                (assoc :eastwood/project-namespaces (:project-namespaces (effective-namespaces exclude-namespaces
@@ -295,13 +309,13 @@
                ;; same
                (not (:eastwood/linter-info opts))
                (assoc :eastwood/linter-info linter-info))
+        opts (assoc opts :eastwood/linting-boxed-math? (contains? (into #{} (map :name) effective-linters)
+                                                                  :boxed-math))
         [result elapsed] (util/timeit (analyze-ns/analyze-ns ns-sym :opt opts))
         {:keys [analyze-results exception exception-phase exception-form]} result]
     {:ns ns-sym
      :analysis-time elapsed
-     :lint-results (some->> linters
-                            (remove (set exclude-linters))
-                            (keep linter-name->info)
+     :lint-results (some->> effective-linters
                             (@util/linter-executor-atom (partial lint-ns* ns-sym analyze-results opts)))
      :analyzer-exception (when exception
                            (msgs/report-analyzer-exception exception exception-phase exception-form ns-sym))}))

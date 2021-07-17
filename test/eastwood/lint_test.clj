@@ -507,3 +507,14 @@ See https://github.com/jonase/eastwood/issues/402"
     #{'testcases.dynamic-earmuffs.no-earmuffs.red}   {:some-warnings true}
     #{'testcases.dynamic-earmuffs.no-dynamic.green}  {:some-warnings false}
     #{'testcases.dynamic-earmuffs.no-dynamic.red}    {:some-warnings true}))
+
+(deftest boxed-math
+  (are [input expected] (testing input
+                          (is (= (assoc expected :some-errors false)
+                                 (-> sut/default-opts
+                                     (assoc :namespaces input
+                                            :linters [:boxed-math])
+                                     (sut/eastwood))))
+                          true)
+    #{'testcases.boxed-math.green} {:some-warnings false}
+    #{'testcases.boxed-math.red}   {:some-warnings true}))

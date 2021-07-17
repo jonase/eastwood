@@ -67,14 +67,12 @@
            (map :warn-data))
       (throw (:exception exception)))))
 
-(defmacro lint-test [ns-sym linters opts expected-lint-result]
-  `(let [lint-result# (lint-ns-noprint ~ns-sym ~linters ~opts)
-         lint-result2# (->> lint-result#
-                            (map normalize-warning)
-                            (map warning-replace-auto-numbered-symbol-names)
-                            frequencies)]
-     (is (= ~expected-lint-result
-            lint-result2#))))
+(defn lint-test [ns-sym linters opts expected-lint-result]
+  (is (= expected-lint-result
+         (->> (lint-ns-noprint ns-sym linters opts)
+              (map normalize-warning)
+              (map warning-replace-auto-numbered-symbol-names)
+              frequencies))))
 
 (defn fname-from-parts [& parts]
   (str/join File/separator parts))

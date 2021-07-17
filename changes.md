@@ -5,6 +5,9 @@
 * Implement a new linter: `:reflection`
   * See https://github.com/jonase/eastwood#reflection
   * Part of https://github.com/jonase/eastwood/issues/133
+* Implement a new linter: `:boxed-math`
+  * See https://github.com/jonase/eastwood#boxed-math
+  * Part of https://github.com/jonase/eastwood/issues/133
 * Enable and refine `:non-dynamic-earmuffs`
   * See https://github.com/jonase/eastwood#non-dynamic-earmuffs
   * It used to be disabled by default.

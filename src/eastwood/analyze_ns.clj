@@ -5,11 +5,11 @@
    [clojure.pprint :as pp]
    [clojure.string :as string]
    [clojure.walk :as walk]
-   [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.warn-earmuff :refer [warn-earmuff]]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes :refer [schedule]]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.trim :refer [trim]]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.warn-earmuff :refer [warn-earmuff]]
    [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
    [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as reader-types]
    [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as jvm]
@@ -254,7 +254,10 @@
                     (util/file-warn-info cwd)
                     :uri-or-file-name)]
     (if uri
-      {:pre pre
+      {:type (if (re-find #"Boxed math warning" msg)
+               :boxed-math
+               :reflection)
+       :pre pre
        :uri uri
        :line line
        :column column
@@ -266,14 +269,19 @@
   (when-not (= out-msgs-str "")
     (doseq [s (string/split-lines out-msgs-str)]
       (println s)))
-  (let [reflection-warnings (atom [])]
+  (let [reflection-warnings (atom [])
+        boxed-math-warnings (atom [])]
     (when-not (= err-msgs-str "")
       (doseq [s (string/split-lines err-msgs-str)
               :let [v (replace-path-in-compiler-error s cwd)]]
         (if (map? v)
-          (swap! reflection-warnings conj v)
+          (swap! (case (:type v)
+                   :reflection reflection-warnings
+                   :boxed-math boxed-math-warnings)
+                 conj
+                 v)
           (some-> v println))))
-    @reflection-warnings))
+    [@reflection-warnings @boxed-math-warnings]))
 
 (defn cleanup [form]
   (let [should-change? (and (-> form list?)
@@ -342,7 +350,8 @@
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
   [source-path & {:keys [reader opt]}]
-  (let [eof (reify)
+  (let [linting-boxed-math? (:eastwood/linting-boxed-math? opt)
+        eof (reify)
         reader-opts {:read-cond :allow :features #{:clj} :eof eof}]
     (before-analyze-file-debug source-path opt)
 
@@ -365,19 +374,27 @@
         (begin-file-debug *file* *ns* opt)
         (loop [forms []
                asts []
-               reflection-warnings-plural []]
+               reflection-warnings-plural []
+               boxed-math-warnings-plural []]
           (let [form (cleanup (reader/read reader-opts reader))]
             (if (identical? form eof)
-              {:forms forms, :asts asts, :exception nil, :reflection-warnings (distinct reflection-warnings-plural)}
+              {:forms forms
+               :asts asts
+               :exception nil
+               :reflection-warnings (distinct reflection-warnings-plural)
+               :boxed-math-warnings (distinct boxed-math-warnings-plural)}
               (let [cur-env (env/deref-env)
                     _ (pre-analyze-debug asts form cur-env *ns* opt)
-                    [exc ast reflection-warnings]
+                    [exc ast reflection-warnings boxed-math-warnings]
                     (try
                       (let [{:keys [val out err]}
                             (util/with-out-str2
                               (binding [jvm/run-passes run-passes]
                                 (let [{:keys [result] :as v}
-                                      (binding [*warn-on-reflection* true]
+                                      (binding [*warn-on-reflection* true
+                                                *unchecked-math* (if linting-boxed-math?
+                                                                   :warn-on-boxed
+                                                                   *unchecked-math*)]
                                         (jvm/analyze+eval form
                                                           (jvm/empty-env)
                                                           {:passes-opts eastwood-passes-opts}))]
@@ -400,8 +417,8 @@
                                                                                 last)))
                                                                       (list))))))
                                   v)))
-                            reflection-warnings (do-eval-output-callbacks out err (:cwd opt))]
-                        [nil val reflection-warnings])
+                            [reflection-warnings boxed-math-warnings] (do-eval-output-callbacks out err (:cwd opt))]
+                        [nil val reflection-warnings boxed-math-warnings])
                       (catch Exception e
                         (let [had-go-call? (atom false)]
                           (when-not (:abort-on-core-async-exceptions? opt)
@@ -454,7 +471,9 @@
                                conj? (conj (eastwood-ast-additions
                                             ast (count asts))))
                              (cond-> reflection-warnings-plural
-                               conj? (into reflection-warnings))))))))))))))
+                               conj? (into reflection-warnings))
+                             (cond-> boxed-math-warnings-plural
+                               conj? (into boxed-math-warnings))))))))))))))
 
 (defn analyze-ns
   "Takes an IndexingReader and a namespace symbol.
@@ -476,11 +495,14 @@
     - same as analyze-file.  See there.
 
   eg. (analyze-ns 'my-ns :opt {} :reader (pb-reader-for-ns 'my.ns))"
-  [source-nsym & {:keys [reader opt] :or {reader (pb-reader-for-ns source-nsym)}}]
+  [source-nsym & {:keys [reader opt]
+                  :or {reader (pb-reader-for-ns source-nsym)}}]
   (with-form-writers opt
     (fn []
       (let [source-path (#'move/ns-file-name source-nsym)
-            {:keys [reflection-warnings] :as m}           (analyze-file source-path :reader reader :opt opt)
+            {:keys [reflection-warnings
+                    boxed-math-warnings]
+             :as m}     (analyze-file source-path :reader reader :opt opt)
             source      (-> source-nsym uri-for-ns slurp)]
         (-> m
             (dissoc :forms :asts :reflection-warnings)
@@ -489,6 +511,7 @@
                                      :exeption-form (:exception-form m)
                                      :forms         (:forms m)
                                      :reflection-warnings reflection-warnings
+                                     :boxed-math-warnings boxed-math-warnings
                                      :asts          (->> m
                                                          :asts
                                                          (mapv (fn [m]
