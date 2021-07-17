@@ -48,8 +48,8 @@ grep --silent "Warnings: 3. $ex_marker 0" output || exit 1
 grep --silent "Warnings: 4. $ex_marker 0" output || exit 1
 grep --silent "Warnings: 10. $ex_marker 0" output || exit 1
 grep --silent "Warnings: 16. $ex_marker 0" output || exit 1
+grep --silent "Warnings: 36. $ex_marker 0" output || exit 1
 grep --silent "Warnings: 45. $ex_marker 0" output || exit 1
-grep --silent "Warnings: 171. $ex_marker 0" output || exit 1
 
 zero_warns=$(grep -c "Warnings: 0. $ex_marker 0" output)
 zero_warns=${zero_warns// /}

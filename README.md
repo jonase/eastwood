@@ -117,6 +117,7 @@ enabled by default unless they have '(disabled)' after their name.
 | ----------- | ----------- | ---- |
 | no name* | Inconsistencies between file names and the namespaces declared within them.  * Cannot be disabled. | [[more]](#check-consistency-of-namespace-and-file-names) |
 | `:bad-arglists` | Function/macro `:arglists` metadata that does not match the number of args it is defined with. | [[more]](#bad-arglists) |
+| `:boxed-math` | Boxed math compiler warnings | [[more]](#boxed-math) |
 | `:constant-test` | A test expression always evaluates as true, or always false. | [[more]](#constant-test) |
 | `:def-in-def` | def's nested inside other def's. | [[more]](#def-in-def) |
 | `:deprecations` | Deprecated Clojure Vars, and deprecated Java constructors, methods, and fields. | [[more]](#deprecations) |
@@ -126,7 +127,9 @@ enabled by default unless they have '(disabled)' after their name.
 | `:misplaced-docstrings` | Function or macro doc strings placed after the argument vector, instead of before the argument vector where they belong. | [[more]](#misplaced-docstrings) |
 | `:no-ns-form-found` | Warn about Clojure files where no `ns` form could be found. | [[more]](#no-ns-form-found) |
 | `:non-clojure-file` (disabled) | Warn about files that will not be linted because they are not Clojure source files, i.e. their name does not end with '.clj'. | [[more]](#non-clojure-file) |
+| `:non-dynamic-earmuffs` | Vars marked `^:dynamic` should follow the "earmuff" naming convention, and vice versa. | [[more]](#non-dynamic-earmuffs) |
 | `:redefd-vars` | Redefinitions of the same name in the same namespace. | [[more]](#redefd-vars) |
+| `:reflection` | Reflection warnings | [[more]](#reflection) |
 | `:suspicious-expression` | Suspicious expressions that appear incorrect, because they always return trivial values. | [[more]](#suspicious-expression) |
 | `:suspicious-test` | Tests using `clojure.test` that may be written incorrectly. | [[more]](#suspicious-test) |
 | `:unlimited-use` | Unlimited `(:use ...)` without `:refer` or `:only` to limit the symbols referred by it. | [[more]](#unlimited-use) |
@@ -1962,6 +1965,21 @@ Vars marked `^:dynamic` should follow the "earmuff" naming convention, and vice 
 * `(def ^:dynamic foo 42)` (NOK: dynamic, non-earmuffed)
 * `(def *foo* 42)` (NOK: earmuffed, non-dynamic)
 * `(def ^:dynamic *foo* 42)` (OK: dynamic, earmuffed)
+
+### Boxed math
+
+#### Boxed math warnings from the Clojure compiler
+
+See: [`*unchecked-math*`](https://clojuredocs.org/clojure.core/*unchecked-math*)
+
+Disabled by default because it's not customary or necessarily justified to aim for a boxed-math-free codebase.
+
+Note that if enabling it, all code will be evaluated with a surrounding `*unchecked-math* :warn-on-boxed` binding,
+which not only enables the warnings but it actually affects the final code that will be emitted
+(although in minor ways, only concerned with unchecked math matters).
+
+Generally this won't affect you in any way except in the case that you are invoking Eastwood in a REPL,
+such that namespaces re-compiled by Eastwood's analysis will be visible and used by your application.
 
 ### `:reflection`
 
