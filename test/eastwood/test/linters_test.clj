@@ -1,7 +1,5 @@
 (ns eastwood.test.linters-test
   (:require
-   [clojure.data :as data]
-   [clojure.pprint :as pprint]
    [clojure.string :as str]
    [clojure.test :refer [deftest is]]
    [eastwood.lint]
@@ -54,6 +52,7 @@
 (defn lint-ns-noprint [ns-sym linters opts]
   (let [opts (assoc opts
                     :linters linters
+                    :exclude-linters [:reflection]
                     :debug #{})
         opts (eastwood.lint/last-options-map-adjustments opts (reporting-callbacks/silent-reporter opts))
         cb (fn [info]
@@ -73,18 +72,9 @@
          lint-result2# (->> lint-result#
                             (map normalize-warning)
                             (map warning-replace-auto-numbered-symbol-names)
-                            frequencies)
-         diffs# (->> (data/diff lint-result2# ~expected-lint-result)
-                     (take 2)
-                     (mapv (fn [m#]
-                             (if (nil? m#)
-                               nil
-                               (into empty-sorted-lint-warning-frequencies-map
-                                     m#)))))]
-     (when (not= diffs# [nil nil])
-       (println "Pretty-printed diffs between actual and expected lint results:")
-       (pprint/pprint diffs#))
-     (is (= diffs# [nil nil]))))
+                            frequencies)]
+     (is (= ~expected-lint-result
+            lint-result2#))))
 
 (defn fname-from-parts [& parts]
   (str/join File/separator parts))
@@ -1234,8 +1224,7 @@
           :msg "Wrong tag: Set on form: b.",
           :file (fname-from-parts "testcases" "wrongtag.clj"),
           :line 125, :column 14}
-         1,
-         }
+         1}
 
         ;; These warnings are not needed after CLJ-1232 was fixed in
         ;; Clojure 1.8.0.

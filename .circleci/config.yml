@@ -82,6 +82,10 @@ jobs:
           command:  git clean -fdx
 
       - run:
+          name: prepare test .jar
+          command: cd .circleci/reflection-example/; lein jar; cd -
+
+      - run:
           name: Run normal test suite
           command: lein with-profile -user,-dev,+test,+warn-on-reflection,+<< parameters.clojure-version >> do clean, test
 

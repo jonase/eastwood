@@ -244,20 +244,31 @@
   (let [[match pre _ path
          line-col post] (re-matches #"((Reflection|Boxed math) warning), (.*?)(:\d+:\d+)(.*)"
                                     msg)
+        [line column] (some-> line-col (string/replace #"^:" "") (string/split #":"))
         url (and match (io/resource path))
-        inf (and url (util/file-warn-info url cwd))]
-    (if inf
-      ;; The filename:line:col should be first in the output
-      (str (:uri-or-file-name inf) line-col ": " pre post)
+        uri (some-> url
+                    (util/file-warn-info cwd)
+                    :uri-or-file-name)]
+    (if uri
+      {:pre pre
+       :uri uri
+       :line line
+       :column column
+       :post post}
       msg)))
 
 (defn- do-eval-output-callbacks [out-msgs-str err-msgs-str cwd]
-  (when (not= out-msgs-str "")
+  (when-not (= out-msgs-str "")
     (doseq [s (string/split-lines out-msgs-str)]
       (println s)))
-  (when (not= err-msgs-str "")
-    (doseq [s (string/split-lines err-msgs-str)]
-      (println (replace-path-in-compiler-error s cwd)))))
+  (let [reflection-warnings (atom [])]
+    (when-not (= err-msgs-str "")
+      (doseq [s (string/split-lines err-msgs-str)
+              :let [v (replace-path-in-compiler-error s cwd)]]
+        (if (string? v)
+          (println v)
+          (swap! reflection-warnings conj v))))
+    @reflection-warnings))
 
 (defn cleanup [form]
   (let [should-change? (and (-> form list?)
@@ -348,20 +359,23 @@
       (env/with-env (jvm/global-env)
         (begin-file-debug *file* *ns* opt)
         (loop [forms []
-               asts []]
+               asts []
+               reflection-warnings-plural []]
           (let [form (cleanup (reader/read reader-opts reader))]
             (if (identical? form eof)
-              {:forms forms, :asts asts, :exception nil}
+              {:forms forms, :asts asts, :exception nil, :reflection-warnings (distinct reflection-warnings-plural)}
               (let [cur-env (env/deref-env)
                     _ (pre-analyze-debug asts form cur-env *ns* opt)
-                    [exc ast]
+                    [exc ast reflection-warnings]
                     (try
                       (let [{:keys [val out err]}
                             (util/with-out-str2
                               (binding [jvm/run-passes run-passes]
-                                (let [{:keys [result] :as v} (jvm/analyze+eval form
-                                                                               (jvm/empty-env)
-                                                                               {:passes-opts eastwood-passes-opts})]
+                                (let [{:keys [result] :as v}
+                                      (binding [*warn-on-reflection* true]
+                                        (jvm/analyze+eval form
+                                                          (jvm/empty-env)
+                                                          {:passes-opts eastwood-passes-opts}))]
                                   (when (and (var? result)
                                              (-> result meta :arglists vector?)
                                              (some-> result meta :arglists first seq?)
@@ -380,9 +394,9 @@
                                                                                      (-> x first #{'quote}))
                                                                                 last)))
                                                                       (list))))))
-                                  v)))]
-                        (do-eval-output-callbacks out err (:cwd opt))
-                        [nil val])
+                                  v)))
+                            reflection-warnings (do-eval-output-callbacks out err (:cwd opt))]
+                        [nil val reflection-warnings])
                       (catch Exception e
                         (let [had-go-call? (atom false)]
                           (when-not (:abort-on-core-async-exceptions? opt)
@@ -433,7 +447,9 @@
                                conj? (conj form))
                              (cond-> asts
                                conj? (conj (eastwood-ast-additions
-                                            ast (count asts))))))))))))))))
+                                            ast (count asts))))
+                             (cond-> reflection-warnings-plural
+                               conj? (into reflection-warnings))))))))))))))
 
 (defn analyze-ns
   "Takes an IndexingReader and a namespace symbol.
@@ -459,16 +475,18 @@
   (with-form-writers opt
     (fn []
       (let [source-path (#'move/ns-file-name source-nsym)
-            m           (analyze-file source-path :reader reader :opt opt)
+            {:keys [reflection-warnings] :as m}           (analyze-file source-path :reader reader :opt opt)
             source      (-> source-nsym uri-for-ns slurp)]
-        (assoc (dissoc m :forms :asts)
-               :analyze-results {:source        source
-                                 :namespace     source-nsym
-                                 :exeption-form (:exception-form m)
-                                 :forms         (:forms m)
-                                 :asts          (->> m
-                                                     :asts
-                                                     (mapv (fn [m]
-                                                             (assoc m
-                                                                    :eastwood/ns-source source
-                                                                    :eastwood/ns-sym source-nsym))))})))))
+        (-> m
+            (dissoc :forms :asts :reflection-warnings)
+            (assoc :analyze-results {:source        source
+                                     :namespace     source-nsym
+                                     :exeption-form (:exception-form m)
+                                     :forms         (:forms m)
+                                     :reflection-warnings reflection-warnings
+                                     :asts          (->> m
+                                                         :asts
+                                                         (mapv (fn [m]
+                                                                 (assoc m
+                                                                        :eastwood/ns-source source
+                                                                        :eastwood/ns-sym source-nsym))))}))))))

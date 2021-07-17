@@ -206,7 +206,7 @@ project, or your project's dependencies:
     test/compojure/core_test.clj:109:1: constant-test: Test expression is always logical true or always logical false: true
     test/compojure/core_test.clj:114:1: constant-test: Test expression is always logical true or always logical false: false
     test/compojure/core_test.clj:114:1: constant-test: Test expression is always logical true or always logical false: true
-    == Warnings: 7 (not including reflection warnings)  Exceptions thrown: 0
+    == Warnings: 7. Exceptions thrown: 0
     Subprocess failed
 
 Adding `:out "warn.txt"` to the options map will cause all of the
@@ -1954,6 +1954,35 @@ version of the namespace would get an explicit description of what had
 changed and their code would not run, which is better than a subtle
 bug in running code.
 
+### `:reflection`
+
+#### Reflection warnings from the Clojure compiler
+
+Addressing reflection warnings systematically is a good idea for many reasons:
+
+* Performance will be improved
+* Performance will easier to measure
+  * Even assuming that JITs can emit optimizations akin to manual type hints, having one's code left unoptimized for an indefinite time (maybe forever, in your local JVM) makes it harder to accurately measure performance, as it can be potentially full of distractions caused by slow, reflective calls.
+* Code will be more maintainable, as anyone reading the code will know the class a given piece of code is dealing with
+  * e.g. some code may be dealing with a very unusual/specific Java class. By using a type hint, maintainers can quickly know of this class instead of having to reverse-engineer that info. 
+* Increased compatibility with newer JDKs
+  * newer JDKs may emit warnings or even not work at all depending on reflective access.
+  * this has changed substantially how Clojure programmers deal with reflection - before it was more of an optimization only.
+* Better integration with various Clojure tooling
+  * e.g. [compliment](https://github.com/alexander-yakushev/compliment) (used by CIDER) is able to perceive type hints and offer better completions accordingly.
+* They might be propagated downstream
+  * If you are a library or tooling author, reflective code you write will show up as warnings for your consumers.
+  * Consumers might be actually be negatively impacted in terms of performance - one never can know how other people use a given piece of code.
+  * Since consumers can't do anything to directly fix this, it's most considerate to avoid in advance any reflective calls. 
+
+Eastwood helps you systematically avoid reflection warnings by considering reflection warnings yet another lintable thing.
+
+It doesn't matter whether a given ns uses `(set! warn-on-reflection ...)` - Eastwood analyses each top-level form with a `binding` overriding any surrounding choice.
+
+The default behavior is only emitting warnings if the reflection happens inside your source paths or test paths: this way one doesn't have to pay a price for unrelated code.
+
+However if a third-party macro expands to reflective access within our source path, it will be reported.
+This is because, in the end, one is creating reflective code in _one's_ codebase, which can be a severe problem and therefore should be fixed, even if it can take some extra effort. 
 
 ### `:keyword-typos`
 

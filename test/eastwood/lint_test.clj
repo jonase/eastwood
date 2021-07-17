@@ -95,9 +95,10 @@
              (sut/eastwood (assoc sut/default-opts :namespaces invalid-namespaces)))))
 
     (testing "Reader-level exceptions are reported as such"
-      (is (-> (with-out-str
-                (sut/eastwood (assoc sut/default-opts :namespaces invalid-namespaces)))
-              (.contains "Warnings: 0 (not including reflection warnings)  Exceptions thrown: 1"))))
+      (let [^String s (with-out-str
+                        (sut/eastwood (assoc sut/default-opts :namespaces invalid-namespaces)))]
+        (is (-> s
+                (.contains "Warnings: 0. Exceptions thrown: 1")))))
 
     (testing "`:rethrow-exceptions?` option"
       (are [namespaces rethrow-exceptions? ok?] (testing [namespaces rethrow-exceptions?]
@@ -329,11 +330,12 @@ relative to a specific macroexpansion"
              (sut/eastwood opts))
           "A non-compilable form is reported as an error")
 
-      (is (-> (with-out-str
-                (sut/eastwood opts))
-              (.contains "The following form was being processed during the exception:
+      (let [^String v (with-out-str
+                        (sut/eastwood opts))]
+        (is (-> v
+                (.contains "The following form was being processed during the exception:
 (def foo (reify Unknown (foo [this])))"))
-          "The culprit form is reported accurately."))))
+            "The culprit form is reported accurately.")))))
 
 (deftest constant-test-test
   (testing "The :constant-test linter for if-some/when-some, per https://github.com/jonase/eastwood/issues/110"
@@ -443,21 +445,45 @@ See https://github.com/jonase/eastwood/issues/402"
       #{'testcases.unused-ret-vals.red3}   {:some-warnings true}
       #{'testcases.unused-ret-vals.red4}   {:some-warnings true})))
 
-(deftest unhinted-reflective-call
-  (testing "A non-type-hinted reflective call returns no errors
-(and typically no warnings; atm reflection warnings aren't a linter)"
-    (are [input expected] (testing input
-                            (binding [*warn-on-reflection* true]
-                              (let [options (-> sut/default-opts
-                                                (assoc :namespaces input))
-                                    warn-output (with-out-str
-                                                  (sut/eastwood options))]
-                                (assert (-> warn-output (.contains "cases/testcases/unhinted_reflective_call/green.clj:4:4: Reflection warning - reference to field theReflectiveCall can't be resolved.")))
-                                (assert (-> warn-output (.contains "cases/testcases/unhinted_reflective_call/green.clj:5:4: Reflection warning - call to method theReflectiveCall can't be resolved (target class is unknown).")))
-                                (is (= (assoc expected :some-errors false)
-                                       (sut/eastwood options)))))
-                            true)
-      #{'testcases.unhinted-reflective-call.green} {:some-warnings false})))
+(deftest reflection
+  (are [desc input expected] (testing input
+                               ;; Remove the ns so that reflection state is reset on each run:
+                               (remove-ns 'reflection-example.core)
+                               (dosync (alter @#'clojure.core/*loaded-libs* disj 'reflection-example.core))
+
+                               (is (= (assoc expected :some-errors false)
+                                      (-> sut/default-opts
+                                          (assoc :namespaces input
+                                                 :linters [:reflection])
+                                          sut/eastwood))
+                                   desc)
+                               true)
+    "Merely `require`ing code that emits reflection warnings at compile-time won't cause Eastwood warnings (because it's third-party code)"
+    #{'testcases.unhinted-reflective-call.unused-foreign-reflective-code}  {:some-warnings false}
+
+    "Vanilla code that directly causes reflection warnings will cause Eastwood warnings"
+    #{'testcases.unhinted-reflective-call.red}                             {:some-warnings true}
+
+    "Calling a third-party defn that emits warnings will not cause Eastwood warnings (because the reflection happens outside our codebase)"
+    #{'testcases.unhinted-reflective-call.foreign-defn-call}               {:some-warnings false}
+
+    "Calling a third-party macro that emits warnings not cause Eastwood warnings (because the reflection happens inside our codebase)"
+    #{'testcases.unhinted-reflective-call.foreign-macro-call}              {:some-warnings true}
+
+    "Analysing code inside a .jar that emits warnings will cause Eastwood warnings (because we're analysing that code directly, so it shouldn't be omitted)"
+    #{'reflection-example.core}                                            {:some-warnings true}
+
+    "A macrocall outside the refresh dirs results in an Eastwood warning"
+    #{'testcases.unhinted-reflective-call.macro-call-outside-refresh-dirs} {:some-warnings true}
+
+    "A macro call inside the refresh dirs results in an Eastwood warning"
+    #{'testcases.unhinted-reflective-call.macro-call-inside-refresh-dirs}  {:some-warnings true}
+
+    "A function call outside the refresh dirs does not result in an Eastwood warning"
+    #{'testcases.unhinted-reflective-call.defn-call-outside-refresh-dirs}  {:some-warnings false}
+
+    "A function call ubside the refresh dirs results in an Eastwood warning"
+    #{'testcases.unhinted-reflective-call.defn-call-inside-refresh-dirs}   {:some-warnings true}))
 
 (deftest ignore-faults-from-foreign-macroexpansions?
   (are [input expected] (testing input

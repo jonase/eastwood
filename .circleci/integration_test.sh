@@ -12,7 +12,7 @@ if lein with-profile -user eastwood > output; then
   exit 1
 fi
 
-grep --silent "== Warnings: 1 (not including reflection warnings)  Exceptions thrown: 0" output  || exit 1
+grep --silent "== Warnings: 1. Exceptions thrown: 0" output  || exit 1
 
 rm -rf .eastwood*
 if lein with-profile -user run -m eastwood.lint > output; then
@@ -21,7 +21,7 @@ if lein with-profile -user run -m eastwood.lint > output; then
   exit 1
 fi
 
-grep --silent "== Warnings: 1 (not including reflection warnings)  Exceptions thrown: 0" output  || exit 1
+grep --silent "== Warnings: 1. Exceptions thrown: 0" output  || exit 1
 
 cd ../example-green-project || exit 1
 
@@ -31,7 +31,7 @@ if ! lein with-profile -user eastwood > output; then
   exit 1
 fi
 
-grep --silent "== Warnings: 0 (not including reflection warnings)  Exceptions thrown: 0" output  || exit 1
+grep --silent "== Warnings: 0. Exceptions thrown: 0" output  || exit 1
 
 rm -rf .eastwood*
 if ! lein with-profile -user run -m eastwood.lint > output; then
@@ -39,6 +39,6 @@ if ! lein with-profile -user run -m eastwood.lint > output; then
   exit 1
 fi
 
-grep --silent "== Warnings: 0 (not including reflection warnings)  Exceptions thrown: 0" output  || exit 1
+grep --silent "== Warnings: 0. Exceptions thrown: 0" output  || exit 1
 
 exit 0

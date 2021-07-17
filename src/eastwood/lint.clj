@@ -10,12 +10,14 @@
    [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.parse :as parse]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
    [eastwood.error-messages :as msgs]
    [eastwood.exit :refer [exit-fn]]
    [eastwood.linters.deprecated :as deprecated]
    [eastwood.linters.implicit-dependencies :as implicit-dependencies]
    [eastwood.linters.misc :as misc]
+   [eastwood.linters.reflection :as reflection]
    [eastwood.linters.typetags :as typetags]
    [eastwood.linters.typos :as typos]
    [eastwood.linters.unused :as unused]
@@ -187,8 +189,15 @@
 
    {:name :implicit-dependencies,
     :enabled-by-default true,
-    :url nil,
-    :fn implicit-dependencies/implicit-dependencies}])
+    :url "https://github.com/jonase/eastwood#implicit-dependencies",
+    :fn implicit-dependencies/implicit-dependencies}
+
+   {:name :reflection
+    :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#reflection",
+    ;; NOTE :ignore-faults-from-foreign-macroexpansions? is useless for this specific linter,
+    ;; since reflection detection doesn't work at tools.analyzer level, so one doesn't get to inspect macroexpasions for this purpose.
+    :fn reflection/linter}])
 
 (def linter-name->info (into {} (for [{:keys [name] :as info} linter-info]
                                   [name info])))
@@ -208,13 +217,31 @@
      {:namespace-sym ns-sym}
      (util/file-warn-info uri cwd-file))))
 
-(defn- handle-lint-result [linter ns-info {:keys [loc] :as result}]
-  {:kind :lint-warning,
-   :warn-data (merge result
-                     ns-info
-                     (select-keys loc #{:file :line :column})
-                     (when-let [url (:url linter)]
-                       {"warning-details-url" url}))})
+(defn- handle-lint-result [linter
+                           {original-uri-or-file-name :uri-or-file-name
+                            :as ns-info}
+                           {project-namespaces :eastwood/project-namespaces}
+                           {:keys [loc uri-or-file-name] :as result}]
+  {:pre [(set? project-namespaces)]}
+  (if (and uri-or-file-name
+           original-uri-or-file-name
+           (not= (str uri-or-file-name)
+                 (str original-uri-or-file-name))
+           (not (contains? project-namespaces
+                           (-> uri-or-file-name
+                               io/reader
+                               slurp
+                               read-string
+                               parse/name-from-ns-decl))))
+    nil
+    {:kind :lint-warning,
+     :warn-data (merge result
+                       ns-info
+                       (select-keys loc #{:file :line :column})
+                       (when-let [url (:url linter)]
+                         {"warning-details-url" url})
+                       (when uri-or-file-name ;; let linters override the affected file (not often needed; it is for reflection warnings)
+                         {:uri-or-file-name uri-or-file-name}))}))
 
 (defn ignore-fault? [ignored-faults {{:keys [namespace-sym column line linter]} :warn-data}]
   (let [matches (get-in ignored-faults [linter namespace-sym])
@@ -237,7 +264,7 @@
   (let [ns-info (namespace-info ns-sym (:cwd opts))]
     (try
       (->> ((:fn linter) analyze-results opts)
-           (map (partial handle-lint-result linter ns-info))
+           (keep (partial handle-lint-result linter ns-info opts))
            (remove (partial ignore-fault? (:ignored-faults opts)))
            doall)
       (catch Throwable e
@@ -253,6 +280,7 @@
                  :linter linter}))))
 
 (defn lint-ns [ns-sym linters {:keys [exclude-namespaces
+                                      exclude-linters
                                       namespaces
                                       source-paths
                                       test-paths] :as opts}]
@@ -272,6 +300,7 @@
     {:ns ns-sym
      :analysis-time elapsed
      :lint-results (some->> linters
+                            (remove (set exclude-linters))
                             (keep linter-name->info)
                             (@util/linter-executor-atom (partial lint-ns* ns-sym analyze-results opts)))
      :analyzer-exception (when exception
@@ -650,7 +679,7 @@
 (defn make-report [reporter start-time {:keys [namespaces]} {:keys [warning-count error-count]}]
   (reporting/note reporter (format "== Linting done in %d ms ==" (- (System/currentTimeMillis)
                                                                     start-time)))
-  (reporting/note reporter (format "== Warnings: %d (not including reflection warnings)  Exceptions thrown: %d"
+  (reporting/note reporter (format "== Warnings: %d. Exceptions thrown: %d"
                                    warning-count
                                    error-count))
   (let [has-errors? (> error-count 0)

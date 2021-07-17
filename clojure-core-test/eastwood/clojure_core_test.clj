@@ -83,5 +83,6 @@
                                 :exclude-linters [:local-shadows-var
                                                   :redefd-vars
                                                   :unused-ret-vals
+                                                  :reflection
                                                   :implicit-dependencies
                                                   :unused-ret-vals-in-try]))))))
