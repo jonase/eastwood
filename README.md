@@ -1954,6 +1954,15 @@ version of the namespace would get an explicit description of what had
 changed and their code would not run, which is better than a subtle
 bug in running code.
 
+### `:non-dynamic-earmuffs`
+
+Vars marked `^:dynamic` should follow the "earmuff" naming convention, and vice versa:
+
+* `(def foo 42)` (OK: non-dynamic, non-earmuffed)
+* `(def ^:dynamic foo 42)` (NOK: dynamic, non-earmuffed)
+* `(def *foo* 42)` (NOK: earmuffed, non-dynamic)
+* `(def ^:dynamic *foo* 42)` (OK: dynamic, earmuffed)
+
 ### `:reflection`
 
 #### Reflection warnings from the Clojure compiler

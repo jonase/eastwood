@@ -1,5 +1,15 @@
 ## Changes from 0.8.1 to
 
+#### New
+
+* Implement a new linter: `:reflection`
+  * See https://github.com/jonase/eastwood#reflection
+  * Part of https://github.com/jonase/eastwood/issues/133
+* Enable and refine `:non-dynamic-earmuffs`
+  * See https://github.com/jonase/eastwood#non-dynamic-earmuffs
+  * It used to be disabled by default.
+  * Now It lints for both missing earmuffs and missing `^:dynamic` metadata. 
+
 #### Bugfixes
 
 * Consider `doall` side-effectful (for the `:unused-ret-vals` linter).

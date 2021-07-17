@@ -84,5 +84,6 @@
                                                   :redefd-vars
                                                   :unused-ret-vals
                                                   :reflection
+                                                  :non-dynamic-earmuffs
                                                   :implicit-dependencies
                                                   :unused-ret-vals-in-try]))))))

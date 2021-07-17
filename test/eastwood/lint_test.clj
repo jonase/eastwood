@@ -495,3 +495,15 @@ See https://github.com/jonase/eastwood/issues/402"
                           true)
     false {:some-warnings true}
     true  {:some-warnings false}))
+
+(deftest non-dynamic-earmuffs
+  (are [input expected] (testing input
+                          (is (= (assoc expected :some-errors false)
+                                 (-> sut/default-opts
+                                     (assoc :namespaces input)
+                                     (sut/eastwood))))
+                          true)
+    #{'testcases.dynamic-earmuffs.no-earmuffs.green} {:some-warnings false}
+    #{'testcases.dynamic-earmuffs.no-earmuffs.red}   {:some-warnings true}
+    #{'testcases.dynamic-earmuffs.no-dynamic.green}  {:some-warnings false}
+    #{'testcases.dynamic-earmuffs.no-dynamic.red}    {:some-warnings true}))

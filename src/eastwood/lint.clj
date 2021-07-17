@@ -182,8 +182,8 @@
     :ignore-faults-from-foreign-macroexpansions? true}
 
    {:name :non-dynamic-earmuffs,
-    :enabled-by-default false,
-    :url nil,
+    :enabled-by-default true,
+    :url "https://github.com/jonase/eastwood#non-dynamic-earmuffs"
     :fn misc/non-dynamic-earmuffs
     :ignore-faults-from-foreign-macroexpansions? true}
 

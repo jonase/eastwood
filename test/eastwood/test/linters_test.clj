@@ -126,6 +126,8 @@
      :file (fname-from-parts "testcases" "f01.clj"),
      :line 82, :column 10}
     1,
+    {:linter :non-dynamic-earmuffs, :msg "#'testcases.f01/var3 should use the earmuff naming convention: please use #'testcases.f01/*var3* instead.", :file "testcases/f01.clj", :line 154, :column 1}
+    1
     {:linter :wrong-arity,
      :msg "Function on var #'clojure.core/assoc called with 1 args, but it is only known to take one of the following args: [map key val]  [map key val & kvs].",
      :file (fname-from-parts "testcases" "f01.clj"),

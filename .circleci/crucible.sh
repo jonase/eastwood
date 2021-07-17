@@ -16,7 +16,7 @@ if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"
   exit 1
 fi
 
-grep --silent "== Warnings: 33. Exceptions thrown: 0" output || exit 1
+grep --silent "== Warnings: 34. Exceptions thrown: 0" output || exit 1
 
 # Exercise malli because Eastwood used to choke on that project due to lack of explicit topo order for ns analysis
 cd ../malli || exit 1

@@ -5,6 +5,7 @@
    [clojure.pprint :as pp]
    [clojure.string :as string]
    [clojure.walk :as walk]
+   [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes.warn-earmuff :refer [warn-earmuff]]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :as ast]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env]
    [eastwood.copieddeps.dep1.clojure.tools.analyzer.passes :refer [schedule]]
@@ -187,15 +188,18 @@
 
 (def eastwood-passes
   "Set of passes that will be run by default on the AST by #'run-passes"
-  ;; Doing clojure.core/eval in analyze+eval already generates
-  ;; reflection warnings from Clojure.  Doing it in tools.analyzer
-  ;; also leads to duplicate warnings.
-  (disj jvm/default-passes #'warn-on-reflection #'trim))
+  (disj jvm/default-passes
+        ;; `clojure.core/eval` in `analyze+eval` already generates reflection warnings from the Clojure compiler.
+        ;; So `#'warn-on-reflection` would lead to duplicate warnings:
+        #'warn-on-reflection
+        #'trim
+        ;; Remove redundant output in face of our own `:non-dynamic-earmuffs` linter:
+        #'warn-earmuff))
 
 (def scheduled-eastwood-passes
   (schedule eastwood-passes))
 
-(defn ^:dynamic run-passes
+(defn run-passes
   "Function that will be invoked on the AST tree immediately after it has been constructed,
    by default set-ups and runs the default passes declared in #'default-passes"
   [ast]
@@ -255,7 +259,8 @@
        :line line
        :column column
        :post post}
-      msg)))
+      (when-not (re-find #"not declared dynamic and thus is not dynamically rebindable, but its name suggests otherwise" msg)
+        msg))))
 
 (defn- do-eval-output-callbacks [out-msgs-str err-msgs-str cwd]
   (when-not (= out-msgs-str "")
@@ -265,9 +270,9 @@
     (when-not (= err-msgs-str "")
       (doseq [s (string/split-lines err-msgs-str)
               :let [v (replace-path-in-compiler-error s cwd)]]
-        (if (string? v)
-          (println v)
-          (swap! reflection-warnings conj v))))
+        (if (map? v)
+          (swap! reflection-warnings conj v)
+          (some-> v println))))
     @reflection-warnings))
 
 (defn cleanup [form]

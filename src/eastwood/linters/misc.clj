@@ -127,12 +127,23 @@
         :when (= (:op expr) :def)
         :let [^clojure.lang.Var v (:var expr)
               s (.sym v)
-              loc (:env expr)]
-        :when (and (earmuffed? s)
-                   (not (dynamic? v)))]
+              var-ns (-> v .ns str)
+              var-name (name s)
+              loc (:env expr)
+              e? (earmuffed? s)
+              d? (dynamic? v)
+              earmuffed-non-dynamic? (and e?
+                                          (not d?))
+              dynamic-non-earmuffed? (and (not earmuffed-non-dynamic?)
+                                          (not e?)
+                                          d?)]
+        :when (or earmuffed-non-dynamic?
+                  dynamic-non-earmuffed?)]
     {:loc loc
      :linter :non-dynamic-earmuffs
-     :msg (format "%s should be marked dynamic." v)}))
+     :msg (if earmuffed-non-dynamic?
+            (format "%s should be marked dynamic." v)
+            (format "%s should use the earmuff naming convention: please use #'%s/*%s* instead." v var-ns var-name))}))
 
 ;; redef'd vars
 
