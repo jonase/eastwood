@@ -1,3 +1,9 @@
+## Changes from 0.9.1 to 0.9.2
+
+#### Bugfixes
+
+* Fix integration of the `:reflection` linter with the `:ignored-faults` mechanism.
+
 ## Changes from 0.9.0 to 0.9.1
 
 #### Bugfixes

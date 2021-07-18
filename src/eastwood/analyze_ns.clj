@@ -248,7 +248,9 @@
   (let [[match pre _ ^String path
          line-col post] (re-matches #"((Reflection|Boxed math) warning), (.*?)(:\d+:\d+)(.*)"
                                     msg)
-        [line column] (some-> line-col (string/replace #"^:" "") (string/split #":"))
+        [line column] (some->> (some-> line-col (string/replace #"^:" "") (string/split #":"))
+                               (mapv (fn [s]
+                                       (Long/parseLong s))))
         alt-path (when (some-> path
                                (.endsWith ".clj"))
                    ;; The Clojure compiler can report files that originally are .cljc as .clj,

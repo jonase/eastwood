@@ -256,6 +256,11 @@
                          {:uri-or-file-name uri-or-file-name}))}))
 
 (defn ignore-fault? [ignored-faults {{:keys [namespace-sym column line linter]} :warn-data}]
+  ;; I've made the mistake in the past of having warn-data locs as strings:
+  (when line
+    (assert (number? line)))
+  (when column
+    (assert (number? column)))
   (let [matches (get-in ignored-faults [linter namespace-sym])
         matches (cond-> matches
                   (not (sequential? matches))
