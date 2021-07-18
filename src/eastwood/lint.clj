@@ -416,7 +416,10 @@
                         ;; resources (whether vanilla, dev-only or test-only) should not be analyzed,
                         ;; or account for `:ignore-faults-from-foreign-macroexpansions?`:
                         (remove (fn [^File f]
-                                  (-> f .toString (.contains "resources"))))
+                                  (let [s (-> f .toString)]
+                                    (or (-> s (.contains "resources"))
+                                        ;; https://github.com/jonase/eastwood/issues/409
+                                        (-> s (.contains ".gitlibs"))))))
                         (set))
      :test-paths #{}}
     {:source-paths (set source-paths)

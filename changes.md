@@ -1,3 +1,11 @@
+## Changes from 0.9.2 to
+
+#### New
+
+* deps.edn integration: don't lint files under `~/.gitlibs`.
+  * These files represent third-party dependencies, so while they should be taken into account for analysis, typically the shouldn't be linted.
+  * Closes https://github.com/jonase/eastwood/issues/409
+
 ## Changes from 0.9.1 to 0.9.2
 
 #### Bugfixes
