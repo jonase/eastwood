@@ -111,8 +111,9 @@
 
                                    :else
                                    [nil nil nil])
-                             _ (when (and typ (not (util/has-keys? loc #{:file :line :column})))
-                                 (util/pprint-ast-node ast))]
+                             #_ _ #_ (when (and typ (not (util/has-keys? loc #{:file :line :column})))
+                                       ;; XXX look into why this would print something when analyzing the clojurescript project:
+                                       (util/pprint-ast-node ast))]
                        :when (and typ
                                   (if-not tag
                                     true
