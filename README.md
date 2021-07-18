@@ -1949,7 +1949,7 @@ Vars marked `^:dynamic` should follow the "earmuff" naming convention, and vice 
 * `(def *foo* 42)` (NOK: earmuffed, non-dynamic)
 * `(def ^:dynamic *foo* 42)` (OK: dynamic, earmuffed)
 
-### Boxed math
+### `:boxed-math`
 
 #### Boxed math warnings from the Clojure compiler
 
