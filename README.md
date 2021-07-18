@@ -68,7 +68,7 @@ If you're using `deps.edn`, you can set options to eastwood linter in a
 to your `deps.edn`, and you should then be able to run Eastwood as
 
 ```sh
-$ clj -A:eastwood
+clojure -A:eastwood
 ```
 
 If it is not obvious what a warning message means, _please_ check the
