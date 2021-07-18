@@ -245,11 +245,18 @@
 
 (defn- replace-path-in-compiler-error
   [msg cwd]
-  (let [[match pre _ path
+  (let [[match pre _ ^String path
          line-col post] (re-matches #"((Reflection|Boxed math) warning), (.*?)(:\d+:\d+)(.*)"
                                     msg)
         [line column] (some-> line-col (string/replace #"^:" "") (string/split #":"))
-        url (and match (io/resource path))
+        alt-path (when (some-> path
+                               (.endsWith ".clj"))
+                   ;; The Clojure compiler can report files that originally are .cljc as .clj,
+                   ;; which would hinder our `:reflection` linter:
+                   (str path "c"))
+        url (and match
+                 (or (io/resource path)
+                     (some-> alt-path io/resource)))
         uri (some-> url
                     (util/file-warn-info cwd)
                     :uri-or-file-name)]

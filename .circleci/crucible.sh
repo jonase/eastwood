@@ -16,6 +16,11 @@ if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"
   exit 1
 fi
 
+if grep --silent "Reflection warning" output; then
+  echo "Reflection warnings should have been detected as an Eastwood linter and not as mere stdout!"
+  exit 1
+fi
+
 grep --silent "== Warnings: 34. Exceptions thrown: 0" output || exit 1
 
 # Exercise clojurescript as it's large and interesting
@@ -32,7 +37,7 @@ if grep --silent "Reflection warning" output; then
   exit 1
 fi
 
-grep --silent "== Warnings: 339. Exceptions thrown: 0" output || exit 1
+grep --silent "== Warnings: 340. Exceptions thrown: 0" output || exit 1
 
 # Exercise malli because Eastwood used to choke on that project due to lack of explicit topo order for ns analysis
 cd ../malli || exit 1
@@ -42,6 +47,11 @@ cp ../deps_project.clj project.clj
 if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
   echo "Should have failed! Emitted output:"
   cat output
+  exit 1
+fi
+
+if grep --silent "Reflection warning" output; then
+  echo "Reflection warnings should have been detected as an Eastwood linter and not as mere stdout!"
   exit 1
 fi
 
@@ -57,6 +67,11 @@ ex_marker="Exceptions thrown:"
 
 if grep --silent "$ex_marker [1-9]" output; then
   echo "Should not have thrown an exception!"
+  exit 1
+fi
+
+if grep --silent "Reflection warning" output; then
+  echo "Reflection warnings should have been detected as an Eastwood linter and not as mere stdout!"
   exit 1
 fi
 
