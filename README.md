@@ -37,7 +37,7 @@ Eastwood can be run from the command line as a
 Merge the following into your `$HOME/.lein/profiles.clj` file:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.8.1"]]}}
+{:user {:plugins [[jonase/eastwood "0.9.0"]]}}
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -426,7 +426,7 @@ If you use Leiningen, merge this into your project's `project.clj`
 file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "0.8.1" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "0.9.0" :exclusions [org.clojure/clojure]]]}}
 ```
 
 If you use a different build tool, you will need to add the dependency
@@ -565,7 +565,7 @@ can be used to modify this merging behavior.
 For example, if your user-wide `profiles.clj` file contains this:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "0.8.1"]]
+{:user {:plugins [[jonase/eastwood "0.9.0"]]
         :eastwood {:exclude-linters [:unlimited-use]
                    :debug [:time]}
         }}
@@ -1931,31 +1931,14 @@ limit their effects, such as these:
         [clojure [xml :only [emit]]]))
 ```
 
-If you still want the refer-all-public-symbols effect of `use` without
-a warning from this linter, it is recommended that you use `require`
-with `:refer :all`, like so:
-
-```clojure
-(ns my.namespace
-  (:require [clojure.string :refer :all]))
-```
-
 In addition, since it is so common (and in my opinion, harmless) to do
 an unlimited use of namespace `clojure.test` in test files, this
 linter never warns about `clojure.test`.
-
 
 For an infrequently-changing namespace like `clojure.string`, the set
 of symbols referred by this `use` is pretty stable across Clojure
 versions, but even so, it only takes one symbol added to shadow an
 existing symbol in your code to ruin your day.
-
-TBD: Is it the default behavior of some/all Clojure versions to abort
-in such a case?  Or perhaps it is some versions of Leiningen that
-enable this option?  If a developer uses such an environment, a new
-version of the namespace would get an explicit description of what had
-changed and their code would not run, which is better than a subtle
-bug in running code.
 
 ### `:non-dynamic-earmuffs`
 
@@ -2088,7 +2071,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein with-profile +eastwood-plugin install
 
-Then add `[jonase/eastwood "0.8.1"]` to
+Then add `[jonase/eastwood "0.9.0"]` to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `$HOME/.lein/profiles.clj` file.
 
