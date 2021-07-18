@@ -6,6 +6,7 @@
    [clojure.set :as set]
    [clojure.string :as str]
    [eastwood.analyze-ns :as analyze-ns]
+   [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
    [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
@@ -239,11 +240,11 @@
            (not= (str uri-or-file-name)
                  (str original-uri-or-file-name))
            (not (contains? project-namespaces
-                           (-> uri-or-file-name
-                               io/reader
-                               slurp
-                               read-string
-                               parse/name-from-ns-decl))))
+                           (->> uri-or-file-name
+                                io/reader
+                                slurp
+                                (reader/read-string {:read-cond :allow :features #{:clj}})
+                                parse/name-from-ns-decl))))
     nil
     {:kind :lint-warning,
      :warn-data (merge result

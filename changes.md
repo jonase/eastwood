@@ -1,3 +1,10 @@
+## Changes from 0.9.0 to 0.9.1
+
+#### Bugfixes
+
+* Fix an implementation detail which could throw exceptions over .cljc files.
+* Silence a `println` over a certain code path.
+
 ## Changes from 0.8.1 to 0.9.0
 
 #### New
