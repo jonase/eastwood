@@ -7,3 +7,6 @@
 [submodule ".circleci/malli"]
 	path = .circleci/malli
 	url = git@github.com:metosin/malli.git
+[submodule ".circleci/clojurescript"]
+	path = .circleci/clojurescript
+	url = git@github.com:clojure/clojurescript.git
