@@ -1014,9 +1014,10 @@ of these kind."
                                 :ignore-faults-from-foreign-macroexpansions?))
               (->> enclosing-macros
                    (some (fn [{:keys [macro]}]
-                           (let [macro-ns (-> macro namespace)
-                                 macro-sym (-> macro-ns symbol)]
-                             (when (and (not (project-namespaces macro-sym))
+                           (let [macro-ns (some-> macro namespace)
+                                 macro-sym (some-> macro-ns symbol)]
+                             (when (and macro ;; can be nil under certain conditions
+                                        (not (project-namespaces macro-sym))
                                         ;; macroexpansions generally bottom out at clojure.* stuff:
                                         (not (-> macro-ns (.startsWith "clojure."))))
                                {:matching-condition :ignored-fault-from-foreign-macroexpansions
