@@ -473,7 +473,7 @@ See https://github.com/jonase/eastwood/issues/402"
     "Analysing code inside a .jar that emits warnings will cause Eastwood warnings (because we're analysing that code directly, so it shouldn't be omitted)"
     #{'reflection-example.core}                                            {:some-warnings true}
 
-    "A macrocall outside the refresh dirs results in an Eastwood warning"
+    "A macro call outside the refresh dirs results in an Eastwood warning"
     #{'testcases.unhinted-reflective-call.macro-call-outside-refresh-dirs} {:some-warnings true}
 
     "A macro call inside the refresh dirs results in an Eastwood warning"
@@ -482,8 +482,36 @@ See https://github.com/jonase/eastwood/issues/402"
     "A function call outside the refresh dirs does not result in an Eastwood warning"
     #{'testcases.unhinted-reflective-call.defn-call-outside-refresh-dirs}  {:some-warnings false}
 
-    "A function call ubside the refresh dirs results in an Eastwood warning"
-    #{'testcases.unhinted-reflective-call.defn-call-inside-refresh-dirs}   {:some-warnings true}))
+    "A function call inside the refresh dirs results in an Eastwood warning"
+    #{'testcases.unhinted-reflective-call.defn-call-inside-refresh-dirs}   {:some-warnings true})
+
+
+  (testing "Integration with `:exclude-namespaces`"
+    (are [desc namespaces exclude-namespaces expected] (testing [namespaces exclude-namespaces]
+
+                                                         ;; Remove the ns so that reflection state is reset on each run:
+                                                         (remove-ns 'testcases.unhinted-reflective-call.example-defn)
+                                                         (dosync (alter @#'clojure.core/*loaded-libs* disj 'testcases.unhinted-reflective-call.example-defn))
+
+                                                         (is (= (assoc expected :some-errors false)
+                                                                (-> sut/default-opts
+                                                                    (assoc :namespaces namespaces
+                                                                           :exclude-namespaces exclude-namespaces
+                                                                           :linters [:reflection])
+                                                                    sut/eastwood))
+                                                             desc)
+                                                         true)
+      #_desc
+      #_namespaces                                                   #_exclude-namespaces                               #_expected
+      #_                                                             #_                                                 #_ #_
+      "A given ns triggers reflection warnings"
+      #{'testcases.unhinted-reflective-call.example-defn}            []                                                 {:some-warnings true}
+
+      "Another ns triggers reflection warnings, because it depends on the former"
+      #{'testcases.unhinted-reflective-call.depends-on-example-defn} []                                                 {:some-warnings true}
+
+      "The dependent ns does not trigger warnings if the ns it depends on belongs to `:exclude-namespaces`"
+      #{'testcases.unhinted-reflective-call.depends-on-example-defn} ['testcases.unhinted-reflective-call.example-defn] {:some-warnings false})))
 
 (deftest ignore-faults-from-foreign-macroexpansions?
   (are [input expected] (testing input

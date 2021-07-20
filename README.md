@@ -1987,7 +1987,7 @@ Addressing reflection warnings systematically is a good idea for many reasons:
 
 Eastwood helps you systematically avoid reflection warnings by considering reflection warnings yet another lintable thing.
 
-It doesn't matter whether a given ns uses `(set! warn-on-reflection ...)` - Eastwood analyses each top-level form with a `binding` overriding any surrounding choice.
+It generally doesn't matter whether a given ns uses `(set! warn-on-reflection ...)` - Eastwood analyses each top-level form with a `binding` overriding any surrounding choice.
 
 The default behavior is only emitting warnings if the reflection happens inside your source paths or test paths: this way one doesn't have to pay a price for unrelated code.
 

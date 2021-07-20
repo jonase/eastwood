@@ -1,3 +1,9 @@
+## Changes from 0.9.3 to 0.9.4
+
+#### Bugfixes
+
+* Honor `:exclude-namespaces` for the `:reflection` and `:boxed-math` linters.
+
 ## Changes from 0.9.2 to 0.9.3
 
 #### New

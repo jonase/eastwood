@@ -232,14 +232,15 @@
 (defn- handle-lint-result [linter
                            {original-uri-or-file-name :uri-or-file-name
                             :as ns-info}
-                           {project-namespaces :eastwood/project-namespaces}
+                           {:keys [exclude-namespaces]
+                            project-namespaces :eastwood/project-namespaces}
                            {:keys [loc uri-or-file-name] :as result}]
   {:pre [(set? project-namespaces)]}
   (if (and uri-or-file-name
            original-uri-or-file-name
            (not= (str uri-or-file-name)
                  (str original-uri-or-file-name))
-           (not (contains? project-namespaces
+           (not (contains? (set/difference project-namespaces (set exclude-namespaces))
                            (->> uri-or-file-name
                                 io/reader
                                 slurp
