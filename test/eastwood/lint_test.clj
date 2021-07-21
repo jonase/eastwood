@@ -503,7 +503,6 @@ See https://github.com/jonase/eastwood/issues/402"
                                                          true)
       #_desc
       #_namespaces                                                   #_exclude-namespaces                               #_expected
-      #_                                                             #_                                                 #_ #_
       "A given ns triggers reflection warnings"
       #{'testcases.unhinted-reflective-call.example-defn}            []                                                 {:some-warnings true}
 
