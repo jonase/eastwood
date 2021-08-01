@@ -1,3 +1,13 @@
+## Changes from 0.9.4 to 0.9.5
+
+#### Bugfixes
+
+* Fix various false positives which could arise when using the `clojure.core.async/go` macro.
+  * Fixes https://github.com/jonase/eastwood/issues/411
+* Upgrade `tools.reader`
+  * Closes https://github.com/jonase/eastwood/issues/297
+  * Fixes https://github.com/jonase/eastwood/issues/413 
+
 ## Changes from 0.9.3 to 0.9.4
 
 #### Bugfixes

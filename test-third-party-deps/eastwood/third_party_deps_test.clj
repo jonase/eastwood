@@ -36,15 +36,34 @@
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.spec-tools-example}))))))
 
 (deftest core-async-example
-  (let [opts (assoc eastwood.lint/default-opts :namespaces #{'testcases.core-async-example})]
+  (testing "Handling of hard-to-analyze `go` forms"
+    (let [opts (assoc eastwood.lint/default-opts :namespaces #{'testcases.core-async-example})]
 
-    (testing "When encountering `go` usages that throw exceptions, it omits the exception"
-      (is (= {:some-warnings false :some-errors false}
-             (eastwood.lint/eastwood opts))))
+      (testing "When encountering `go` usages that throw exceptions, it omits the exception"
+        (is (= {:some-warnings false :some-errors false}
+               (eastwood.lint/eastwood opts))))
 
-    ;; This counterexample is important not only for covering the option itself,
-    ;; but also for making sure the previous test is logically valid:
-    (testing "When encountering `go` usages that throw exceptions, and passing an opt-out flag,
+      ;; This counterexample is important not only for covering the option itself,
+      ;; but also for making sure the previous test is logically valid:
+      (testing "When encountering `go` usages that throw exceptions, and passing an opt-out flag,
 it doesn't omit the exception"
-      (is (= {:some-warnings true :some-errors true}
-             (eastwood.lint/eastwood (assoc opts :abort-on-core-async-exceptions? true)))))))
+        (is (= {:some-warnings true :some-errors true}
+               (eastwood.lint/eastwood (assoc opts :abort-on-core-async-exceptions? true)))))))
+
+
+  (let [base-opts (assoc eastwood.lint/default-opts :abort-on-core-async-exceptions? true)] ;; Make test more logically robust
+
+    (testing "`alt!` can be used without false positives, see https://github.com/jonase/eastwood/issues/411"
+      (is (= {:some-warnings false :some-errors false}
+             (eastwood.lint/eastwood (assoc base-opts
+                                            :namespaces #{'testcases.core-async-example.alt})))))
+
+    (testing "`assert` can be used without false positives"
+      (is (= {:some-warnings false :some-errors false}
+             (eastwood.lint/eastwood (assoc base-opts
+                                            :namespaces #{'testcases.core-async-example.assert})))))
+
+    (testing "All other (relevant) silencings present in resource/clojure.clj"
+      (is (= {:some-warnings false :some-errors false}
+             (eastwood.lint/eastwood (assoc base-opts
+                                            :namespaces #{'testcases.core-async-example.misc})))))))

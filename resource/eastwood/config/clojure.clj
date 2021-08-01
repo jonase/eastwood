@@ -129,3 +129,31 @@ their intention being to write to stdout and therefore have the `with-out-str` r
   :qualifier true
   :within-depth 9
   :reason "Support a specific pattern that tends to fail better."})
+
+(do
+  ;; All these disablings within `go` are here because it's a peculiar macro which seemingly doesn't integrate well with the :if-inside-macroexpansion-of implementation.
+  ;; These disablings can duplicate logic placed elsewhere.
+  ;; This section might have to groe in a future. Maybe there's a way to de-duplicate the disablings or impl logic.
+
+  (disable-warning
+   {:linter :suspicious-expression
+    :for-macro 'clojure.core/or
+    :if-inside-macroexpansion-of #{'clojure.core.async/go}
+    :reason "https://github.com/jonase/eastwood/issues/411. Note that `alt!` is not caught as a macro, possibly because `go` is a peculiar macro."})
+
+  (disable-warning
+   {:linter :suspicious-expression
+    :for-macro 'clojure.core/and
+    :if-inside-macroexpansion-of #{'clojure.core.async/go}})
+
+  (doseq [v [true false]]
+    (disable-warning
+     {:linter :constant-test
+      :qualifier v
+      :for-macro 'clojure.core/assert
+      :if-inside-macroexpansion-of #{'clojure.core.async/go}}))
+
+  (disable-warning
+   {:linter :constant-test
+    :for-macro 'clojure.test/is
+    :if-inside-macroexpansion-of #{'clojure.core.async/go}}))

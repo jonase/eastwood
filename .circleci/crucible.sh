@@ -21,7 +21,7 @@ if grep --silent "Reflection warning" output; then
   exit 1
 fi
 
-grep --silent "== Warnings: 34. Exceptions thrown: 0" output || exit 1
+grep --silent "== Warnings: 29. Exceptions thrown: 0" output || exit 1
 
 # Exercise tools.reader, see https://github.com/jonase/eastwood/issues/413
 cd ../tools.reader || exit 1
