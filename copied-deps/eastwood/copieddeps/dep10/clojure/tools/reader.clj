@@ -9,11 +9,11 @@
 (ns ^{:doc "A clojure reader in clojure"
       :author "Bronsa"}
   eastwood.copieddeps.dep10.clojure.tools.reader
-  (:refer-clojure :exclude [read read-line read-string char
+  (:refer-clojure :exclude [read read-line read-string char read+string
                             default-data-readers *default-data-reader-fn*
                             *read-eval* *data-readers* *suppress-read*])
   (:require [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :refer
-             [read-char unread peek-char indexing-reader?
+             [read-char unread peek-char indexing-reader? source-logging-push-back-reader source-logging-reader?
               get-line-number get-column-number get-file-name string-push-back-reader log-source]]
             [eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils :refer :all] ;; [char ex-info? whitespace? numeric? desugar-meta]
             [eastwood.copieddeps.dep10.clojure.tools.reader.impl.errors :as err]
@@ -22,8 +22,10 @@
   (:import (clojure.lang PersistentHashSet IMeta
                          RT Symbol Reflector Var IObj
                          PersistentVector IRecord Namespace)
+           eastwood.copieddeps.dep10.clojure.tools.reader.reader_types.SourceLoggingPushbackReader
            java.lang.reflect.Constructor
-           (java.util regex.Pattern List LinkedList)))
+           java.util.regex.Pattern
+           (java.util List LinkedList)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; helpers
@@ -283,7 +285,7 @@
              (read-unicode-char rdr ch 16 4 true)))
       (if (numeric? ch)
         (let [ch (read-unicode-char rdr ch 8 3 false)]
-          (if (> (int ch) 0337)
+          (if (> (int ch) 0377)
             (err/throw-bad-octal-number rdr)
             ch))
         (err/throw-bad-escape-char rdr ch)))))
@@ -672,8 +674,8 @@
     ret))
 
 (defn- syntax-quote-coll [type coll]
-  ;; We use sequence rather than seq here to fix http://dev.clojure.org/jira/browse/CLJ-1444
-  ;; But because of http://dev.clojure.org/jira/browse/CLJ-1586 we still need to call seq on the form
+  ;; We use sequence rather than seq here to fix https://clojure.atlassian.net/browse/CLJ-1444
+  ;; But because of https://clojure.atlassian.net/browse/CLJ-1586 we still need to call seq on the form
   (let [res (list 'clojure.core/sequence
                   (list 'clojure.core/seq
                         (cons 'clojure.core/concat
@@ -750,7 +752,8 @@
 
 (defn- read-namespaced-map
   [rdr _ opts pending-forms]
-  (let [token (read-token rdr :namespaced-map (read-char rdr))]
+  (let [[start-line start-column] (starting-line-col-info rdr)
+        token (read-token rdr :namespaced-map (read-char rdr))]
     (if-let [ns (cond
                   (= token ":")
                   (ns-name *ns*)
@@ -763,13 +766,22 @@
 
       (let [ch (read-past whitespace? rdr)]
         (if (identical? ch \{)
-          (let [items (read-delimited :namespaced-map \} rdr opts pending-forms)]
+          (let [items (read-delimited :namespaced-map \} rdr opts pending-forms)
+                [end-line end-column] (ending-line-col-info rdr)]
             (when (odd? (count items))
               (err/throw-odd-map rdr nil nil items))
             (let [keys (take-nth 2 items)
                   vals (take-nth 2 (rest items))]
-
-              (RT/map (to-array (mapcat list (namespace-keys (str ns) keys) vals)))))
+              (with-meta
+                (RT/map (to-array (mapcat list (namespace-keys (str ns) keys) vals)))
+                (when start-line
+                  (merge
+                   (when-let [file (get-file-name rdr)]
+                     {:file file})
+                   {:line start-line
+                    :column start-column
+                    :end-line end-line
+                    :end-column end-column})))))
           (err/throw-ns-map-no-map rdr token)))
       (err/throw-bad-ns rdr token))))
 
@@ -828,7 +840,7 @@
           (loop [i 0]
             (if (>= i ctors-num)
               (err/reader-error rdr "Unexpected number of constructor arguments to " (str class)
-                            ": got" numargs)
+                            ": got " numargs)
               (if (== (count (.getParameterTypes ^Constructor (aget all-ctors i)))
                       numargs)
                 (Reflector/invokeConstructor class entries)
@@ -910,47 +922,46 @@
        (err/reader-error "Reading disallowed - *read-eval* bound to :unknown"))
      (try
        (loop []
-         (log-source reader
-           (if (seq pending-forms)
-             (.remove ^List pending-forms 0)
-             (let [ch (read-char reader)]
-               (cond
-                (whitespace? ch) (recur)
-                (nil? ch) (if eof-error? (err/throw-eof-error reader nil) sentinel)
-                (= ch return-on) READ_FINISHED
-                (number-literal? reader ch) (read-number reader ch)
-                :else (let [f (macros ch)]
-                        (if f
-                          (let [res (f reader ch opts pending-forms)]
-                            (if (identical? res reader)
-                              (recur)
-                              res))
-                          (read-symbol reader ch))))))))
-       (catch Exception e
-         (if (ex-info? e)
-           (let [d (ex-data e)]
-             (if (= :reader-exception (:type d))
-               (throw e)
-               (throw (ex-info (.getMessage e)
-                               (merge {:type :reader-exception}
-                                      d
-                                      (if (indexing-reader? reader)
-                                        {:line   (get-line-number reader)
-                                         :column (get-column-number reader)
-                                         :file   (get-file-name reader)}))
-                               e))))
-           (throw (ex-info (.getMessage e)
-                           (merge {:type :reader-exception}
-                                  (if (indexing-reader? reader)
-                                    {:line   (get-line-number reader)
-                                     :column (get-column-number reader)
-                                     :file   (get-file-name reader)}))
-                           e)))))))
+         (let [ret (log-source reader
+                     (if (seq pending-forms)
+                       (.remove ^List pending-forms 0)
+                       (let [ch (read-char reader)]
+                         (cond
+                           (whitespace? ch) reader
+                           (nil? ch) (if eof-error? (err/throw-eof-error reader nil) sentinel)
+                           (= ch return-on) READ_FINISHED
+                           (number-literal? reader ch) (read-number reader ch)
+                           :else (if-let [f (macros ch)]
+                                   (f reader ch opts pending-forms)
+                                   (read-symbol reader ch))))))]
+           (if (identical? ret reader)
+             (recur)
+             ret)))
+        (catch Exception e
+          (if (ex-info? e)
+            (let [d (ex-data e)]
+              (if (= :reader-exception (:type d))
+                (throw e)
+                (throw (ex-info (.getMessage e)
+                                (merge {:type :reader-exception}
+                                       d
+                                       (if (indexing-reader? reader)
+                                         {:line   (get-line-number reader)
+                                          :column (get-column-number reader)
+                                          :file   (get-file-name reader)}))
+                                e))))
+            (throw (ex-info (.getMessage e)
+                            (merge {:type :reader-exception}
+                                   (if (indexing-reader? reader)
+                                     {:line   (get-line-number reader)
+                                      :column (get-column-number reader)
+                                      :file   (get-file-name reader)}))
+                            e)))))))
 
 (defn read
   "Reads the first object from an IPushbackReader or a java.io.PushbackReader.
    Returns the object read. If EOF, throws if eof-error? is true.
-   Otherwise returns sentinel. If no stream is providen, *in* will be used.
+   Otherwise returns sentinel. If no stream is provided, *in* will be used.
 
    Opts is a persistent map with valid keys:
     :read-cond - :allow to process reader conditionals, or
@@ -970,8 +981,16 @@
   {:arglists '([] [reader] [opts reader] [reader eof-error? eof-value])}
   ([] (read *in* true nil))
   ([reader] (read reader true nil))
-  ([{eof :eof :as opts :or {eof :eofthrow}} reader] (read* reader (= eof :eofthrow) eof nil opts (LinkedList.)))
-  ([reader eof-error? sentinel] (read* reader eof-error? sentinel nil {} (LinkedList.))))
+  ([{eof :eof :as opts :or {eof :eofthrow}} reader]
+   (when (source-logging-reader? reader)
+     (let [^StringBuilder buf (:buffer @(.source-log-frames ^SourceLoggingPushbackReader reader))]
+       (.setLength buf 0)))
+   (read* reader (= eof :eofthrow) eof nil opts (LinkedList.)))
+  ([reader eof-error? sentinel]
+   (when (source-logging-reader? reader)
+     (let [^StringBuilder buf (:buffer @(.source-log-frames ^SourceLoggingPushbackReader reader))]
+       (.setLength buf 0)))
+   (read* reader eof-error? sentinel nil {} (LinkedList.))))
 
 (defn read-string
   "Reads one object from the string s.
@@ -996,3 +1015,17 @@
   [form]
   (binding [gensym-env {}]
     (syntax-quote* form)))
+
+(defn read+string
+  "Like read, and taking the same args. reader must be a SourceLoggingPushbackReader.
+  Returns a vector containing the object read and the (whitespace-trimmed) string read."
+  ([] (read+string (source-logging-push-back-reader *in*)))
+  ([stream] (read+string stream true nil))
+  ([^SourceLoggingPushbackReader stream eof-error? eof-value]
+   (let [o (log-source stream (read stream eof-error? eof-value))
+         s (.trim (str (:buffer @(.source-log-frames stream))))]
+     [o s]))
+  ([opts ^SourceLoggingPushbackReader stream]
+   (let [o (log-source stream (read opts stream))
+         s (.trim (str (:buffer @(.source-log-frames stream))))]
+     [o s])))

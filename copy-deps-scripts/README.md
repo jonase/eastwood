@@ -115,14 +115,16 @@ for details.
 
 ### Using Dolly to copy dependencies into Eastwood source code
 
+From the project root:
+
     % lein repl
 
     (require '[dolly.clone :as c])
     (def dry-run {:dry-run? true :print? true})
     (def for-real {:dry-run? false :print? true})
 
-    (def e-root "/Users/jafinger/clj/eastwood/newest/eastwood")
-    (def src-path (str e-root "/src"))
+    (def e-root (System/getProperty "user.dir"))
+    (def src-path (str e-root "/copied-deps"))
     (def staging-path (str e-root "/staging"))
 
     (def taj-src-path (str e-root "/copy-deps-scripts/repos/tools.analyzer.jvm/src/main/clojure"))

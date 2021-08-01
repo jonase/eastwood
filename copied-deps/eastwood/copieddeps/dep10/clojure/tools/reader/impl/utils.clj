@@ -7,7 +7,7 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns ^:skip-wiki eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils
-  (:refer-clojure :exclude [char]))
+  (:refer-clojure :exclude [char reader-conditional tagged-literal]))
 
 (defn char [x]
   (when x
@@ -36,18 +36,18 @@
   (defn tagged-literal?
     "Return true if the value is the data representation of a tagged literal"
     [value]
-    (instance? eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.TaggedLiteral value))
+    (instance? clojure.tools.reader.impl.utils.TaggedLiteral value))
 
   (defn tagged-literal
     "Construct a data representation of a tagged literal from a
        tag symbol and a form."
     [tag form]
-    (eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.TaggedLiteral. tag form))
+    (clojure.tools.reader.impl.utils.TaggedLiteral. tag form))
 
   (ns-unmap *ns* '->TaggedLiteral)
   (ns-unmap *ns* 'map->TaggedLiteral)
 
-  (defmethod print-method eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.TaggedLiteral [o ^java.io.Writer w]
+  (defmethod print-method clojure.tools.reader.impl.utils.TaggedLiteral [o ^java.io.Writer w]
     (.write w "#")
     (print-method (:tag o) w)
     (.write w " ")
@@ -60,15 +60,15 @@
   (defn reader-conditional?
     "Return true if the value is the data representation of a reader conditional"
     [value]
-    (instance? eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.ReaderConditional value))
+    (instance? clojure.tools.reader.impl.utils.ReaderConditional value))
 
   (defn reader-conditional
     "Construct a data representation of a reader conditional.
        If true, splicing? indicates read-cond-splicing."
     [form splicing?]
-    (eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.ReaderConditional. splicing? form))
+    (clojure.tools.reader.impl.utils.ReaderConditional. splicing? form))
 
-  (defmethod print-method eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils.ReaderConditional [o ^java.io.Writer w]
+  (defmethod print-method clojure.tools.reader.impl.utils.ReaderConditional [o ^java.io.Writer w]
     (.write w "#?")
     (when (:splicing? o) (.write w "@"))
     (print-method (:form o) w)))

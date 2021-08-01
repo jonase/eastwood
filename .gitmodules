@@ -10,3 +10,6 @@
 [submodule ".circleci/clojurescript"]
 	path = .circleci/clojurescript
 	url = git@github.com:clojure/clojurescript.git
+[submodule ".circleci/tools.reader"]
+	path = .circleci/tools.reader
+	url = git@github.com:clojure/tools.reader.git

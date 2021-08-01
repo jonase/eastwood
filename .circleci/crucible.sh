@@ -23,6 +23,22 @@ fi
 
 grep --silent "== Warnings: 34. Exceptions thrown: 0" output || exit 1
 
+# Exercise tools.reader, see https://github.com/jonase/eastwood/issues/413
+cd ../tools.reader || exit 1
+
+if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
+  echo "Should have failed! Emitted output:"
+  cat output
+  exit 1
+fi
+
+if grep --silent "Reflection warning" output; then
+  echo "Reflection warnings should have been detected as an Eastwood linter and not as mere stdout!"
+  exit 1
+fi
+
+grep --silent "== Warnings: 14. Exceptions thrown: 0" output || exit 1
+
 # Exercise clojurescript as it's large and interesting
 cd ../clojurescript || exit 1
 

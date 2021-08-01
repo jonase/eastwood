@@ -52,14 +52,15 @@
 
       :else
       (loop [sb (StringBuilder.)
-             ch (do (unread rdr initch) initch)]
+             ch initch]
         (if (or (whitespace? ch)
                 (macro-terminating? ch)
                 (nil? ch))
-          (str sb)
+          (do (unread rdr ch)
+              (str sb))
           (if (not-constituent? ch)
             (err/throw-bad-char rdr kind ch)
-            (recur (doto sb (.append (read-char rdr))) (peek-char rdr))))))))
+            (recur (doto sb (.append ch)) (read-char rdr))))))))
 
 
 
@@ -70,9 +71,7 @@
   (if-let [ch (read-char rdr)]
     (if-let [dm (dispatch-macros ch)]
       (dm rdr ch opts)
-      (if-let [obj (read-tagged (doto rdr (unread ch)) ch opts)]
-        obj
-        (err/throw-no-dispatch rdr ch)))
+      (read-tagged (doto rdr (unread ch)) ch opts))
     (err/throw-eof-at-dispatch rdr)))
 
 (defn- read-unmatched-delimiter
@@ -231,7 +230,7 @@
              (read-unicode-char rdr ch 16 4 true)))
       (if (numeric? ch)
         (let [ch (read-unicode-char rdr ch 8 3 false)]
-          (if (> (int ch) 0337)
+          (if (> (int ch) 0377)
             (err/throw-bad-octal-number rdr)
             ch))
         (err/throw-bad-escape-char rdr ch)))))
@@ -272,9 +271,9 @@
           (let [^String ns (s 0)
                 ^String name (s 1)]
             (if (identical? \: (nth token 0))
-              (err/throw-invalid reader :keyword token) ; No ::kw in edn.
+              (err/throw-invalid reader :keyword (str \: token)) ; No ::kw in edn.
               (keyword ns name)))
-          (err/throw-invalid reader :keyword token)))
+          (err/throw-invalid reader :keyword (str \: token))))
       (err/throw-single-colon reader))))
 
 (defn- wrapping-reader
