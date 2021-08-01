@@ -1,4 +1,4 @@
-## Changes from 0.9.4 to 0.9.5
+## Changes from 0.9.4 to 0.9.6
 
 #### Bugfixes
 
