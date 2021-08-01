@@ -15,15 +15,18 @@
 > nor win.  That's just the way it is."
 > - Josey Wales, played by Clint Eastwood in "The Outlaw Josey Wales"
 
-Eastwood is a Clojure
-[lint](http://en.wikipedia.org/wiki/Lint_%28software%29) tool that
-uses the [tools.analyzer](https://github.com/clojure/tools.analyzer)
-and
-[tools.analyzer.jvm](https://github.com/clojure/tools.analyzer.jvm)
-libraries to inspect namespaces and report possible problems.
+Eastwood is a Clojure [linter](http://en.wikipedia.org/wiki/Lint_%28software%29); it inspects namespaces and reports possible problems.
 
-> Eastwood supports only Clojure (>= 1.7.0) on Java, not ClojureScript or
-  Clojure/CLR.
+Because it uses [tools.analyzer](https://github.com/clojure/tools.analyzer.jvm), its analysis and diagnostics tend to be particularly accurate, avoiding false positives and false negatives.
+
+In particular it's about as accurate as the Clojure compiler itself - it prefers evaluation and macroexpansion over other approaches.
+
+This approach is not free of tradeoffs. The use case where it shines is in CI environments, where a matrix of JDKs and/or Clojure versions can be leveraged, and where linter performance is not as critical as in editors or CLIs.
+
+Eastwood's main area of focus is spotting bugs (as opposed to, say, helping following coding conventions). Other tools can complement or partly overlap with Eastwood's offering. 
+
+> Eastwood supports only JVM Clojure (>= 1.7.0) , not ClojureScript or
+  Clojure/CLR. Consider using .cljc for obtaining certain degree of ClojureScript support.
 
 ## Installation & Quick usage
 
@@ -71,7 +74,7 @@ to your `deps.edn`, and you should then be able to run Eastwood as
 clojure -M:test:eastwood
 ```
 
-If it is not obvious what a warning message means, _please_ check the
+If it is not obvious what a warning message means, please check the
 next section, which has a `[more]` link for each type of warning.
 Most types of warning messages have a page or more of text describing
 the warning, why it occurs, and sometimes suggestions on what you can
@@ -1978,6 +1981,7 @@ Addressing reflection warnings systematically is a good idea for many reasons:
 * Increased compatibility with newer JDKs
   * newer JDKs may emit warnings or even not work at all depending on reflective access.
   * this has changed substantially how Clojure programmers deal with reflection - before it was more of an optimization only.
+* Increased compatibility with GraalVM native images [ref](https://www.graalvm.org/reference-manual/native-image/Reflection/)
 * Better integration with various Clojure tooling
   * e.g. [compliment](https://github.com/alexander-yakushev/compliment) (used by CIDER) is able to perceive type hints and offer better completions accordingly.
 * They might be propagated downstream
@@ -1993,6 +1997,8 @@ The default behavior is only emitting warnings if the reflection happens inside 
 
 However if a third-party macro expands to reflective access within our source path, it will be reported.
 This is because, in the end, one is creating reflective code in _one's_ codebase, which can be a severe problem and therefore should be fixed, even if it can take some extra effort. 
+
+Sibling linters such as `:wrong-tag` and `:unused-meta-on-macro` help guaranteeing that reflection is being addressed in a veridic way.
 
 ### `:keyword-typos`
 
