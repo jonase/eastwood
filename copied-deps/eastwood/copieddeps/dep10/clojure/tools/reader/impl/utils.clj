@@ -7,7 +7,7 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns ^:skip-wiki eastwood.copieddeps.dep10.clojure.tools.reader.impl.utils
-  (:refer-clojure :exclude [char]))
+  (:refer-clojure :exclude [char reader-conditional tagged-literal]))
 
 (defn char [x]
   (when x
