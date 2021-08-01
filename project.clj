@@ -60,8 +60,8 @@
                                                   [manifold "0.1.9-alpha4"]
                                                   [metosin/spec-tools "0.10.5"]
                                                   [org.clojure/core.async "1.3.618"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2021.06.18"]]}
-             :antq {:plugins [[com.github.liquidz/antq "0.16.0"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2021.07.28"]]}
+             :antq {:plugins [[com.github.liquidz/antq "0.16.1"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
