@@ -311,6 +311,15 @@
       (symbol (-> ns .-name name)
               (-> var meta :name name)))))
 
+(defn skip-form? [form]
+  (and (list? form)
+       (= 3 (count form))
+       (let [[a b c] form]
+         (and (false? c)
+              (= 'set! a)
+              (= (ns-resolve *ns* b)
+                 #'*warn-on-reflection*)))))
+
 (defn analyze-file
   "Takes a file path and optionally a pushback reader.  Returns a map
   with at least the following keys:
@@ -396,37 +405,42 @@
                     _ (pre-analyze-debug asts form cur-env *ns* opt)
                     [exc ast reflection-warnings boxed-math-warnings]
                     (try
-                      (let [{:keys [val out err]}
-                            (util/with-out-str2
-                              (binding [jvm/run-passes run-passes]
-                                (let [{:keys [result] :as v}
-                                      (binding [*warn-on-reflection* true
-                                                *unchecked-math* (if linting-boxed-math?
-                                                                   :warn-on-boxed
-                                                                   *unchecked-math*)]
-                                        (jvm/analyze+eval form
-                                                          (jvm/empty-env)
-                                                          {:passes-opts eastwood-passes-opts}))]
-                                  (when (and (var? result)
-                                             (-> result meta :arglists vector?)
-                                             (some-> result meta :arglists first seq?)
-                                             (some-> result meta :arglists first first #{'quote}))
-                                    ;; Cleanup odd arglists such as git.io/Jnidv
-                                    ;; (as they have unexpected quotes, and a swapped choice of vectors/lists):
-                                    (alter-meta! result (fn [{:keys [arglists]
-                                                              :as m}]
-                                                          (assoc m
-                                                                 :arglists
-                                                                 (->> arglists
-                                                                      (mapv (fn [x]
-                                                                              (cond-> x
-                                                                                (and (seq? x)
-                                                                                     (-> x count #{2})
-                                                                                     (-> x first #{'quote}))
-                                                                                last)))
-                                                                      (list))))))
-                                  v)))
-                            [reflection-warnings boxed-math-warnings] (do-eval-output-callbacks out err (:cwd opt))]
+                      (let [skip? (skip-form? form)
+                            {:keys [val out err]}
+                            (if skip?
+                              [::omit "" ""]
+                              (util/with-out-str2
+                                (binding [jvm/run-passes run-passes]
+                                  (let [{:keys [result] :as v}
+                                        (binding [*warn-on-reflection* true
+                                                  *unchecked-math* (if linting-boxed-math?
+                                                                     :warn-on-boxed
+                                                                     *unchecked-math*)]
+                                          (jvm/analyze+eval form
+                                                            (jvm/empty-env)
+                                                            {:passes-opts eastwood-passes-opts}))]
+                                    (when (and (var? result)
+                                               (-> result meta :arglists vector?)
+                                               (some-> result meta :arglists first seq?)
+                                               (some-> result meta :arglists first first #{'quote}))
+                                      ;; Cleanup odd arglists such as git.io/Jnidv
+                                      ;; (as they have unexpected quotes, and a swapped choice of vectors/lists):
+                                      (alter-meta! result (fn [{:keys [arglists]
+                                                                :as m}]
+                                                            (assoc m
+                                                                   :arglists
+                                                                   (->> arglists
+                                                                        (mapv (fn [x]
+                                                                                (cond-> x
+                                                                                  (and (seq? x)
+                                                                                       (-> x count #{2})
+                                                                                       (-> x first #{'quote}))
+                                                                                  last)))
+                                                                        (list))))))
+                                    v))))
+                            [reflection-warnings boxed-math-warnings] (if skip?
+                                                                        [[] []]
+                                                                        (do-eval-output-callbacks out err (:cwd opt)))]
                         [nil val reflection-warnings boxed-math-warnings])
                       (catch Exception e
                         (let [had-go-call? (atom false)]
