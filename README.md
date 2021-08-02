@@ -49,15 +49,6 @@ command:
 
     $ lein eastwood
 
-WARNING: If loading your code (particularly test files) causes side
-effects like writing files, opening connections to servers, modifying
-databases, etc., running Eastwood on your code will do that, too.
-Eastwood is _no less dangerous_ than loading your code, and should be
-no more dangerous.  To confine linting to files in your
-`:source-paths`, use this command instead:
-
-    $ lein eastwood "{:namespaces [:source-paths]}"
-
 ## deps.edn
 If you're using `deps.edn`, you can set options to eastwood linter in a
  EDN map, like this:
@@ -73,6 +64,8 @@ to your `deps.edn`, and you should then be able to run Eastwood as
 ```sh
 clojure -M:test:eastwood
 ```
+
+---
 
 If it is not obvious what a warning message means, please check the
 next section, which has a `[more]` link for each type of warning.
@@ -417,13 +410,15 @@ such file names are only looked for in Eastwood's built-in config
 files.
 
 Similarly you can specify `:config-files` in the options map to give
-additional files to read.  These are file names (or Java resource names) that can be anywhere
+additional files to read.  These are filenames that can be anywhere
 in your file system, specified as strings, or if Eastwood is invoked
 from the REPL, anything that can be passed to
 `clojure.java.io/reader`.
 
 
 ### Running Eastwood in a REPL
+
+<details>
 
 If you use Leiningen, merge this into your project's `project.clj`
 file first:
@@ -518,7 +513,11 @@ versions of namespaces from a JVM process.  If you have instructions
 that you have used with Eastwood and component or a similar tool,
 please file a GitHub issue so they can be included here.
 
+</details>
+
 ### How the Eastwood options map is determined
+
+<details>
 
 If you start Eastwood from a REPL using the function
 `eastwood.lint/eastwood`, then the options map you supply is modified
@@ -646,6 +645,7 @@ following _before_ the supplied options map.  See
   map (e.g. if it is a string, the file named by that string will be
   written).
 
+</details>
 
 ## Known issues
 
@@ -680,6 +680,8 @@ this issue:
 ## Notes on linter warnings
 
 ### Check consistency of namespace and file names
+
+<details>
 
 This is not a linter like the others, in that it has no name, cannot
 be disabled, and the check is always performed by Eastwood before any
@@ -720,10 +722,13 @@ wrongly-given namespace once, not multiple times.  In both cases, such
 a wrong namespace is easy to create by copying a Clojure file and
 editing it, forgetting to edit the namespace.
 
+</details>
 
 ### `:non-clojure-file`
 
 #### Files that will not be linted because they are not Clojure source files
+
+<details>
 
 This linter is disabled by default, because it warns even about
 ClojureScript and Java source files it finds, and these are relatively
@@ -736,10 +741,13 @@ paths for Clojure source files, then with this linter enabled it will
 warn about each file found that is not a Clojure/Java source file,
 i.e. if its file name does not end with '.clj'.
 
+</details>
 
 ### `:no-ns-form-found`
 
 #### Warn about Clojure files where no `ns` form could be found
+
+<details>
 
 If you explicitly specify `:source-paths` or `:test-paths`, or use the
 default Eastwood options from the command line that cause it to scan
@@ -762,9 +770,13 @@ include it from two or more other source files.  Starting with Clojure
 1.7.0, this purpose is better satisfied with `.cljc` files (see
 [Reader Conditions](http://clojure.org/reader#The%20Reader--Reader%20Conditionals)).
 
+</details>
+
 ### `:misplaced-docstrings`
 
 #### Function or macro doc strings placed after the argument vector, instead of before the argument vector where they belong.
+
+<details>
 
 The correct place to put a documentation string for a function or
 macro is just before the arguments, like so:
@@ -791,10 +803,13 @@ disadvantage is that there is no doc string for a function defined
 this way, so `(doc my-function)` will not show what you intended, and
 tools that extract documentation from Clojure code will not find it.
 
+</details>
 
 ### `:deprecations`
 
 #### Deprecated Clojure Vars, and deprecated Java instance methods, static fields, static methods, and constructors.
+
+<details>
 
 The warnings issued are based upon the particular JDK you are using
 when running Eastwood, and can change between different JDK versions.
@@ -817,9 +832,13 @@ below.
   [n x] (take n (repeat x)))
 ```
 
+</details>
+
 ### `:implicit-dependencies`
 
 #### Implicit dependencies
+
+<details>
 
 A qualified var like `some-namespace/foo` will resolve if `some-namespace`
 has been loaded, regardless of whether or not `some-namespace` has been
@@ -842,11 +861,13 @@ This linter raises a warning in these cases, so you can list the dependency expl
 (some-namespace/foo)
 ```
 
-
+</details>
 
 ### `:redefd-vars`
 
 #### Redefinitions of the same name in the same namespace.
+
+<details>
 
 It is possible to accidentally define the same var multiple times in
 the same namespace.  Eastwood's `:redefd-vars` linter will warn about
@@ -913,10 +934,13 @@ If you want to write a macro that uses a similar technique as these
 others, consider using `declare` for all but the last definition, if
 possible, and Eastwood will ignore all but that last definition.
 
+</details>
 
 ### `:def-in-def`
 
 #### `def` nested inside other `def`s
+
+<details>
 
 If you come to Clojure having learned Scheme earlier, you may write
 Clojure code with `def` statements inside of functions.  Or you might
@@ -974,9 +998,13 @@ variables, other recommendations are:
   [`with-local-vars`](http://clojuredocs.org/clojure.core/with-local-vars)
   or the [proteus](https://github.com/ztellman/proteus) library
 
+</details>
+
 ### `:wrong-arity`
 
 #### Function calls that seem to have the wrong number of arguments.
+
+<details>
 
 Eastwood warns if a function call is found that has a number of
 arguments not equal to any of the defined signatures (also called
@@ -1019,12 +1047,15 @@ via metadata.
   :reason "clojure.java.jdbc/query uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
 ```
 
+</details>
 
 ### `:bad-arglists`
 
 #### Function/macro `:arglists` metadata that does not match the number of args it is defined with
 
-Clearly this linter needs to be better documented.
+<details>
+
+<!-- 
 
 TBD: Give examples of function/macro definitions from Clojure and
 other libraries that will cause this warning, and some that will not,
@@ -1044,6 +1075,8 @@ will never cause a :bad-arglists warning, but verify that.
    :added "1.0"}
  not-every? (comp not every?))
 ```
+
+-->
 
 This linter was created because of the belief that it is better if
 the value of `:arglists` for vars accurately represents the number of
@@ -1068,10 +1101,13 @@ linter) and other Clojure development tools could rely upon
 :arglists matching the actual arities of the function or macro that
 have been defined.
 
+</details>
 
 ### `:wrong-ns-form`
 
 #### ns forms containing incorrect syntax or options
+
+<details>
 
 Clojure will accept and correctly execute `ns` forms with references
 in vectors, as shown in this example:
@@ -1120,10 +1156,13 @@ Clojure processes prefix lists in vectors, and `tools.namespace`
 recognizes them as dependencies as Clojure does.  It is also somewhat
 common in the many Clojure projects on which Eastwood is tested.
 
+</details>
 
 ### `:wrong-pre-post`
 
 #### function has preconditions or postconditions that are likely incorrect
+
+<details>
 
 Preconditions and postconditions that throw exceptions if they are
 false can be specified for any Clojure function by putting a map after
@@ -1189,10 +1228,13 @@ evaluates is the value of `non-neg?` -- not the value when you call
 That value is a function, and neither `nil` nor `false`, so logical
 true.
 
+</details>
 
 ### `:suspicious-test`
 
 #### Tests using `clojure.test` that may be written incorrectly.
+
+<details>
 
 It is easy to misunderstand or forget the correct arguments to
 `clojure.test`'s `is` macro, and as a result write unit tests that do
@@ -1266,6 +1308,7 @@ test.
                       (expr-i-expect-to-throw-exception)))
 ```
 
+</details>
 
 ### `:suspicious-expression`
 
@@ -1274,6 +1317,8 @@ test.
 ### `:constant-test`
 
 #### A test expression always evaluates as true, or always false
+
+<details>
 
 Warn if you have a test expression in `if`, `cond`, `if-let`,
 `when-let`, etc. that is obviously a constant, or it is a literal
@@ -1324,10 +1369,13 @@ This linter does not yet examine tests in `if-some` or `when-some`
 forms.  It is also not able to determine that expressions like `(/ 84
 2)` are constant.
 
+</details>
 
 ### `:unused-meta-on-macro`
 
 #### Metadata on a macro invocation is ignored by Clojure
+
+<details>
 
 When you invoke a macro and annotate it with metadata, in most cases
 that metadata will be discarded when the macro is expanded, unless the
@@ -1411,9 +1459,13 @@ all Clojure macros to explicitly preserve the metadata on any `(fn
 ...)` forms.  Eastwood has a special case not to warn about those
 cases.
 
+</details>
+
 ### `:unused-ret-vals`
 
 #### Unused values, including unused return values of pure functions, and some others functions where it rarely makes sense to discard its return value.
+
+<details>
 
 The variant `:unused-ret-vals-in-try` is also documented here.
 
@@ -1518,9 +1570,13 @@ a function is pure, conditionally pure, a HOF, etc.  All of these
 properties were determined by manual inspection and recorded in a map
 of data about Clojure core functions.
 
+</details>
+
 ### `:local-shadows-var`
 
 #### A local name, e.g. a function arg, let binding, or record field name, has the same name as a global Var, and is called as a function
+
+<details>
 
 Many functions in `clojure.core` have names that you might like to use
 as local names, such as function arguments or let bindings.  This is
@@ -1584,10 +1640,13 @@ No matter what kind of local symbol is shadowing a Var, you can force
 use of the Var by qualifying it with a namespace, or an alias of a
 namespace as created by `:as` in a `require` form.
 
+</details>
 
 ### `:wrong-tag`
 
 #### An incorrect type tag for which the Clojure compiler does not give an error
+
+<details>
 
 You can use a type tag on a Var name, like in the examples below.
 This does not force the type of the value assigned to the Var, but
@@ -1767,10 +1826,13 @@ See Clojure ticket
 if you are interested in Clojure changing its implementation and/or
 make its documentation more explicit.
 
+</details>
 
 ### `:unused-fn-args`
 
 #### Unused arguments of functions, macros, methods
+
+<details>
 
 This linter is disabled by default, because it often produces a large
 number of warnings that are not errors.  You must explicitly enable it
@@ -1793,10 +1855,13 @@ linter, but have several unused arguments that are acceptable to you,
 consider prepending an underscore to their names to silence the
 warnings.
 
+</details>
 
 ### `:unused-locals`
 
 #### Symbols bound with `let` or `loop` that are never used
+
+<details>
 
 This linter is disabled by default, because it often produces a large
 number of warnings, and even the ones that are correct can be
@@ -1839,10 +1904,13 @@ macroexpansion, and thus it will not be bound to the same value.  But
 hey, the value wasn't being used anyway, right?  Consider removing it
 from the list of keywords completely.
 
+</details>
 
 ### `:unused-namespaces`
 
 #### A namespace you use/require could be removed
+
+<details>
 
 This linter is disabled by default, because it can be fairly noisy.
 You must explicitly enable it if you wish to see these warnings.
@@ -1857,10 +1925,13 @@ these issues:
 * Issue [#192](https://github.com/jonase/eastwood/issues/192)
 * Issue [#210](https://github.com/jonase/eastwood/issues/210)
 
+</details>v
 
 ### `:unused-private-vars`
 
 #### A Var declared to be private is not used in the namespace where it is def'd
+
+<details>
 
 This linter is disabled by default, but at least with a collection of
 projects on which Eastwood is frequently tested, it is an uncommon
@@ -1896,10 +1967,13 @@ with the backquote character causes the resulting code to not refer to
 the Var directly, but to create a function that _only when evaluated_
 contains `(var my.ns/private-fn)`.
 
+</details>
 
 ### `:unlimited-use`
 
 #### Unlimited `(:use ...)` without `:refer` or `:only` to limit the symbols referred by it.
+
+<details>
 
 An `ns` statement like the one below will refer all of the public
 symbols in the namespace `clojure.string`:
@@ -1943,7 +2017,11 @@ of symbols referred by this `use` is pretty stable across Clojure
 versions, but even so, it only takes one symbol added to shadow an
 existing symbol in your code to ruin your day.
 
+</details>
+
 ### `:non-dynamic-earmuffs`
+
+<details>
 
 Vars marked `^:dynamic` should follow the "earmuff" naming convention, and vice versa:
 
@@ -1952,9 +2030,13 @@ Vars marked `^:dynamic` should follow the "earmuff" naming convention, and vice 
 * `(def *foo* 42)` (NOK: earmuffed, non-dynamic)
 * `(def ^:dynamic *foo* 42)` (OK: dynamic, earmuffed)
 
+</details>
+
 ### `:boxed-math`
 
 #### Boxed math warnings from the Clojure compiler
+
+<details>
 
 See: [`*unchecked-math*`](https://clojuredocs.org/clojure.core/*unchecked-math*)
 
@@ -1967,9 +2049,13 @@ which not only enables the warnings but it actually affects the final code that 
 Generally this won't affect you in any way except in the case that you are invoking Eastwood in a REPL,
 such that namespaces re-compiled by Eastwood's analysis will be visible and used by your application.
 
+</details>
+
 ### `:reflection`
 
 #### Reflection warnings from the Clojure compiler
+
+<details>
 
 Addressing reflection warnings systematically is a good idea for many reasons:
 
@@ -2000,9 +2086,13 @@ This is because, in the end, one is creating reflective code in _one's_ codebase
 
 Sibling linters such as `:wrong-tag` and `:unused-meta-on-macro` help guaranteeing that reflection is being addressed in a veridic way.
 
+</details>
+
 ### `:keyword-typos`
 
 #### Keywords that may have typographical errors
+
+<details>
 
 This linter is disabled by default, because it often produces a large
 number of warnings that are not errors.  You must explicitly enable it
@@ -2024,6 +2114,8 @@ expression in the file is an `ns` expression, and the namespace
 remains the same throughout the file.  This is a common convention
 followed by most Clojure source code, and required by several other
 Clojure development tools.
+
+</details>
 
 ## Ignored faults
 
