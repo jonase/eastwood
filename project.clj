@@ -60,8 +60,8 @@
                                                   [manifold "0.1.9-alpha4"]
                                                   [metosin/spec-tools "0.10.5"]
                                                   [org.clojure/core.async "1.3.618"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2021.07.28"]]}
-             :antq {:plugins [[com.github.liquidz/antq "0.16.1"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2021.08.06"]]}
+             :antq {:plugins [[com.github.liquidz/antq "0.16.3"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
@@ -82,8 +82,8 @@
                                              ;; clj-http
                                              ;; compojure
                                              [org.clojure/core.async "1.3.618"]
-                                             [org.clojure/core.cache "1.0.207"]
-                                             [org.clojure/core.memoize "1.0.236"]
+                                             [org.clojure/core.cache "1.0.217"]
+                                             [org.clojure/core.memoize "1.0.250"]
                                              [org.clojure/data.codec "0.1.1"]
                                              [org.clojure/data.csv "1.0.0"]
                                              [org.clojure/data.json "2.4.0"]
