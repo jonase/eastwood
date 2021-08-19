@@ -31,7 +31,7 @@
 
 (defn keywords-very-similar?
   "Check for the special case of two names differing only by one of
-  them being equal to \"_\" followed by the other name.  Apparently
+  them being equal to \"_\" followed by the other name. Apparently
   this is somewhat common for keywords names when interacting with
   Datomic."
   [name-str1 name-str2]
@@ -46,7 +46,7 @@
 
 ;; Note: Walking the asts and looking for keywords also finds keywords
 ;; from macro expansions, ones that the developer never typed in their
-;; code.  Better to use the forms to stay closer to the source code
+;; code. Better to use the forms to stay closer to the source code
 ;; they typed and warn about similar keywords there only.
 
 ;; The only disadvantage I know of in doing it this way is that
@@ -136,78 +136,103 @@
 ;;                               [[:then] :invoke]  ;; of clojure.test/do-report
 ;;                               [[:args 0] :map]]))
 
-(defn suspicious-is-forms [is-formasts]
-  (apply
-   concat
-   (for [{isf :raw-form, ast :ast} is-formasts]
-     (let [is-args (next isf)
-           n (count is-args)
-           is-arg1 (first is-args)
-           thrown? (and (sequential? is-arg1)
-                        (= 'thrown? (first is-arg1)))
-           thrown-args (and thrown? (rest is-arg1))
-           thrown-arg2 (and thrown? (nth is-arg1 2))
-           is-loc (-> isf first meta)
-           pred (fn [{:keys [op]}]
-                  (#{:const :map} op))
-           first-invoke-do-report-ast (doto (->>
-                                             (ast/nodes ast)
-                                             (filter #(and
-                                                       (= :invoke (:op %))
-                                                       (= 'clojure.test/do-report
-                                                          (-> % :fn :var
-                                                              util/var-to-fqsym))
-                                                       (->> % :args (some pred))))
-                                             first)
-                                        assert)
-           const-or-map-ast (doto (->> (get-in first-invoke-do-report-ast [:args])
-                                       (filter pred)
-                                       first)
-                              assert)
-           message-val-or-ast (case (:op const-or-map-ast)
-                                :const (-> const-or-map-ast :val :message)
-                                :map (util/get-val-in-map-ast
-                                      (get-in first-invoke-do-report-ast [:args 0])
-                                      :message))
-           message-tag (when message-val-or-ast
-                         (case (:op const-or-map-ast)
-                           :const (class message-val-or-ast)
-                           :map (:tag message-val-or-ast)))]
-       (cond
-         (and (= n 2) (string? is-arg1))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.")}]
+(defn suspicious-is-forms [{exclude-linters :eastwood/exclude-linters}
+                           is-formasts]
+  (let [warns
+        (for [{isf :raw-form, ast :ast} is-formasts]
+          (let [is-args (next isf)
+                n (count is-args)
+                is-arg1 (first is-args)
+                thrown? (and (sequential? is-arg1)
+                             (= 'thrown? (first is-arg1)))
+                thrown-args (and thrown? (rest is-arg1))
+                thrown-arg2 (and thrown? (nth is-arg1 2))
+                is-loc (-> isf first meta)
+                pred (fn [{:keys [op]}]
+                       (#{:const :map} op))
+                first-invoke-do-report-ast (doto (->>
+                                                  (ast/nodes ast)
+                                                  (filter #(and
+                                                            (= :invoke (:op %))
+                                                            (= 'clojure.test/do-report
+                                                               (-> % :fn :var
+                                                                   util/var-to-fqsym))
+                                                            (->> % :args (some pred))))
+                                                  first)
+                                             assert)
+                const-or-map-ast (doto (->> (get-in first-invoke-do-report-ast [:args])
+                                            (filter pred)
+                                            first)
+                                   assert)
+                message-val-or-ast (case (:op const-or-map-ast)
+                                     :const (-> const-or-map-ast :val :message)
+                                     :map (util/get-val-in-map-ast
+                                           (get-in first-invoke-do-report-ast [:args 0])
+                                           :message))
+                message-tag (when message-val-or-ast
+                              (case (:op const-or-map-ast)
+                                :const (class message-val-or-ast)
+                                :map (:tag message-val-or-ast)))]
+            (cond
+              (and (= n 2)
+                   (string? is-arg1)
+                   (not (util/excludes-kind? [:suspicious-test :first-arg-is-string]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :first-arg-is-string
+                :msg (format "'is' form has string as first arg. This will always pass. If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.")}]
 
-         (and (constant-expr-logical-true? is-arg1)
-              (not (list? is-arg1)))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test.")}]
+              (and (constant-expr-logical-true? is-arg1)
+                   (not (list? is-arg1))
+                   (not (util/excludes-kind? [:suspicious-test :first-arg-is-constant-true]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :first-arg-is-constant-true
+                :msg (format "'is' form has first arg that is a constant whose value is logical true. This will always pass. There is probably a mistake in this test.")}]
 
-         (and (= n 2)
-              (not= message-tag java.lang.String))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "'is' form has non-string as second arg (inferred type is %s).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away."
-                        message-tag)}]
+              (and (= n 2)
+                   (not= message-tag String)
+                   (not (util/excludes-kind? [:suspicious-test :second-arg-is-not-string]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :second-arg-is-not-string
+                :msg (format "'is' form has non-string as second arg (inferred type is %s). The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception. If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away."
+                             message-tag)}]
 
-         (and thrown? (util/regex? thrown-arg2))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")}]
+              (and thrown?
+                   (util/regex? thrown-arg2)
+                   (not (util/excludes-kind? [:suspicious-test :thrown-regex]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :thrown-regex
+                :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex. This regex is ignored. Did you mean to use thrown-with-msg? instead of thrown?")}]
 
-         (and thrown? (string? thrown-arg2))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")}]
+              (and thrown?
+                   (string? thrown-arg2)
+                   (not (util/excludes-kind? [:suspicious-test :thrown-string-arg]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :thrown-string-arg
+                :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string. This string is ignored. Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")}]
 
-         (and thrown? (some string? thrown-args))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")}]
+              (and thrown?
+                   (some string? thrown-args)
+                   (not (util/excludes-kind? [:suspicious-test :string-inside-thrown]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :string-inside-thrown
+                :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...). This string is ignored. Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")}]
 
-         :else nil)))))
+              :else nil)))]
+    (->> warns
+         (apply concat)
+         (keep identity))))
 
 (def var-info-map-delayed
   (delay
@@ -229,7 +254,7 @@
                                   :linter :suspicious-test
                                   :suspicious-test {:ast ast}
                                   :qualifier f
-                                  :msg (format "Found constant form%s with class %s inside %s.  Did you intend to compare its value to something else inside of an 'is' expresssion?"
+                                  :msg (format "Found constant form%s with class %s inside %s. Did you intend to compare its value to something else inside of an 'is' expresssion?"
                                                (cond
                                                  (-> meta-loc :line) ""
                                                  (string? f) (str " \"" f "\"")
@@ -254,7 +279,7 @@
                             (not omit-because-of-are?))
                        [{:loc loc
                          :linter :suspicious-test,
-                         :msg (format "Found (%s ...) form inside %s.  Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
+                         :msg (format "Found (%s ...) form inside %s. Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
                                       ff form-type ff)}]
 
                        (and var-info
@@ -262,7 +287,7 @@
                             (not omit-because-of-are?))
                        [{:loc loc
                          :linter :suspicious-test,
-                         :msg (format "Found (%s ...) form inside %s.  This is a pure function with no side effects, and its return value is unused.  Did you intend to compare its return value to something else inside of an 'is' expression?"
+                         :msg (format "Found (%s ...) form inside %s. This is a pure function with no side effects, and its return value is unused. Did you intend to compare its return value to something else inside of an 'is' expression?"
                                       ff form-type)}]
 
                        :else nil))
@@ -292,16 +317,16 @@
 
 ;; suspicious-test used to do its job only examining source forms, but
 ;; now it goes through the forms on the :raw-forms lists of the AST
-;; nodes that have such a key.  This is useful for distinguishing
+;; nodes that have such a key. This is useful for distinguishing
 ;; occurrences of (is ...)  forms that are from clojure.test/is,
 ;; vs. ones from clojure.core.typed/is from core.typed.
 
 ;; For each AST node, we want only the first expression that has a
-;; first symbol equal to clojure.test/is.  There can be more than one
+;; first symbol equal to clojure.test/is. There can be more than one
 ;; such expression in the list, because (clojure.test/is expr) macro
-;; expands to (clojure.test/is expr nil).  We do not want to duplicate
+;; expands to (clojure.test/is expr nil). We do not want to duplicate
 ;; messages, so keep only the one that is closer to what the
-;; programmer wrote.  Another disadvantage of looking at the second
+;; programmer wrote. Another disadvantage of looking at the second
 ;; one is that the 'nil' argument causes warnings about a non-string
 ;; second argument to be issued, if we check it.
 
@@ -334,11 +359,11 @@
         (assoc-subexprs formasts #{'clojure.test/testing})
 
         pr-is-formasts pr-first-is-formasts]
-    (concat (suspicious-is-forms pr-is-formasts)
+    (concat (suspicious-is-forms opt pr-is-formasts)
             (predicate-forms opt pr-deftest-subexprs 'deftest)
             (predicate-forms opt pr-testing-subexprs 'testing))))
 
-;; Suspicious macro invocations.  Any macros in clojure.core that can
+;; Suspicious macro invocations. Any macros in clojure.core that can
 ;; have 'trivial' expansions are included here, if it can be
 ;; determined solely by the number of arguments to the macro.
 
@@ -396,7 +421,7 @@
     ;; (import) -> (do)
     clojure.core/import   {0 {:args [] :ret-val nil}}
 
-    ;; (lazy-cat) expands to (concat).  TBD: add concat to this list?
+    ;; (lazy-cat) expands to (concat). TBD: add concat to this list?
     clojure.core/lazy-cat {0 {:args [] :ret-val ()}}
 
     ;; (let [x val]) always returns nil
@@ -475,7 +500,7 @@
 
 ;; suspicious-macro-invocations was formerly called
 ;; suspicious-expressions-forms, and implemented to use the 'forms'
-;; key, not the asts.  That was closer to the original source code,
+;; key, not the asts. That was closer to the original source code,
 ;; before macro expansion, so it would give warnings for expressions
 ;; that we would prefer it not warn, like this one:
 
@@ -483,14 +508,14 @@
 
 ;; The newer version suspicious-macro-invocations uses the asts, which
 ;; contain forms on the key :raw-forms, to see what the forms looked
-;; like before macroexpansion.  This should avoid the issue above.
+;; like before macroexpansion. This should avoid the issue above.
 
 ;; For suspicious function calls, we check for them in the asts in
 ;; suspicious-fn-calls below, but that will not find suspicious calls
 ;; on macros, nor on clojure.test/is forms.
 
 ;; suspicious-is-try-expr looks for suspicious expressions in calls to
-;; clojure.test/is like these examples below.  Special detection code
+;; clojure.test/is like these examples below. Special detection code
 ;; is needed because of the unusual way that clojure.test/is
 ;; macroexpands.
 
@@ -557,7 +582,7 @@
                    :suspicious-expression {:kind :macro-invocation
                                            :ast ast
                                            :macro-symbol macro-sym}
-                   :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
+                   :msg (format "%s called with %d args. (%s%s) always returns %s. Perhaps there are misplaced parentheses?"
                                 (name macro-sym) num-args (name macro-sym)
                                 (if (> num-args 0)
                                   (str " " (str/join " " (:args info)))
@@ -574,7 +599,7 @@
 ;; Note: Looking for asts that contain :invoke nodes for the function
 ;; 'clojure.core/= will not find expressions like (clojure.test/is (=
 ;; (+ 1 1))), because the is macro changes that to an apply on
-;; function = with one arg, which is a sequence of expressions.  Such
+;; function = with one arg, which is a sequence of expressions. Such
 ;; expressions are looked for by the function suspicious-is-try-expr.
 
 (def core-fns-that-do-little
@@ -638,7 +663,7 @@
           (when (contains? suspicious-args num-args)
             {:loc loc
              :linter :suspicious-expression,
-             :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
+             :msg (format "%s called with %d args. (%s%s) always returns %s. Perhaps there are misplaced parentheses?"
                           fn-sym num-args fn-sym
                           (if (> num-args 0)
                             (str " " (str/join " " (:args info)))
@@ -689,7 +714,7 @@
                      (contains? suspicious-args num-args))]
       {:loc loc
        :linter :suspicious-expression
-       :msg (format "%s called with %d args.  (%s%s) always returns %s.  Perhaps there are misplaced parentheses?"
+       :msg (format "%s called with %d args. (%s%s) always returns %s. Perhaps there are misplaced parentheses?"
                     (name fn-sym) num-args (name fn-sym)
                     (if (> num-args 0)
                       (str " " (str/join " " (:args info)))
@@ -709,7 +734,7 @@
   represents not necessarily a constant expression, but definitely an
   expression that evaluates as logical true in an if test, e.g. vectors,
   maps, and sets, even if they have contents that vary at run time, are
-  always logical true.  Otherwise, return nil."
+  always logical true. Otherwise, return nil."
   [ast]
   (cond (#{:vector :map :set :quote} (:op ast)) ast
         (= :with-meta (:op ast)) (logical-true-test (:expr ast))
@@ -752,8 +777,8 @@
 
 (defn constant-ast
   "Return nil if 'ast' is not one that we can determine to be a
-  constant value.  Does not do all compile-time evaluation that would be
-  possible, to keep things relatively simple.  If we can determine it to
+  constant value. Does not do all compile-time evaluation that would be
+  possible, to keep things relatively simple. If we can determine it to
   be a constant value, return an ast that can be used to issue a
   warning, that contains the constant value."
   [ast]
@@ -767,7 +792,7 @@
                 bound-val-binding (-> ast :env :locals local-sym)
                 bound-val-ast (when (and (= :binding (:op bound-val-binding))
                                          ;; loop and fn arg bindings can
-                                         ;; never be constants.  Only
+                                         ;; never be constants. Only
                                          ;; examine let bindings, which
                                          ;; might be constants.
                                          (= :let (:local bound-val-binding)))
@@ -900,8 +925,8 @@
 (defn fn-ast-with-pre-post [ast]
   ;; Starting in Clojure 1.8.0, the :op :fn AST is usually not the one
   ;; to have the macroexpansion from clojure.core/fn to
-  ;; clojure.core/fn*.  Instead it is its parent AST, which
-  ;; has :op :with-meta.  fn-form-with-pre-post should have all the
+  ;; clojure.core/fn*. Instead it is its parent AST, which
+  ;; has :op :with-meta. fn-form-with-pre-post should have all the
   ;; needed checks on the node to determine whether a
   ;; particular :op :with-meta AST node contains preconditions or not.
   (when (#{:fn :with-meta} (:op ast))
@@ -934,7 +959,7 @@
                           (:raw-forms ast)))
                   (ast/nodes do-body-ast))]
       ;; Don't return more than one, as we might issue incorrect
-      ;; warnings.  Hopefully it will be rare that we find multiple
+      ;; warnings. Hopefully it will be rare that we find multiple
       ;; matching ASTs.
       (if (= 1 (count matching-assert-asts))
         (:test (first matching-assert-asts))
@@ -945,7 +970,7 @@
 (defn wrong-pre-post-messages [opt kind conditions method-num ast
                                condition-desc-begin condition-desc-middle]
   (if (not (vector? conditions))
-    [(format "All function %s should be in a vector.  Found: %s."
+    [(format "All function %s should be in a vector. Found: %s."
              condition-desc-middle (pr-str conditions))]
 
     (remove nil?
@@ -957,12 +982,12 @@
                                conditions)]
               (cond
                 (= :const (:op test-ast))
-                (format "%s found that is always logical true or always logical false.  Should be changed to function call?  %s."
+                (format "%s found that is always logical true or always logical false. Should be changed to function call?  %s."
                         condition-desc-begin (pr-str condition))
 
                 (and (-> test-ast :op #{:var})
                      (-> test-ast :var meta :dynamic not))
-                (format "%s found that is probably always logical true or always logical false.  Should be changed to function call?  %s."
+                (format "%s found that is probably always logical true or always logical false. Should be changed to function call?  %s."
                         condition-desc-begin (pr-str condition))
 
                 ;; In this case, probably the developer wanted to assert that
@@ -1038,7 +1063,7 @@
     (mapcat arg-vecs-of-fn-raw-form (:raw-forms ast))))
 
 ;; Copied a few functions from Clojure 1.9.0, and renamed with 'my-'
-;; prefix.  That enables running this code with earlier Clojure
+;; prefix. That enables running this code with earlier Clojure
 ;; versions, and not have name conflicts when running with Clojure
 ;; 1.9.0.
 
@@ -1206,7 +1231,7 @@
                 [{:loc (better-loc loc as-local-name)
                   :linter :unused-or-default
                   :unused-or-default {}
-                  :msg (format "Name %s after :as is also in :or map of associative destructuring.  The default value in the :or will never be used."
+                  :msg (format "Name %s after :as is also in :or map of associative destructuring. The default value in the :or will never be used."
                                as-local-name)}])
 
               ;; Warn about any keys in an :or map that are not
@@ -1221,7 +1246,7 @@
                      {:loc (better-loc loc unused-or-name)
                       :linter :unused-or-default
                       :unused-or-default {}
-                      :msg (format "Name %s with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used."
+                      :msg (format "Name %s with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression. The default value in the :or will never be used."
                                    unused-or-name)})
                    unused-or-names)
               sub-infos (map :nested-info map-sub-destructure)]
@@ -1249,10 +1274,10 @@
   warned about as duplicates.
 
   By convention, _ is a parameter intended to be ignored, and often
-  occurs multiple times in the same arg vector when it is used.  Also do
-  not warn about any other symbols that begin with _.  This gives
-  Eastwood users a way to selectively disable such warnings if they
-  wish."
+  occurs multiple times in the same arg vector when it is used. Also do
+  not warn about any other symbols that begin with _.
+
+  This gives Eastwood users a way to selectively disable such warnings if they wish."
   [sym]
   (.startsWith (name sym) "_"))
 

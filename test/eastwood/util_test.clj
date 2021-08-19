@@ -32,3 +32,33 @@
     '(+ 999 999)
     '(do (is (thrown? Exception (+ 3 2))))
     false))
+
+(deftest expand-exclude-linters
+  (are [input expected] (testing input
+                          (is (= expected
+                                 (sut/expand-exclude-linters input)))
+                          true)
+    #{}                         #{}
+    #{:foo}                     #{:foo}
+    #{[:foo :bar]}              #{[:foo :bar]}
+    #{[:foo #{:bar :baz}]}      #{[:foo :bar] [:foo :baz]}
+    #{[:foo [:bar :baz]]}       #{[:foo :bar] [:foo :baz]}
+    #{:foo [:foo :bar]}         #{:foo [:foo :bar]}
+    #{:foo [:foo [:bar]]}       #{:foo [:foo :bar]}
+    #{:foo [:foo #{:bar}]}      #{:foo [:foo :bar]}
+    #{:foo [:foo [:bar :baz]]}  #{:foo [:foo :bar] [:foo :baz]}
+    #{:foo [:foo #{:bar :baz}]} #{:foo [:foo :bar] [:foo :baz]}))
+
+(deftest excludes-kind?
+  (are [exclude-linters path expected] (testing [exclude-linters path]
+                                         (is (= expected
+                                                (sut/excludes-kind? path (sut/expand-exclude-linters exclude-linters))))
+                                         true)
+    #_exclude-linters     #_path       #_expected
+    #{}                   [:foo :bar]  false
+    #{:foo}               [:foo :bar]  true
+    #{[:foo :bar]}        [:foo :bar]  true
+    #{[:foo :bar]}        [:foo :baz]  false
+    #{[:foo [:bar]]}      [:foo :baz]  false
+    #{[:foo [:bar :baz]]} [:foo :baz]  true
+    #{[:foo [:bar :baz]]} [:foo :quux] false))

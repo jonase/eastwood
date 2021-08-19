@@ -45,8 +45,8 @@
 
 ;; Why?  I think because the type tag addition in macro extend-type,
 ;; used by macro extend-protocol, replaces the ^doubles type tag
-;; during macro expansion.  See the REPL session below for
-;; confirmation.  Namespace alias u was created with this require in
+;; during macro expansion. See the REPL session below for
+;; confirmation. Namespace alias u was created with this require in
 ;; Eastwood:
 
 ;; (require '[eastwood.util :as u])
@@ -85,7 +85,7 @@
     (get-elem [^doubles m ^Integer idx] (aget m idx)))
 
 ;; This is the extend function call that the previous extend-type
-;; macro invocation expands to.  Note that there is no mention of a
+;; macro invocation expands to. Note that there is no mention of a
 ;; type tag doubles anywhere, only (Class/forName "[D").
 ;; Reflection: yes
 ;; Eastwood wrong-tag warning: yes
@@ -108,7 +108,7 @@
 
 
 ;; Here is a way to do it with no reflection, but it can only be done
-;; by using extend directly.  Neither extend-type nor extend-protocol
+;; by using extend directly. Neither extend-type nor extend-protocol
 ;; can be used for this in Clojure 1.6.0 (and probably also cannot in
 ;; any other Clojure version, at least up through 1.7.0-alpha4).
 

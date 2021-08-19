@@ -38,6 +38,7 @@
              :eastwood-plugin {:source-paths [~plugin-source-path]
                                :jvm-opts ["-Deastwood.internal.plugin-profile-active=true"]}
              :warn-on-reflection {:global-vars {*warn-on-reflection* true}}
+             :deep-diff {:dependencies [[lambdaisland/deep-diff "0.0-29"]]}
              :test {:dependencies
                     ;; NOTE: please don't add non-essential 3rd-party deps here.
                     ;; It is desirable to rest assured that the test suite does not depend on a third-party lib.

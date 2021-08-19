@@ -36,7 +36,7 @@
 ;; e.g. :no-ns-form-found, can be enabled/disabled from the opt map
 ;; like other linters, but they are a bit different in their
 ;; implementation as they have no separate function to call on each
-;; namespace.  They are done very early, and are not specific to a
+;; namespace. They are done very early, and are not specific to a
 ;; namespace.
 
 ;; :ignore-faults-from-foreign-macroexpansions? is selectively added here for the specific linters where:
@@ -427,16 +427,16 @@
      :test-paths (set test-paths)}))
 
 ;; If you do not specify :namespaces in the options, it defaults to
-;; the same as if you specified [:source-paths :test-paths].  If you
+;; the same as if you specified [:source-paths :test-paths]. If you
 ;; specify a list of namespaces explicitly, perhaps mingled with
 ;; occurrences of :source-paths and/or :test-paths, then the
 ;; namespaces will be linted in the order you specify, even if this
-;; violates dependency order according to the ns form contents.  No
+;; violates dependency order according to the ns form contents. No
 ;; warning will be detected or printed about this.
 
 ;; TBD: It would be nice if the default behavior would instead be to
 ;; put the specified namespaces into an order that honors all declared
-;; dependencies between namespaces.  If this is implemented, it might
+;; dependencies between namespaces. If this is implemented, it might
 ;; also be nice (perhaps only for debugging purposes) to implement a
 ;; keyword :force-order that preserves the specified namespace order
 ;; regardless of dependencies.
@@ -520,7 +520,9 @@
                               (set/union add-linters))
         known-linters (set (keys linter-name->info))
         unknown-linters (set/difference (set/union linters-requested
-                                                   excluded-linters)
+                                                   (into #{}
+                                                         (filter keyword?)
+                                                         excluded-linters))
                                         known-linters)]
     (when (and (seq unknown-linters)
                (not disable-linter-name-checks))
@@ -594,11 +596,11 @@
   + Reads source files, analyzes them, generates Clojure forms from
   analysis results, and eval's those forms (which if there are bugs in
   tools.analyzer or tools.analyzer.jvm, may not be identical to the
-  original forms read.  If require'ing your source files launches the
+  original forms read. If require'ing your source files launches the
   missiles, so will this.
   + Does create-ns on all namespaces specified, even if an exception
   during linting causes this function to return before reading all of
-  them.  See the code for why.
+  them. See the code for why.
   + Should not print output to any output files/streams/etc., unless
   this occurs due to eval'ing the code being linted."
   [reporter
@@ -620,7 +622,7 @@
 
     (reporting/debug-namespaces reporter namespaces)
 
-    ;; Create all namespaces to be analyzed.  This can help in some
+    ;; Create all namespaces to be analyzed. This can help in some
     ;; (unusual) situations, such as when namespace A requires B,
     ;; so Eastwood analyzes B first, but eval'ing B assumes that
     ;; A's namespace has been created first because B contains (alias 'x 'A):
@@ -651,6 +653,8 @@
                    :test-paths #{}
                    :namespaces #{:source-paths :test-paths}
                    :exclude-namespaces #{}
+                   :exclude-linters #{ ;; exclude only a sub :kind for a specific linter:
+                                      [:suspicious-test :second-arg-is-not-string]}
                    :config-files #{}
                    :builtin-config-files default-builtin-config-files
                    :rethrow-exceptions? false
@@ -662,19 +666,23 @@
         distinct* (fn [x] ;; distinct but keeps original coll type
                     (->> (into (empty x) (distinct) x)
                          (into (empty x)))) ;; restore list order
-        opts (-> opts
-                 (update :debug set)
-                 (update :namespaces distinct*)
-                 (update :source-paths set)
-                 (update :test-paths set)
-                 (update :exclude-namespaces set))
+        {:keys [exclude-linters]
+         :as opts} (-> opts
+                       (update :debug set)
+                       (update :namespaces distinct*)
+                       (update :source-paths set)
+                       (update :test-paths set)
+                       (update :exclude-namespaces set))
         ;; Changes below override anything in the caller-provided
         ;; options map.
         opts (assoc opts
                     :warning-enable-config
                     (util/init-warning-enable-config
                      (:builtin-config-files opts)
-                     (:config-files opts) opts))]
+                     (:config-files opts) opts)
+
+                    :eastwood/exclude-linters
+                    (util/expand-exclude-linters exclude-linters))]
     (reporting/debug reporter
                      :options (with-out-str
                                 (println "\nOptions map after filling in defaults:")
@@ -755,7 +763,7 @@
       ((exit-fn) (:forced-exit-code opts 1))
       ;; Eastwood does not use future, pmap, or clojure.shell/sh now
       ;; (at least not yet), but it may evaluate code that does when
-      ;; linting a project.  Call shutdown-agents to avoid the
+      ;; linting a project. Call shutdown-agents to avoid the
       ;; 1-minute 'hang' that would otherwise occur.
       (shutdown-agents))))
 
@@ -767,18 +775,18 @@
       The warning map contents are documented below.
 
   :err - nil if there were no exceptions thrown or other errors that
-      stopped linting before it completed.  A keyword identifying a
-      kind of error if there was.  See the source file
+      stopped linting before it completed. A keyword identifying a
+      kind of error if there was. See the source file
       src/eastwood/lint.clj inside Eastwood for defmethod's of
-      error-msg.  Each is specialized on a keyword value that is one
-      possible value the :err key can take.  The body of each method
+      error-msg. Each is specialized on a keyword value that is one
+      possible value the :err key can take. The body of each method
       shows how Eastwood shows to the user each kind of error when it
       is invoked from the command line via Leiningen, serves as a kind
       of documentation for what the value of the :err-data key
       contains.
 
   :err-data - Some data describing the error if :err's value is not
-      nil.  See :err above for where to find out more about its
+      nil. See :err above for where to find out more about its
       contents.
 
   :versions - A nested map with its own keys containing information
@@ -791,15 +799,15 @@
       file inside of that directory, or a URI object,
       e.g. \"cases/testcases/f02.clj\"
 
-  :line - line number in file for warning, e.g. 20.  The first line in
-      the file is 1, not 0.  Note: In some cases this key may not be
-      present, or the value may be nil.  This is an area where
+  :line - line number in file for warning, e.g. 20. The first line in
+      the file is 1, not 0. Note: In some cases this key may not be
+      present, or the value may be nil. This is an area where
       Eastwood will probably improve in the future, but best to handle
       it for now, perhaps by replacing it with line 1 as a
       placeholder.
 
-  :column - column number in file for warning, e.g. 42.  The first
-      character of each line is column 1, not 0.  Same comments apply
+  :column - column number in file for warning, e.g. 42. The first
+      character of each line is column 1, not 0. Same comments apply
       for :column as for :line.
 
   :linter - keyword identifying the linter, e.g. :def-in-def
@@ -809,7 +817,7 @@
       i-am-outer-defonce-sym\"
 
   :uri - object with class URI of the file, *or* a URI within a JAR
-       file, e.g.  #<URI file:/Users/jafinger/clj/eastwood/0.2.0/eastwood/cases/testcases/f02.clj>
+       file, e.g. #<URI file:/Users/jafinger/clj/eastwood/0.2.0/eastwood/cases/testcases/f02.clj>
 
   :namespace-sym - symbol containing namespace, e.g. testcases.f02,
 
@@ -845,9 +853,9 @@
 
 (defn insp
   "Read, analyze, and eval a file specified by namespace as a symbol,
-  e.g. 'testcases.f01.  Return a value that has been 'cleaned up', by
+  e.g. 'testcases.f01. Return a value that has been 'cleaned up', by
   removing some keys from ASTs, so that it is more convenient to call
-  clojure.inspector/inspect-tree on it.  Example in REPL:
+  clojure.inspector/inspect-tree on it. Example in REPL:
 
   (require '[eastwood.lint :as l] '[clojure.inspector :as i])
   (i/inspect-tree (l/insp 'testcases.f01))"

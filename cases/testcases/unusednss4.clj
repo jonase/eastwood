@@ -8,7 +8,7 @@
 
 ;; This file should only reference the use'd and require'd namespaces
 ;; in the ns form above via their occurrence in keywords, either as an
-;; alias, or as the full namespace name.  Eastwood does not
+;; alias, or as the full namespace name. Eastwood does not
 ;; distinguish which of those 2 methods is used.
 
 

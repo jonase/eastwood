@@ -14,7 +14,7 @@
     (finally 18)))
 
 ;; A - in the middle of a protocol method name once caused
-;; tools.analyzer to throw an exception.  Keep this around for
+;; tools.analyzer to throw an exception. Keep this around for
 ;; regression testing.
 (defprotocol BarBary
   (as-file [x]))
@@ -39,19 +39,19 @@
 
 ;; It would be nice if the (dec i) expression caused an
 ;; :unused-ret-vals warning, but it currently does not because the
-;; doseq body has a do wrapped around it.  Eastwood isn't clever
+;; doseq body has a do wrapped around it. Eastwood isn't clever
 ;; enough to notice that the enclosing do has its return value
 ;; ignored, and thus the final expression within the do also has its
 ;; return value ignored.
 
-;; TBD: The :op for the body of the doseq is :do.  If we find that,
+;; TBD: The :op for the body of the doseq is :do. If we find that,
 ;; then the return values of every expression in the do are also
 ;; ignored, so iterate through them, doing the same checks on all
-;; subforms.  Go through the :statements sequence elements, and the
-;; :ret child, too.  Even the :ret child has its return value ignored,
+;; subforms. Go through the :statements sequence elements, and the
+;; :ret child, too. Even the :ret child has its return value ignored,
 ;; because the do form as a whole does.
 
-;; Actually the statements will already be gone through.  It is only
+;; Actually the statements will already be gone through. It is only
 ;; the :ret child that is not already covered elsewhere.
 
 (defn unused-ret-vals2 [i n]
@@ -66,15 +66,15 @@
 
 
 ;; This case is similar to the previous one, except it is a []
-;; wrapping around the pure functions.  It 'uses' their return values,
-;; but its own value is itself discarded.  Obviously this could extend
+;; wrapping around the pure functions. It 'uses' their return values,
+;; but its own value is itself discarded. Obviously this could extend
 ;; through any number of levels of nesting.
 
 ;; The statement containing the vector has :op :with-meta, :tag
 ;; clojure.lang.PersistentVector, :children [:meta :expr], and the
 ;; :expr is itself a sub-ast with :op :vector, :children [:items], and
 ;; :items is a vector of ast's, each of which should be iterated
-;; through.  The first is an :invoke, the second a :static-call.
+;; through. The first is an :invoke, the second a :static-call.
 
 (defn unused-ret-vals3 [i n]
   (let [a (* i n)]
@@ -101,7 +101,7 @@
   (dec i))
 
 
-;; The assoc expression below is warned about.  Good.
+;; The assoc expression below is warned about. Good.
 
 (defn unused-ret-val4 [k v]
   (assoc {} k v)
@@ -143,7 +143,7 @@
   (true? a))
 
 ;; comment is a normal macro, not built-in to the Clojure compiler in
-;; any more special way than that.  It expands to nil.  Eastwood has a
+;; any more special way than that. It expands to nil. Eastwood has a
 ;; special case for this in its :unused-ret-vals linter that should
 ;; prevent warnings for the comment forms below.
 
@@ -178,10 +178,10 @@
 
 ;; This leads to the unused-ret-vals linter, which calls
 ;; passes/get-method and then passes/void-method? on the return value,
-;; to throw an exception.  A quick fix for Issue #173 is to only call
+;; to throw an exception. A quick fix for Issue #173 is to only call
 ;; passes/void-method? if the return value of passes/get-method is a
 ;; Method, and otherwise never give an :unused-ret-val warning for the
-;; method call.  It would be preferable to find a way to resolve the
+;; method call. It would be preferable to find a way to resolve the
 ;; method call even better, but I'm not sure how to do that in
 ;; general, with multiple arguments of different types.
 

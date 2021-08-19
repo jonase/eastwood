@@ -46,8 +46,8 @@
   (m-bind m identity))
 
 
-;; Excerpted from clojure.java.io.  Once caused tools.analyzer to
-;; throw an exception.  Reported and fixed as ticket TANAL-19.
+;; Excerpted from clojure.java.io. Once caused tools.analyzer to
+;; throw an exception. Reported and fixed as ticket TANAL-19.
 
 (defmulti do-copy
   (fn [input output _opts] [(type input) (type output)]))
@@ -58,7 +58,7 @@
 
 
 ;; This function, excerpted and cut down from clojure.java.browse,
-;; once caused tools.analyzer to throw an exception.  It was reported
+;; once caused tools.analyzer to throw an exception. It was reported
 ;; and fixed as ticket TANAL-20.
 
 (defn open-url-in-browser [url]
@@ -83,14 +83,14 @@
 
 
 ;; Stripped down from some example found somewhere in a contrib
-;; library, I think.  Formerly caused exception with tools.analyzer,
+;; library, I think. Formerly caused exception with tools.analyzer,
 ;; but reported and fixed as ticket TANAL-25.
 
 (defn foo [e]
   (clojure.main/repl-caught e))
 
 ;; The comment below used to cause an :unused-ret-vals warning in
-;; earlier versions of Eastwood.  Starting with version 0.1.4,
+;; earlier versions of Eastwood. Starting with version 0.1.4,
 ;; tools.analyzer(.jvm) added :raw-forms in the returned ASTs, making
 ;; it easy for Eastwood to discover that the nil return value was
 ;; produced from a comment macro invocation.

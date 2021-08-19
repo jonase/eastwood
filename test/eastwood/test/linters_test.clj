@@ -4,7 +4,8 @@
    [clojure.test :refer [deftest is]]
    [eastwood.lint]
    [eastwood.reporting-callbacks :as reporting-callbacks]
-   [eastwood.util :as util])
+   [eastwood.util :as util]
+   [lambdaisland.deep-diff])
   (:import
    (java.io File)))
 
@@ -46,7 +47,7 @@
 
 (def default-test-opts {})
 
-;; If an exception occurs during analyze, re-throw it.  This will
+;; If an exception occurs during analyze, re-throw it. This will
 ;; cause any test written that calls lint-ns-noprint to fail, unless
 ;; it expects the exception.
 (defn lint-ns-noprint [ns-sym linters opts]
@@ -68,11 +69,16 @@
       (throw (:exception exception)))))
 
 (defn lint-test [ns-sym linters opts expected-lint-result]
-  (is (= expected-lint-result
-         (->> (lint-ns-noprint ns-sym linters opts)
-              (map normalize-warning)
-              (map warning-replace-auto-numbered-symbol-names)
-              frequencies))))
+  (let [v (->> (lint-ns-noprint ns-sym linters opts)
+               (map normalize-warning)
+               (map warning-replace-auto-numbered-symbol-names)
+               frequencies)]
+    (is (= expected-lint-result
+           v)
+        (with-out-str
+          (-> expected-lint-result
+              (lambdaisland.deep-diff/diff v)
+              lambdaisland.deep-diff/pretty-print)))))
 
 (defn fname-from-parts [& parts]
   (str/join File/separator parts))
@@ -165,11 +171,12 @@
      :msg "#'testcases.f01/*var2* should be marked dynamic.",
      :file (fname-from-parts "testcases" "f01.clj"),
      :line 152, :column 1}
-    1})
+    1}))
 
-  ;; TBD: I do not know why the i-am-inner-defonce-sym warning appears
-  ;; twice in the result.  Once would be enough.
+;; TBD: I do not know why the i-am-inner-defonce-sym warning appears
+;; twice in the result. Once would be enough.
 
+(deftest test2
   (lint-test
    'testcases.f02
    [:misplaced-docstrings :def-in-def :redefd-vars :wrong-arity
@@ -193,15 +200,18 @@
      :msg "There is a def of i-am-inner-defonce-sym nested inside def i-am-outer-defonce-sym.",
      :file (fname-from-parts "testcases" "f02.clj"),
      :line 20, :column 42}
-    2})
+    2}))
 
+(deftest test3
   (lint-test
    'testcases.f03
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
     :unused-namespaces :unused-ret-vals :unused-ret-vals-in-try :wrong-arity
     :wrong-tag :unused-locals]
    eastwood.lint/default-opts
-   {})
+   {}))
+
+(deftest test4
   (lint-test
    'testcases.f04
    [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
@@ -226,18 +236,23 @@
      :msg "local: dogs invoked as function shadows var: #'testcases.f04/dogs.",
      :file (fname-from-parts "testcases" "f04.clj"),
      :line 90, :column 13}
-    1})
-  ;; The following test is known to fail with Clojure 1.5.1 because of
-  ;; protocol method names that begin with "-".  See
-  ;; http://dev.clojure.org/jira/browse/TANAL-17 and
-  ;; http://dev.clojure.org/jira/browse/CLJ-1202
-  (when (util/clojure-1-6-or-later)
+    1}))
+
+;; The following test is known to fail with Clojure 1.5.1 because of
+;; protocol method names that begin with "-". See
+;; http://dev.clojure.org/jira/browse/TANAL-17 and
+;; http://dev.clojure.org/jira/browse/CLJ-1202
+
+(when (util/clojure-1-6-or-later)
+  (deftest test5
     (lint-test
      'testcases.f05
      [:misplaced-docstrings :def-in-def :redefd-vars :deprecations
       :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
      eastwood.lint/default-opts
-     {}))
+     {})))
+
+(deftest test6
   (lint-test
    'testcases.f06
    [:unused-fn-args :misplaced-docstrings :def-in-def :redefd-vars :deprecations
@@ -287,7 +302,9 @@
      :msg "Function arg val never used.",
      :file (fname-from-parts "testcases" "f06.clj"),
      :line 69, :column 13}
-    1})
+    1}))
+
+(deftest test7
   (let [common-expected-warnings
         {{:line 10, :column 5,
           :file (fname-from-parts "testcases" "f07.clj"),
@@ -446,7 +463,7 @@
 
         ;; Clojure 1.5 does not have clojure.core/some? so it does not
         ;; warn about calling that function when its return value is
-        ;; unused.  Clojure 1.6 and later should.
+        ;; unused. Clojure 1.6 and later should.
         clojure-1-6-or-later-additional-expected-warnings
         {{:line 140, :column 3,
           :file (fname-from-parts "testcases" "f07.clj"),
@@ -470,7 +487,9 @@
               clojure-1-6-or-later-additional-expected-warnings
               clojure-1-5-additional-expected-warnings)
             (when (util/clojure-1-8-or-later)
-              clojure-1-8-or-later-additional-expected-warnings))))
+              clojure-1-8-or-later-additional-expected-warnings)))))
+
+(deftest test8
   (lint-test
    'testcases.deprecated
    [:deprecations :wrong-arity :local-shadows-var :wrong-tag :unused-locals]
@@ -497,21 +516,27 @@
      :msg "Var '#'clojure.core/replicate' is deprecated.",
      :file (fname-from-parts "testcases" "deprecated.clj"),
      :line 13, :column 4}
-    1})
+    1}))
+
+(deftest test9
   (lint-test
    'testcases.tanal-9
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
     :local-shadows-var :wrong-tag :unused-locals]
    eastwood.lint/default-opts
-   {})
+   {}))
+
+(deftest test10
   (lint-test
    'testcases.tanal-27
    [:misplaced-docstrings :def-in-def :redefd-vars :unused-fn-args
     :unused-ret-vals :unused-ret-vals-in-try :deprecations :wrong-arity
     :local-shadows-var :wrong-tag :unused-locals]
    eastwood.lint/default-opts
-   {})
+   {}))
+
+(deftest test11
   (lint-test
    'testcases.keyword-typos
    [:keyword-typos :unused-ret-vals :unused-ret-vals-in-try
@@ -519,596 +544,601 @@
    eastwood.lint/default-opts
    {{:linter :keyword-typos,
      :msg "Possible keyword typo: :occuption instead of :occupation ?"}
-    1})
+    1}))
+
+(deftest test12
   (lint-test
    'testcases.isformsok
    [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag
     :unused-locals]
    eastwood.lint/default-opts
-   {})
+   {}))
+
+(deftest test13
   (lint-test
    'testcases.testtest
    [:keyword-typos :suspicious-test :suspicious-expression
     :local-shadows-var :wrong-tag]
    eastwood.lint/default-opts
    {{:linter :suspicious-test,
-     :msg "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.",
+     :msg "'is' form has string as first arg. This will always pass. If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 11, :column 4}
     1,
     {:linter :suspicious-test,
-     :msg "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.",
+     :msg "'is' form has string as first arg. This will always pass. If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 13, :column 4}
     1,
     {:linter :suspicious-test,
-     :msg "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test.",
+     :msg "'is' form has first arg that is a constant whose value is logical true. This will always pass. There is probably a mistake in this test.",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 17, :column 4}
     1,
     {:linter :suspicious-test,
-     :msg "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?",
+     :msg "(is (thrown? ...)) form has a string inside (thrown? ...). This string is ignored. Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 61, :column 4}
     1,
     {:linter :suspicious-test,
-     :msg "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?",
+     :msg "(is (thrown? ...)) form has second thrown? arg that is a string. This string is ignored. Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 63, :column 4}
     1,
     {:linter :suspicious-test,
-     :msg "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?",
+     :msg "(is (thrown? ...)) form has second thrown? arg that is a regex. This regex is ignored. Did you mean to use thrown-with-msg? instead of thrown?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 65, :column 4}
     1,
     {:linter :suspicious-test,
-     :msg "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?",
+     :msg "(is (thrown? ...)) form has second thrown? arg that is a regex. This regex is ignored. Did you mean to use thrown-with-msg? instead of thrown?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 69, :column 4}
     1,
     {:linter :suspicious-test,
-     :msg "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?",
+     :msg "(is (thrown? ...)) form has second thrown? arg that is a regex. This regex is ignored. Did you mean to use thrown-with-msg? instead of thrown?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 71, :column 4}
     1,
     {:linter :suspicious-test,
-     :msg "Found (= ...) form inside deftest.  Did you forget to wrap it in 'is', e.g. (is (= ...))?",
+     :msg "Found (= ...) form inside deftest. Did you forget to wrap it in 'is', e.g. (is (= ...))?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 73, :column 4}
     1,
     {:linter :suspicious-test,
-     :msg "Found (= ...) form inside testing.  Did you forget to wrap it in 'is', e.g. (is (= ...))?",
+     :msg "Found (= ...) form inside testing. Did you forget to wrap it in 'is', e.g. (is (= ...))?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 77, :column 6}
     1,
     {:linter :suspicious-test,
-     :msg "Found (contains? ...) form inside deftest.  Did you forget to wrap it in 'is', e.g. (is (contains? ...))?",
+     :msg "Found (contains? ...) form inside deftest. Did you forget to wrap it in 'is', e.g. (is (contains? ...))?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 80, :column 4}
     1,
     {:linter :suspicious-test,
-     :msg "'is' form has non-string as second arg (inferred type is class java.lang.Long).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away.",
+     :msg "'is' form has non-string as second arg (inferred type is class java.lang.Long). The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception. If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away.",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 82, :column 4}
     1,
     {:linter :suspicious-expression,
-     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?",
+     :msg "= called with 1 args. (= x) always returns true. Perhaps there are misplaced parentheses?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 82, :column 7}
     1,
     {:linter :suspicious-test,
-     :msg "'is' form has non-string as second arg (inferred type is class java.lang.Long).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away.",
+     :msg "'is' form has non-string as second arg (inferred type is class java.lang.Long). The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception. If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away.",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 83, :column 4}
     1,
     {:linter :suspicious-expression,
-     :msg "> called with 1 args.  (> x) always returns true.  Perhaps there are misplaced parentheses?",
+     :msg "> called with 1 args. (> x) always returns true. Perhaps there are misplaced parentheses?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 83, :column 7}
     1,
     {:linter :suspicious-expression,
-     :msg "min-key called with 2 args.  (min-key f x) always returns x.  Perhaps there are misplaced parentheses?",
+     :msg "min-key called with 2 args. (min-key f x) always returns x. Perhaps there are misplaced parentheses?",
      :file (fname-from-parts "testcases" "testtest.clj"),
      :line 84, :column 10}
     1,
     {:line 86, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?"}
+     :msg "= called with 1 args. (= x) always returns true. Perhaps there are misplaced parentheses?"}
     1,
     {:line 87, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "== called with 1 args.  (== x) always returns true.  Perhaps there are misplaced parentheses?"}
+     :msg "== called with 1 args. (== x) always returns true. Perhaps there are misplaced parentheses?"}
     1,
     {:line 88, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "not= called with 1 args.  (not= x) always returns false.  Perhaps there are misplaced parentheses?"}
+     :msg "not= called with 1 args. (not= x) always returns false. Perhaps there are misplaced parentheses?"}
     1,
     {:line 89, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "< called with 1 args.  (< x) always returns true.  Perhaps there are misplaced parentheses?"}
+     :msg "< called with 1 args. (< x) always returns true. Perhaps there are misplaced parentheses?"}
     1,
     {:line 90, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "<= called with 1 args.  (<= x) always returns true.  Perhaps there are misplaced parentheses?"}
+     :msg "<= called with 1 args. (<= x) always returns true. Perhaps there are misplaced parentheses?"}
     1,
     {:line 91, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "> called with 1 args.  (> x) always returns true.  Perhaps there are misplaced parentheses?"}
+     :msg "> called with 1 args. (> x) always returns true. Perhaps there are misplaced parentheses?"}
     1,
     {:line 92, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg ">= called with 1 args.  (>= x) always returns true.  Perhaps there are misplaced parentheses?"}
+     :msg ">= called with 1 args. (>= x) always returns true. Perhaps there are misplaced parentheses?"}
     1,
     {:line 93, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "min called with 1 args.  (min x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "min called with 1 args. (min x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 94, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "max called with 1 args.  (max x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "max called with 1 args. (max x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 95, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "min-key called with 2 args.  (min-key f x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "min-key called with 2 args. (min-key f x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 96, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "max-key called with 2 args.  (max-key f x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "max-key called with 2 args. (max-key f x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 97, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "+ called with 0 args.  (+) always returns 0.  Perhaps there are misplaced parentheses?"}
+     :msg "+ called with 0 args. (+) always returns 0. Perhaps there are misplaced parentheses?"}
     1,
     {:line 98, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "+ called with 1 args.  (+ x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "+ called with 1 args. (+ x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 99, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "+' called with 0 args.  (+') always returns 0.  Perhaps there are misplaced parentheses?"}
+     :msg "+' called with 0 args. (+') always returns 0. Perhaps there are misplaced parentheses?"}
     1,
     {:line 100, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "+' called with 1 args.  (+' x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "+' called with 1 args. (+' x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 101, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "* called with 0 args.  (*) always returns 1.  Perhaps there are misplaced parentheses?"}
+     :msg "* called with 0 args. (*) always returns 1. Perhaps there are misplaced parentheses?"}
     1,
     {:line 102, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "* called with 1 args.  (* x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "* called with 1 args. (* x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 103, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "*' called with 0 args.  (*') always returns 1.  Perhaps there are misplaced parentheses?"}
+     :msg "*' called with 0 args. (*') always returns 1. Perhaps there are misplaced parentheses?"}
     1,
     {:line 104, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "*' called with 1 args.  (*' x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "*' called with 1 args. (*' x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 105, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "dissoc called with 1 args.  (dissoc map) always returns map.  Perhaps there are misplaced parentheses?"}
+     :msg "dissoc called with 1 args. (dissoc map) always returns map. Perhaps there are misplaced parentheses?"}
     1,
     {:line 106, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "disj called with 1 args.  (disj set) always returns set.  Perhaps there are misplaced parentheses?"}
+     :msg "disj called with 1 args. (disj set) always returns set. Perhaps there are misplaced parentheses?"}
     1,
     {:line 107, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "merge called with 0 args.  (merge) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "merge called with 0 args. (merge) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 108, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "merge called with 1 args.  (merge map) always returns map.  Perhaps there are misplaced parentheses?"}
+     :msg "merge called with 1 args. (merge map) always returns map. Perhaps there are misplaced parentheses?"}
     1,
     {:line 109, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "merge-with called with 1 args.  (merge-with f) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "merge-with called with 1 args. (merge-with f) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 110, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "merge-with called with 2 args.  (merge-with f map) always returns map.  Perhaps there are misplaced parentheses?"}
+     :msg "merge-with called with 2 args. (merge-with f map) always returns map. Perhaps there are misplaced parentheses?"}
     1,
     {:line 113, :column 18,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "interleave called with 0 args.  (interleave) always returns ().  Perhaps there are misplaced parentheses?"}
+     :msg "interleave called with 0 args. (interleave) always returns (). Perhaps there are misplaced parentheses?"}
     1,
     {:line 114, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "pr-str called with 0 args.  (pr-str) always returns \"\".  Perhaps there are misplaced parentheses?"}
+     :msg "pr-str called with 0 args. (pr-str) always returns \"\". Perhaps there are misplaced parentheses?"}
     1,
     {:line 115, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "print-str called with 0 args.  (print-str) always returns \"\".  Perhaps there are misplaced parentheses?"}
+     :msg "print-str called with 0 args. (print-str) always returns \"\". Perhaps there are misplaced parentheses?"}
     1,
     {:line 116, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "with-out-str called with 0 args.  (with-out-str) always returns \"\".  Perhaps there are misplaced parentheses?"}
+     :msg "with-out-str called with 0 args. (with-out-str) always returns \"\". Perhaps there are misplaced parentheses?"}
     1,
     {:line 117, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "pr called with 0 args.  (pr) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "pr called with 0 args. (pr) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 118, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "print called with 0 args.  (print) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "print called with 0 args. (print) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 119, :column 19,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "comp called with 0 args.  (comp) always returns identity.  Perhaps there are misplaced parentheses?"}
+     :msg "comp called with 0 args. (comp) always returns identity. Perhaps there are misplaced parentheses?"}
     1,
     {:line 120, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "partial called with 1 args.  (partial f) always returns f.  Perhaps there are misplaced parentheses?"}
+     :msg "partial called with 1 args. (partial f) always returns f. Perhaps there are misplaced parentheses?"}
     1,
     {:line 121, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "lazy-cat called with 0 args.  (lazy-cat) always returns ().  Perhaps there are misplaced parentheses?"}
+     :msg "lazy-cat called with 0 args. (lazy-cat) always returns (). Perhaps there are misplaced parentheses?"}
     1,
     {:line 122, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "-> called with 1 args.  (-> x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "-> called with 1 args. (-> x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 123, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "cond called with 0 args.  (cond) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "cond called with 0 args. (cond) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 124, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "case called with 2 args.  (case x y) always returns y.  Perhaps there are misplaced parentheses?"}
+     :msg "case called with 2 args. (case x y) always returns y. Perhaps there are misplaced parentheses?"}
     1,
     {:line 125, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "condp called with 3 args.  (condp pred test-expr expr) always returns expr.  Perhaps there are misplaced parentheses?"}
+     :msg "condp called with 3 args. (condp pred test-expr expr) always returns expr. Perhaps there are misplaced parentheses?"}
     1,
     {:line 126, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "when called with 1 args.  (when test) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "when called with 1 args. (when test) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 127, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "when-not called with 1 args.  (when-not test) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "when-not called with 1 args. (when-not test) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 128, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "when-let called with 1 args.  (when-let [x y]) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "when-let called with 1 args. (when-let [x y]) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 129, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "doseq called with 1 args.  (doseq [x coll]) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "doseq called with 1 args. (doseq [x coll]) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 130, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "dotimes called with 1 args.  (dotimes [i n]) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "dotimes called with 1 args. (dotimes [i n]) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 131, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "and called with 0 args.  (and) always returns true.  Perhaps there are misplaced parentheses?"}
+     :msg "and called with 0 args. (and) always returns true. Perhaps there are misplaced parentheses?"}
     1,
     {:line 132, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "and called with 1 args.  (and x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "and called with 1 args. (and x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 133, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "or called with 0 args.  (or) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "or called with 0 args. (or) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 134, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "or called with 1 args.  (or x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "or called with 1 args. (or x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 135, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?"}
+     :msg "doto called with 1 args. (doto x) always returns x. Perhaps there are misplaced parentheses?"}
     1,
     {:line 136, :column 16,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?"}
+     :msg "declare called with 0 args. (declare) always returns nil. Perhaps there are misplaced parentheses?"}
     1,
     {:line 145, :column 7,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?"}
+     :msg "= called with 1 args. (= x) always returns true. Perhaps there are misplaced parentheses?"}
     1,
     {:line 146, :column 4,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-test,
-     :msg "'is' form has non-string as second arg (inferred type is class java.lang.Long).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away."}
+     :msg "'is' form has non-string as second arg (inferred type is class java.lang.Long). The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception. If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away."}
     1,
     {:line 146, :column 7,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "== called with 1 args.  (== x) always returns true.  Perhaps there are misplaced parentheses?"}
+     :msg "== called with 1 args. (== x) always returns true. Perhaps there are misplaced parentheses?"}
     1,
     {:line 156, :column 7,
      :file (fname-from-parts "testcases" "testtest.clj"),
      :linter :suspicious-expression,
-     :msg "= called with 1 args.  (= x) always returns true.  Perhaps there are misplaced parentheses?"}
-    1})
+     :msg "= called with 1 args. (= x) always returns true. Perhaps there are misplaced parentheses?"}
+    1}))
 
+(deftest test14
   (let [common-expected-warnings
         {{:linter :suspicious-expression,
-          :msg "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?",
+          :msg "doto called with 1 args. (doto x) always returns x. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 23, :column 5}
          1,
          {:linter :suspicious-expression,
           :msg
-          "-> called with 1 args.  (-> x) always returns x.  Perhaps there are misplaced parentheses?",
+          "-> called with 1 args. (-> x) always returns x. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 25, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "and called with 0 args.  (and) always returns true.  Perhaps there are misplaced parentheses?",
+          "and called with 0 args. (and) always returns true. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 27, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "and called with 1 args.  (and x) always returns x.  Perhaps there are misplaced parentheses?",
+          "and called with 1 args. (and x) always returns x. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 28, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "as-> called with 2 args.  (as-> expr name) always returns expr.  Perhaps there are misplaced parentheses?",
+          "as-> called with 2 args. (as-> expr name) always returns expr. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 29, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "case called with 2 args.  (case x y) always returns y.  Perhaps there are misplaced parentheses?",
+          "case called with 2 args. (case x y) always returns y. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 30, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "cond called with 0 args.  (cond) always returns nil.  Perhaps there are misplaced parentheses?",
+          "cond called with 0 args. (cond) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 31, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "cond-> called with 1 args.  (cond-> x) always returns x.  Perhaps there are misplaced parentheses?",
+          "cond-> called with 1 args. (cond-> x) always returns x. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 32, :column 12}
          1,
          {:linter :suspicious-expression,
           :msg
-          "cond->> called with 1 args.  (cond->> x) always returns x.  Perhaps there are misplaced parentheses?",
+          "cond->> called with 1 args. (cond->> x) always returns x. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 33, :column 12}
          1,
          {:linter :suspicious-expression,
           :msg
-          "condp called with 3 args.  (condp pred test-expr expr) always returns expr.  Perhaps there are misplaced parentheses?",
+          "condp called with 3 args. (condp pred test-expr expr) always returns expr. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 34, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "declare called with 0 args.  (declare) always returns nil.  Perhaps there are misplaced parentheses?",
+          "declare called with 0 args. (declare) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 35, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "delay called with 0 args.  (delay) always returns (delay nil).  Perhaps there are misplaced parentheses?",
+          "delay called with 0 args. (delay) always returns (delay nil). Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 36, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "doseq called with 1 args.  (doseq [x coll]) always returns nil.  Perhaps there are misplaced parentheses?",
+          "doseq called with 1 args. (doseq [x coll]) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 37, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "dotimes called with 1 args.  (dotimes [i n]) always returns nil.  Perhaps there are misplaced parentheses?",
+          "dotimes called with 1 args. (dotimes [i n]) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 38, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "doto called with 1 args.  (doto x) always returns x.  Perhaps there are misplaced parentheses?",
+          "doto called with 1 args. (doto x) always returns x. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 39, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "import called with 0 args.  (import) always returns nil.  Perhaps there are misplaced parentheses?",
+          "import called with 0 args. (import) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 40, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "lazy-cat called with 0 args.  (lazy-cat) always returns ().  Perhaps there are misplaced parentheses?",
+          "lazy-cat called with 0 args. (lazy-cat) always returns (). Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 41, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "let called with 1 args.  (let bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          "let called with 1 args. (let bindings) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 42, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "letfn called with 1 args.  (letfn bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          "letfn called with 1 args. (letfn bindings) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 43, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "locking called with 1 args.  (locking x) always returns nil.  Perhaps there are misplaced parentheses?",
+          "locking called with 1 args. (locking x) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 44, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "loop called with 1 args.  (loop bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          "loop called with 1 args. (loop bindings) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 45, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "or called with 0 args.  (or) always returns nil.  Perhaps there are misplaced parentheses?",
+          "or called with 0 args. (or) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 46, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "or called with 1 args.  (or x) always returns x.  Perhaps there are misplaced parentheses?",
+          "or called with 1 args. (or x) always returns x. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 47, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "pvalues called with 0 args.  (pvalues) always returns ().  Perhaps there are misplaced parentheses?",
+          "pvalues called with 0 args. (pvalues) always returns (). Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 48, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "some-> called with 1 args.  (some-> expr) always returns expr.  Perhaps there are misplaced parentheses?",
+          "some-> called with 1 args. (some-> expr) always returns expr. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 49, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "some->> called with 1 args.  (some->> expr) always returns expr.  Perhaps there are misplaced parentheses?",
+          "some->> called with 1 args. (some->> expr) always returns expr. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 50, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "when called with 1 args.  (when test) always returns nil.  Perhaps there are misplaced parentheses?",
+          "when called with 1 args. (when test) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 51, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "when-first called with 1 args.  (when-first [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
+          "when-first called with 1 args. (when-first [x y]) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 52, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "when-let called with 1 args.  (when-let [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
+          "when-let called with 1 args. (when-let [x y]) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 53, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "when-not called with 1 args.  (when-not test) always returns nil.  Perhaps there are misplaced parentheses?",
+          "when-not called with 1 args. (when-not test) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 54, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "with-bindings called with 1 args.  (with-bindings map) always returns nil.  Perhaps there are misplaced parentheses?",
+          "with-bindings called with 1 args. (with-bindings map) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 56, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "with-in-str called with 1 args.  (with-in-str s) always returns nil.  Perhaps there are misplaced parentheses?",
+          "with-in-str called with 1 args. (with-in-str s) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 57, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "with-local-vars called with 1 args.  (with-local-vars bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          "with-local-vars called with 1 args. (with-local-vars bindings) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 58, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "with-open called with 1 args.  (with-open bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          "with-open called with 1 args. (with-open bindings) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 59, :column 1}
          2,
          {:linter :suspicious-expression,
           :msg
-          "with-out-str called with 0 args.  (with-out-str) always returns \"\".  Perhaps there are misplaced parentheses?",
+          "with-out-str called with 0 args. (with-out-str) always returns \"\". Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 60, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "with-precision called with 1 args.  (with-precision precision) always returns nil.  Perhaps there are misplaced parentheses?",
+          "with-precision called with 1 args. (with-precision precision) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 61, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "with-redefs called with 1 args.  (with-redefs bindings) always returns nil.  Perhaps there are misplaced parentheses?",
+          "with-redefs called with 1 args. (with-redefs bindings) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 62, :column 1}
          1}
         clojure-1-6-or-later-additional-expected-warnings
         {{:linter :suspicious-expression,
           :msg
-          "->> called with 1 args.  (->> x) always returns x.  Perhaps there are misplaced parentheses?",
+          "->> called with 1 args. (->> x) always returns x. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 26, :column 1}
          1,
          {:linter :suspicious-expression,
           :msg
-          "when-some called with 1 args.  (when-some [x y]) always returns nil.  Perhaps there are misplaced parentheses?",
+          "when-some called with 1 args. (when-some [x y]) always returns nil. Perhaps there are misplaced parentheses?",
           :file (fname-from-parts "testcases" "suspicious.clj"),
           :line 55, :column 1}
          1}
@@ -1121,11 +1151,13 @@
      'testcases.suspicious
      [:suspicious-test :suspicious-expression :local-shadows-var :wrong-tag]
      eastwood.lint/default-opts
-     expected-warnings))
+     expected-warnings)))
 
-  ;; It is strange that the :unlimited-use linter has nil for :line
-  ;; and :column here, but integer values when I use it from the
-  ;; command line.  What is going on here?
+;; It is strange that the :unlimited-use linter has nil for :line
+;; and :column here, but integer values when I use it from the
+;; command line. What is going on here?
+
+(deftest test15
   (lint-test
    'testcases.unlimiteduse
    [:unlimited-use :local-shadows-var :wrong-tag :unused-locals]
@@ -1139,7 +1171,9 @@
      :msg "Unlimited use of ((clojure [pprint :as pp] [uuid :as u])) in testcases.unlimiteduse.",
      :file (fname-from-parts "testcases" "unlimiteduse.clj"),
      :line 14, :column 10}
-    1})
+    1}))
+
+(deftest test16
   (lint-test
    'testcases.in-ns-switching
    [:unlimited-use :local-shadows-var :wrong-tag :unused-locals]
@@ -1148,7 +1182,9 @@
      :msg "Unlimited use of (clojure.set [testcases.f01 :as t1]) in testcases.in-ns-switching.",
      :file (fname-from-parts "testcases" "in_ns_switching.clj"),
      :line 4, :column 9}
-    1})
+    1}))
+
+(deftest test17
   (let [common-expected-warnings
         {{:linter :wrong-tag,
           :msg "Wrong tag: clojure.core$long@<somehex> in def of Var: lv1.",
@@ -1231,12 +1267,12 @@
 
         clojure-1-7-or-earlier-expected-warnings
         {{:linter :wrong-tag,
-          :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
+          :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace. This is only an issue for Clojure 1.7 and earlier. Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
           :file (fname-from-parts "testcases" "wrongtag.clj"),
           :line 87, :column 28}
          1,
          {:linter :wrong-tag,
-          :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
+          :msg "Tag: LinkedList for return type of function on arg vector: [coll] should be fully qualified Java class name, or else it may cause exception if used from another namespace. This is only an issue for Clojure 1.7 and earlier. Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
           :file (fname-from-parts "testcases" "wrongtag.clj"),
           :line 88, :column 25}
          1}
@@ -1249,7 +1285,7 @@
         (merge common-expected-warnings
                clojure-1-7-or-earlier-expected-warnings
                {{:linter :wrong-tag,
-                 :msg "Tag: LinkedList for return type of function on arg vector: [& p__<num>] should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
+                 :msg "Tag: LinkedList for return type of function on arg vector: [& p__<num>] should be fully qualified Java class name, or else it may cause exception if used from another namespace. This is only an issue for Clojure 1.7 and earlier. Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232).",
                  :file (fname-from-parts "testcases" "wrongtag.clj"),
                  :line 93, :column 26}
                 1})]
@@ -1262,43 +1298,45 @@
            ;; This is actually the expected result only for 1.7.0-alpha2
            ;; or later, because the behavior changed with the fix for
            ;; CLJ-887, so it will fail if you run the test with
-           ;; 1.7.0-alpha1.  I won't bother checking the version that
+           ;; 1.7.0-alpha1. I won't bother checking the version that
            ;; precisely, though.
            (util/clojure-1-7-or-later) clojure-1-7-only-expected-warnings
 
-           :else clojure-1-6-or-earlier-expected-warnings)))
+           :else clojure-1-6-or-earlier-expected-warnings))))
+
+(deftest test18
   (lint-test
    'testcases.macrometa
    [:unlimited-use :local-shadows-var :wrong-tag :unused-meta-on-macro
     :unused-locals]
    eastwood.lint/default-opts
    {{:linter :unused-meta-on-macro,
-     :msg "Java constructor call 'StringWriter.' has metadata with keys (:foo).  All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :msg "Java constructor call 'StringWriter.' has metadata with keys (:foo). All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 20, :column 28}
     1,
     {:linter :unused-meta-on-macro,
-     :msg "Java constructor call 'StringWriter.' has metadata with keys (:tag).  All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :msg "Java constructor call 'StringWriter.' has metadata with keys (:tag). All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 21, :column 28}
     1,
     {:linter :unused-meta-on-macro,
-     :msg "Java instance method call '.close' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :msg "Java instance method call '.close' has metadata with keys (:foo). All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 35, :column 20}
     1,
     {:linter :unused-meta-on-macro,
-     :msg "Java instance method call '.close' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :msg "Java instance method call '.close' has metadata with keys (:foo). All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 37, :column 20}
     1,
     {:linter :unused-meta-on-macro,
-     :msg "Java static method call 'Math/abs' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :msg "Java static method call 'Math/abs' has metadata with keys (:foo). All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 44, :column 20}
     1,
     {:linter :unused-meta-on-macro,
-     :msg "Java static method call 'Math/abs' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :msg "Java static method call 'Math/abs' has metadata with keys (:foo). All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 46, :column 20}
     1,
@@ -1318,26 +1356,27 @@
      :line 78, :column 20}
     1,
     {:linter :unused-meta-on-macro,
-     :msg "Java static field access 'Long/MAX_VALUE' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :msg "Java static field access 'Long/MAX_VALUE' has metadata with keys (:foo). All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 92, :column 20}
     1,
     {:linter :unused-meta-on-macro,
-     :msg "Java static field access 'Long/MAX_VALUE' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :msg "Java static field access 'Long/MAX_VALUE' has metadata with keys (:foo). All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 94, :column 20}
     1,
     {:linter :unused-meta-on-macro,
-     :msg "Java instance method/field access '.x' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :msg "Java instance method/field access '.x' has metadata with keys (:foo). All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 102, :column 20}
     1,
     {:linter :unused-meta-on-macro,
-     :msg "Java instance method/field access '.x' has metadata with keys (:foo).  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
+     :msg "Java instance method/field access '.x' has metadata with keys (:foo). All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure.",
      :file (fname-from-parts "testcases" "macrometa.clj"),
      :line 104, :column 20}
-    1})
+    1}))
 
+(deftest test19
   (let [common-expected-warnings
         {{:linter :constant-test,
           :msg "Test expression is always logical true or always logical false: false in form (if false 1 2).",
@@ -1579,8 +1618,9 @@
      'testcases.constanttestexpr
      [:constant-test :unused-locals]
      eastwood.lint/default-opts
-     expected-warnings))
+     expected-warnings)))
 
+(deftest test20
   (lint-test
    'testcases.unusedlocals
    [:unused-locals :unused-private-vars]
@@ -1639,10 +1679,14 @@
      :msg "Private var 'foo10' is never used."
      :file (fname-from-parts "testcases" "unusedlocals.clj"),
      :line 164, :column 1}
-    1})
-  ;; No faults expected:
-  (lint-test 'testcases.unusednsimport.consumer1 [:unused-namespaces] eastwood.lint/default-opts {})
-  ;; Fault expected (since the refered type is in a `comment` form):
+    1}))
+
+;; No faults expected:
+(deftest test21
+  (lint-test 'testcases.unusednsimport.consumer1 [:unused-namespaces] eastwood.lint/default-opts {}))
+
+;; Fault expected (since the refered type is in a `comment` form):
+(deftest test22
   (lint-test 'testcases.unusednsimport.consumer2
              [:unused-namespaces]
              eastwood.lint/default-opts
@@ -1650,13 +1694,24 @@
                :msg "Namespace testcases.unusednsimport.defrecord is never used in testcases.unusednsimport.consumer2."
                :file "testcases/unusednsimport/consumer2.clj"
                :line 1
-               :column 1} 1})
-  ;; No faults expected:
-  (lint-test 'testcases.unusednsimport.consumer3 [:unused-namespaces] eastwood.lint/default-opts {})
-  ;; No faults expected:
-  (lint-test 'testcases.unusednsimport.consumer4 [:unused-namespaces] eastwood.lint/default-opts {})
-  ;; No faults expected:
-  (lint-test 'testcases.unusednsimport.consumer5 [:unused-namespaces] eastwood.lint/default-opts {})
+               :column 1} 1}))
+
+;; No faults expected:
+(deftest test23
+  (lint-test 'testcases.unusednsimport.consumer3 [:unused-namespaces] eastwood.lint/default-opts {}))
+
+;; No faults expected:
+(deftest test24
+  (lint-test 'testcases.unusednsimport.consumer3 [:unused-namespaces] eastwood.lint/default-opts {}))
+
+(deftest test25
+  (lint-test 'testcases.unusednsimport.consumer4 [:unused-namespaces] eastwood.lint/default-opts {}))
+
+;; No faults expected:
+(deftest test26
+  (lint-test 'testcases.unusednsimport.consumer5 [:unused-namespaces] eastwood.lint/default-opts {}))
+
+(deftest test27
   (lint-test
    'testcases.unusednss
    [:unused-namespaces :unused-locals]
@@ -1665,12 +1720,16 @@
      :msg "Namespace clojure.string is never used in testcases.unusednss.",
      :file (fname-from-parts "testcases" "unusednss.clj"),
      :line 1, :column 1}
-    1})
+    1}))
+
+(deftest test28
   (lint-test
    'testcases.unusednss3
    [:unused-namespaces :unused-locals]
    eastwood.lint/default-opts
-   {})
+   {}))
+
+(deftest test29
   (lint-test
    'testcases.unusednss4
    [:unused-namespaces :unused-locals]
@@ -1679,7 +1738,9 @@
      :msg "Namespace testcases.unusednss2 is never used in testcases.unusednss4.",
      :file (fname-from-parts "testcases" "unusednss4.clj"),
      :line 1, :column 1}
-    1})
+    1}))
+
+(deftest test30
   (lint-test
    'testcases.wrongnsform
    [:wrong-ns-form :unused-locals]
@@ -1690,7 +1751,7 @@
      :line 5, :column 3}
     1,
     {:linter :wrong-ns-form,
-     :msg "ns references should be lists.  This is not: [:use clojure.test].",
+     :msg "ns references should be lists. This is not: [:use clojure.test].",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 10, :column 3}
     1,
@@ -1700,27 +1761,27 @@
      :line 19, :column 1}
     1,
     {:linter :wrong-ns-form,
-     :msg "ns references should be lists.  This is not: [:use clojure.test].",
+     :msg "ns references should be lists. This is not: [:use clojure.test].",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 20, :column 3}
     1,
     {:linter :wrong-ns-form,
-     :msg "ns references should be lists.  This is not: [:use clojure.test].",
+     :msg "ns references should be lists. This is not: [:use clojure.test].",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 26, :column 3}
     1,
     {:linter :wrong-ns-form,
-     :msg "ns references should be lists.  This is not: [:use clojure.test].",
+     :msg "ns references should be lists. This is not: [:use clojure.test].",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 33, :column 3}
     1,
     {:linter :wrong-ns-form,
-     :msg "ns references should be lists.  This is not: [:use clojure.test].",
+     :msg "ns references should be lists. This is not: [:use clojure.test].",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 39, :column 3}
     1,
     {:linter :wrong-ns-form,
-     :msg ":require has an arg that is a 1-item list.  Clojure silently does nothing with this.  To require it as a namespace, it should be a symbol on its own or it should be inside of a vector, not a list.  To use it as the first part of a prefix list, there should be libspecs after it in the list: (eastwood.foo).",
+     :msg ":require has an arg that is a 1-item list. Clojure silently does nothing with this. To require it as a namespace, it should be a symbol on its own or it should be inside of a vector, not a list. To use it as the first part of a prefix list, there should be libspecs after it in the list: (eastwood.foo).",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 60, :column 13}
     1,
@@ -1738,38 +1799,40 @@
      :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :exclude :include-macros :refer :refer-macros :rename.",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 182, :column 13}
-    1})
+    1}))
+
+(deftest test31
   (lint-test
    'testcases.wrongprepost
    (concat @#'eastwood.lint/default-linters [:unused-locals])
    eastwood.lint/default-opts
    {{:linter :wrong-pre-post,
-     :msg "All function preconditions should be in a vector.  Found: (pos? x).",
+     :msg "All function preconditions should be in a vector. Found: (pos? x).",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 5, :column 9}
     1,
     {:linter :wrong-pre-post,
-     :msg "All function preconditions should be in a vector.  Found: (> x y).",
+     :msg "All function preconditions should be in a vector. Found: (> x y).",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 12, :column 12}
     1,
     {:linter :wrong-pre-post,
-     :msg "Postcondition found that is probably always logical true or always logical false.  Should be changed to function call?  number?.",
+     :msg "Postcondition found that is probably always logical true or always logical false. Should be changed to function call?  number?.",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 23, :column 10}
     1,
     {:linter :wrong-pre-post,
-     :msg "All function postconditions should be in a vector.  Found: (number? %).",
+     :msg "All function postconditions should be in a vector. Found: (number? %).",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 35, :column 10}
     1,
     {:linter :wrong-pre-post,
-     :msg "All function preconditions should be in a vector.  Found: (number? x).",
+     :msg "All function preconditions should be in a vector. Found: (number? x).",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 41, :column 9}
     1,
     {:linter :wrong-pre-post,
-     :msg "Precondition found that is probably always logical true or always logical false.  Should be changed to function call?  f.",
+     :msg "Precondition found that is probably always logical true or always logical false. Should be changed to function call?  f.",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 51, :column 9}
     1,
@@ -1779,12 +1842,12 @@
      :line 69, :column 1}
     1,
     {:linter :wrong-pre-post,
-     :msg "Precondition found that is always logical true or always logical false.  Should be changed to function call?  7.",
+     :msg "Precondition found that is always logical true or always logical false. Should be changed to function call?  7.",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 70, :column 9}
     1,
     {:linter :wrong-pre-post,
-     :msg "Precondition found that is probably always logical true or always logical false.  Should be changed to function call?  >=.",
+     :msg "Precondition found that is probably always logical true or always logical false. Should be changed to function call?  >=.",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 70, :column 9}
     1,
@@ -1799,17 +1862,17 @@
      :line 74, :column 1}
     1,
     {:linter :wrong-pre-post,
-     :msg "Precondition found that is always logical true or always logical false.  Should be changed to function call?  :a.",
+     :msg "Precondition found that is always logical true or always logical false. Should be changed to function call?  :a.",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 75, :column 9}
     1,
     {:linter :wrong-pre-post,
-     :msg "Postcondition found that is always logical true or always logical false.  Should be changed to function call?  \"constant\".",
+     :msg "Postcondition found that is always logical true or always logical false. Should be changed to function call?  \"constant\".",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 76, :column 10}
     1,
     {:linter :wrong-pre-post,
-     :msg "Precondition found that is probably always logical true or always logical false.  Should be changed to function call?  wrong-pre-9.",
+     :msg "Precondition found that is probably always logical true or always logical false. Should be changed to function call?  wrong-pre-9.",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 102, :column 9}
     1,
@@ -1819,7 +1882,7 @@
      :line 108, :column 1}
     1,
     {:linter :wrong-pre-post,
-     :msg "All function preconditions should be in a vector.  Found: (instance? Number datastore).",
+     :msg "All function preconditions should be in a vector. Found: (instance? Number datastore).",
      :file (fname-from-parts "testcases" "wrongprepost.clj"),
      :line 111, :column 9}
     1,
@@ -1846,7 +1909,9 @@
      :file "testcases/wrongprepost.clj",
      :line 109,
      :column 40}
-    1})
+    1}))
+
+(deftest test32
   (lint-test
    'testcases.arglists
    (concat @#'eastwood.lint/default-linters [:unused-locals])
@@ -1860,7 +1925,9 @@
      :msg "Function on var fn-with-arglists3 defined taking # args [1 3] but :arglists metadata has # args [2 4].",
      :file (fname-from-parts "testcases" "arglists.clj"),
      :line 22, :column 7}
-    1})
+    1}))
+
+(deftest test33
   (lint-test
    'testcases.duplicateparams
    (concat @#'eastwood.lint/default-linters [:unused-locals])
@@ -2027,7 +2094,7 @@
      :line 194,
      ;; I do not yet know _why_, but on both macOS and Linux I have
      ;; seen that the column number for this warning and the next one
-     ;; is always 1 unless you are running Clojure 1.9.  Weird.  Just
+     ;; is always 1 unless you are running Clojure 1.9. Weird. Just
      ;; expect that difference for now (and maybe always).
      :column (if (util/clojure-1-9-or-later) 22 1)}
     1,
@@ -2052,28 +2119,28 @@
     1,
     {:linter :unused-or-default,
      :msg
-     "Name f with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used.",
+     "Name f with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression. The default value in the :or will never be used.",
      :file "testcases/duplicateparams.clj",
      :line 217,
      :column 46}
     1,
     {:linter :unused-or-default,
      :msg
-     "Name f with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used.",
+     "Name f with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression. The default value in the :or will never be used.",
      :file "testcases/duplicateparams.clj",
      :line 231,
      :column 20}
     1,
     {:linter :unused-or-default,
      :msg
-     "Name h with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression.  The default value in the :or will never be used.",
+     "Name h with default value in :or map of associative destructuring does not appear elsewhere in that same destructuring expression. The default value in the :or will never be used.",
      :file "testcases/duplicateparams.clj",
      :line 231,
      :column 24}
     1,
     {:linter :unused-or-default,
      :msg
-     "Name c after :as is also in :or map of associative destructuring.  The default value in the :or will never be used.",
+     "Name c after :as is also in :or map of associative destructuring. The default value in the :or will never be used.",
      :file "testcases/duplicateparams.clj",
      :line 252,
      :column 31}
@@ -2089,23 +2156,21 @@
      :file "testcases/duplicateparams.clj",
      :line 257,
      :column 40}
-    1})
+    1}))
 
-  ;; I would prefer if this threw an exception, but I think it does
-  ;; not because Clojure reads, analyzes, and evaluates the namespace
-  ;; before lint-test does, and thus the namespace is already there
-  ;; when analyze-ns re-analyzes it.  I tried a variation of the
-  ;; lint-test macro that did remove-ns first, but that caused other
-  ;; tests to fail for reasons that I did not spend long enough to
-  ;; learn the reason for.
-  ;;  (lint-test
-  ;;   'testcases.topleveldo
-  ;;   [:redefd-vars :unlimited-use]
-  ;;   default-opts
-  ;;   {})
-  )
-
-(deftest test2
+;; I would prefer if this threw an exception, but I think it does
+;; not because Clojure reads, analyzes, and evaluates the namespace
+;; before lint-test does, and thus the namespace is already there
+;; when analyze-ns re-analyzes it. I tried a variation of the
+;; lint-test macro that did remove-ns first, but that caused other
+;; tests to fail for reasons that I did not spend long enough to
+;; learn the reason for.
+;;  (lint-test
+;;   'testcases.topleveldo
+;;   [:redefd-vars :unlimited-use]
+;;   default-opts
+;;   {})
+(deftest test34
   (when (util/clojure-1-9-or-later)
     (lint-test
      'testcases.wrongprepost2

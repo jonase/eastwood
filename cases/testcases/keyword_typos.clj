@@ -13,8 +13,8 @@
 ;; in the presence or absence of an initial '_' character are
 ;; reasonably common when interacting with Datomic.
 
-;; The example below is completely made up.  I have never worked with
-;; Datomic before.  It simply contains a pair of keywords that differ
+;; The example below is completely made up. I have never worked with
+;; Datomic before. It simply contains a pair of keywords that differ
 ;; only in presence/absence of a leading '_' character.
 
 (def datomic-common-pattern

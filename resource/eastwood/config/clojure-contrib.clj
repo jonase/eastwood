@@ -15,7 +15,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; This is probably a sloppy way to disable some
-;; :suspicious-expression warnings.  Consider fine-tuning it further.
+;; :suspicious-expression warnings. Consider fine-tuning it further.
 
 (disable-warning
  {:linter :suspicious-expression
@@ -23,16 +23,16 @@
   :for-macro 'clojure.core/and
   :if-inside-macroexpansion-of #{'clojure.core.match/match}
   :within-depth 13
-  :reason "Many clojure.core.match/match macro expansions contain expressions of the form (and expr).  This is normal, and probably simplifies the definition of match."})
+  :reason "Many clojure.core.match/match macro expansions contain expressions of the form (and expr). This is normal, and probably simplifies the definition of match."})
 
 (disable-warning
  {:linter :constant-test
   :if-inside-macroexpansion-of #{'clojure.core.match/match}
   ;; suppress :constant-test warnings even if arbitrarily deep inside
-  ;; a macroexpansion of the match macro.  I have seen one 22 deep in
+  ;; a macroexpansion of the match macro. I have seen one 22 deep in
   ;; the list, and several 7 or 10 deep.
   :within-depth nil
-  :reason "Many clojure.core.match/match macro expansions contain test expressions that are always true or always false.  This is normal, and probably simplifies the definition of match."})
+  :reason "Many clojure.core.match/match macro expansions contain test expressions that are always true or always false. This is normal, and probably simplifies the definition of match."})
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -46,7 +46,7 @@
   '([db sql-params & {:keys [result-set-fn row-fn identifiers as-arrays?]
                       :or {row-fn identity
                            identifiers str/lower-case}}])
-  :reason "clojure.java.jdbc/query uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
+  :reason "clojure.java.jdbc/query uses metadata to override the default value of :arglists for documentation purposes. This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
 
 (disable-warning
  {:linter :wrong-arity
@@ -54,14 +54,14 @@
   :arglists-for-linting
   '([db sql-params & {:keys [transaction? multi?]
                       :or {transaction? true multi? false}}])
-  :reason "clojure.java.jdbc/execute! uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
+  :reason "clojure.java.jdbc/execute! uses metadata to override the default value of :arglists for documentation purposes. This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
 
 (disable-warning
  {:linter :wrong-arity
   :function-symbol 'clojure.java.jdbc/insert!
   :arglists-for-linting
   '([db table & options])
-  :reason "clojure.java.jdbc/insert! uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
+  :reason "clojure.java.jdbc/insert! uses metadata to override the default value of :arglists for documentation purposes. This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -95,18 +95,18 @@
  {:linter :unused-ret-vals
   :if-inside-macroexpansion-of #{'clojure.core.typed/ann-form}
   :within-depth 1
-  :reason "core.typed macro ann-form can expand to its first argument, and is often used in places where its return value is unused.  This seems to be expected normal usage."})
+  :reason "core.typed macro ann-form can expand to its first argument, and is often used in places where its return value is unused. This seems to be expected normal usage."})
 
 (disable-warning
  {:linter :unused-ret-vals
   :if-inside-macroexpansion-of #{'clojure.core.typed/letfn>}
   :within-depth 2
-  :reason "core.typed macro letfn> expands to a letfn with a map as a first body expression, followed by more things in the body.  Not sure why."})
+  :reason "core.typed macro letfn> expands to a letfn with a map as a first body expression, followed by more things in the body. Not sure why."})
 
 (disable-warning
  {:linter :unused-ret-vals
   :for-value nil
   :if-inside-macroexpansion-of #{'clojure.core.typed.collect-phase/add-collect-method}
   :within-depth 4
-  :reason "core.typed macro add-collect-method expands to a fn that often has nil as first expression in body, probably a place-holder for pre/post-conditions.  Not sure why."})
+  :reason "core.typed macro add-collect-method expands to a fn that often has nil as first expression in body, probably a place-holder for pre/post-conditions. Not sure why."})
 

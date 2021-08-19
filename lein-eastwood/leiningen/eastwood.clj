@@ -6,7 +6,7 @@
    [leiningen.core.main :as main]))
 
 ;; 'lein help' prints only the first line of the string returned by
-;; help.  'lein help eastwood' prints all of it, plus the arg vectors
+;; help. 'lein help eastwood' prints all of it, plus the arg vectors
 ;; taken by the eastwood function below.
 
 (defn help []
@@ -21,7 +21,7 @@ Usage: To lint all Clojure files in your :source-paths and :test-paths:
 WARNING: If loading your code, e.g. via 'require' or 'use' (especially
 test files) causes side effects like opening connections to servers,
 modifying databases, etc., linting your test files will have those
-side effects, too.  To confine linting to Clojure code in
+side effects, too. To confine linting to Clojure code in
 your :source-paths, use this command:
 
     lein eastwood '{:namespaces [:source-paths]}'
@@ -56,9 +56,9 @@ For other options, see the full documentation on-line here:
 
 (defn pprint-meta
   "A version of pprint that prints all metadata on the object,
-wherever it appears.  (binding [*print-meta* true] (pprint obj))
+wherever it appears. (binding [*print-meta* true] (pprint obj))
 prints metadata on symbols, but not on collection, at least with
-Clojure 1.6.0 and probably earlier versions.  Clojure ticket CLJ-1445
+Clojure 1.6.0 and probably earlier versions. Clojure ticket CLJ-1445
 may improve upon this in the future.
 
 http://dev.clojure.org/jira/browse/CLJ-1445"
