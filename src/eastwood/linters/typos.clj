@@ -136,78 +136,103 @@
 ;;                               [[:then] :invoke]  ;; of clojure.test/do-report
 ;;                               [[:args 0] :map]]))
 
-(defn suspicious-is-forms [is-formasts]
-  (apply
-   concat
-   (for [{isf :raw-form, ast :ast} is-formasts]
-     (let [is-args (next isf)
-           n (count is-args)
-           is-arg1 (first is-args)
-           thrown? (and (sequential? is-arg1)
-                        (= 'thrown? (first is-arg1)))
-           thrown-args (and thrown? (rest is-arg1))
-           thrown-arg2 (and thrown? (nth is-arg1 2))
-           is-loc (-> isf first meta)
-           pred (fn [{:keys [op]}]
-                  (#{:const :map} op))
-           first-invoke-do-report-ast (doto (->>
-                                             (ast/nodes ast)
-                                             (filter #(and
-                                                       (= :invoke (:op %))
-                                                       (= 'clojure.test/do-report
-                                                          (-> % :fn :var
-                                                              util/var-to-fqsym))
-                                                       (->> % :args (some pred))))
-                                             first)
-                                        assert)
-           const-or-map-ast (doto (->> (get-in first-invoke-do-report-ast [:args])
-                                       (filter pred)
-                                       first)
-                              assert)
-           message-val-or-ast (case (:op const-or-map-ast)
-                                :const (-> const-or-map-ast :val :message)
-                                :map (util/get-val-in-map-ast
-                                      (get-in first-invoke-do-report-ast [:args 0])
-                                      :message))
-           message-tag (when message-val-or-ast
-                         (case (:op const-or-map-ast)
-                           :const (class message-val-or-ast)
-                           :map (:tag message-val-or-ast)))]
-       (cond
-         (and (= n 2) (string? is-arg1))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "'is' form has string as first arg.  This will always pass.  If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.")}]
+(defn suspicious-is-forms [{exclude-linters :eastwood/exclude-linters}
+                           is-formasts]
+  (let [warns
+        (for [{isf :raw-form, ast :ast} is-formasts]
+          (let [is-args (next isf)
+                n (count is-args)
+                is-arg1 (first is-args)
+                thrown? (and (sequential? is-arg1)
+                             (= 'thrown? (first is-arg1)))
+                thrown-args (and thrown? (rest is-arg1))
+                thrown-arg2 (and thrown? (nth is-arg1 2))
+                is-loc (-> isf first meta)
+                pred (fn [{:keys [op]}]
+                       (#{:const :map} op))
+                first-invoke-do-report-ast (doto (->>
+                                                  (ast/nodes ast)
+                                                  (filter #(and
+                                                            (= :invoke (:op %))
+                                                            (= 'clojure.test/do-report
+                                                               (-> % :fn :var
+                                                                   util/var-to-fqsym))
+                                                            (->> % :args (some pred))))
+                                                  first)
+                                             assert)
+                const-or-map-ast (doto (->> (get-in first-invoke-do-report-ast [:args])
+                                            (filter pred)
+                                            first)
+                                   assert)
+                message-val-or-ast (case (:op const-or-map-ast)
+                                     :const (-> const-or-map-ast :val :message)
+                                     :map (util/get-val-in-map-ast
+                                           (get-in first-invoke-do-report-ast [:args 0])
+                                           :message))
+                message-tag (when message-val-or-ast
+                              (case (:op const-or-map-ast)
+                                :const (class message-val-or-ast)
+                                :map (:tag message-val-or-ast)))]
+            (cond
+              (and (= n 2)
+                   (string? is-arg1)
+                   (not (util/excludes-kind? [:suspicious-test :first-arg-is-string]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :first-arg-is-string
+                :msg (format "'is' form has string as first arg. This will always pass. If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.")}]
 
-         (and (constant-expr-logical-true? is-arg1)
-              (not (list? is-arg1)))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "'is' form has first arg that is a constant whose value is logical true.  This will always pass.  There is probably a mistake in this test.")}]
+              (and (constant-expr-logical-true? is-arg1)
+                   (not (list? is-arg1))
+                   (not (util/excludes-kind? [:suspicious-test :first-arg-is-constant-true]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :first-arg-is-constant-true
+                :msg (format "'is' form has first arg that is a constant whose value is logical true. This will always pass. There is probably a mistake in this test.")}]
 
-         (and (= n 2)
-              (not= message-tag java.lang.String))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "'is' form has non-string as second arg (inferred type is %s).  The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception.  If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away."
-                        message-tag)}]
+              (and (= n 2)
+                   (not= message-tag String)
+                   (not (util/excludes-kind? [:suspicious-test :second-arg-is-not-string]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :second-arg-is-not-string
+                :msg (format "'is' form has non-string as second arg (inferred type is %s). The second arg is an optional message to print if the test fails, not a test expression, and will never cause your test to fail unless it throws an exception. If the second arg is an expression that evaluates to a message string during test time, and you intended this, you may wrap it in a call to (str ...) so this warning goes away."
+                             message-tag)}]
 
-         (and thrown? (util/regex? thrown-arg2))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex.  This regex is ignored.  Did you mean to use thrown-with-msg? instead of thrown?")}]
+              (and thrown?
+                   (util/regex? thrown-arg2)
+                   (not (util/excludes-kind? [:suspicious-test :thrown-regex]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :thrown-regex
+                :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex. This regex is ignored. Did you mean to use thrown-with-msg? instead of thrown?")}]
 
-         (and thrown? (string? thrown-arg2))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string.  This string is ignored.  Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")}]
+              (and thrown?
+                   (string? thrown-arg2)
+                   (not (util/excludes-kind? [:suspicious-test :thrown-string-arg]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :thrown-string-arg
+                :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string. This string is ignored. Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")}]
 
-         (and thrown? (some string? thrown-args))
-         [{:loc is-loc
-           :linter :suspicious-test,
-           :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...).  This string is ignored.  Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")}]
+              (and thrown?
+                   (some string? thrown-args)
+                   (not (util/excludes-kind? [:suspicious-test :string-inside-thrown]
+                                             exclude-linters)))
+              [{:loc is-loc
+                :linter :suspicious-test,
+                :kind :string-inside-thrown
+                :msg (format "(is (thrown? ...)) form has a string inside (thrown? ...). This string is ignored. Did you mean it to be a message shown if the test fails, like (is (thrown? ...) \"message\")?")}]
 
-         :else nil)))))
+              :else nil)))]
+    (->> warns
+         (apply concat)
+         (keep identity))))
 
 (def var-info-map-delayed
   (delay

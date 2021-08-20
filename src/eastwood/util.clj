@@ -1227,3 +1227,28 @@ of these kind."
             (println (format "            In file but not loaded:"))
             (doseq [name (sort file-but-not-loaded)]
               (println (format "            %s" name)))))))))
+
+(defn expand-exclude-linters [exclude-linters]
+  (->> exclude-linters
+       (mapcat (fn [x]
+                 (if (keyword? x)
+                   [x]
+                   (let [[y z :as a] x]
+                     (if (keyword? z)
+                       [a]
+                       (->> z
+                            (mapv (fn [k]
+                                    [y k]))))))))
+       (set)))
+
+(defn excludes-kind?
+  "Is the linter kind denoted by `path` excluded from runtime configuration?"
+  [[linter _kind :as path] exclude-linters--internal]
+  {:pre [(vector? path)
+         (every? keyword? path)
+         (set? exclude-linters--internal)]}
+  (->> [linter ;; the whole linter
+        ;; only the specific linter `:kind`:
+        path]
+       (some exclude-linters--internal)
+       boolean))

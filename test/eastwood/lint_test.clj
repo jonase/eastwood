@@ -25,23 +25,28 @@
     (testing "default-options are added"
       (is (= sut/default-opts
              (dissoc (sut/last-options-map-adjustments nil reporter)
-                     :warning-enable-config))))
+                     :warning-enable-config
+                     :eastwood/exclude-linters))))
     (testing "passed options are respected. So are the type and sort order of :namespaces."
       (is (= (assoc sut/default-opts
                     :namespaces ["foo" "bar"])
              (dissoc (sut/last-options-map-adjustments {:namespaces ["foo" "bar"]} reporter)
-                     :warning-enable-config)))
+                     :warning-enable-config
+                     :eastwood/exclude-linters)))
       (is (= (assoc sut/default-opts
                     :namespaces #{"foo"})
              (dissoc (sut/last-options-map-adjustments {:namespaces #{"foo"}} reporter)
-                     :warning-enable-config)))
+                     :warning-enable-config
+                     :eastwood/exclude-linters)))
       (is (= (assoc sut/default-opts
                     :namespaces '("foo" "bar"))
              (dissoc (sut/last-options-map-adjustments {:namespaces '("foo" "bar")} reporter)
-                     :warning-enable-config))))
+                     :warning-enable-config
+                     :eastwood/exclude-linters))))
     (testing "all the things are sets (except :namespaces, which keep their original class)"
       (is (empty? (->>
-                   (select-keys (sut/last-options-map-adjustments {:namespaces []} reporter) [:debug :source-paths :test-paths :exclude-namespaces])
+                   (select-keys (sut/last-options-map-adjustments {:namespaces []} reporter)
+                                [:debug :source-paths :test-paths :exclude-namespaces])
                    (vals)
                    (remove set?)))))))
 
@@ -545,3 +550,20 @@ See https://github.com/jonase/eastwood/issues/402"
                           true)
     #{'testcases.boxed-math.green} {:some-warnings false}
     #{'testcases.boxed-math.red}   {:some-warnings true}))
+
+(deftest subkind-silencing
+  (testing "I can silence a specific linter :kind"
+    (are [input expected] (testing input
+                            (is (= (assoc expected :some-errors false)
+                                   (-> sut/default-opts
+                                       (assoc :namespaces #{'testcases.subkind-silencing.red}
+                                              :exclude-linters input)
+                                       sut/eastwood)))
+                            true)
+      #{}                                                {:some-warnings true}
+      #{:suspicious-test}                                {:some-warnings false}
+      #{[:suspicious-test :second-arg-is-not-string]}    {:some-warnings false}
+      #{[:suspicious-test [::something-else]]}           {:some-warnings true}
+      #{[:suspicious-test #{:second-arg-is-not-string}]} {:some-warnings false}
+      #{[:suspicious-test #{:second-arg-is-not-string
+                            ::something-else}]}          {:some-warnings false})))

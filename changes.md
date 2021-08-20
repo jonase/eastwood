@@ -1,3 +1,10 @@
+## Changes from 0.9.6 to
+
+#### New
+
+* Implement ability to omit a specific linter :kind
+  * Closes https://github.com/jonase/eastwood/issues/387
+
 ## Changes from 0.9.4 to 0.9.6
 
 #### Bugfixes

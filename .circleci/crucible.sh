@@ -53,7 +53,7 @@ if grep --silent "Reflection warning" output; then
   exit 1
 fi
 
-grep --silent "== Warnings: 340. Exceptions thrown: 0" output || exit 1
+grep --silent "== Warnings: 339. Exceptions thrown: 0" output || exit 1
 
 # Exercise malli because Eastwood used to choke on that project due to lack of explicit topo order for ns analysis
 cd ../malli || exit 1
@@ -96,11 +96,17 @@ grep --silent "Warnings: 4. $ex_marker 0" output || exit 1
 grep --silent "Warnings: 10. $ex_marker 0" output || exit 1
 grep --silent "Warnings: 16. $ex_marker 0" output || exit 1
 grep --silent "Warnings: 36. $ex_marker 0" output || exit 1
-grep --silent "Warnings: 45. $ex_marker 0" output || exit 1
+grep --silent "Warnings: 43. $ex_marker 0" output || exit 1
 
 zero_warns=$(grep -c "Warnings: 0. $ex_marker 0" output)
 zero_warns=${zero_warns// /}
 if [ "$zero_warns" != "11" ]; then
+  exit 1
+fi
+
+one_warns=$(grep -c "Warnings: 1. $ex_marker 0" output)
+one_warns=${one_warns// /}
+if [ "$one_warns" != "1" ]; then
   exit 1
 fi
 

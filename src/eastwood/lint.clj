@@ -520,7 +520,9 @@
                               (set/union add-linters))
         known-linters (set (keys linter-name->info))
         unknown-linters (set/difference (set/union linters-requested
-                                                   excluded-linters)
+                                                   (into #{}
+                                                         (filter keyword?)
+                                                         excluded-linters))
                                         known-linters)]
     (when (and (seq unknown-linters)
                (not disable-linter-name-checks))
@@ -651,6 +653,8 @@
                    :test-paths #{}
                    :namespaces #{:source-paths :test-paths}
                    :exclude-namespaces #{}
+                   :exclude-linters #{ ;; exclude only a sub :kind for a specific linter:
+                                      [:suspicious-test :second-arg-is-not-string]}
                    :config-files #{}
                    :builtin-config-files default-builtin-config-files
                    :rethrow-exceptions? false
@@ -662,19 +666,23 @@
         distinct* (fn [x] ;; distinct but keeps original coll type
                     (->> (into (empty x) (distinct) x)
                          (into (empty x)))) ;; restore list order
-        opts (-> opts
-                 (update :debug set)
-                 (update :namespaces distinct*)
-                 (update :source-paths set)
-                 (update :test-paths set)
-                 (update :exclude-namespaces set))
+        {:keys [exclude-linters]
+         :as opts} (-> opts
+                       (update :debug set)
+                       (update :namespaces distinct*)
+                       (update :source-paths set)
+                       (update :test-paths set)
+                       (update :exclude-namespaces set))
         ;; Changes below override anything in the caller-provided
         ;; options map.
         opts (assoc opts
                     :warning-enable-config
                     (util/init-warning-enable-config
                      (:builtin-config-files opts)
-                     (:config-files opts) opts))]
+                     (:config-files opts) opts)
+
+                    :eastwood/exclude-linters
+                    (util/expand-exclude-linters exclude-linters))]
     (reporting/debug reporter
                      :options (with-out-str
                                 (println "\nOptions map after filling in defaults:")
