@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   shellcheck: circleci/shellcheck@2.2.3
-  
+
 executor_defaults: &executor_defaults
   # xlarge: use as many CPU cores as possible, to exercise parallelism as realistically as possible
   # xlarge is only applied in paid accounts and gracefully degrades to a compatible resource_class in regular accounts
@@ -75,7 +75,7 @@ jobs:
 
       - run:
           name: Run Eastwood against itself
-          command: EVAL_IN_LEININGEN=1 lein with-profile +eastwood-plugin eastwood
+          command: EVAL_IN_LEININGEN=1 lein with-profile +eastwood-plugin,+deep-diff eastwood
 
       - run:
           name: Prevent any form of caching, for the next step
@@ -87,7 +87,7 @@ jobs:
 
       - run:
           name: Run normal test suite
-          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+<< parameters.clojure-version >> do clean, test
+          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+deep-diff,+<< parameters.clojure-version >> do clean, test
 
       - run:
           # Aims to exercise that the plugin can be run in external projects, and that the `-main` program works:
@@ -123,20 +123,20 @@ jobs:
 
       - run:
           name: Run test suite that exercises 3rd-party libs
-          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+test-3rd-party-deps,+<< parameters.clojure-version >> do clean, test
+          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+test-3rd-party-deps,+deep-diff,+<< parameters.clojure-version >> do clean, test
 
       - run:
           name: Prevent any form of caching, for the next step
           command:  git clean -fdx
-          
+
       - run:
           name: Run test suite that exercises clojure.core
-          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+clojure-core-test,+<< parameters.clojure-version >> do clean, test
-          
+          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+clojure-core-test,+deep-diff,+<< parameters.clojure-version >> do clean, test
+
       - run:
           name: Run test suite that exercises var-info.edn
-          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+var-info-test,+<< parameters.clojure-version >> do clean, test
-          
+          command: lein with-profile -user,-dev,+test,+warn-on-reflection,+var-info-test,+deep-diff,+<< parameters.clojure-version >> do clean, test
+
   lint:
     parameters:
       executor:
@@ -151,7 +151,7 @@ jobs:
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "project.clj" }}
-            
+
       - restore_cache:
           keys:
             - v2-dependencies-LINT-{{ checksum "project.clj" }}
@@ -184,7 +184,7 @@ jobs:
           paths:
             - ~/.m2/repository/org/owasp/dependency-check-utils/6.2.2/data
           key: v2-nvd-data-{{ checksum "project.clj" }}-{{checksum "today"}}
-          
+
       - run:
           name: Run against a variety of real-world projects
           command: JVM_OPTS= .circleci/crucible.sh
