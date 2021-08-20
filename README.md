@@ -49,7 +49,7 @@ command:
 
     $ lein eastwood
 
-## deps.edn
+### deps.edn
 If you're using `deps.edn`, you can set options to eastwood linter in a
  EDN map, like this:
 ```clojure
@@ -250,7 +250,7 @@ specifying which linters are enabled or disabled are:
 * `:linters` Linters to use.  If not specified, same as `[:default]`,
   which is all linters except those documented as 'disabled by
   default'.
-* `:exclude-linters` Linters to exclude
+* `:exclude-linters` Linters (or [linter sub `:kind`s](#ignoring-linter-sub-kinds)) to exclude
 * `:add-linters` Linters to add.  The final list of linters is the set
   specified by `:linters`, taking away all in `:excluded-linters`,
   then adding all in `:add-linters`.
@@ -297,24 +297,8 @@ tests written using
 do), then you can run Eastwood on those files without the side
 effects.
 
-If you know how to write tests using other Clojure test libraries
-besides `clojure.test` so that merely loading the file does not run
-the tests, please create an Issue for Eastwood on GitHub.
-
 If you have a code base you do not trust to load, consider a sandbox,
 throwaway virtual machine, etc.
-
-New in Eastwood 0.1.5 is an option to force continuing to lint more
-files even if an exception was thrown while analyzing or evaluating an
-earlier file.  To do this, set the key `:continue-on-exception` to
-`true` in the option map.  Without this option, the default behavior
-is to stop linting if an exception is thrown.
-
-Warning: Setting `:continue-on-exception` to true can cause exceptions
-while analyzing later namespaces that would not otherwise occur.  For
-example, if namespace `A` is analyzed first, and throws an exception
-before function `A/foo` is defined, analyzing a later namespace `B`
-that uses `A/foo` will throw an exception because it is undefined.
 
 There are also options that enable printing of additional debug
 messages during linting.  These are only intended for tracking down
@@ -588,8 +572,7 @@ for the `:eastwood` key:
 ```clojure
   {:exclude-linters (:unlimited-use :wrong-arity :bad-arglists)
    :debug (:time :progress)
-   :warning-format :map-v2
-   }
+   :warning-format :map-v2}
 ```
 
 We will call this value the Leiningen option map.
@@ -1355,8 +1338,8 @@ to disable these warnings, only when they occur within particular
 macro expansions.  Search those config files for `:constant-test` to
 find examples.
 
-It is common across Clojure projects tested to use `:else` as the last
-'always do this case' at the end of a `cond` form.  It is also fairly
+It is common across Clojure projects to use `:else` as the last
+'always do this' case at the end of a `cond` form.  It is also fairly
 common to use `true` or `:default` for this purpose, and Eastwood will
 not warn about these.  If you use some other constant in that
 position, Eastwood will warn.
@@ -1364,10 +1347,6 @@ position, Eastwood will warn.
 It is somewhat common to use `(assert false "msg")` to throw
 exceptions in Clojure code.  This linter has a special check never to
 warn about such forms.
-
-This linter does not yet examine tests in `if-some` or `when-some`
-forms.  It is also not able to determine that expressions like `(/ 84
-2)` are constant.
 
 </details>
 
@@ -2153,17 +2132,39 @@ The following are acceptable `target`s:
 > Please, if encountering an issue in Eastwood, consider reporting it in addition to (or instead of) silencing it.
 > This way Eastwood can continue to be a precise linter, having as few false positives as possible.
 
+## Ignoring linter sub `:kind`s
+
+A given linter may have different `:kind`s of emitted warnings. For example the `:suspicious-test` linter has the following kinds:
+
+> `:first-arg-is-string, :first-arg-is-constant-true, :second-arg-is-not-string, :thrown-regex, :thrown-string-arg, :string-inside-thrown`
+
+That `:kind` is reported to stdout when running Eastwood as a tool, and returned as data when invoking Eastwood programatically. 
+
+You can prevent a specific `:kind` from emitting warnings by using any of the following syntaxes:
+
+```clj
+;; simple pairs of [<linter>, <kind>]:
+:exclude-linters [[:suspicious-test :first-arg-is-constant-true], [:suspicious-test :thrown-regex]]
+;; or
+;; pairs of [<linter>, <vector of kinds for that linter>]:
+:exclude-linters [[:suspicious-test [:first-arg-is-constant-true :thrown-regex]]]
+
+;; You can mix and match both syntaxes.
+;; You can also mix them with single keywords which denote a whole linter to be omitted:
+:exclude-linters [:constant-test, [:suspicious-test :first-arg-is-constant-true]]
+```
+
+With newer versions, Eastwood disables `[:suspicious-test :first-arg-is-constant-true]` by default.
+
+To re-enable it, set `:exclude-linters` to `[]` or any custom value. Whatever value you provide will replace the default entirely.  
+
 ## Changelog
 
-See the
-[changes.md](https://github.com/jonase/eastwood/blob/master/changes.md)
-file.
-
+See the [changes.md](https://github.com/jonase/eastwood/blob/master/changes.md) file.
 
 ## For Eastwood developers
 
-To be on the bleeding edge (with all that phrase implies, e.g. you are
-more likely to run across new undiscovered bugs), install Eastwood in
+To be on the bleeding edge, install Eastwood in
 your local Maven repository:
 
     $ cd path/to/eastwood
