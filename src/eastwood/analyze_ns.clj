@@ -19,8 +19,7 @@
    [eastwood.passes :as pass]
    [eastwood.util :as util])
   (:import
-   (clojure.lang Namespace)
-   (java.net URL)))
+   (clojure.lang Namespace)))
 
 ;; uri-for-ns, pb-reader-for-ns were copied from library
 ;; jvm.tools.analyzer, then later probably diverged from each other.
@@ -38,7 +37,7 @@
 (defn uri-for-ns
   "Returns a URI representing the namespace. Throws an
   exception if URI not found."
-  ^URL
+  ^java.net.URL
   [ns-sym]
   (let [rsrc-path-clj (ns-resource-name ns-sym ".clj")
         rsrc-path-cljc (ns-resource-name ns-sym ".cljc")

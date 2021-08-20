@@ -11,8 +11,7 @@
    [eastwood.copieddeps.dep10.clojure.tools.reader.reader-types :as reader-types])
   (:import
    (clojure.lang LineNumberingPushbackReader)
-   (java.io File StringReader)
-   (java.net URI)))
+   (java.io File StringReader)))
 
 (defmacro timeit
   "Evaluates expr and returns a vector containing the expression's
@@ -69,7 +68,7 @@
 
 ;; first char is upper-case
 
-(defn to-uri ^URI [x]
+(defn to-uri ^java.net.URI [x]
   (cond (instance? java.net.URI x) x
         (instance? java.io.File x) (.toURI ^java.io.File x)
         (instance? java.net.URL x) (.toURI ^java.net.URL x)
