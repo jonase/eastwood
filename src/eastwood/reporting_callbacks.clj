@@ -11,17 +11,21 @@
   (when (not= cwd @last-cwd-shown)
     (reset! last-cwd-shown cwd)
     (println (format "Entering directory `%s'" cwd)))
-  (println (format "%s:%s:%s: %s: %s"
-                   (-> warn-data :uri-or-file-name str)
-                   ;; Emacs compilation-mode default regex's
-                   ;; do not recognize warning lines with
-                   ;; nil instead of decimal numbers for
-                   ;; line/col number. Make up values if we
-                   ;; don't know them.
-                   (or (-> warn-data :line) "1")
-                   (or (-> warn-data :column) "1")
-                   (name (-> warn-data :linter))
-                   (-> warn-data :msg))))
+  (let [kind (-> warn-data :kind)
+        kind-string (when kind
+                      (format " {:kind %s}" kind))
+        linter-string (-> warn-data :linter name (str kind-string))]
+    (println (format "%s:%s:%s: %s: %s"
+                     (-> warn-data :uri-or-file-name str)
+                     ;; Emacs compilation-mode default regex's
+                     ;; do not recognize warning lines with
+                     ;; nil instead of decimal numbers for
+                     ;; line/col number. Make up values if we
+                     ;; don't know them.
+                     (or (-> warn-data :line) "1")
+                     (or (-> warn-data :column) "1")
+                     linter-string
+                     (-> warn-data :msg)))))
 
 (defrecord PrintingReporter [opts warn-writer])
 
