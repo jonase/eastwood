@@ -21,7 +21,7 @@
 
 
 ;; It seems defprotocol macroexpands into a do with quite a few
-;; sequential forms, each with side effects.  It is probably necessary
+;; sequential forms, each with side effects. It is probably necessary
 ;; to analyze, and then eval, each of them one at a time, in order for
 ;; things to work.
 

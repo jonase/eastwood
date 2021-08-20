@@ -1,11 +1,11 @@
 ;; NOTE: This file is *evaluated* by Eastwood before it starts
-;; linting, not merely read.  This has the advantage that you can use
-;; functions, loops, etc.  This can be useful to disable many similar
+;; linting, not merely read. This has the advantage that you can use
+;; functions, loops, etc. This can be useful to disable many similar
 ;; kinds of warnings.
 
 ;; This file contains some configuration for disabling warnings that
-;; Eastwood uses by default.  Users may write files similar to this
-;; one that provide additional configuration.  See the documentation
+;; Eastwood uses by default. Users may write files similar to this
+;; one that provide additional configuration. See the documentation
 ;; for the :config-files option to Eastwood.
 
 ;; The kind of configuration implemented depends upon the linter
@@ -13,7 +13,7 @@
 
 ;; For :suspicious-expression and :constant-test linters, you can
 ;; disable them based on which macroexpansions occurred to create the
-;; AST node that is the source of the warning.  Thus a developer may
+;; AST node that is the source of the warning. Thus a developer may
 ;; disable warnings that are caused by macros in libraries that they
 ;; do not wish to edit, e.g. because the library is widely used and
 ;; they do not wish to create a custom version of it that disables the
@@ -31,8 +31,8 @@
 
 ;; Without a change in Carmine's source code, there is a warning about
 ;; a clojure.core/let with an empty body every time macro
-;; enqueue-request is invoked.  I have filed an issue with Carmine on
-;; GitHub, since it appears like it might be a bug in Carmine.  Until
+;; enqueue-request is invoked. I have filed an issue with Carmine on
+;; GitHub, since it appears like it might be a bug in Carmine. Until
 ;; that is resolved (and maybe afterwards), it would be good to
 ;; suppress what can otherwise be a huge number of warnings when
 ;; linting Carmine itself.
@@ -207,7 +207,7 @@
        {:linter :wrong-arity
         :function-symbol f
         :arglists-for-linting defelem-modified-arglists
-        :reason (format "%s uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that." f)}))))
+        :reason (format "%s uses metadata to override the default value of :arglists for documentation purposes. This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that." f)}))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -271,7 +271,7 @@
                                  'schema.core/fn
                                  'schema.core/defmethod}
   :within-depth 9
-  :reason "schema.core/defn, fn, and defmethod always give a constant-test warning for a test 'true' in macro expansions, if it has metadata ^:always-validate.  This config will disable such warnings regardless of the presence of ^:always-validate"})
+  :reason "schema.core/defn, fn, and defmethod always give a constant-test warning for a test 'true' in macro expansions, if it has metadata ^:always-validate. This config will disable such warnings regardless of the presence of ^:always-validate"})
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -297,7 +297,7 @@
   :arglists-for-linting
   '([coll obj & {:keys [from to many write-concern]
                  :or {from :clojure to :clojure many false}}])
-  :reason "somnium.congomongo/insert!  uses metadata to override the default value of :arglists for documentation purposes.  This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
+  :reason "somnium.congomongo/insert!  uses metadata to override the default value of :arglists for documentation purposes. This configuration tells Eastwood what the actual :arglists is, i.e. would have been without that."})
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Configs to disable warnings in slingshot, version 0.12.2

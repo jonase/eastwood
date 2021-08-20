@@ -16,7 +16,7 @@
                    ;; Emacs compilation-mode default regex's
                    ;; do not recognize warning lines with
                    ;; nil instead of decimal numbers for
-                   ;; line/col number.  Make up values if we
+                   ;; line/col number. Make up values if we
                    ;; don't know them.
                    (or (-> warn-data :line) "1")
                    (or (-> warn-data :column) "1")

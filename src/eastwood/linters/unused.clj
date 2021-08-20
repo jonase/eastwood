@@ -100,7 +100,7 @@
   unused, such as &form and &env that are 'hidden' args of macros.
 
   By convention, _ is never reported as unused, and neither is any arg
-  with a name that begins with _.  This gives eastwood users a way to
+  with a name that begins with _. This gives eastwood users a way to
   selectively disable such warnings if they wish."
   [arg]
   (or (contains? #{'&env '&form} arg)
@@ -143,9 +143,9 @@
 
 ;; Symbols in let or loop bindings that are unused
 
-;; Note: the let bindings are sequential.  It can happen that the only
+;; Note: the let bindings are sequential. It can happen that the only
 ;; place a bound symbol is used is in the init expression of a later
-;; bound symbol, and not in the let body at all.  This must be handled
+;; bound symbol, and not in the let body at all. This must be handled
 ;; or we will get incorrect warnings.
 
 (defn- ignore-local-symbol?
@@ -153,7 +153,7 @@
   warned about as unused.
 
   By convention, _ is never reported as unused, and neither is any
-  symbol with a name that begins with _.  This gives eastwood users a
+  symbol with a name that begins with _. This gives eastwood users a
   way to selectively disable such warnings if they wish."
   [arg]
   (.startsWith (name arg) "_"))
@@ -190,7 +190,7 @@
                (filter unused-set)))))))
 
 ;; Never warn about symbols bound by let's that result from expanding
-;; clojure.core/loop.  See function foo2 in namespace
+;; clojure.core/loop. See function foo2 in namespace
 ;; testcases.unusedlocals for an example and discussion.
 
 (defn let-ast-from-loop-expansion [ast]
@@ -235,12 +235,12 @@
 
 ;; (first ns-asts) below will likely find the *only* ns form in the
 ;; entire file, but it is written to use the first one in case there
-;; are more than one.  See :wrong-ns-form linter for more checks on ns
+;; are more than one. See :wrong-ns-form linter for more checks on ns
 ;; forms.
 
 ;; The unused-namespaces linter doesn't even try to have line:col
-;; info.  We should usually, if not always, be able to get some from
-;; the namespace where it was read.  At worst, it should get the
+;; info. We should usually, if not always, be able to get some from
+;; the namespace where it was read. At worst, it should get the
 ;; beginning of the ns form it is in.
 
 (defn unused-namespaces [{:keys [asts]} _opt]
@@ -334,7 +334,7 @@
   expressions that appear to have been generated via 'defprotocol' will
   have their 4th subexpression ast node marked specially with the
   key :eastwood/defprotocol-expansion-sigs with the name of the
-  protocol.  There does not seem to be an easier way to avoid printing
+  protocol. There does not seem to be an easier way to avoid printing
   out :unused-ret-vals warning messages of the form 'Constant value is
   discarded inside null: null'."
   [ast]
@@ -357,8 +357,8 @@
     :do (unused-exprs-to-check (:ret ast-node))
     ;; Digging into let exprs may be the cause of many many
     ;; auto-generated names appearing in the :unused-ret-vals linter
-    ;; output during recent testing.  Too noisy to be useful like
-    ;; that.  Try without it.
+    ;; output during recent testing. Too noisy to be useful like
+    ;; that. Try without it.
     ;; Similarly for let, except everything in its body is unused.
     ;; If a :set node has an unused ret value, then all of its
     ;; elements have unused ret values.
@@ -455,7 +455,7 @@
                      stmt-desc-str extra-msg form))}
 
           ;; default case, where we have no information about the type
-          ;; of function or method it is.  Note that for Clojure
+          ;; of function or method it is. Note that for Clojure
           ;; function invocations on functions that are not known,
           ;; action will be nil here, and there will be no warning about
           ;; them.
@@ -475,10 +475,10 @@
 
 ;; Note 1: Report unused :const :var and :local only when linter is
 ;; the regular :unused-ret-vals one, but do so for such values whether
-;; they are inside of a try block or not.  If both :unused-ret-vals
+;; they are inside of a try block or not. If both :unused-ret-vals
 ;; and :unused-ret-vals-in-try are specified, such values will only be
 ;; reported once, and if :unused-ret-vals-in-try is used but not the
-;; other, they will not be reported.  I expect that :unused-ret-vals
+;; other, they will not be reported. I expect that :unused-ret-vals
 ;; will be the more commonly used one, as the :unused-ret-vals-in-try
 ;; will likely have more false positives from functions being called
 ;; in unit tests to see if they throw an exception.
@@ -566,7 +566,7 @@
 
              (util/invoke-expr? stmt)
              (let [v1 (get-in stmt [:fn :var])
-                   ;; Special case for apply.  Issue a warning based upon
+                   ;; Special case for apply. Issue a warning based upon
                    ;; the 1st arg to apply, not apply itself (if that arg
                    ;; is a var).
                    arg1 (first (:args stmt))
@@ -643,13 +643,13 @@
                               :msg
                               (cond
                                 (= :new (:op ast))
-                                (format "Java constructor call '%s' has metadata with keys %s.  All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure."
+                                (format "Java constructor call '%s' has metadata with keys %s. All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure."
                                         (first orig-form)
                                         sorted-removed-meta-keys)
 
                                 (#{:instance-call :static-call :instance-field :static-field
                                    :host-interop} (:op ast))
-                                (format "Java %s '%s' has metadata with keys %s.  All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure."
+                                (format "Java %s '%s' has metadata with keys %s. All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure."
                                         (case (:op ast)
                                           :instance-call "instance method call"
                                           :static-call "static method call"

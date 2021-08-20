@@ -3,7 +3,7 @@
 
 
 ;; defrecords with an empty field list produce in their macroexpansion
-;; several unused locals.  This code here helps test that Eastwood
+;; several unused locals. This code here helps test that Eastwood
 ;; suppresses those warnings correctly.
 
 (defrecord zero-field-rec [])
@@ -16,7 +16,7 @@
 ;; undesirable-warn1 being unused in fn foo2 below.
 
 ;; This occurs because of the way loop macroexpands when it has
-;; destructuring binding.  The macroexpansion of the loop in foo2's
+;; destructuring binding. The macroexpansion of the loop in foo2's
 ;; body is this:
 
 ;; user=> (pprint (macroexpand '(loop [[undesirable-warn1] (next x)] (when (next undesirable-warn1) (recur (next undesirable-warn1))))))
@@ -35,12 +35,12 @@
 
 ;; Note that the inner let's undesirable-warn1 is what is used in the
 ;; loop body, while the outer let's undesirable-warn1 is not used
-;; anywhere.  Why is it even bound to a value in the outer let?
+;; anywhere. Why is it even bound to a value in the outer let?
 ;; Probably because it should be available for use in a later bound
 ;; symbol's initial value expression, if there is one.
 
 ;; Thus the warning is technically correct, but misleading when
-;; looking at the pre-macroexpanded form.  It would be nice to find a
+;; looking at the pre-macroexpanded form. It would be nice to find a
 ;; clean way to eliminate this warning without also suppressing any
 ;; good warnings.
 
@@ -116,11 +116,11 @@
 
 ;; unused-private-vars tests
 
-;; I saw examples like these in tools.reader.  They were used later in
+;; I saw examples like these in tools.reader. They were used later in
 ;; the file, but tools.analyzer had :op :const ast nodes where they
 ;; were used, with a :form equal to 'upper-limit and 'lower-limit.
 ;; However, the asts where they were used seemed to have no reference
-;; to the vars at all.  I am not sure how much I can trust that there
+;; to the vars at all. I am not sure how much I can trust that there
 ;; are not corner cases if I tried to use the :form values of those
 ;; :const nodes to treat them as uses of these private const vars, and
 ;; not something else that might have the same symbol to refer to
@@ -144,7 +144,7 @@
        (< x lower-limit2)))
 
 ;; TBD: I found a case like foo10 and foo11 below in project automat,
-;; where foo10 was warned about.  Ideally we should not warn about
+;; where foo10 was warned about. Ideally we should not warn about
 ;; this, since it is used in foo11's macroexpansion, but I guess if
 ;; there is no actual expansion of foo11 in the namespace, how would
 ;; one know?

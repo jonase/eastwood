@@ -8,9 +8,9 @@
 ;; The sole purpose of this namespace and testcases.warnloc2 is to
 ;; debug, and eventually fix and provide ongoing test cases for,
 ;; incorrect file/line/column combinations that as of just before
-;; Eastwood 0.1.5 release are still there.  That is, sometimes a file
+;; Eastwood 0.1.5 release are still there. That is, sometimes a file
 ;; name is reported with a line number that does not exist in that
-;; file at all.  It appears that this is due to an example like this:
+;; file at all. It appears that this is due to an example like this:
 
 ;; Namespace A defines a macro.
 
@@ -31,7 +31,7 @@
 ;; it.
 
 
-;; many blank lines here.  Go to the end for actual code.
+;; many blank lines here. Go to the end for actual code.
 
 
 

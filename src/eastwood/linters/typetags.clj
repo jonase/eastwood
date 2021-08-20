@@ -11,14 +11,14 @@
 (defn replace-variable-tag-part
   "Wrong tags that were written like (def ^long foo ...) convert to
   strings like clojure.core$long@deadbeef, where the deadbeef part is an
-  hex string that changes from one run to the next.  It is usually 8
+  hex string that changes from one run to the next. It is usually 8
   digits long in my experience, but does not print leading 0s so can be
   shorter.
 
   Replace these strings with @<somehex>, simply to make them consistent
   from one run to the next, thus easier to check for in unit tests, and
   producing fewer lines of output in 'diff' from one Eastwood run to the
-  next.  I doubt the exact value of the hex digits has any lasting
+  next. I doubt the exact value of the hex digits has any lasting
   significance needed by the user."
   [tag]
   (string/replace (str tag)
@@ -65,7 +65,7 @@
                                    [nil nil nil]
 
                                    ;; This started appearing with Clojure 1.8.0 due
-                                   ;; to the :rettag changes.  See
+                                   ;; to the :rettag changes. See
                                    ;; eastwood.util/get-fn-in-def for some more
                                    ;; details of this change.
                                    (and (= wrong-tag-keys #{:eastwood/return-tag})
@@ -87,7 +87,7 @@
                                    ;; So far I have only seen this case in ztellman's
                                    ;; byte-streams library, and the warnings from a
                                    ;; different case were more clear and closer to
-                                   ;; the source of the problem.  At least for now,
+                                   ;; the source of the problem. At least for now,
                                    ;; don't issue warnings for this case.
                                    (and (= wrong-tag-keys #{:eastwood/o-tag})
                                         (#{:local} op))
@@ -137,7 +137,7 @@
                                                  form
                                                  (-> ast :var meta :name)
                                                  (-> ast :var meta :ns))
-                                    :invoke (format "Tag: %s for return type of function %s should be Java class name (fully qualified if not in java.lang package).  It may be defined in another namespace."
+                                    :invoke (format "Tag: %s for return type of function %s should be Java class name (fully qualified if not in java.lang package). It may be defined in another namespace."
                                                     (replace-variable-tag-part tag)
                                                     (-> form first))
                                     :fn-method (format "Tag: %s for return type of function method: %s should be Java class name (fully qualified if not in java.lang package)."
@@ -170,12 +170,12 @@
         :let [loc (-> form first meta)
               ;; *If* this :fn-method is part of a defn, then the
               ;; 'parent' ast should be the one with :op :fn, and its
-              ;; parent ast should be the one with :op :def.  That
+              ;; parent ast should be the one with :op :def. That
               ;; 'grandparent' ast's :meta key should have the
               ;; metadata on the Var whose value is being made equal
-              ;; to the fn being defined.  That is where the {:private
+              ;; to the fn being defined. That is where the {:private
               ;; true} key/value pair should be if the Var is marked
-              ;; private.  Recent changes in t.a(.j) libs made it
+              ;; private. Recent changes in t.a(.j) libs made it
               ;; possible it could also be the node one more level up
               ;; the tree that is the :def node, so check both.
               gp-and-ggp-asts (let [ancestors (:eastwood/ancestors ast)]
@@ -193,7 +193,7 @@
                    (nil? (fq-classname-to-class (str tag))))]
     {:loc loc
      :linter :wrong-tag
-     :msg (format "Tag: %s for return type of function on arg vector: %s should be fully qualified Java class name, or else it may cause exception if used from another namespace.  This is only an issue for Clojure 1.7 and earlier.  Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232)."
+     :msg (format "Tag: %s for return type of function on arg vector: %s should be fully qualified Java class name, or else it may cause exception if used from another namespace. This is only an issue for Clojure 1.7 and earlier. Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232)."
                   tag (-> form first))}))
 
 (defn wrong-tag [& args]

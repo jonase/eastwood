@@ -39,7 +39,7 @@
     ;; function.
     (println (remove 5))
     ;; Eastwood currently isn't clever enough to recognize that (comp
-    ;; ...)  returns a function value.  Thus unlike the examples
+    ;; ...)  returns a function value. Thus unlike the examples
     ;; above, it warns about this call to replace.
     (println (replace 5))
     ;; Similarly for shuffle being bound locally to the value of

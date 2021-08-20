@@ -12,9 +12,9 @@
         ;; sequential? includes lists, conses, vectors, and seqs of
         ;; just about any collection, although it is recommended not
         ;; to use this to compare seqs of unordered collections like
-        ;; sets or maps (vectors should be OK).  This should be
+        ;; sets or maps (vectors should be OK). This should be
         ;; everything we would want to compare using cmp-seq-lexi
-        ;; below.  TBD: Does it leave anything out?  Include anything
+        ;; below. TBD: Does it leave anything out?  Include anything
         ;; it should not?
         (sequential? x) "clojure.lang.Sequential"
 
@@ -36,7 +36,7 @@
 
 (defn cmp-seq-lexi
   "Compare sequences x and y in lexicographic order, using comparator
-  cmpf to compare elements from x and y to each other.  As a comparator
+  cmpf to compare elements from x and y to each other. As a comparator
   function, cmp-seq-lexi returns a negative, 0, or positive integer if x
   is less than, equal to, or greater than y."
   [cmpf x y]
@@ -53,7 +53,7 @@
       (if (seq y)
         ;; we reached end of x first, so x < y
         -1
-        ;; Sequences contain same elements.  x = y
+        ;; Sequences contain same elements. x = y
         0))))
 
 ;; The same result can be obtained by calling cmp-seq-lexi on two
@@ -62,7 +62,7 @@
 
 (defn cmp-vec-lexi
   "Compare vectors x and y in lexicographic order, using comparator
-  cmpf to compare elements from x and y to each other.  As a comparator
+  cmpf to compare elements from x and y to each other. As a comparator
   function, cmp-seq-lexi returns a negative, 0, or positive integer if x
   is less than, equal to, or greater than y.
 
@@ -85,7 +85,7 @@
 
 (defn cmp-array-lexi
   "Compare Java arrays x and y in lexicographic order, using
-comparator cmpf to compare elements from x and y to each other.  As a
+comparator cmpf to compare elements from x and y to each other. As a
 comparator function, cmp-array-lexi returns a negative, 0, or positive
 integer if x is less than, equal to, or greater than y."
   [cmpf ^"[J" x ^"[J" y]
@@ -103,7 +103,7 @@ integer if x is less than, equal to, or greater than y."
             c))))))
 
 (defn cc-cmp
-  "cc-cmp compares two values x and y.  As a comparator, it returns a
+  "cc-cmp compares two values x and y. As a comparator, it returns a
   negative, 0, or positive integer if x is less than, equal to, or
   greater than y.
 
@@ -119,14 +119,14 @@ integer if x is less than, equal to, or greater than y."
 
   Also unlike compare, cc-cmp can compare values of different types to
   each other without throwing an exception, if it can compare them at
-  all.  Values of different types are sorted relative to each other by a
-  string that is the name of their class.  Note that all numbers use the
+  all. Values of different types are sorted relative to each other by a
+  string that is the name of their class. Note that all numbers use the
   string \"java.lang.Number\" so that numbers are sorted together,
   rather than separated out by type, and for a similar reason all
   vectors, lists, and sequences use the string
-  \"clojure.lang.Sequential\".  All sets use the string
+  \"clojure.lang.Sequential\". All sets use the string
   \"clojure.lang.IPersistentSet\", and all maps and records use the
-  string \"clojure.lang.IPersistentMap\".  All Java arrays use the
+  string \"clojure.lang.IPersistentMap\". All Java arrays use the
   string \"java.util.Arrays\" (that is not the name of any instantiable
   class -- it is simply used for sorting Java arrays versus other
   objects).
@@ -162,7 +162,7 @@ integer if x is less than, equal to, or greater than y."
 
           ;; Make a special check for two vectors, since cmp-vec-lexi
           ;; should allocate less memory comparing them than
-          ;; cmp-seq-lexi.  Both here and for comparing sequences, we
+          ;; cmp-seq-lexi. Both here and for comparing sequences, we
           ;; must use cc-cmp recursively on the elements, because if
           ;; we used compare we would lose the ability to compare
           ;; elements with different types.

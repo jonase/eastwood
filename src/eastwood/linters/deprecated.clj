@@ -8,7 +8,7 @@
 (defn no-constructor-found [ctor-info]
   (when (map? ctor-info)
     (let [{:keys [arg-types]} ctor-info]
-      (println (format "Error: Eastwood found no constructor for class %s taking %d args with types (%s).  This may occur because Eastwood does not yet do type matching in the same way that Clojure does."
+      (println (format "Error: Eastwood found no constructor for class %s taking %d args with types (%s). This may occur because Eastwood does not yet do type matching in the same way that Clojure does."
                        (.getName ^Class (:class ctor-info))
                        (count arg-types)
                        (pass/arg-type-str arg-types))))))
@@ -16,7 +16,7 @@
 (defn no-method-found [kind method-info]
   (when (map? method-info)
     (let [{:keys [arg-types]} method-info]
-      (println (format "Error: Eastwood found no %s method named %s for class %s taking %d args with types (%s).  This may occur because Eastwood does not yet do type matching in the same way that Clojure does."
+      (println (format "Error: Eastwood found no %s method named %s for class %s taking %d args with types (%s). This may occur because Eastwood does not yet do type matching in the same way that Clojure does."
                        (name kind)
                        (:method-name method-info)
                        (.getName ^Class (:class method-info))

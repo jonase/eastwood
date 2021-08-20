@@ -2,7 +2,7 @@
 
 
 ;; foo8 gives an error when attempting to compile it with Clojure
-;; 1.8.0 or earlir.  It is OK with Clojure 1.9.0.
+;; 1.8.0 or earlier. It is OK with Clojure 1.9.0.
 
 (defn foo8 [{:my.ns/keys [a b] :other.ns/syms [a c]}]
   [a b c])

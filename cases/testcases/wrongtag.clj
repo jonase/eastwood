@@ -7,7 +7,7 @@
 (def ^long lv1 -2)
 (def ^{:tag long} lv2 -2)
 
-;; This is a correct way to tag it.  Should have no warning
+;; This is a correct way to tag it. Should have no warning
 (def ^{:tag 'long} lv3 -2)
 
 ;; These kinds of tags do not have to be restricted to long or double
@@ -22,9 +22,9 @@
 (def ^{:tag 'int} iv3 -2)
 (def ^{:tag 'bytes} bvv1 (byte-array (map byte [1 2 3])))  ; map byte needed to avoid bug in Clojure 1.5.1
 
-;; Similarly for tags on Vars whose values are functions.  Again, such
+;; Similarly for tags on Vars whose values are functions. Again, such
 ;; tags do not cause the return type of the function created to be a
-;; primitive.  They are simply used to avoid reflection wherever the
+;; primitive. They are simply used to avoid reflection wherever the
 ;; return value of the function is used in a Java interop call.
 
 ;; Warnings for these
@@ -70,7 +70,7 @@
 ;; Thus Eastwood will warn about function definitions like this, in an
 ;; effort to help the developer more quickly discover the solution.
 ;; The thing that works for now in all cases is to fully qualify the
-;; class name where the function is defined.  This does not require
+;; class name where the function is defined. This does not require
 ;; the caller of the function to import the class.
 
 ;; Eastwood avoids issuing a warning if the function is also declared
@@ -88,7 +88,7 @@
 (defn avlf4 ^LinkedList [coll] (java.util.LinkedList. coll))
 ;; The following will not warn with Clojure <= 1.7.0-alpha1, but will
 ;; with Clojure >= 1.7.0-alpha2, because of the fix for ticket
-;; CLJ-887.  Before that fix, metadata was lost on argument vectors
+;; CLJ-887. Before that fix, metadata was lost on argument vectors
 ;; that use destructuring.
 (defn avlf4b ^LinkedList [& {:keys [coll]}] (java.util.LinkedList. coll))
 
@@ -105,7 +105,7 @@
 (defn ^{:private true} avlf12 ^LinkedList [coll] (java.util.LinkedList. coll))
 (defn- avlf13 ^LinkedList [coll] (java.util.LinkedList. coll))
 
-;; No warnings for these cases, either, strangely enough.  Clojure
+;; No warnings for these cases, either, strangely enough. Clojure
 ;; never seems to throw an exception for non-fully qualified Java
 ;; class names as type tags on Vars naming functions, only in the
 ;; cases mentioned above when such a class name is used as a tag on
@@ -129,7 +129,7 @@
 ;; Copied and adapted from Seesaw namespace seesaw.widgets.log-window
 
 ;; Formerly caused tools.analyzer to throw an exception, now Eastwood
-;; handles the wrong-tag callback to avoid the exception.  Filed
+;; handles the wrong-tag callback to avoid the exception. Filed
 ;; ticket TANAL-31 for this issue.
 
 (defn- log-window-proxy [state]
@@ -158,7 +158,7 @@
 ;;  (Math/abs x))
 
 ;; The functions below do not give compiler errors, *and* the type
-;; hints on their arg vectors do help avoid reflection.  Eastwood
+;; hints on their arg vectors do help avoid reflection. Eastwood
 ;; 0.2.1 gives incorrect warnings about ^objects type tags on arg
 ;; vectors.
 

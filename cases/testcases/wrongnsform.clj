@@ -1,6 +1,6 @@
 (ns testcases.wrongnsform
   ;; Clojure does not complain about the following line, but silently
-  ;; turns it into a call to the println function.  Good to warn if
+  ;; turns it into a call to the println function. Good to warn if
   ;; any but the documented set of keywords appear in an ns form.
   (:println "Hello, ns form!")
   ;; Clojure does not complain about putting ns references in vectors
@@ -40,7 +40,7 @@
 
 
 ;; Clojure 1.6.0 throws exception for these requires with
-;; namespace-qualified symbols.  It actually does load the namespace
+;; namespace-qualified symbols. It actually does load the namespace
 ;; specified by the symbol without the namespace qualifier, but throws
 ;; an exception afterwards when it checks that the namespace exists,
 ;; and finds that the namespace with the qualifier does not exist.
@@ -51,8 +51,8 @@
 
 ;; Clojure 1.6.0 gives no exception for the following ns form, and
 ;; quietly ignores the (eastwood.foo) because it is a prefix with no
-;; libspecs after it.  It does not matter if what is inside the parens
-;; is a valid namespace name or not.  This _should_ be warned about by
+;; libspecs after it. It does not matter if what is inside the parens
+;; is a valid namespace name or not. This _should_ be warned about by
 ;; Eastwood, since the author probably intended a bare symbol, or a
 ;; libspec in a vector, instead.
 
@@ -60,7 +60,7 @@
   (:require (eastwood.foo)))
 
 ;; This is a valid prefix list that tries to load namespace
-;; eastwood.util.  There should be no warning for it.
+;; eastwood.util. There should be no warning for it.
 
 (ns testcases.nsform7b
   (:require (eastwood util)))
@@ -98,8 +98,8 @@
 ;; to do pattern matching on the exception thrown, perhaps including
 ;; the stack trace and form being eval'd when it was thrown, or check
 ;; the ns form after being read, and maybe also after being analyzed,
-;; but before being eval'd.  After analysis but before eval would
-;; require modifying analyze+eval.  After read but before analyze+eval
+;; but before being eval'd. After analysis but before eval would
+;; require modifying analyze+eval. After read but before analyze+eval
 ;; would miss non-top-level ns forms, but those are quite rare.
 
 ;;(ns testcases.nsform10-exception
@@ -124,7 +124,7 @@
 
 ;; Clojure 1.6.0 with the :require below causes clojure.core/load-lib
 ;; to be called with the arguments: prefix=nil, lib=eastwood.util,
-;; options=(:as :require true).  When it tries to call (apply hash-map
+;; options=(:as :require true). When it tries to call (apply hash-map
 ;; option) with an odd number of arguments, it throws the exception:
 
 ;; IllegalArgumentException No value supplied for key: true
