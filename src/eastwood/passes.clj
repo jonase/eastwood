@@ -97,15 +97,15 @@
 elements of :raw-forms lists with a key
 of :eastwood.copieddeps.dep1.clojure.tools.analyzer/resolved-op The
 value associated with this key is the Var that the first item of the
-raw form resolves to at the time the form was analyzed.  In some
+raw form resolves to at the time the form was analyzed. In some
 unusual cases, e.g. the Var is redefined later, this function
 add-partly-resolved-forms could give an incorrect resolution, where
-the new tools.analyzer(.jvm) will give the correct resolution.  This
+the new tools.analyzer(.jvm) will give the correct resolution. This
 function is only being kept here for quick reference, and may be
 deleted later.
 
 For every node that has a :raw-forms key, add a new
-key :eastwood/partly-resolved-forms.  The value associated with the
+key :eastwood/partly-resolved-forms. The value associated with the
 new key is nearly the same as that associated with :raw-forms, except
 that every list that starts with a symbol will have that symbol
 replaced by one that is resolved, with a namespace."
@@ -154,7 +154,7 @@ replaced by one that is resolved, with a namespace."
   "Given an ast that contains something in the source code we would
 like to create a warning about, return the nearest ancestor ast T that
 has non-nil values for (-> T :env :line) and also for :column
-and :file.  Assumes the ast has earlier been put through
+and :file. Assumes the ast has earlier been put through
 add-ancestors."
   [ast]
   (let [places (concat [ast] (util/nil-safe-rseq (:eastwood/ancestors ast)))

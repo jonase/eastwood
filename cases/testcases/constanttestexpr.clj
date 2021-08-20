@@ -36,10 +36,10 @@
 (when nil 'tom :cat)  ; same as if
 (when-not [nil] 1)    ; same as if
 
-;; No warning for this one, unless I make the linter fancier.  Why?
+;; No warning for this one, unless I make the linter fancier. Why?
 ;; While the linter can tell seq is a pure fn, it is not able to
 ;; determine that the map has constant keys and values because of the
-;; expression (/ 84 2).  Thus it treats the value of the map as a
+;; expression (/ 84 2). Thus it treats the value of the map as a
 ;; variable, and does not know the behavior of seq.
 (if (seq {:a (/ 84 2)}) 1 2)
 
@@ -52,7 +52,7 @@
 ;; I'd be surprised if someone wrote code like this, but may as well
 ;; not warn about it.
 (cond :else 9)
-;; Sometimes people use true or :default instead of :else.  Don't warn
+;; Sometimes people use true or :default instead of :else. Don't warn
 ;; about those, either.
 (cond true 9)
 (cond :default 9)
@@ -85,7 +85,7 @@
 (assert [false])
 
 ;; Make sure *not* to get bindings from loop statements when looking
-;; for let bindings.  There should be no warnings for the function
+;; for let bindings. There should be no warnings for the function
 ;; below.
 
 (defn input-ranges [s]
@@ -113,10 +113,10 @@
   (dec i))
 
 ;; A function like this in data.json gave :constant-test warnings
-;; before.  I don't see yet why that might happen.  Answer:
-;; pprint/formatter-out is a macro, not a function.  It exapnds to
+;; before. I don't see yet why that might happen. Answer:
+;; pprint/formatter-out is a macro, not a function. It exapnds to
 ;; include an expression of the form (if (string? "string-arg")
-;; then-expr else-expr).  That is what causes the warning.
+;; then-expr else-expr). That is what causes the warning.
 
 (defn- pprint-array [s]
   ((pprint/formatter-out "~<[~;~@{~w~^, ~:_~}~;]~:>") s))

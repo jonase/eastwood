@@ -77,7 +77,7 @@
 
 (defn remove-prefix
   "If string s starts with the string prefix, return s with that
-  prefix removed.  Otherwise, return s."
+  prefix removed. Otherwise, return s."
   [^String s ^String prefix]
   (if (.startsWith s prefix)
     (subs s (count prefix))
@@ -102,9 +102,9 @@
      :uri-or-file-name uri-or-rel-file-str}))
 
 (defn canonical-filename
-  "Returns the canonical file name for the given file name.  A
+  "Returns the canonical file name for the given file name. A
   canonical file name is platform dependent, but is both absolute and
-  unique.  See the Java docs for getCanonicalPath for some more details,
+  unique. See the Java docs for getCanonicalPath for some more details,
   and the examples below.
 
     http://docs.oracle.com/javase/7/docs/api/java/io/File.html#getCanonicalPath%28%29
@@ -145,7 +145,7 @@
 
 (defn pst
   "'Prints' a stack trace of the exception,  to the depth requested (the
-  entire stack trace if depth is nil).  Does not print ex-data."
+  entire stack trace if depth is nil). Does not print ex-data."
   [^Throwable e depth]
   (println (str (-> e class .getSimpleName) " "
                 (.getMessage e)))
@@ -183,7 +183,7 @@ the special keys, sorted by the default-comparator."
 
 (defn ast-to-ordered
   "Take an ast and return an identical one, except every map is
-replaced with an ordering-map.  The sorting of keys in a specified
+replaced with an ordering-map. The sorting of keys in a specified
 order can make it significantly easier when printing them out, to see
 more interesting keys earlier."
   [ast]
@@ -321,7 +321,7 @@ twice."
 (defn separate-suffix
   "Given a string s and a sequence of strings, suffixes, return a
   vector of 2 strings [x y] where y is the first element of suffixes
-  that is a suffix of s, and (str x y)=s.  If no string in suffixes is
+  that is a suffix of s, and (str x y)=s. If no string in suffixes is
   a suffix of s, return nil."
   [^String s suffixes]
   (when-let [suffix (some #(when (.endsWith s %)
@@ -331,7 +331,7 @@ twice."
 
 (defn nth-last
   "Return the nth-last element of a vector v, where n=1 means the last
-element, n=2 is the second-to-last, etc.  Returns nil if there are
+element, n=2 is the second-to-last, etc. Returns nil if there are
 fewer than n elements in the vector."
   [v n]
   (let [c (count v)]
@@ -353,13 +353,13 @@ fewer than n elements in the vector."
        (has-keys? x [:file :line :column])))
 
 (defn walk
-  "Traverses form, an arbitrary data structure.  inner and outer are
-  functions.  Applies inner to each element of form, building up a
+  "Traverses form, an arbitrary data structure. inner and outer are
+  functions. Applies inner to each element of form, building up a
   data structure of the same type, then applies outer to the result.
   Recognizes all Clojure data structures. Consumes seqs as with doall.
 
   walk was copied from Clojure 1.6.0, and then modified to preserve
-  metadata on all sub-values of the input form that have them.  Note
+  metadata on all sub-values of the input form that have them. Note
   that this metadata is 'put back on' after the function inner has
   already been called, but before outer, so only outer has a chance to
   change it."
@@ -381,7 +381,7 @@ fewer than n elements in the vector."
 ;; they use this modified version of walk.
 
 (defn postwalk
-  "Performs a depth-first, post-order traversal of form.  Calls f on
+  "Performs a depth-first, post-order traversal of form. Calls f on
   each sub-form, uses f's return value in place of the original.
   Recognizes all Clojure data structures. Consumes seqs as with doall."
   {:added "1.1"}
@@ -402,15 +402,15 @@ fewer than n elements in the vector."
 ;; *two* copies of metadata on symbols.
 
 ;; This version of the function includes a suggested enhancement by
-;; Cedric Greevey later in the discussion thread.  As the test cases
+;; Cedric Greevey later in the discussion thread. As the test cases
 ;; below the function show, it appears to work correctly even if
 ;; metadata maps have metadata themselves.
 
 (defn pprint-meta
   "A version of pprint that prints all metadata on the object,
-wherever it appears.  (binding [*print-meta* true] (pprint obj))
+wherever it appears. (binding [*print-meta* true] (pprint obj))
 prints metadata on symbols, but not on collection, at least with
-Clojure 1.6.0 and probably earlier versions.  Clojure ticket CLJ-1445
+Clojure 1.6.0 and probably earlier versions. Clojure ticket CLJ-1445
 may improve upon this in the future.
 
 http://dev.clojure.org/jira/browse/CLJ-1445"
@@ -445,7 +445,7 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
     (postwalk eli form)))
 
 ;; TBD: pprint-meta-elided does not elide metadata that is on the keys
-;; or values inside of other metadata maps.  Such metadata does occur
+;; or values inside of other metadata maps. Such metadata does occur
 ;; in output of tools.reader, e.g. when metadata is in the source
 ;; code, symbols inside the metadata map keys/vals have metadata
 ;; maps with :line :column etc. info.
@@ -464,7 +464,7 @@ http://dev.clojure.org/jira/browse/CLJ-1445"
 
 (defn elide-defprotocol-vars
   "Motivation: pprint'ing a value containing a defprotocol Var, with
-all metadata included leads to an infinite loop.  Why?  The value of a
+all metadata included leads to an infinite loop. Why?  The value of a
 defprotocol's Var is a map.
 
 (1) The value of the key :var in this map is the defprotocol Var
@@ -479,9 +479,9 @@ defprotocol maps.
 
 Note: This can replace Vars in the AST with their values, so the
 resulting AST is not as it was originally, and will likely fail if you
-try to generate code from it.  It is fine for pprint'ing.
+try to generate code from it. It is fine for pprint'ing.
 
-There are cases where this function misses things.  It seems like it
+There are cases where this function misses things. It seems like it
 may be simpler to detect protocol occurrences while doing
 pprint-meta instead."
   [ast]
@@ -561,7 +561,7 @@ pprint-meta instead."
 (defn fqsym-of-raw-form [raw-form]
   ;; A few raw forms are symbols like clojure.lang.Compiler/COMPILE
   ;; (I'm probably misremembering the precise name, but it was
-  ;; definitely a symbol, not a list).  Return nil for those.
+  ;; definitely a symbol, not a list). Return nil for those.
   (when (seq? raw-form)
     (-> raw-form
         meta
@@ -590,16 +590,16 @@ pprint-meta instead."
 
 (defn string->forms
   "Treat a string as a sequence of 0 or more Clojure forms, and read
-  all of them.  No line or column number metadata will be attached to
+  all of them. No line or column number metadata will be attached to
   the returned forms, but sometimes this is what you want.
 
   Hack alert: In order to be able to correctly interpret keywords of
   the form ::name or ::ns-or-ns-alias/name, you should pass in a
   namespace to bind to the *ns* var during this function's reading of
-  s.  The assumption is that this namespace and those it requires are
+  s. The assumption is that this namespace and those it requires are
   already loaded before this function is called, and any aliases used
-  by keywords are already set up.  It also assumes that the entire
-  string is in that same namespace.  Fortunately, this is pretty
+  by keywords are already set up. It also assumes that the entire
+  string is in that same namespace. Fortunately, this is pretty
   common for most Clojure code as written today."
   [s ns include-line-col-metadata?]
   (binding [reader/*data-readers* *data-readers*
@@ -738,7 +738,7 @@ marked.
 
 Return values, i.e. expressions that are the last one in the body,
 will have the new keyword :eastwood/used-ret-val-expr-in-try-body with
-value true.  Use the fn ret-expr-in-try-body? to check whether a node
+value true. Use the fn ret-expr-in-try-body? to check whether a node
 was so marked.
 
 Use fn expr-in-try-body? to check whether an expression was either one
@@ -767,7 +767,7 @@ of these kind."
          (or (= flds '(__meta __extmap))
              ;; Clojure 1.9.0 performance improvement change for
              ;; CLJ-1224 adds "hidden" fields __hash and __hasheq for
-             ;; records.  Before then, it was only __meta and __extmap
+             ;; records. Before then, it was only __meta and __extmap
              (= flds '(__meta __extmap __hash __hasheq))))))
 
 (defn inside-fieldless-defrecord [ast]
@@ -826,9 +826,9 @@ of these kind."
     ((:callback opt) {:kind kind, :msg msg-str, :opt opt})))
 
 (defmacro with-out-str2
-  "Like with-out-str, but returns a map m.  (:val m) is the return
-  value of the last expression in the body.  (:out m) is the string
-  normally returned by with-out-str.  (:err m) is the string that would
+  "Like with-out-str, but returns a map m. (:val m) is the return
+  value of the last expression in the body. (:out m) is the string
+  normally returned by with-out-str. (:err m) is the string that would
   be returned by with-out-str if it bound *err* instead of *out* to a
   StringWriter."
   {:style/indent 0}
@@ -842,8 +842,8 @@ of these kind."
 
 ;; TBD: There are some cases I have seen of calling this for every ast
 ;; warned about in the :constant-test linter, where the 'leaf' AST
-;; seemed to be shown, but none of its ancestor ASTs.  This was the
-;; case for the last form in constanttestexpr.clj, for example.  It
+;; seemed to be shown, but none of its ancestor ASTs. This was the
+;; case for the last form in constanttestexpr.clj, for example. It
 ;; would be good to make that case work, too.
 
 (defn print-enclosing-macros

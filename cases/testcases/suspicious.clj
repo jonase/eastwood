@@ -2,7 +2,7 @@
   (:import (java.io StringReader))
   (:use [clojure.test]))
 
-;; Test cases targeted at :suspicious-expression linter.  There are
+;; Test cases targeted at :suspicious-expression linter. There are
 ;; some more in testcases.testtest namespace.
 (defmacro compile-if [test then] (if (eval test) then))
 ;; Empty defrecords have macroexpansions containing suspicious-looking

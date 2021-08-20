@@ -19,7 +19,7 @@
 
 ;; Any use statement that does not include a keyword :only or :refer
 ;; that limits the symbols referred from the other namespace is an
-;; 'unlimited' use.  The only use args that will be considered "safe"
+;; 'unlimited' use. The only use args that will be considered "safe"
 ;; are the ones that have a :only or :refer keyword in them, to limit
 ;; the symbols that are referred.
 
@@ -72,16 +72,16 @@
         :when (use? ast)
         :let [use-args (map remove-quote-wrapper (rest (-> ast :form)))
               s (remove use-arg-ok? use-args)
-              ;; Don't warn about unlimited use of clojure.test.  It
+              ;; Don't warn about unlimited use of clojure.test. It
               ;; is very common, and seems harmless enough to me in
-              ;; test code.  Note: No need to have separate versions
+              ;; test code. Note: No need to have separate versions
               ;; of the expressions as vectors, since the lists are
-              ;; equal to them.  Also, even though it doesn't cause a
+              ;; equal to them. Also, even though it doesn't cause a
               ;; compile time error if we include ['clojure.test] in
               ;; the set below, it does cause a run-time duplicate
               ;; item exception in createWithCheck if we use Eastwood
               ;; to lint itself, after it re-evaluates this source
-              ;; file.  I don't fully understand that yet.
+              ;; file. I don't fully understand that yet.
               s (remove #{'clojure.test '(clojure.test) '(clojure test)} s)]
         :when (seq s)]
     (let [first-bad-use (first s)
@@ -148,7 +148,7 @@
 ;; redef'd vars
 
 ;; Attempt to detect any var that is def'd multiple times in the same
-;; namespace.  This should even catch cases like the following, where
+;; namespace. This should even catch cases like the following, where
 ;; a def is inside of a let, do, etc.
 
 ;; (def foo 1)
@@ -159,11 +159,11 @@
 ;; normal to declare a symbol and later def it.
 
 ;; It does not count as a redef'd var any var whose def is nested
-;; inside of another def.  Those are treated with a separated
+;; inside of another def. Those are treated with a separated
 ;; :def-in-def lint warning.
 
 ;; TBD: Uses of defprotocol seem to create multiple :def's for the
-;; protocol name.  See if I can figure out how to recognize this
+;; protocol name. See if I can figure out how to recognize this
 ;; situation and not warn about them.
 
 (def ^:dynamic *def-walker-data* 0)
@@ -173,7 +173,7 @@
 ;; (defonce foo (defonce bar 5))
 
 ;; I doubt many people would write code like that, but it would be a
-;; good corner test to see how this code handles it.  It would be good
+;; good corner test to see how this code handles it. It would be good
 ;; if it could be recognized as a :def-in-def warning.
 
 (defn def-walker-pre1 [ast]
@@ -275,7 +275,7 @@
 
 (defn redefd-var-loc [ast]
   ;; For some macro expansions, their expansions do not have :line and
-  ;; :column info in (-> ast var-of-ast meta).  Try another place it
+  ;; :column info in (-> ast var-of-ast meta). Try another place it
   ;; can sometimes be found.
   (let [loc1 (-> ast var-of-ast meta)]
     (if (-> loc1 :line)
@@ -336,7 +336,7 @@
 ;; Def-in-def
 
 ;; TBD: The former implementation of def-in-def only signaled a
-;; warning if the parent def was not a macro.  Should that be done
+;; warning if the parent def was not a macro. Should that be done
 ;; here, too?  Try to find a small example, if so, and add it to the
 ;; tests.
 
@@ -382,7 +382,7 @@
         n-or-more (when (seq (get kinds true))
                     (apply min (map second (get kinds true))))
         ;; If there are exact arg counts that are larger than the
-        ;; smallest 'N args or more', remove them.  Sort any that are
+        ;; smallest 'N args or more', remove them. Sort any that are
         ;; smaller, dropping duplicates.
         exacts (->> (get kinds false)
                     (map first)
@@ -604,7 +604,7 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;; TBD: Try to make this *not* warn for macros with custom :arglists,
-;; but only for non-macro functions.  Perhaps even better, separate
+;; but only for non-macro functions. Perhaps even better, separate
 ;; linter names for each type of warning.
 
 ;; The code as is will warn about this macro in timbre's namespace
@@ -620,7 +620,7 @@
 
 ;; TBD: This also does not catch fns created via hiccup's defelem
 ;; macro, because when def'd they are fine, and then later the macro
-;; alters the :arglists metadata on the var.  One way to catch that
+;; alters the :arglists metadata on the var. One way to catch that
 ;; would be to look at the final value of :arglists after eval'ing the
 ;; entire namespace.
 
@@ -638,8 +638,8 @@
 
 ;; tools.analyzer.jvm 0.6.8 introduced extra level of (quote ...)
 ;; around the value of (-> a :meta :val :arglists) for function ASTs
-;; a, over what version 0.6.7 had.  I have filed ticket TANAL-117 to
-;; point this out, and learn whether this is a bug or not.  Until
+;; a, over what version 0.6.7 had. I have filed ticket TANAL-117 to
+;; point this out, and learn whether this is a bug or not. Until
 ;; then, work around it if it is seen.
 
 (defn maybe-unwrap-quote [x]
@@ -698,7 +698,7 @@
   (for [{:keys [op fn env]} (mapcat ast/nodes asts)
         :when (and (= op :invoke)
                    ;; In the examples I have looked at, (:o-tag fn) is
-                   ;; also equal to 'clojure.lang.AFunction.  What is
+                   ;; also equal to 'clojure.lang.AFunction. What is
                    ;; the difference between that and (:tag fn) ?
                    (not= clojure.lang.AFunction (:tag fn))
                    (contains? (:locals env) (:form fn)))
@@ -752,7 +752,7 @@
     (symbol? libspec)
     ;; Clojure 1.6.0 and probably earlier throws an exception for this
     ;; case during eval of require, so having a check for it in Eastwood
-    ;; is redundant.  Even Eastwood never shows the warning because the
+    ;; is redundant. Even Eastwood never shows the warning because the
     ;; eval of the form throws an exception, before linting begins.
     ;;   (if-not (nil? (namespace arg))
     ;;     [(util/add-loc-info
@@ -788,7 +788,7 @@
     (even? (count libspec))
     [{:loc loc
       :linter :wrong-ns-form
-      :msg (format "%s has a vector libspec with an even number of items.  It should always be a symbol followed by keyword / value pairs: %s."
+      :msg (format "%s has a vector libspec with an even number of items. It should always be a symbol followed by keyword / value pairs: %s."
                    kw libspec)}]
 
     :else
@@ -797,11 +797,11 @@
           allowed-options
           (case kw
             ;; Note: The documentation for require only mentions :as
-            ;; and :refer as options.  However, Clojure allows and
+            ;; and :refer as options. However, Clojure allows and
             ;; correctly handles :exclude and :rename as options in a
             ;; :require libspec, and as long as there is a :refer
             ;; option, they behave correctly as they would for a use
-            ;; with those options.  :only never makes sense for
+            ;; with those options. :only never makes sense for
             ;; :require, as :refer can be used for that purpose
             ;; instead.
             :require (merge
@@ -870,21 +870,21 @@
     (cond
       ;; Even though a prefix list is called a list in the Clojure
       ;; documentation, it seems to be reasonably common that people
-      ;; use vectors for them.  Clojure 1.6.0 itself distinguishes
+      ;; use vectors for them. Clojure 1.6.0 itself distinguishes
       ;; between libspec or prefix list by considering it a libspec if
       ;; it has at most 1 item, or the second item is a keyword (see
-      ;; clojure.core/libspec?).  Do the same here.
+      ;; clojure.core/libspec?). Do the same here.
       (libspec? arg)
       (warnings-for-libspec arg kw loc)
 
       (or (list? arg) (vector? arg))
       (cond
-        ;; This case can occur, with no exception from Clojure.  There is a
+        ;; This case can occur, with no exception from Clojure. There is a
         ;; test case for it in testcases.wrongnsform
         (and (list? arg) (= 1 (count arg)))
         [{:loc loc
           :linter :wrong-ns-form
-          :msg (format "%s has an arg that is a 1-item list.  Clojure silently does nothing with this.  To %s it as a namespace, it should be a symbol on its own or it should be inside of a vector, not a list.  To use it as the first part of a prefix list, there should be libspecs after it in the list: %s."
+          :msg (format "%s has an arg that is a 1-item list. Clojure silently does nothing with this. To %s it as a namespace, it should be a symbol on its own or it should be inside of a vector, not a list. To use it as the first part of a prefix list, there should be libspecs after it in the list: %s."
                        kw (name kw) arg)}]
 
         :else
@@ -916,7 +916,7 @@
      (for [non-list non-lists]
        {:loc (most-specific-loc loc non-list)
         :linter :wrong-ns-form
-        :msg (format "ns references should be lists.  This is not: %s."
+        :msg (format "ns references should be lists. This is not: %s."
                      non-list)})
      (for [wrong-kw wrong-kws]
        {:loc (most-specific-loc loc wrong-kw)
@@ -970,7 +970,7 @@
    :warn-data (let [inf (util/file-warn-info file cwd)]
                 (merge
                  {:linter kw
-                  :msg (format (str msg " '%s'.  It will not be linted.")
+                  :msg (format (str msg " '%s'. It will not be linted.")
                                (:uri-or-file-name inf))}
                  inf))})
 

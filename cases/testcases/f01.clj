@@ -104,8 +104,8 @@
 
 (defn catch
   "The Clojure compiler allows catch to be defined as a function and
-called, as long as you do it from outside of a try form.  Test case
-for tools.analyzer, which at one time did not permit this.  Zach
+called, as long as you do it from outside of a try form. Test case
+for tools.analyzer, which at one time did not permit this. Zach
 Tellman is to be credited/blamed for this test case."
   ([x y]
      (catch x Throwable y))
@@ -126,7 +126,7 @@ Tellman is to be credited/blamed for this test case."
 ;; below.
 
 ;; This is a toy test example that I don't think anyone would create
-;; in real development.  It is only intended to verify that Eastwood
+;; in real development. It is only intended to verify that Eastwood
 ;; is actually using the configuration correctly.
 
 (defn wrong-args1 [x]

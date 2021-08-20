@@ -6,7 +6,7 @@
         ))
 
 ;; This test is inspired by a problem found when analyzing Incanter's
-;; namespace incanter.sql-tests.  It has a similar use of in-ns to
+;; namespace incanter.sql-tests. It has a similar use of in-ns to
 ;; change namespaces, fiddle with something in the other namespace,
 ;; then switch back to the original namespace with another in-ns call.
 ;; Earlier versions of Eastwood would correctly process the first

@@ -139,8 +139,8 @@ before the argument vector, like this:
             (error-cb (format
                        "If you wish to use a primitive type tag on the Var name, Clojure will
 only use that if the function is called and its return value is used
-as an argument in a Java interop call.  In such situations, the type
-tag can help choose a Java method and often avoid reflection.  If that
+as an argument in a Java interop call. In such situations, the type
+tag can help choose a Java method and often avoid reflection. If that
 is what you want, you must specify the tag like so:
     (defn ^{:tag '%s} %s [args] ...)" prim-name form))
             {:info :no-more-details-needed
@@ -176,13 +176,13 @@ Otherwise, import the Java class, e.g. add a line like this to the ns statement:
           (symbol? tag)
           (do
             (error-cb (format
-                       "This is a symbol, but does not appear to be a Java class.  Whatever it
+                       "This is a symbol, but does not appear to be a Java class. Whatever it
 is, library tools.analyzer, on which Eastwood relies, cannot analyze
 such files.
 
 Cases like this have been seen in some Clojure code that used the
-library test.generative.  That library uses tag metadata in an unusual
-way that might be changed to avoid this.  See
+library test.generative. That library uses tag metadata in an unusual
+way that might be changed to avoid this. See
 http://dev.clojure.org/jira/browse/TGEN-5 for details if you are
 curious.
 
@@ -207,8 +207,8 @@ possible future enhancement to Eastwood: %s
 
 If you do not see any expression like this in your source code, cases
 like this have been seen in programs that used the library
-test.generative.  That library uses tag metadata in an unusual way
-that might be changed to avoid this.  See
+test.generative. That library uses tag metadata in an unusual way
+that might be changed to avoid this. See
 http://dev.clojure.org/jira/browse/TGEN-5 for details if you are
 curious." eastwood-url))
             {:info :no-more-details-needed
@@ -263,8 +263,8 @@ curious." eastwood-url))
         (error-cb (with-out-str (util/pprint-form exception-form)))))
     (error-cb
      (str "\nAn exception was thrown while analyzing namespace " ns-sym "
-Lint results may be incomplete.  If there are compilation errors in
-your code, try fixing those.  If not, check above for info on the
+Lint results may be incomplete. If there are compilation errors in
+your code, try fixing those. If not, check above for info on the
 exception."))
     {:exception exception
      :msgs @strings}))
@@ -314,7 +314,7 @@ No other linting checks will be performed until these problems have
 been corrected.
 
 The 'should have namespace' and 'should be in file' messages above are
-merely suggestions.  It may be better in your case to rename both the
+merely suggestions. It may be better in your case to rename both the
 file and namespace to avoid name collisions."))))
 
 (defmethod error-msg :unknown-linter [err-info]
@@ -333,16 +333,16 @@ file and namespace to avoid name collisions."))))
     (if (< 0 namespaces-left)
       (format "
 Stopped analyzing namespaces after %s
-due to exception thrown.  %d namespaces left unanalyzed.
+due to exception thrown. %d namespaces left unanalyzed.
 
 If you wish to force continuation of linting after an exception in one
 namespace, make the option map key :continue-on-exception have the
 value true.
 
 WARNING: This can cause exceptions to be thrown while analyzing later
-namespaces that would not otherwise occur.  For example, if a function
+namespaces that would not otherwise occur. For example, if a function
 is defined in the namespace where the first exception occurs, after
-the exception, it will never be evaluated.  If the function is then
+the exception, it will never be evaluated. If the function is then
 used in namespaces analyzed later, it will be undefined, causing
 error.
 "

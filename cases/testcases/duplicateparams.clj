@@ -152,9 +152,9 @@
 ;; could take the value in the column 'Vector element example', and
 ;; return the corresponding value in the column 'local symbol bound'.
 
-;; There should be no warnings for this function.  It simply
+;; There should be no warnings for this function. It simply
 ;; demonstates most of the kinds of things that can legally be inside
-;; the vector after a :keys key in associative destructuring.  (It
+;; the vector after a :keys key in associative destructuring. (It
 ;; leaves out symbols that have no namespace, but there are plenty of
 ;; examples of that elsewhere in this file.)
 
@@ -201,17 +201,17 @@
 
 
 ;; No duplicate local names in foo12, but it does have local name 'f'
-;; as a key in the :or map, with no local name 'f'.  If you change the
+;; as a key in the :or map, with no local name 'f'. If you change the
 ;; body of this function to refer to f, you get a compiler
 ;; error "Unable to resolve symbol: f in this context".
 
 ;; Eastwood's :unused-or-default warning can warn about a local name as
-;; a key in an :or map that does not appear elsewhere.  I believe that
+;; a key in an :or map that does not appear elsewhere. I believe that
 ;; such a local name that is a key in an :or map only applies to local
 ;; names bound in the same 'level' of map destructuring where the :or
-;; appears.  That is, if there are nested sub-maps or sub-vectors
+;; appears. That is, if there are nested sub-maps or sub-vectors
 ;; destructuring within that map with the :or, that :or does not 'see'
-;; or apply to them.  It doesn't apply to siblings or parents in the
+;; or apply to them. It doesn't apply to siblings or parents in the
 ;; 'tree' of destructuring things, either.
 
 (defn foo12 [{:keys [a.b/c d/e] :or {c 5 e 7 f 10} :as g}]
@@ -224,7 +224,7 @@
               ;; The h on the next line is at higher level in tree
               ;; than the one above, and thus has no affect on the
               ;; value bound to the local name h in the body of foo13.
-              ;; Similarly for the f on the next line.  Both keys in
+              ;; Similarly for the f on the next line. Both keys in
               ;; the :or below are thus good to warn about in
               ;; Eastwood, as likely mistakes, since they do not
               ;; affect the compiled code at all.
@@ -242,10 +242,10 @@
 
 ;; macroexpanding this function demonstarates that the 'c' in the :or
 ;; map below does _not_ have any effect on the value of c bound by the
-;; arg vector below via the ':as c' portion.  This makes sense, since
+;; arg vector below via the ':as c' portion. This makes sense, since
 ;; c should be bound to the entire associative value passed as the
 ;; first parameter, regardless of its contents, and a default value
-;; doesn't make sense.  This is an example where a warning that the
+;; doesn't make sense. This is an example where a warning that the
 ;; 'c' in the :or {c 5} part of the arg vector should ideally trigger
 ;; a warning.
 

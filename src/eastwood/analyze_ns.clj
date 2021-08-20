@@ -165,7 +165,7 @@
               (get ast t))]
 
     ;; Key/value pairs to be merged into ast for later code to find
-    ;; and issue warnings.  We use a different map key for each
+    ;; and issue warnings. We use a different map key for each
     ;; different value of t, because if we used the same map key, only
     ;; the last one merged in would remain, the way tools.analyzer.jvm
     ;; uses this return value.
@@ -181,7 +181,7 @@
       :return-tag {:eastwood/return-tag tag})))
 
 ;; eastwood-passes is a cut-down version of run-passes in
-;; tools.analyzer.jvm.  It eliminates phases that are not needed for
+;; tools.analyzer.jvm. It eliminates phases that are not needed for
 ;; linting, and which can cause analysis to throw exceptions, where in
 ;; Eastwood we would prefer to give linter warnings.
 
@@ -224,7 +224,7 @@
 (defn asts-with-eval-exception
   "tools.analyzer.jvm/analyze+eval returns an AST with a :result key
   being a specific class of Exception object, if an exception occurred
-  while eval'ing the corresponding expression.  This is easy to check at
+  while eval'ing the corresponding expression. This is easy to check at
   the top level of an AST, but since analyze+eval recurses into
   top-level do forms, analyzing and eval'ing each independently,
   checking whether any of them threw an exception during eval requires
@@ -320,21 +320,21 @@
                  #'*warn-on-reflection*)))))
 
 (defn analyze-file
-  "Takes a file path and optionally a pushback reader.  Returns a map
+  "Takes a file path and optionally a pushback reader. Returns a map
   with at least the following keys:
 
   :forms - a sequence of forms as read in, with any forms within a
       top-level do, or do forms nested within a top-level do,
-      'flattened' to the top level themselves.  This sequence will
+      'flattened' to the top level themselves. This sequence will
       include all forms in the file, as far as the file could be
       successfully read, even if an exception was thrown earlier than
       that during analysis or evaluation of the forms.
 
   :asts - a sequence of ASTs of the forms that were successfully
-      analyzed without exception.  They correspond one-to-one with
+      analyzed without exception. They correspond one-to-one with
       forms in the :forms sequence.
 
-  :exception - nil if no exception occurred.  An Exception object if
+  :exception - nil if no exception occurred. An Exception object if
       an exception was thrown during analysis, emit-form, or eval.
 
   If :exception is not nil, then the following keys will also be part
@@ -342,7 +342,7 @@
 
   :exception-phase - If an exception was thrown, this is a keyword
       indicating in what portion of analyze-file's operation this
-      exception occurred.  Always :analyze+eval or :eval
+      exception occurred. Always :analyze+eval or :eval
 
   :exception-form - If an exception was thrown, the current form being
       processed when the exception occurred.
@@ -499,7 +499,7 @@
 
 (defn analyze-ns
   "Takes an IndexingReader and a namespace symbol.
-  Returns a map of results of analyzing the namespace.  The map
+  Returns a map of results of analyzing the namespace. The map
   contains these keys:
 
   :analyze-results - The value associated with this key is itself a
@@ -514,7 +514,7 @@
   Options:
   - :reader  a pushback reader to use to read the namespace forms
   - :opt     a map of analyzer options
-    - same as analyze-file.  See there.
+    - same as analyze-file. See there.
 
   eg. (analyze-ns 'my-ns :opt {} :reader (pb-reader-for-ns 'my.ns))"
   [source-nsym & {:keys [reader opt]

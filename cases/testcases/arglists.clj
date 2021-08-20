@@ -45,7 +45,7 @@
     `(def ~name ~expr)))
 
 ;; This is adapted from a macro named with-replies* in the
-;; carmine library.  It has given warnings at one time with Eastwood,
+;; carmine library. It has given warnings at one time with Eastwood,
 ;; but I think it should not.
 
 (defmacro macro-with-arglists-no-warn1
@@ -55,7 +55,7 @@
         body         (if as-pipeline? sn sigs)]
     `(do ~@body (do :get-replies ~as-pipeline?))))
 
-;; Adapted from a macro named fnm in the core.logic library.  I
+;; Adapted from a macro named fnm in the core.logic library. I
 ;; think it should not give any warnings, because the developer-supplied
 ;; :arglists is more restrictive than the actual arg vector(s) allow.
 

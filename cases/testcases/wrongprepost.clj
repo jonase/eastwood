@@ -55,7 +55,7 @@
 ;; It would be good to give a different warning for the following case
 ;; than for wrong-pre-7, because the following may actually be what
 ;; the user intended, to assert that the argument y is neither nil nor
-;; false.  If they intended to assert that y was not nil, we could
+;; false. If they intended to assert that y was not nil, we could
 ;; recommend that they be explicit with (not (nil? y)).
 
 ;; To implement this, it seems necessary to check whether the symbol
@@ -81,7 +81,7 @@
 ;; Certain kinds of destructuring in fn arg vectors cause an
 ;; additional let to be in the macroexpansion, which caused an earlier
 ;; version of the :wrong-pre-post linter to not find the assert form
-;; ASTs.  This example is stripped down a bit from a similar function
+;; ASTs. This example is stripped down a bit from a similar function
 ;; found in the Carmine library where this issue was first discovered.
 
 (defn ok-different-macroexpansion-11

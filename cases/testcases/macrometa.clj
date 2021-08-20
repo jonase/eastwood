@@ -8,7 +8,7 @@
 ;; Any of these with a name ending in -lintwarn should cause an
 ;; Eastwood :unused-meta-on-macro warning due to metadata being lost.
 ;; They are not intended to be useful bits of code -- just things that
-;; the Clojure compiler will accept without error.  Some will cause
+;; the Clojure compiler will accept without error. Some will cause
 ;; reflection warnings if *warn-on-reflection* is true, but that is
 ;; exactly why someone might try to add type hints, which if not done
 ;; correctly will be ignored.
@@ -29,7 +29,7 @@
 
 ;; Java interop - instance method calls (.instanceMethod obj args)
 ;; Only :tag metadata preserved during macroexpansion to form (. obj
-;; (instanceMethod args)).  Any other metadata removed.
+;; (instanceMethod args)). Any other metadata removed.
 
 (def ex05-nolintwarn (.close (StringWriter.)))
 (def ex06-lintwarn ^{:foo 7} (.close (StringWriter.)))
@@ -38,14 +38,14 @@
 
 ;; Java interop - class method calls (ClassName/staticMethod args)
 ;; Only :tag metadata preserved during macroexpansion to form
-;; (. ClassName (staticMethod args)).  Any other metadata removed.
+;; (. ClassName (staticMethod args)). Any other metadata removed.
 
 (def ex09-nolintwarn (Math/abs 5))
 (def ex10-lintwarn ^{:foo 7} (Math/abs 5))
 (def ex11-nolintwarn ^Writer (Math/abs 5))
 (def ex12-lintwarn ^{:foo 7 :tag Writer} (Math/abs 5))
 
-;; Java interop - those beginning with ".".  All metadata preserved
+;; Java interop - those beginning with ".". All metadata preserved
 ;; since no macroexpansion required.
 
 (def ex13-nolintwarn (. Math abs 5))
@@ -66,7 +66,7 @@
 
 ;; Invocations of macros defined with defmacro -- all metadata removed
 ;; during macroexpansion, unless the macro is specifically written to
-;; preserve it.  I am not certain, but I believe doing so would
+;; preserve it. I am not certain, but I believe doing so would
 ;; require using the &form or &env hidden args to macros.
 
 (defmacro my-writer-macro [x]
@@ -86,7 +86,7 @@
 
 ;; Java interop - class static field accesses (ClassName/staticField)
 ;; Only :tag metadata preserved during macroexpansion to form
-;; (. ClassName staticField).  Any other metadata removed.
+;; (. ClassName staticField). Any other metadata removed.
 
 (def ex30-nolintwarn (Long/MAX_VALUE))
 (def ex31-lintwarn ^{:foo 7} (Long/MAX_VALUE))
@@ -95,7 +95,7 @@
 
 ;; Java interop - instance field accesses (.instanceField instance)
 ;; Only :tag metadata preserved during macroexpansion to form
-;; (. instance instanceField).  Any other metadata removed.
+;; (. instance instanceField). Any other metadata removed.
 
 (def pt1 (Point. 1 2))
 (def ex34-nolintwarn (.x pt1))
@@ -161,7 +161,7 @@
 ;; user=> (m '^{:foo 7 :tag Writer} (new StringWriter))
 ;; [{:tag Writer, :foo 7, :line 1, :column 5} (new StringWriter)]
 
-;; ;; All metadata preserved for function calls.  No macroexpansion is
+;; ;; All metadata preserved for function calls. No macroexpansion is
 ;; ;; occurring.
 ;; user=> (defn my-writer [& args] (apply io/writer args))
 ;; #'user/my-writer
