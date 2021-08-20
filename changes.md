@@ -1,4 +1,4 @@
-## Changes from 0.9.6 to
+## Changes from 0.9.6 to 0.9.7
 
 #### New
 
