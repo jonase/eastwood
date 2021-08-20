@@ -345,3 +345,45 @@
  {:linter :constant-test
   :if-inside-macroexpansion-of #{'spec-tools.core/spec
                                  'borkdude.dynaload/dynaload}})
+
+(doseq [s '[honey.sql.helpers/add-index
+            honey.sql.helpers/alter-table
+            honey.sql.helpers/bulk-collect-into
+            honey.sql.helpers/clause-or-expression
+            honey.sql.helpers/create-extension
+            honey.sql.helpers/create-materialized-view
+            honey.sql.helpers/create-table
+            honey.sql.helpers/create-table-as
+            honey.sql.helpers/create-view
+            honey.sql.helpers/delete
+            honey.sql.helpers/delete-from
+            honey.sql.helpers/do-nothing
+            honey.sql.helpers/do-update-set
+            honey.sql.helpers/drop-column
+            honey.sql.helpers/fetch
+            honey.sql.helpers/filter
+            honey.sql.helpers/for
+            honey.sql.helpers/insert-into
+            honey.sql.helpers/into
+            honey.sql.helpers/limit
+            honey.sql.helpers/lock
+            honey.sql.helpers/offset
+            honey.sql.helpers/on-conflict
+            honey.sql.helpers/on-constraint
+            honey.sql.helpers/on-duplicate-key-update
+            honey.sql.helpers/refresh-materialized-view
+            honey.sql.helpers/rename-column
+            honey.sql.helpers/rename-table
+            honey.sql.helpers/select-distinct-on
+            honey.sql.helpers/set
+            honey.sql.helpers/truncate
+            honey.sql.helpers/update
+            honey.sql.helpers/values
+            honey.sql.helpers/with-columns
+            honey.sql.helpers/with-data
+            honey.sql.helpers/within-group]]
+  (disable-warning
+   {:linter               :wrong-arity
+    :function-symbol      s
+    :arglists-for-linting '([& _])
+    :reason               "Eastwood is currently unable to parse honeysql-style arglists, see https://github.com/jonase/eastwood/issues/399"}))

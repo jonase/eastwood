@@ -2,13 +2,18 @@
 
 #### New
 
-* Implement ability to omit a specific linter `:kind`
+* Implement ability to omit a specific linter `:kind`.
   * Closes https://github.com/jonase/eastwood/issues/387
   * [Documentation](https://github.com/jonase/eastwood#ignoring-linter-sub-kinds)
 * Now the `:second-arg-is-not-string` sub-kind for the `:suspicious-test` is disabled by default.
   * Rationale: https://github.com/jonase/eastwood/issues/387
   * You can re-enable it by passing `:exclude-linters #{}`
   * [Learn more about sub-kind silencing](https://github.com/jonase/eastwood#ignoring-linter-sub-kinds)
+
+#### Bugfixes
+
+* Silence `:wrong-arity` false positives for honeysql the time being.
+  * Part of https://github.com/jonase/eastwood/issues/399
 
 ## Changes from 0.9.4 to 0.9.6
 
