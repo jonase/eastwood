@@ -244,9 +244,40 @@
 
 (defn- replace-path-in-compiler-error
   [msg cwd]
-  (let [[match pre _ ^String path
-         line-col post] (re-matches #"((Reflection|Boxed math) warning), (.*?)(:\d+:\d+)(.*)"
-                                    msg)
+  (let [[linter
+         kind
+         [match
+          pre
+          _
+          ^String path
+          line-col
+          post]] (or (when-let [[^String s p :as m]
+                                (re-matches #"((Reflection|Performance|Boxed math) warning), (.*?)(:\d+:\d+)(.*)"
+                                            msg)]
+                       (let [l (case p
+                                 "Boxed math warning" :boxed-math
+                                 "Performance warning" :performance
+                                 "Reflection warning" :reflection)]
+
+                         [l
+                          (when (= :performance l)
+                            (cond
+                              (-> s (.contains "case has int tests, but tested expression"))
+                              :case
+
+                              (-> s (.contains "hash collision of some case test constants"))
+                              :hash))
+                          m]))
+                     (when-let [[m f l c x y] (re-matches #"(.*?)(:\d+)(:\d+)?( recur arg for primitive local)(.*)"
+                                                          msg)]
+                       [:performance
+                        :recur
+                        [m
+                         "Performance warning"
+                         :_
+                         f
+                         (str l (or c ":1"))
+                         (str x y)]]))
         [line column] (some->> (some-> line-col (string/replace #"^:" "") (string/split #":"))
                                (mapv (fn [s]
                                        (Long/parseLong s))))
@@ -255,22 +286,27 @@
                    ;; The Clojure compiler can report files that originally are .cljc as .clj,
                    ;; which would hinder our `:reflection` linter:
                    (str path "c"))
+        ;; For recur warnings, the clojure compiler can print opaque filenames.
+        ;; For those, we fall back:
+        recur-path (when (= kind :recur)
+                     *file*)
         url (and match
                  (or (io/resource path)
-                     (some-> alt-path io/resource)))
+                     (some-> alt-path io/resource)
+                     (some-> recur-path io/resource)))
         uri (some-> url
                     (util/file-warn-info cwd)
                     :uri-or-file-name)]
     (if uri
-      {:type (if (re-find #"Boxed math warning" msg)
-               :boxed-math
-               :reflection)
+      {:type linter
+       :kind kind
        :pre pre
        :uri uri
        :line line
        :column column
        :post post}
-      (when-not (re-find #"not declared dynamic and thus is not dynamically rebindable, but its name suggests otherwise" msg)
+      (when-not (or (re-find #"not declared dynamic and thus is not dynamically rebindable, but its name suggests otherwise" msg)
+                    (re-find #"Auto-boxing loop arg" msg))
         msg))))
 
 (defn- do-eval-output-callbacks [out-msgs-str err-msgs-str cwd]
@@ -278,18 +314,20 @@
     (doseq [s (string/split-lines out-msgs-str)]
       (println s)))
   (let [reflection-warnings (atom [])
-        boxed-math-warnings (atom [])]
+        boxed-math-warnings (atom [])
+        performance-warnings (atom [])]
     (when-not (= err-msgs-str "")
       (doseq [s (string/split-lines err-msgs-str)
               :let [v (replace-path-in-compiler-error s cwd)]]
         (if (map? v)
           (swap! (case (:type v)
                    :reflection reflection-warnings
-                   :boxed-math boxed-math-warnings)
+                   :boxed-math boxed-math-warnings
+                   :performance performance-warnings)
                  conj
                  v)
           (some-> v println))))
-    [@reflection-warnings @boxed-math-warnings]))
+    [@reflection-warnings @boxed-math-warnings @performance-warnings]))
 
 (defn cleanup [form]
   (let [should-change? (and (-> form list?)
@@ -369,7 +407,8 @@
   [source-path & {:keys [reader opt]}]
   (let [linting-boxed-math? (:eastwood/linting-boxed-math? opt)
         eof (reify)
-        reader-opts {:read-cond :allow :features #{:clj} :eof eof}]
+        reader-opts {:read-cond :allow :features #{:clj} :eof eof}
+        source-path-str (str source-path)]
     (before-analyze-file-debug source-path opt)
 
     ;; prevent t.ana from possibly altering *ns* or such:
@@ -378,7 +417,7 @@
               *compile-path* *compile-path*
               *data-readers* *data-readers*
               *default-data-reader-fn* *default-data-reader-fn*
-              *file* (str source-path)
+              *file* source-path-str
               *math-context* *math-context*
               *ns* *ns*
               *print-length* *print-length*
@@ -392,17 +431,19 @@
         (loop [forms []
                asts []
                reflection-warnings-plural []
-               boxed-math-warnings-plural []]
+               boxed-math-warnings-plural []
+               performance-warnings-plural []]
           (let [form (cleanup (reader/read reader-opts reader))]
             (if (identical? form eof)
               {:forms forms
                :asts asts
                :exception nil
                :reflection-warnings (distinct reflection-warnings-plural)
-               :boxed-math-warnings (distinct boxed-math-warnings-plural)}
+               :boxed-math-warnings (distinct boxed-math-warnings-plural)
+               :performance-warnings (distinct performance-warnings-plural)}
               (let [cur-env (env/deref-env)
                     _ (pre-analyze-debug asts form cur-env *ns* opt)
-                    [exc ast reflection-warnings boxed-math-warnings]
+                    [exc ast reflection-warnings boxed-math-warnings performance-warnings]
                     (try
                       (let [skip? (skip-form? form)
                             {:keys [val out err]}
@@ -437,10 +478,12 @@
                                                                                   last)))
                                                                         (list))))))
                                     v))))
-                            [reflection-warnings boxed-math-warnings] (if skip?
-                                                                        [[] []]
-                                                                        (do-eval-output-callbacks out err (:cwd opt)))]
-                        [nil val reflection-warnings boxed-math-warnings])
+                            [reflection-warnings boxed-math-warnings performance-warnings]
+                            (if skip?
+                              [[] [] []]
+                              (binding [*file* source-path-str]
+                                (do-eval-output-callbacks out err (:cwd opt))))]
+                        [nil val reflection-warnings boxed-math-warnings performance-warnings])
                       (catch Exception e
                         (let [had-go-call? (atom false)]
                           (when-not (:abort-on-core-async-exceptions? opt)
@@ -495,12 +538,13 @@
                              (cond-> reflection-warnings-plural
                                conj? (into reflection-warnings))
                              (cond-> boxed-math-warnings-plural
-                               conj? (into boxed-math-warnings))))))))))))))
+                               conj? (into boxed-math-warnings))
+                             (cond-> performance-warnings-plural
+                               conj? (into performance-warnings))))))))))))))
 
 (defn analyze-ns
-  "Takes an IndexingReader and a namespace symbol.
-  Returns a map of results of analyzing the namespace. The map
-  contains these keys:
+  "Returns a map of results of analyzing the namespace.
+  The map contains these keys:
 
   :analyze-results - The value associated with this key is itself a
       map with the following keys:
@@ -514,16 +558,15 @@
   Options:
   - :reader  a pushback reader to use to read the namespace forms
   - :opt     a map of analyzer options
-    - same as analyze-file. See there.
-
-  eg. (analyze-ns 'my-ns :opt {} :reader (pb-reader-for-ns 'my.ns))"
+    - same as analyze-file."
   [source-nsym & {:keys [reader opt]
                   :or {reader (pb-reader-for-ns source-nsym)}}]
   (with-form-writers opt
     (fn []
       (let [source-path (#'move/ns-file-name source-nsym)
             {:keys [reflection-warnings
-                    boxed-math-warnings]
+                    boxed-math-warnings
+                    performance-warnings]
              :as m}     (analyze-file source-path :reader reader :opt opt)
             source      (-> source-nsym uri-for-ns slurp)]
         (-> m
@@ -534,6 +577,7 @@
                                      :forms         (:forms m)
                                      :reflection-warnings reflection-warnings
                                      :boxed-math-warnings boxed-math-warnings
+                                     :performance-warnings performance-warnings
                                      :asts          (->> m
                                                          :asts
                                                          (mapv (fn [m]
