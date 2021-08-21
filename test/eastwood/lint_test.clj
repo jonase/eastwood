@@ -585,3 +585,15 @@ See https://github.com/jonase/eastwood/issues/402"
       #{[:suspicious-test #{:second-arg-is-not-string}]} {:some-warnings false}
       #{[:suspicious-test #{:second-arg-is-not-string
                             ::something-else}]}          {:some-warnings false})))
+
+(deftest refer-clojure-exclude
+  (testing "https://github.com/jonase/eastwood/issues/185"
+    (testing ":refer-clojure :exclude doesn't create false positives"
+      (are [input expected] (testing input
+                              (is (= (assoc expected :some-errors false)
+                                     (-> sut/default-opts
+                                         (assoc :namespaces input)
+                                         (sut/eastwood))))
+                              true)
+        #{'testcases.refer-clojure-exclude.green} {:some-warnings false}
+        #{'testcases.refer-clojure-exclude.red}   {:some-warnings true}))))

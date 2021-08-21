@@ -1262,3 +1262,7 @@ of these kind."
                          (take-while some?)
                          (set))]
     (not (parent-dirs root-dir))))
+
+(defn ast->ns [ast]
+  {:post [%]}
+  (-> ast :env :ns find-ns))
