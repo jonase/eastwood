@@ -252,6 +252,7 @@
                                  (passes/code-loc (passes/nearest-ast-with-loc ast)))
                          warning {:loc loc
                                   :linter :suspicious-test
+                                  :kind :constant-form
                                   :suspicious-test {:ast ast}
                                   :qualifier f
                                   :msg (format "Found constant form%s with class %s inside %s. Did you intend to compare its value to something else inside of an 'is' expresssion?"
@@ -281,6 +282,7 @@
                             (not omit-because-of-are?))
                        [{:loc loc
                          :linter :suspicious-test,
+                         :kind :missing-is
                          :msg (format "Found (%s ...) form inside %s. Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
                                       ff form-type ff)}]
 
@@ -289,6 +291,7 @@
                             (not omit-because-of-are?))
                        [{:loc loc
                          :linter :suspicious-test,
+                         :kind :pure-fn-inside-is
                          :msg (format "Found (%s ...) form inside %s. This is a pure function with no side effects, and its return value is unused. Did you intend to compare its return value to something else inside of an 'is' expression?"
                                       ff form-type)}]
 

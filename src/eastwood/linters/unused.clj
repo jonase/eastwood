@@ -438,6 +438,7 @@
           (:lazy-fn :pure-fn :pure-fn-if-fn-args-pure :warn-if-ret-val-unused)
           {:loc loc
            :linter linter
+           :kind (:op stmt)
            linter {:kind (:op stmt), :action action, :ast stmt}
            :msg
            (case action
@@ -528,12 +529,14 @@
                           (passes/has-code-loc? (-> stmt :raw-forms first meta))
                           (if name-found?
                             (-> stmt :env :name meta)
-                            (passes/code-loc (passes/nearest-ast-with-loc stmt))))]
+                            (passes/code-loc (passes/nearest-ast-with-loc stmt))))
+                     op (:op stmt)]
                  {:loc loc
                   :linter :unused-ret-vals
-                  :unused-ret-vals {:kind (:op stmt), :ast stmt}
+                  :kind op
+                  :unused-ret-vals {:kind op, :ast stmt}
                   :msg (format "%s value is discarded%s: %s."
-                               (op-desc (:op stmt))
+                               (op-desc op)
                                (if name-found?
                                  (str " inside " (-> stmt :env :name))
                                  "")
@@ -637,18 +640,20 @@
 
                      sorted-removed-meta-keys (sort removed-meta-keys)]
                :when (seq removed-meta-keys)
-               :let [warning {:loc loc
+               :let [op (:op ast)
+                     warning {:loc loc
                               :linter :unused-meta-on-macro
+                              :kind op
                               :unused-meta-on-macro {:ast ast}
                               :msg
                               (cond
-                                (= :new (:op ast))
+                                (= :new op)
                                 (format "Java constructor call '%s' has metadata with keys %s. All metadata is eliminated from such forms during macroexpansion and thus ignored by Clojure."
                                         (first orig-form)
                                         sorted-removed-meta-keys)
 
                                 (#{:instance-call :static-call :instance-field :static-field
-                                   :host-interop} (:op ast))
+                                   :host-interop} op)
                                 (format "Java %s '%s' has metadata with keys %s. All metadata keys except :tag are eliminated from such forms during macroexpansion and thus ignored by Clojure."
                                         (case (:op ast)
                                           :instance-call "instance method call"

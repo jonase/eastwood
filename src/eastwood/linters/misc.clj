@@ -141,6 +141,9 @@
                   dynamic-non-earmuffed?)]
     {:loc loc
      :linter :non-dynamic-earmuffs
+     :kind (if earmuffed-non-dynamic?
+             :earmuffed-non-dynamic
+             :dynamic-non-earmuffed)
      :msg (if earmuffed-non-dynamic?
             (format "%s should be marked dynamic." v)
             (format "%s should use the earmuff naming convention: please use #'%s/*%s* instead." v var-ns var-name))}))
@@ -769,6 +772,7 @@
     (not (symbol? (first libspec)))
     [{:loc loc
       :linter :wrong-ns-form
+      :kind :vector-libspec-non-symbol
       :msg (format "%s has a vector libspec that begins with a non-symbol: %s."
                    kw (first libspec))}]
 
@@ -788,6 +792,7 @@
     (even? (count libspec))
     [{:loc loc
       :linter :wrong-ns-form
+      :kind :vector-lib-spec-with-even-count
       :msg (format "%s has a vector libspec with an even number of items. It should always be a symbol followed by keyword / value pairs: %s."
                    kw libspec)}]
 
@@ -846,6 +851,7 @@
        (if (seq bad-option-keys)
          [{:loc loc
            :linter :wrong-ns-form
+           :kind :wrong-option-keys
            :msg (format "%s has a libspec with wrong option keys: %s - option keys for %s should only include the following: %s."
                         kw (string/join " " (sort bad-option-keys))
                         kw (string/join " " (sort (keys allowed-options))))}]
@@ -853,6 +859,7 @@
        (for [[option-key bad-option-val] bad-option-val-map]
          {:loc loc
           :linter :wrong-ns-form
+          :kind :bad-option
           :msg (format "%s has a libspec with option key %s that should have a value that is a %s, but instead it is: %s."
                        kw option-key
                        (case (allowed-options option-key)
@@ -884,6 +891,7 @@
         (and (list? arg) (= 1 (count arg)))
         [{:loc loc
           :linter :wrong-ns-form
+          :kind :empty-list
           :msg (format "%s has an arg that is a 1-item list. Clojure silently does nothing with this. To %s it as a namespace, it should be a symbol on its own or it should be inside of a vector, not a list. To use it as the first part of a prefix list, there should be libspecs after it in the list: %s."
                        kw (name kw) arg)}]
 
@@ -895,6 +903,7 @@
       ;; will not throw an exception during eval.
       [{:loc loc
         :linter :wrong-ns-form
+        :kind :unexpected-value
         :msg (format "%s has an arg that is none of the allowed things of: a keyword, symbol naming a namespace, a libspec (in a vector), a prefix list (in a list or vector): %s."
                      kw arg)}])))
 
@@ -916,11 +925,13 @@
      (for [non-list non-lists]
        {:loc (most-specific-loc loc non-list)
         :linter :wrong-ns-form
+        :kind :not-a-list
         :msg (format "ns references should be lists. This is not: %s."
                      non-list)})
      (for [wrong-kw wrong-kws]
        {:loc (most-specific-loc loc wrong-kw)
         :linter :wrong-ns-form
+        :kind :unexpected-reference
         :msg (format "ns reference starts with '%s' - should be one one of the keywords: %s."
                      (first wrong-kw)
                      (string/join " " (sort allowed-ns-reference-keywords)))})
@@ -938,12 +949,14 @@
                    (when (seq invalid-flags)
                      [{:loc (most-specific-loc loc reference)
                        :linter :wrong-ns-form
+                       :kind :unknown-flags
                        :msg (format "%s contains unknown flags: %s - flags should only be the following: %s."
                                     kw (string/join " " (sort invalid-flags))
                                     (string/join " " (sort valid-flags)))}])
                    (when (seq valid-but-unusual-flags)
                      [{:loc (most-specific-loc loc reference)
                        :linter :wrong-ns-form
+                       :kind :repl-flags
                        :msg (format "%s contains the following valid flags, but it is most common to use them interactively, not in ns forms: %s."
                                     kw (string/join
                                         " " (sort valid-but-unusual-flags)))}])
@@ -961,6 +974,7 @@
     (if (> (count ns-asts) 1)
       (cons {:loc (-> ns-asts second :env)
              :linter :wrong-ns-form
+             :kind :duplicate
              :msg "More than one ns form found in same file."}
             warnings)
       warnings)))

@@ -123,6 +123,7 @@
                                                            'class `class})))))]
                    (let [warning {:loc loc
                                   :linter :wrong-tag
+                                  :kind typ
                                   :wrong-tag {:ast ast}
                                   :msg
                                   (case typ
@@ -193,6 +194,7 @@
                    (nil? (fq-classname-to-class (str tag))))]
     {:loc loc
      :linter :wrong-tag
+     :kind :clj-1232
      :msg (format "Tag: %s for return type of function on arg vector: %s should be fully qualified Java class name, or else it may cause exception if used from another namespace. This is only an issue for Clojure 1.7 and earlier. Clojure 1.8 fixes it (CLJ-1232 https://dev.clojure.org/jira/browse/CLJ-1232)."
                   tag (-> form first))}))
 
