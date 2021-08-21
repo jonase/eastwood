@@ -67,7 +67,7 @@
   ;; Hack alert: Assumes that the first form in the file is an ns
   ;; form, and that the namespace remains the same throughout the
   ;; source file.
-  (let [this-ns (-> (first asts) :env :ns the-ns)
+  (let [this-ns (-> (first asts) util/ast->ns)
         forms (util/string->forms source this-ns false)
         freqs (->> forms
                    util/replace-comments-and-quotes-with-nil
@@ -268,9 +268,11 @@
 
                    (sequential? f)
                    (let [ff (first f)
-                         cc-sym (and ff
-                                     (instance? clojure.lang.Named ff)
-                                     (symbol "clojure.core" (name ff)))
+                         cc-sym (and (some-> ff symbol?)
+                                     (some-> ast
+                                             util/ast->ns
+                                             (ns-resolve ff)
+                                             util/var-to-fqsym))
                          var-info (and cc-sym (var-info-map cc-sym))
                          loc (-> ff meta)]
                      (cond
