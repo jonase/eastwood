@@ -19,6 +19,7 @@
    [eastwood.linters.deprecated :as deprecated]
    [eastwood.linters.implicit-dependencies :as implicit-dependencies]
    [eastwood.linters.misc :as misc]
+   [eastwood.linters.performance :as performance]
    [eastwood.linters.reflection :as reflection]
    [eastwood.linters.typetags :as typetags]
    [eastwood.linters.typos :as typos]
@@ -200,6 +201,13 @@
     ;; NOTE :ignore-faults-from-foreign-macroexpansions? is useless for this specific linter,
     ;; since reflection detection doesn't work at tools.analyzer level, so one doesn't get to inspect macroexpasions for this purpose.
     :fn reflection/linter}
+
+   {:name :performance
+    :enabled-by-default false
+    :url "https://github.com/jonase/eastwood#performance",
+    ;; NOTE :ignore-faults-from-foreign-macroexpansions? is useless for this specific linter,
+    ;; since reflection detection doesn't work at tools.analyzer level, so one doesn't get to inspect macroexpasions for this purpose.
+    :fn performance/linter}
 
    {:name :boxed-math
     ;; Disabled by default as it's not customary or excessively justified to always fix these:

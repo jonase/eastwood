@@ -124,6 +124,7 @@ enabled by default unless they have '(disabled)' after their name.
 | `:no-ns-form-found` | Warn about Clojure files where no `ns` form could be found. | [[more]](#no-ns-form-found) |
 | `:non-clojure-file` (disabled) | Warn about files that will not be linted because they are not Clojure source files, i.e. their name does not end with '.clj'. | [[more]](#non-clojure-file) |
 | `:non-dynamic-earmuffs` | Vars marked `^:dynamic` should follow the "earmuff" naming convention, and vice versa. | [[more]](#non-dynamic-earmuffs) |
+| `:performance` | Performance warnings | [[more]](#performance) |
 | `:redefd-vars` | Redefinitions of the same name in the same namespace. | [[more]](#redefd-vars) |
 | `:reflection` | Reflection warnings | [[more]](#reflection) |
 | `:suspicious-expression` | Suspicious expressions that appear incorrect, because they always return trivial values. | [[more]](#suspicious-expression) |
@@ -2027,6 +2028,25 @@ which not only enables the warnings but it actually affects the final code that 
 
 Generally this won't affect you in any way except in the case that you are invoking Eastwood in a REPL,
 such that namespaces re-compiled by Eastwood's analysis will be visible and used by your application.
+
+</details>
+
+### `:performance`
+
+#### Performance warnings from the Clojure compiler
+
+<details>
+
+The Clojure compiler optionally emits performance warnings related to the use of `case` and `recur` and their relationship with primitive numerics.
+
+> Please refer to https://clojure.org/reference/java_interop for a guide on primive math
+(tldr: use `(long)`, or occasionally `^long` where it is permitted).
+
+Eastwood wraps these warnings, enhacing them when needed (the reported file name can be misleading),
+restricting them to _your project's_ source paths and allowing them to be omitted on a file/line basis.  
+
+This linter is disabled by default because it's not customary or necessarily justified to address these warnings.
+For some corner cases it might not be even possible (however the [`:ignored-faults`](https://github.com/jonase/eastwood#ignored-faults) would allow you to prevent that corner case from failing your build).
 
 </details>
 

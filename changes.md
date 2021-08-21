@@ -1,3 +1,12 @@
+## Changes from 0.9.7 to 1.0.0
+
+#### New
+
+* Implement a new linter: `:performance`
+  * Note that it's disabled by default. There are no drawbacks to enabling it (other than the burden of having to fix or silence these).
+  * Closes https://github.com/jonase/eastwood/issues/416
+  * [Documentation](https://github.com/jonase/eastwood#performance)
+
 ## Changes from 0.9.6 to 0.9.7
 
 #### New

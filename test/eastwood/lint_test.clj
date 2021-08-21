@@ -551,6 +551,25 @@ See https://github.com/jonase/eastwood/issues/402"
     #{'testcases.boxed-math.green} {:some-warnings false}
     #{'testcases.boxed-math.red}   {:some-warnings true}))
 
+(deftest performance
+  (are [input expected] (testing input
+                          (is (= (assoc expected :some-errors false)
+                                 (-> sut/default-opts
+                                     (assoc :namespaces input
+                                            ;; explicitly only run the :performance linter,
+                                            ;; proving that it doesn't depend on the :reflection linter:
+                                            :linters [:performance])
+                                     (sut/eastwood))))
+                          true)
+    #{'testcases.performance.red.case}    {:some-warnings true}
+    #{'testcases.performance.red.recur}   {:some-warnings true}
+    #{'testcases.performance.red.hash}    {:some-warnings true}
+
+    ;; the green cases demonstrate how each fault would be fixed:
+    #{'testcases.performance.green.case}  {:some-warnings false}
+    #{'testcases.performance.green.recur} {:some-warnings false}
+    #{'testcases.performance.green.hash}  {:some-warnings false}))
+
 (deftest subkind-silencing
   (testing "I can silence a specific linter :kind"
     (are [input expected] (testing input
