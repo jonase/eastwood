@@ -1,7 +1,9 @@
 (ns eastwood.util-test
   (:require
    [clojure.test :refer [are deftest is testing]]
-   [eastwood.util :as sut]))
+   [eastwood.util :as sut])
+  (:import
+   (java.io File)))
 
 (deftest trim-thrown-form
   (testing "Removes the `Exception` from a `(is (thrown? Exception ...`"
@@ -62,3 +64,13 @@
     #{[:foo [:bar]]}      [:foo :baz]  false
     #{[:foo [:bar :baz]]} [:foo :baz]  true
     #{[:foo [:bar :baz]]} [:foo :quux] false))
+
+(deftest dir-outside-root-dir?
+  (are [input expected] (testing input
+                          (is (= expected
+                                 (sut/dir-outside-root-dir? input)))
+                          true)
+    (File. (System/getProperty "user.dir")) false
+    (File. ".")                             false
+    (File. "src")                           false
+    (File. "/")                             true))

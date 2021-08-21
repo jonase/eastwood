@@ -7,6 +7,10 @@
   * Closes https://github.com/jonase/eastwood/issues/416
   * [Documentation](https://github.com/jonase/eastwood#performance)
 
+#### Bugfixes
+
+* Exclude Lein checkouts' directories from the inferred `:source-paths` (source path inference being Eastwood's fallback to a lack of explicitly specified `:source-paths` / `:test-paths`). 
+
 ## Changes from 0.9.6 to 0.9.7
 
 #### New
