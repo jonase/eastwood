@@ -1251,3 +1251,14 @@ of these kind."
         path]
        (some exclude-linters--internal)
        boolean))
+
+(defn dir-outside-root-dir? [^File f]
+  {:pre [(-> f .isDirectory)]}
+  (let [f (-> f .getCanonicalPath File.)
+        root-dir (File. (System/getProperty "user.dir"))
+        parent-dirs (->> f
+                         (iterate (fn [^File f]
+                                    (some-> f .getCanonicalPath File. .getParent File.)))
+                         (take-while some?)
+                         (set))]
+    (not (parent-dirs root-dir))))

@@ -52,18 +52,18 @@
 
 (deftest setup-lint-paths-test
   (testing "non-empty source/test paths is respected"
-    (is (= {:source-paths #{"lol"}
+    (is (= {:source-paths #{"src"}
             :test-paths #{}}
-           (sut/setup-lint-paths #{"lol"} nil)))
+           (sut/setup-lint-paths #{"src"} nil)))
     (is (= {:source-paths #{}
-            :test-paths #{"lol"}}
-           (sut/setup-lint-paths nil #{"lol"})))
-    (is (= {:source-paths #{"lol"}
-            :test-paths #{"bar"}}
-           (sut/setup-lint-paths #{"lol"} #{"bar"}))))
+            :test-paths #{"test"}}
+           (sut/setup-lint-paths nil #{"test"})))
+    (is (= {:source-paths #{"src"}
+            :test-paths #{"test"}}
+           (sut/setup-lint-paths #{"src"} #{"test"}))))
   (testing "empty source/test paths yields classpath-directories"
-    (with-redefs [classpath/classpath-directories (fn [] [(File. "lol")])]
-      (is (= {:source-paths #{(File. "lol")}
+    (with-redefs [classpath/classpath-directories (constantly [(File. "src")])]
+      (is (= {:source-paths #{(File. "src")}
               :test-paths #{}}
              (sut/setup-lint-paths nil nil))))))
 
@@ -489,7 +489,6 @@ See https://github.com/jonase/eastwood/issues/402"
 
     "A function call inside the refresh dirs results in an Eastwood warning"
     #{'testcases.unhinted-reflective-call.defn-call-inside-refresh-dirs}   {:some-warnings true})
-
 
   (testing "Integration with `:exclude-namespaces`"
     (are [desc namespaces exclude-namespaces expected] (testing [namespaces exclude-namespaces]

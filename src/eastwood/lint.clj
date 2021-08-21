@@ -423,9 +423,12 @@
      :test-paths (set test-paths)}
     {:source-paths (->> (or (seq (classpath/classpath-directories))
                             ;; fallback, because the above can fail in presence of certain libs or scenarios:
-                            (->> (classpath/system-classpath)
-                                 (filter (fn [^File f]
-                                           (-> f .isDirectory)))))
+                            (classpath/system-classpath))
+                        (filter (fn [^File f]
+                                  (-> f .isDirectory)))
+                        ;; remove dirs representing Lein checkouts
+                        ;; (which cannot be directly detected as symlinks, since Lein resolves them first):
+                        (remove util/dir-outside-root-dir?)
                         ;; resources (whether vanilla, dev-only or test-only) should not be analyzed,
                         ;; or account for `:ignore-faults-from-foreign-macroexpansions?`:
                         (remove (fn [^File f]
@@ -669,7 +672,7 @@
                    :test-paths #{}
                    :namespaces #{:source-paths :test-paths}
                    :exclude-namespaces #{}
-                   :exclude-linters #{ ;; exclude only a sub :kind for a specific linter:
+                   :exclude-linters #{;; exclude only a sub :kind for a specific linter:
                                       [:suspicious-test :second-arg-is-not-string]}
                    :config-files #{}
                    :builtin-config-files default-builtin-config-files
