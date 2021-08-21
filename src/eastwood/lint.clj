@@ -399,16 +399,20 @@
 (defn expand-ns-keywords
   "Expand any keyword in `namespaces` with values from `expanded-namespaces`"
   [expanded-namespaces namespaces]
-  (mapcat (fn [x] (get expanded-namespaces x [x])) namespaces))
+  (->> namespaces
+       (mapcat (fn [x]
+                 (get expanded-namespaces x [x])))))
 
 (defn setup-lint-paths
-  "Return a map containing `:source-path` and `:test-paths` which
+  "Returns a map containing `:source-path` and `:test-paths` which
   contains the set of values in each. If both `source-paths` and `test-paths`
   are empty then `:source-path` is set to all the directories on the classpath,
   while `:test-paths` is the empty set."
   [source-paths test-paths]
-  (if-not (or (seq source-paths)
-              (seq test-paths))
+  (if (or (seq source-paths)
+          (seq test-paths))
+    {:source-paths (set source-paths)
+     :test-paths (set test-paths)}
     {:source-paths (->> (or (seq (classpath/classpath-directories))
                             ;; fallback, because the above can fail in presence of certain libs or scenarios:
                             (->> (classpath/system-classpath)
@@ -422,9 +426,7 @@
                                         ;; https://github.com/jonase/eastwood/issues/409
                                         (-> s (.contains ".gitlibs"))))))
                         (set))
-     :test-paths #{}}
-    {:source-paths (set source-paths)
-     :test-paths (set test-paths)}))
+     :test-paths #{}}))
 
 ;; If you do not specify :namespaces in the options, it defaults to
 ;; the same as if you specified [:source-paths :test-paths]. If you
@@ -534,14 +536,13 @@
     (set/intersection linters-requested known-linters)))
 
 (defn- dirs-scanned [reporter cwd dirs]
-  (when dirs
-    (reporting/note reporter "Directories scanned for source files:")
-    (reporting/note reporter " ")
-    (->> dirs
-         (map #(util/file-warn-info % cwd))
-         (map :uri-or-file-name)
-         (str/join " ")
-         (reporting/note reporter))))
+  (some->> dirs
+           seq ;; shortcircuit printing
+           (map #(util/file-warn-info % cwd))
+           (map :uri-or-file-name)
+           (str/join " ")
+           (str "Directories scanned for source files: ")
+           (reporting/note reporter)))
 
 (defn- lint-namespace [_reporter namespace linters opts]
   (try
@@ -608,8 +609,15 @@
    cwd
    {:keys [namespaces dirs files file-map non-clojure-files project-namespaces]
     :as effective-namespaces}
+   lint-paths
    linters]
-  (dirs-scanned reporter cwd dirs)
+
+  (->> lint-paths
+       (vals)
+       (reduce into #{}) ;; merge :source-paths and :test-paths
+       (sort)
+       (dirs-scanned reporter cwd))
+
   (let [no-ns-forms (misc/no-ns-form-found-files dirs files file-map linters cwd opts)
         non-clojure-files (misc/non-clojure-files non-clojure-files linters cwd)]
 
@@ -735,15 +743,18 @@
                    test-paths
                    modified-since
                    cwd] :as opts} (last-options-map-adjustments opts reporter)
-           namespaces-info (effective-namespaces exclude-namespaces namespaces
-                                                 (setup-lint-paths source-paths test-paths) modified-since)
+           lint-paths (setup-lint-paths source-paths test-paths)
+           namespaces-info (effective-namespaces exclude-namespaces
+                                                 namespaces
+                                                 lint-paths
+                                                 modified-since)
            linter-info (select-keys opts [:linters :exclude-linters :add-linters :disable-linter-name-checks])]
        (reporting/debug reporter :var-info (with-out-str
                                              (util/print-var-info-summary @typos/var-info-map-delayed)))
        (reporting/debug reporter :compare-forms
                         "Writing files forms-read.txt and forms-emitted.txt")
        (->> (effective-linters linter-info linter-name->info default-linters)
-            (eastwood-core reporter opts cwd namespaces-info)
+            (eastwood-core reporter opts cwd namespaces-info lint-paths)
             summary
             counted-summary
             (make-report reporter start-time namespaces-info)))
@@ -833,14 +844,17 @@
                    test-paths
                    modified-since
                    cwd] :as opts} (last-options-map-adjustments opts reporter)
-           namespaces-info (effective-namespaces exclude-namespaces namespaces
-                                                 (setup-lint-paths source-paths test-paths) modified-since)
+           lint-paths (setup-lint-paths source-paths test-paths)
+           namespaces-info (effective-namespaces exclude-namespaces
+                                                 namespaces
+                                                 lint-paths
+                                                 modified-since)
            linter-info (select-keys opts [:linters :exclude-linters :add-linters :disable-linter-name-checks])
            {:keys [error error-data
                    lint-warnings
                    namespace]}
            (->> (effective-linters linter-info linter-name->info default-linters)
-                (eastwood-core reporter opts cwd namespaces-info)
+                (eastwood-core reporter opts cwd namespaces-info lint-paths)
                 summary)]
        {:namespaces namespace
         :warnings (seq lint-warnings)
