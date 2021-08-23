@@ -4,7 +4,7 @@
    [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
-   [eastwood.lint :as sut]
+   [eastwood.lint :as sut :refer [with-memoization-bindings]]
    [eastwood.reporting-callbacks :as reporting]
    [eastwood.util :as util])
   (:import
@@ -54,18 +54,18 @@
   (testing "non-empty source/test paths is respected"
     (is (= {:source-paths #{"src"}
             :test-paths #{}}
-           (sut/setup-lint-paths #{"src"} nil)))
+           (sut/setup-lint-paths #{} #{"src"} nil)))
     (is (= {:source-paths #{}
             :test-paths #{"test"}}
-           (sut/setup-lint-paths nil #{"test"})))
+           (sut/setup-lint-paths #{} nil #{"test"})))
     (is (= {:source-paths #{"src"}
             :test-paths #{"test"}}
-           (sut/setup-lint-paths #{"src"} #{"test"}))))
+           (sut/setup-lint-paths #{} #{"src"} #{"test"}))))
   (testing "empty source/test paths yields classpath-directories"
     (with-redefs [classpath/classpath-directories (constantly [(File. "src")])]
       (is (= {:source-paths #{(File. "src")}
               :test-paths #{}}
-             (sut/setup-lint-paths nil nil))))))
+             (sut/setup-lint-paths #{} nil nil))))))
 
 (def eastwood-src-namespaces (::track/load (dir/scan-dirs (track/tracker) #{"src"})))
 (def eastwood-test-namespaces (::track/load (dir/scan-dirs (track/tracker) #{"test"})))
@@ -84,10 +84,13 @@
     (is (= {:dirs (concat (map util/canonical-filename source-paths)
                           (map util/canonical-filename test-paths))
             :namespaces (sort eastwood-all-namespaces)}
-           (-> (sut/effective-namespaces #{}
-                                         #{:source-paths :test-paths}
-                                         {:source-paths source-paths
-                                          :test-paths test-paths} 0)
+           (-> (with-memoization-bindings
+                 (sut/effective-namespaces #{}
+                                           #{:source-paths :test-paths}
+                                           {:source-paths source-paths
+                                            :test-paths test-paths}
+                                           {:source-paths source-paths
+                                            :test-paths test-paths} 0))
                (select-keys [:dirs :namespaces])
                (update :namespaces sort))))))
 

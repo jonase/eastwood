@@ -9,7 +9,7 @@
 (ns ^{:author "Stuart Sierra"
       :doc "Parse Clojure namespace (ns) declarations and extract
   dependencies."}
-  eastwood.copieddeps.dep9.clojure.tools.namespace.parse
+    eastwood.copieddeps.dep9.clojure.tools.namespace.parse
   (:require [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
             [clojure.set :as set]))
 
@@ -57,6 +57,8 @@
            (= ::eof form) nil
            :else (recur)))))))
 
+(def ^:dynamic *read-ns-decl* read-ns-decl)
+
 ;;; Parsing dependencies
 
 (defn- prefix-spec?
@@ -80,21 +82,21 @@
 
 (defn- deps-from-libspec [prefix form]
   (cond (prefix-spec? form)
-          (mapcat (fn [f] (deps-from-libspec
-                           (symbol (str (when prefix (str prefix "."))
-                                        (first form)))
-                           f))
-                  (rest form))
+        (mapcat (fn [f] (deps-from-libspec
+                         (symbol (str (when prefix (str prefix "."))
+                                      (first form)))
+                         f))
+                (rest form))
 	(option-spec? form)
-          (deps-from-libspec prefix (first form))
+        (deps-from-libspec prefix (first form))
 	(symbol? form)
-          (list (symbol (str (when prefix (str prefix ".")) form)))
+        (list (symbol (str (when prefix (str prefix ".")) form)))
 	(keyword? form)  ; Some people write (:require ... :reload-all)
-          nil
+        nil
 	:else
-          (throw (ex-info "Unparsable namespace form"
-                          {:reason ::unparsable-ns-form
-                           :form form}))))
+        (throw (ex-info "Unparsable namespace form"
+                        {:reason ::unparsable-ns-form
+                         :form form}))))
 
 (def ^:private ns-clause-head-names
   "Set of symbol/keyword names which can appear as the head of a

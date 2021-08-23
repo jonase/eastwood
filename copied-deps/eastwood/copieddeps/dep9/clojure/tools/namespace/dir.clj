@@ -1,30 +1,27 @@
-;; Copyright (c) Stuart Sierra, 2012. All rights reserved. The use and
-;; distribution terms for this software are covered by the Eclipse
-;; Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
-;; which can be found in the file epl-v10.html at the root of this
-;; distribution. By using this software in any fashion, you are
-;; agreeing to be bound by the terms of this license. You must not
-;; remove this notice, or any other, from this software.
-
-(ns ^{:author "Stuart Sierra"
-      :doc "Track namespace dependencies and changes by monitoring
-  file-modification timestamps"}
-  eastwood.copieddeps.dep9.clojure.tools.namespace.dir
-  (:require [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
-            [eastwood.copieddeps.dep11.clojure.java.classpath :refer [classpath-directories]]
-            [clojure.java.io :as io]
-            [clojure.set :as set]
-            [clojure.string :as string])
-  (:import (java.io File) (java.util.regex Pattern)))
+(ns ^{:author "Stuart Sierra", :doc "Track namespace dependencies and changes by monitoring\n  file-modification timestamps"} eastwood.copieddeps.dep9.clojure.tools.namespace.dir
+  (:require
+   [clojure.java.io :as io]
+   [clojure.set :as set]
+   [clojure.string :as string]
+   [eastwood.copieddeps.dep11.clojure.java.classpath :refer [classpath-directories]]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track])
+  (:import
+   (java.io File)
+   (java.util.regex Pattern)))
 
 (defn- find-files [dirs platform]
   (let [all-files (->> dirs
                        (map io/file)
                        (filter #(.exists ^File %))
-                       (mapcat file-seq)
-                       (remove #(.isDirectory ^File %)))
+                       (pmap (fn [d]
+                               (->> d
+                                    file-seq
+                                    (remove #(.isDirectory ^File %))
+                                    ;; no lazy pmapping:
+                                    (vec))))
+                       (apply concat))
         {:keys [extensions]} (or platform find/clj)
         grouped (group-by #(file/file-with-extension? % extensions) all-files)]
     {:clojure-files (get grouped true)
@@ -55,7 +52,7 @@
   Optional third argument is map of options:
 
     :platform  Either clj (default) or cljs, both defined in
-               eastwood.copieddeps.dep9.clojure.tools.namespace.find, controls reader options for 
+               eastwood.copieddeps.dep9.clojure.tools.namespace.find, controls reader options for
                parsing files.
 
     :add-all?  If true, assumes all extant files are modified regardless
@@ -81,8 +78,8 @@
 
   Optional third argument is map of options:
 
-    :platform  Either clj (default) or cljs, both defined in 
-               eastwood.copieddeps.dep9.clojure.tools.namespace.find, controls file extensions 
+    :platform  Either clj (default) or cljs, both defined in
+               eastwood.copieddeps.dep9.clojure.tools.namespace.find, controls file extensions
                and reader options.
 
     :add-all?  If true, assumes all extant files are modified regardless

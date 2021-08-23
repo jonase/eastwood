@@ -1,18 +1,12 @@
-;; Copyright (c) Stuart Sierra, 2012. All rights reserved. The use and
-;; distribution terms for this software are covered by the Eclipse
-;; Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
-;; which can be found in the file epl-v10.html at the root of this
-;; distribution. By using this software in any fashion, you are
-;; agreeing to be bound by the terms of this license. You must not
-;; remove this notice, or any other, from this software.
-
-(ns ^{:author "Stuart Sierra"
-      :doc "Read and track namespace information from files"}
-  eastwood.copieddeps.dep9.clojure.tools.namespace.file
-  (:require [clojure.java.io :as io]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.parse :as parse]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track])
-  (:import (java.io PushbackReader)))
+(ns ^{:author "Stuart Sierra", :doc "Read and track namespace information from files"}
+    eastwood.copieddeps.dep9.clojure.tools.namespace.file
+  (:require
+   [clojure.java.io :as io]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.parse :as parse]
+   [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
+   [eastwood.util.parallel :refer [partitioning-pmap]])
+  (:import
+   (java.io PushbackReader)))
 
 (defn read-file-ns-decl
   "Attempts to read a (ns ...) declaration from file, and returns the
@@ -22,7 +16,9 @@
    (read-file-ns-decl file nil))
   ([file read-opts]
    (with-open [rdr (PushbackReader. (io/reader file))]
-     (parse/read-ns-decl rdr read-opts))))
+     (parse/*read-ns-decl* rdr read-opts))))
+
+(def ^:dynamic *read-file-ns-decl* read-file-ns-decl)
 
 (defn file-with-extension?
   "Returns true if the java.io.File represents a file whose name ends
@@ -59,15 +55,21 @@
 ;;; Dependency tracker
 
 (defn- files-and-deps [files read-opts]
-  (reduce (fn [m file]
-            (if-let [decl (read-file-ns-decl file read-opts)]
-              (let [deps (parse/deps-from-ns-decl decl)
-                    name (parse/name-from-ns-decl decl)]
-                (-> m
-                    (assoc-in [:depmap name] deps)
-                    (assoc-in [:filemap file] name)))
-              m))
-          {} files))
+  (let [files (->> files
+                   (partitioning-pmap (fn [file]
+                                        (when-let [decl (*read-file-ns-decl* file read-opts)]
+                                          (let [deps (parse/deps-from-ns-decl decl)
+                                                name (parse/name-from-ns-decl decl)]
+                                            {:deps deps
+                                             :name name
+                                             :file file}))))
+                   (keep identity))]
+    (->> files
+         (reduce (fn [m {:keys [deps name file]}]
+                   (-> m
+                       (assoc-in [:depmap name] deps)
+                       (assoc-in [:filemap file] name)))
+                 {}))))
 
 (def ^:private merge-map (fnil merge {}))
 
@@ -90,4 +92,3 @@
   (-> tracker
       (track/remove (keep (::filemap tracker {}) files))
       (update-in [::filemap] #(apply dissoc % files))))
-

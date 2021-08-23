@@ -31,7 +31,7 @@
                                         resource-path->filenames
                                         first))]
                    (if-let [decl (some-> file
-                                         (file/read-file-ns-decl nil))]
+                                         (file/*read-file-ns-decl* nil))]
                      (let [deps (parse/deps-from-ns-decl decl)
                            name (parse/name-from-ns-decl decl)]
                        (-> m

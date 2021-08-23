@@ -962,8 +962,7 @@ of these kind."
   (io/resource (str "eastwood/config/" name)))
 
 (defn init-warning-enable-config [builtin-config-files config-files opt]
-  (let [all-config-files (concat (map builtin-config-to-resource
-                                      builtin-config-files)
+  (let [all-config-files (concat (map builtin-config-to-resource builtin-config-files)
                                  config-files)]
     (reset! warning-enable-config-atom [])
     (reset! linter-executor-atom pmap)
