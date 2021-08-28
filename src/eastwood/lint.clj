@@ -307,7 +307,8 @@
           :exception e}]))))
 
 (defn lint-ns* [ns-sym analyze-results opts linter]
-  (let [[results elapsed] (util/timeit (run-linter linter analyze-results ns-sym opts))]
+  (let [[results elapsed] (util/timeit
+                            (run-linter linter analyze-results ns-sym opts))]
     (->> results
          (group-by :kind)
          (merge {:elapsed elapsed
@@ -369,7 +370,8 @@
                  (assoc :eastwood/linter-info linter-info))
           opts (assoc opts :eastwood/linting-boxed-math? (contains? (into #{} (map :name) effective-linters)
                                                                     :boxed-math))
-          [result elapsed] (util/timeit (analyze-ns/analyze-ns ns-sym :opt opts))
+          [result elapsed] (util/timeit
+                             (analyze-ns/analyze-ns ns-sym :opt opts))
           {:keys [analyze-results exception exception-phase exception-form]} result]
       {:ns ns-sym
        :analysis-time elapsed

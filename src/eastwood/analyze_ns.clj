@@ -411,7 +411,7 @@
       - :ast Print complete ASTs just after analysis of each form.
 
   eg. (analyze-file \"my/ns.clj\" :opt {:debug-all true})"
-  [source-path & {:keys [reader opt]}]
+  [source-nsym source-path & {:keys [reader opt]}]
   (let [linting-boxed-math? (:eastwood/linting-boxed-math? opt)
         eof (reify)
         reader-opts {:read-cond :allow :features #{:clj} :eof eof}
@@ -435,6 +435,19 @@
               reader/*data-readers* *data-readers*]
       (env/with-env (jvm/global-env)
         (begin-file-debug *file* *ns* opt)
+
+        ;; https://github.com/jonase/eastwood/issues/419
+        (in-ns source-nsym)
+        (do
+          (doseq [alias (keys (ns-aliases *ns*))]
+            (try
+              (ns-unalias *ns* alias)
+              (catch Exception _)))
+          (doseq [alias (keys (ns-refers *ns*))]
+            (try
+              (ns-unmap *ns* alias)
+              (catch Exception _))))
+
         (loop [forms []
                asts []
                reflection-warnings-plural []
@@ -576,7 +589,7 @@
             {:keys [reflection-warnings
                     boxed-math-warnings
                     performance-warnings]
-             :as m}     (analyze-file source-path :reader reader :opt opt)
+             :as m}     (analyze-file source-nsym source-path :reader reader :opt opt)
             source      (-> source-nsym uri-for-ns slurp)]
         (-> m
             (dissoc :forms :asts :reflection-warnings)

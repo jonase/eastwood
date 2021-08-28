@@ -18,6 +18,8 @@
 
 * Handle `:refer-clojure :exclude` better in `:suspicious-test`.
   * Closes https://github.com/jonase/eastwood/issues/185
+* Prevent occasional issues related to ns-interns when using Eastwood from a REPL
+  * Closes https://github.com/jonase/eastwood/issues/419
 * var-info.edn: mark various side-effectful fns as such
   * This silences a few `:unused-ret-vals` false positives.
   * Fixes https://github.com/jonase/eastwood/issues/421
