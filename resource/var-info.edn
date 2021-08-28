@@ -127,7 +127,7 @@
  clojure.core/assert {:var-kind nil, :macro true},
  clojure.core/assert-same-protocol {:var-kind nil, :macro nil, :side-effect true},
  clojure.core/assoc {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/assoc! {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},
+ clojure.core/assoc! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/assoc-in {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/associative? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/atom {:var-kind nil, :macro nil},
@@ -198,7 +198,7 @@
  clojure.core/cond->> {:var-kind nil, :macro true},
  clojure.core/condp {:var-kind nil, :macro true},
  clojure.core/conj {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/conj! {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},
+ clojure.core/conj! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/cons {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/constantly {:var-kind nil, :macro nil, :pure-if-fn-args-pure true},
  clojure.core/construct-proxy {:var-kind nil, :macro nil},
@@ -234,9 +234,9 @@
  clojure.core/descendants {:var-kind nil, :macro nil},
  clojure.core/destructure {:var-kind nil, :macro nil},
  clojure.core/disj {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/disj! {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},
+ clojure.core/disj! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/dissoc {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/dissoc! {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},
+ clojure.core/dissoc! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/distinct {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/distinct? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/doall {:var-kind nil, :macro nil, :predicate false, :side-effect true :pure-fn false :warn-if-ret-val-unused false :lazy false, :pure-if-fn-args-pure false :io-fn false :evals-exprs false}, ;; TBD: Consider making a special warning just for this one, suggesting to use dorun instead if the return value is not needed, potentially saving memory
@@ -432,10 +432,10 @@
  clojure.core/partition-by {:var-kind nil, :macro nil, :lazy true, :pure-fn-if-fn-args-pure true},
  clojure.core/pcalls {:var-kind nil, :macro nil, :pure-if-fn-args-pure true},
  clojure.core/peek {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/persistent! {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},
+ clojure.core/persistent! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/pmap {:var-kind nil, :macro nil, :lazy true, :pure-fn-if-fn-args-pure true},
  clojure.core/pop {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/pop! {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true},
+ clojure.core/pop! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/pop-thread-bindings {:var-kind nil, :macro nil},
  clojure.core/pos? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/pr {:var-kind nil, :macro nil, :io-fn true, :side-effect true},
@@ -479,8 +479,8 @@
 
  ;; :warn-if-ret-val-unused was changed for `read` from `true` to `false`,
  ;; because `read` can be used for advancing positions in a pushbackreader, or to implicitly eval forms, etc:
- clojure.core/read {:var-kind nil, :macro nil, :predicate false :side-effect true :io-fn true, :pure-fn false :evals-exprs true, :pure-if-fn-args-pure false :lazy false, :warn-if-ret-val-unused true},
- clojure.core/read-line {:var-kind nil, :macro nil, :io-fn true, :evals-exprs false, :lazy false, :warn-if-ret-val-unused true}, ;; Note that it never evals anything, only returns a string read from a stream
+ clojure.core/read {:var-kind nil, :macro nil, :predicate false :side-effect true :io-fn true, :pure-fn false :evals-exprs true, :pure-if-fn-args-pure false :lazy false, :warn-if-ret-val-unused false},
+ clojure.core/read-line {:var-kind nil, :macro nil, :io-fn true, :evals-exprs false, :lazy false, :warn-if-ret-val-unused false}, ;; Note that it never evals anything, only returns a string read from a stream
  clojure.core/read-string {:var-kind nil, :macro nil, :evals-exprs true, :lazy false, :warn-if-ret-val-unused true},
  clojure.core/reader-conditional? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/realized? {:var-kind nil, :macro nil, :lazy false, :pure-fn false, :predicate true}, ;; Definitely not pure, as its return value can change over time for the same arg
@@ -543,7 +543,7 @@
  clojure.core/shorts {:var-kind nil, :macro nil},
  clojure.core/shuffle {:var-kind nil, :macro nil, :lazy false, :warn-if-ret-val-unused true}, ;; TBD: pure fn?  Even if arg is Java array?
  clojure.core/shutdown-agents {:var-kind nil, :macro nil},
- clojure.core/slurp {:var-kind nil, :macro nil, :io-fn true, :lazy false, :warn-if-ret-val-unused true},
+ clojure.core/slurp {:var-kind nil, :macro nil, :io-fn true, :lazy false, :warn-if-ret-val-unused false},
  clojure.core/some {:var-kind nil, :macro nil, :lazy true, :pure-fn-if-fn-args-pure true},
  clojure.core/some? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/some-> {:var-kind nil, :macro true},
@@ -706,7 +706,7 @@
  clojure.data/diff {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.data/diff-similar {:var-kind nil, :macro nil},
  clojure.data/equality-partition {:var-kind nil, :macro nil},
- clojure.edn/read {:var-kind nil, :macro nil, :io-fn true, :lazy false, :warn-if-ret-val-unused true},
+ clojure.edn/read {:var-kind nil, :macro nil, :io-fn true, :lazy false, :warn-if-ret-val-unused false},
  clojure.edn/read-string {:var-kind nil, :macro nil, :pure-if-fn-args-pure true}, ;; TBD: purity depends upon the value of data readers
  clojure.inspector/atom? {:var-kind nil, :macro nil},
  clojure.inspector/collection-tag {:var-kind nil, :macro nil},

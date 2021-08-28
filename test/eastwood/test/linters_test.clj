@@ -371,13 +371,6 @@
           :linter :unused-ret-vals,
           :msg "Lazy function call return value is discarded: (filter print [1 2 3])."}
          1,
-         {:line 35, :column 3,
-          :file (fname-from-parts "testcases" "f07.clj"),
-          :linter :unused-ret-vals,
-          :msg (if (util/clojure-1-6-or-later)
-                 "Should use return value of function call, but it is discarded: (disj! (transient #{:b :a}) :a)."
-                 "Should use return value of function call, but it is discarded: (disj! (transient #{:a :b}) :a).")}
-         1,
          {:line 36, :column 3,
           :file (fname-from-parts "testcases" "f07.clj"),
           :linter :unused-ret-vals,
