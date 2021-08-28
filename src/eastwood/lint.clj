@@ -674,12 +674,11 @@
             []
             namespaces)))
 
-(defmethod lint-namespaces :naive [parallel? reporter {:keys [namespaces]} linters opts]
-  (reporting/note reporter (str "Linting using " (name parallel?) " parallelism."))
-  (pmap (fn [namespace]
-          (reporting/note reporter (str "== Linting " namespace " =="))
-          (reporting/report-result reporter (lint-namespace reporter namespace linters opts)))
-        namespaces))
+(defmethod lint-namespaces :naive [_parallel? reporter x y z]
+  (reporting/note reporter ":parallel? :naive is deprecated.
+It has never been a safe option; code analysis should't be performed in parallel.
+Eastwood has other forms of effective, safe parallelism now. Falling back to sequential analysis.")
+  (lint-namespaces :none reporter x y z))
 
 (defn eastwood-core
   "Lint a sequence of namespaces using a specified collection of linters.

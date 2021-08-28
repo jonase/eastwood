@@ -2,25 +2,29 @@
 
 #### New
 
-* Implement a new linter: `:performance`
+* Implement a new linter: `:performance`.
   * Note that it's disabled by default. There are no drawbacks to enabling it (other than the burden of having to fix or silence these).
   * Closes https://github.com/jonase/eastwood/issues/416
   * [Documentation](https://github.com/jonase/eastwood#performance)
+* Add `:kind`s to all remaining linters.
+  * [Documentation](https://github.com/jonase/eastwood#ignoring-linter-sub-kinds)
+  * Closes https://github.com/jonase/eastwood/issues/418
 * Improve Eastwood performance substantially.
   * Various redundant work is avoided or DRYed.
   * Various operations are now (safely) parallelized and cached.
     * Caching works on a per-run manner, so separate invocations from REPL will remain isolated from one another.
-* Add `:kind`s to all remaining linters.
-  * [Documentation](https://github.com/jonase/eastwood#ignoring-linter-sub-kinds)
-  * Closes https://github.com/jonase/eastwood/issues/418
+* Deprecate `:parallel?` option.
+  * It has never been a safe option; it was removed from the README some time ago.
+  * Now if passed, it will fallback to non-parallel code analysis.
+    * A few other things _are_ parallel in Eastwood: from parsing projects, to running linters. 
 
 #### Bugfixes
 
 * Handle `:refer-clojure :exclude` better in `:suspicious-test`.
   * Closes https://github.com/jonase/eastwood/issues/185
-* Prevent occasional issues related to ns-interns when using Eastwood from a REPL
+* Prevent occasional issues related to ns-interns when using Eastwood from a REPL.
   * Closes https://github.com/jonase/eastwood/issues/419
-* var-info.edn: mark various side-effectful fns as such
+* var-info.edn: mark various side-effectful fns as such.
   * This silences a few `:unused-ret-vals` false positives.
   * Fixes https://github.com/jonase/eastwood/issues/421
 * Exclude Lein checkouts' directories from the inferred `:source-paths` (source path inference being Eastwood's fallback to a lack of explicitly specified `:source-paths` / `:test-paths`). 
