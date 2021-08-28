@@ -330,7 +330,7 @@ file and namespace to avoid name collisions."))))
     ;; Don't report that we stopped analyzing early if we stop on the
     ;; last namespace (it is especially bad form to print the long
     ;; message if only one namespace was being linted).
-    (if (< 0 namespaces-left)
+    (if (< 0 (long namespaces-left))
       (format "
 Stopped analyzing namespaces after %s
 due to exception thrown. %d namespaces left unanalyzed.

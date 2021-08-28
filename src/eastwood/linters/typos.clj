@@ -37,9 +37,14 @@
   [name-str1 name-str2]
   (let [l1 (count name-str1)
         l2 (count name-str2)
-        [^String n1 l1 ^String n2 l2] (if (< l2 l1)
-                                        [name-str2 l2 name-str1 l1]
-                                        [name-str1 l1 name-str2 l2])]
+        [^String n1
+         l1
+         ^String n2
+         l2] (if (< l2 l1)
+               [name-str2 l2 name-str1 l1]
+               [name-str1 l1 name-str2 l2])
+        l1 (long l1)
+        l2 (long l2)]
     (and (== l2 (inc l1))
          (.startsWith n2 "_")
          (.endsWith n2 n1))))
@@ -85,7 +90,8 @@
                      (not= s1 s2)
                      (not (keywords-very-similar? s1 s2))
                      (< 3 (count s1))
-                     (< (levenshtein s1 s2) 2))]
+                     (< (long (levenshtein s1 s2))
+                        2))]
       {:linter :keyword-typos
        :msg (format "Possible keyword typo: %s instead of %s ?" kw1 kw2)})))
 
@@ -703,7 +709,8 @@
                 suspicious-args (core-fns-that-do-little fn-sym)
                 info (get suspicious-args num-args)]
           :when (and num-args
-                     (contains? suspicious-args num-args))]
+                     (contains? suspicious-args num-args))
+          :let [num-args (long num-args)]]
       {:loc loc
        :linter :suspicious-expression
        :msg (format "%s called with %d args. (%s%s) always returns %s. Perhaps there are misplaced parentheses?"

@@ -801,13 +801,18 @@ Eastwood has other forms of effective, safe parallelism now. Falling back to seq
    :lint-time (apply + (mapcat vals (:lint-times summary)))
    :analysis-time (apply + (:analysis-time summary))})
 
-(defn make-report [reporter start-time {:keys [namespaces]} {:keys [warning-count error-count]}]
+(defn make-report [reporter
+                   ^long start-time
+                   {:keys [namespaces]}
+                   {:keys [warning-count error-count]}]
   (reporting/note reporter (format "== Linting done in %d ms ==" (- (System/currentTimeMillis)
                                                                     start-time)))
   (reporting/note reporter (format "== Warnings: %d. Exceptions thrown: %d"
                                    warning-count
                                    error-count))
-  (let [has-errors? (> error-count 0)
+  (let [error-count (long error-count)
+        warning-count (long warning-count)
+        has-errors? (> error-count 0)
         nothing-was-linted? (-> namespaces count zero?)]
     (when nothing-was-linted?
       (reporting/note reporter "== No namespaces were linted. This might indicate a misconfiguration."))

@@ -123,6 +123,7 @@
                         "test"]}
   :eastwood {:source-paths ["src"]
              :test-paths ["test"]
+             :add-linters [:boxed-math :performance]
              :debug #{}}
   ;; Eastwood may work with earlier Leiningen versions, but this is
   ;; close to the earliest version that it was most tested with.

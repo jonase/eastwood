@@ -41,8 +41,10 @@
 ;; [name1 [name2 :as alias2] [name3 :as alias3]]
 
 (defn- use-arg-ok?
-  ([arg] (use-arg-ok? arg 0))
-  ([arg depth]
+  ([arg]
+   (use-arg-ok? arg 0))
+
+  ([arg ^long depth]
    ;; keyword covers things like :reload or :reload-all typically
    ;; put at the end of a use or require
    (or (keyword? arg)
@@ -328,10 +330,10 @@
                               (println (format "paths to ASTs of %d defs for Var %s"
                                                num-defs redefd-var))
                               (doseq [[i ast] (map-indexed vector ast-list)]
-                                (println (format "#%d: %s" (inc i) (:eastwood/path ast))))
+                                (println (format "#%d: %s" (inc (long i)) (:eastwood/path ast))))
                               (doseq [[i ast] (map-indexed vector ast-list)]
                                 (println (format "enclosing macros for def #%d of %d for Var %s"
-                                                 (inc i) num-defs redefd-var))
+                                                 (inc (long i)) num-defs redefd-var))
                                 (pprint/pprint (->> (util/enclosing-macros ast)
                                                     (map #(dissoc % :ast :index)))))))
         w))))
@@ -389,7 +391,8 @@
         ;; smaller, dropping duplicates.
         exacts (->> (get kinds false)
                     (map first)
-                    (remove #(and n-or-more (>= % n-or-more)))
+                    (remove #(and n-or-more (>= (long %)
+                                                (long n-or-more))))
                     (into (sorted-set)))]
     (vec (concat exacts (and n-or-more [n-or-more :or-more])))))
 
@@ -414,24 +417,26 @@
   (let [[exact-sigs1 or-more1] (deconstruct-signature-union sigs1)
         [exact-sigs2 or-more2] (deconstruct-signature-union sigs2)]
     (if or-more2
-      (if or-more1
-        (if (>= or-more1 or-more2)
-          (set/subset? (set (remove #(>= % or-more2) exact-sigs1))
-                       (set exact-sigs2))
-          (set/subset? (set (concat exact-sigs1 (range or-more1 or-more2)))
-                       (set exact-sigs2)))
-        (set/subset? (set (remove #(>= % or-more2) exact-sigs1))
-                     (set exact-sigs2)))
+      (let [or-more2 (long or-more2)]
+        (if or-more1
+          (let [or-more1 (long or-more1)]
+            (if (>= or-more1 or-more2)
+              (set/subset? (set (remove #(>= (long %) or-more2) exact-sigs1))
+                           (set exact-sigs2))
+              (set/subset? (set (concat exact-sigs1 (range or-more1 or-more2)))
+                           (set exact-sigs2))))
+          (set/subset? (set (remove #(>= (long %) or-more2) exact-sigs1))
+                       (set exact-sigs2))))
       (if or-more1
         false
         (set/subset? (set exact-sigs1) (set exact-sigs2))))))
 
-(defn arg-count-compatible-with-arglists [arg-count arglists]
+(defn arg-count-compatible-with-arglists [^long arg-count arglists]
   (let [argvec-kinds (map argvec-kind arglists)]
     (some (fn [ak]
             (if (= '>= (first ak))
-              (>= arg-count (second ak))
-              (= arg-count (first ak))))
+              (>= arg-count (long (second ak)))
+              (= arg-count (long (first ak)))))
           argvec-kinds)))
 
 (defn wrong-arity [{:keys [asts]} opt]

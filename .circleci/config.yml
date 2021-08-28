@@ -10,7 +10,7 @@ executor_defaults: &executor_defaults
   working_directory: ~/repo
 
 env_defaults: &env_defaults
-  LEIN_DEPS_COMMAND: "lein with-profile +test,+test-3rd-party-deps,+antq,+clj-kondo deps"
+  LEIN_DEPS_COMMAND: "lein with-profile -user,+test,+test-3rd-party-deps,+antq,+clj-kondo deps"
   LEIN_ROOT: "true"
   LINT_SCRIPT: ".circleci/lint.sh"
 
@@ -75,7 +75,7 @@ jobs:
 
       - run:
           name: Run Eastwood against itself
-          command: EVAL_IN_LEININGEN=1 lein with-profile +eastwood-plugin,+deep-diff eastwood
+          command: EVAL_IN_LEININGEN=1 lein with-profile -user,+eastwood-plugin,+deep-diff eastwood
 
       - run:
           name: Prevent any form of caching, for the next step
@@ -300,7 +300,7 @@ jobs:
            GPG_TTY=$(tty)
            export GPG_TTY
            echo $GPG_TTY
-           ./circle-maybe-deploy.bb lein with-profile -dev,+eastwood-plugin deploy clojars
+           ./circle-maybe-deploy.bb lein with-profile -user,-dev,+eastwood-plugin deploy clojars
 
 workflows:
   nvd:

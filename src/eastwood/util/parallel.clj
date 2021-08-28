@@ -5,14 +5,16 @@
 
 (defn divide-by
   "Divides `coll` in `n` parts. The parts can have disparate sizes if the division isn't exact."
-  [n coll]
+  [^long n coll]
   (let [the-count (count coll)
         seed [(-> the-count double (/ n) Math/floor)
               (rem the-count n)
               []
               coll]
         recipe (iterate (fn [[quotient remainder output input]]
-                          (let [chunk-size (+ quotient (if (pos? remainder)
+                          (let [remainder (long remainder)
+                                quotient (long quotient)
+                                chunk-size (+ quotient (if (pos? remainder)
                                                          1
                                                          0))
                                 addition (take chunk-size input)

@@ -158,7 +158,7 @@
     (when cause
       (println "Caused by:")
       (pst cause (when depth
-                   (min depth
+                   (min (long depth)
                         (+ 2 (- (count (.getStackTrace cause))
                                 (count st)))))))))
 
@@ -167,8 +167,8 @@
 
 (defn ordering-map
   "Create an empty map with a custom comparator that puts the given
-keys first, in the order specified. Other keys will be placed after
-the special keys, sorted by the default-comparator."
+  keys first, in the order specified. Other keys will be placed after
+  the special keys, sorted by the default-comparator."
   ([key-order] (ordering-map key-order compare))
   ([key-order default-comparator]
    (let [indices (into {} (map-indexed (fn [i x] [x i]) key-order))]
@@ -183,9 +183,9 @@ the special keys, sorted by the default-comparator."
 
 (defn ast-to-ordered
   "Take an ast and return an identical one, except every map is
-replaced with an ordering-map. The sorting of keys in a specified
-order can make it significantly easier when printing them out, to see
-more interesting keys earlier."
+  replaced with an ordering-map. The sorting of keys in a specified
+  order can make it significantly easier when printing them out, to see
+  more interesting keys earlier."
   [ast]
   (let [empty (ordering-map [:op
                              :children
@@ -328,15 +328,6 @@ twice."
                              %)
                           suffixes)]
     [(subs s 0 (- (count s) (count suffix))) suffix]))
-
-(defn nth-last
-  "Return the nth-last element of a vector v, where n=1 means the last
-element, n=2 is the second-to-last, etc. Returns nil if there are
-fewer than n elements in the vector."
-  [v n]
-  (let [c (count v)]
-    (when (>= c n)
-      (v (- c n)))))
 
 (defn var-to-fqsym [^clojure.lang.Var v]
   (when v

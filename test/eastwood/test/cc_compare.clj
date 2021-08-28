@@ -44,7 +44,7 @@
          y y]
     (if (seq x)
       (if (seq y)
-        (let [c (cmpf (first x) (first y))]
+        (let [c (long (cmpf (first x) (first y)))]
           (if (zero? c)
             (recur (rest x) (rest y))
             c))
@@ -78,16 +78,16 @@
         ;; If all elements 0..(len-1) are same, shorter vector comes
         ;; first.
         (compare x-len y-len)
-        (let [c (cmpf (x i) (y i))]
+        (let [c (long (cmpf (x i) (y i)))]
           (if (zero? c)
             (recur (inc i))
             c))))))
 
 (defn cmp-array-lexi
   "Compare Java arrays x and y in lexicographic order, using
-comparator cmpf to compare elements from x and y to each other. As a
-comparator function, cmp-array-lexi returns a negative, 0, or positive
-integer if x is less than, equal to, or greater than y."
+  comparator cmpf to compare elements from x and y to each other. As a
+  comparator function, cmp-array-lexi returns a negative, 0, or positive
+  integer if x is less than, equal to, or greater than y."
   [cmpf ^"[J" x ^"[J" y]
   (let [x-len (alength x)
         y-len (alength y)
@@ -97,7 +97,7 @@ integer if x is less than, equal to, or greater than y."
         ;; If all elements 0..(len-1) are same, shorter array comes
         ;; first.
         (compare x-len y-len)
-        (let [c (cmpf (aget x i) (aget y i))]
+        (let [c (long (cmpf (aget x i) (aget y i)))]
           (if (zero? c)
             (recur (inc i))
             c))))))
