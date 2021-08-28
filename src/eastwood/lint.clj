@@ -286,12 +286,19 @@
                    (candidates match))))
          (boolean))))
 
-(defn- run-linter [linter analyze-results ns-sym opts]
+(defn- run-linter [linter analyze-results ns-sym {expanded-exclude-linters :eastwood/exclude-linters
+                                                  :as opts}]
+  {:pre [expanded-exclude-linters]}
   (let [ns-info (namespace-info ns-sym (:cwd opts))]
     (try
       (->> ((:fn linter) analyze-results opts)
            (keep (partial handle-lint-result linter ns-info opts))
            (remove (partial ignore-fault? (:ignored-faults opts)))
+           (remove (fn [{{:keys [linter kind]} :warn-data}]
+                     {:pre [linter]}
+                     (if-not kind
+                       false
+                       (util/excludes-kind? [linter kind] expanded-exclude-linters))))
            doall)
       (catch Throwable e
         [{:kind :lint-error

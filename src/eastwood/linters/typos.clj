@@ -136,8 +136,7 @@
 ;;                               [[:then] :invoke]  ;; of clojure.test/do-report
 ;;                               [[:args 0] :map]]))
 
-(defn suspicious-is-forms [{exclude-linters :eastwood/exclude-linters}
-                           is-formasts]
+(defn suspicious-is-forms [is-formasts]
   (let [warns
         (for [{isf :raw-form, ast :ast} is-formasts]
           (let [is-args (next isf)
@@ -175,27 +174,21 @@
                                 :map (:tag message-val-or-ast)))]
             (cond
               (and (= n 2)
-                   (string? is-arg1)
-                   (not (util/excludes-kind? [:suspicious-test :first-arg-is-string]
-                                             exclude-linters)))
+                   (string? is-arg1))
               [{:loc is-loc
                 :linter :suspicious-test,
                 :kind :first-arg-is-string
                 :msg (format "'is' form has string as first arg. This will always pass. If you meant to have a message arg to 'is', it should be the second arg, after the expression to test.")}]
 
               (and (constant-expr-logical-true? is-arg1)
-                   (not (list? is-arg1))
-                   (not (util/excludes-kind? [:suspicious-test :first-arg-is-constant-true]
-                                             exclude-linters)))
+                   (not (list? is-arg1)))
               [{:loc is-loc
                 :linter :suspicious-test,
                 :kind :first-arg-is-constant-true
                 :msg (format "'is' form has first arg that is a constant whose value is logical true. This will always pass. There is probably a mistake in this test.")}]
 
               (and (= n 2)
-                   (not= message-tag String)
-                   (not (util/excludes-kind? [:suspicious-test :second-arg-is-not-string]
-                                             exclude-linters)))
+                   (not= message-tag String))
               [{:loc is-loc
                 :linter :suspicious-test,
                 :kind :second-arg-is-not-string
@@ -203,27 +196,21 @@
                              message-tag)}]
 
               (and thrown?
-                   (util/regex? thrown-arg2)
-                   (not (util/excludes-kind? [:suspicious-test :thrown-regex]
-                                             exclude-linters)))
+                   (util/regex? thrown-arg2))
               [{:loc is-loc
                 :linter :suspicious-test,
                 :kind :thrown-regex
                 :msg (format "(is (thrown? ...)) form has second thrown? arg that is a regex. This regex is ignored. Did you mean to use thrown-with-msg? instead of thrown?")}]
 
               (and thrown?
-                   (string? thrown-arg2)
-                   (not (util/excludes-kind? [:suspicious-test :thrown-string-arg]
-                                             exclude-linters)))
+                   (string? thrown-arg2))
               [{:loc is-loc
                 :linter :suspicious-test,
                 :kind :thrown-string-arg
                 :msg (format "(is (thrown? ...)) form has second thrown? arg that is a string. This string is ignored. Did you mean to use thrown-with-msg? instead of thrown?, and a regex instead of the string?")}]
 
               (and thrown?
-                   (some string? thrown-args)
-                   (not (util/excludes-kind? [:suspicious-test :string-inside-thrown]
-                                             exclude-linters)))
+                   (some string? thrown-args))
               [{:loc is-loc
                 :linter :suspicious-test,
                 :kind :string-inside-thrown
@@ -252,6 +239,7 @@
                                  (passes/code-loc (passes/nearest-ast-with-loc ast)))
                          warning {:loc loc
                                   :linter :suspicious-test
+                                  :kind :constant-form
                                   :suspicious-test {:ast ast}
                                   :qualifier f
                                   :msg (format "Found constant form%s with class %s inside %s. Did you intend to compare its value to something else inside of an 'is' expresssion?"
@@ -281,6 +269,7 @@
                             (not omit-because-of-are?))
                        [{:loc loc
                          :linter :suspicious-test,
+                         :kind :missing-is
                          :msg (format "Found (%s ...) form inside %s. Did you forget to wrap it in 'is', e.g. (is (%s ...))?"
                                       ff form-type ff)}]
 
@@ -289,6 +278,7 @@
                             (not omit-because-of-are?))
                        [{:loc loc
                          :linter :suspicious-test,
+                         :kind :pure-fn-inside-is
                          :msg (format "Found (%s ...) form inside %s. This is a pure function with no side effects, and its return value is unused. Did you intend to compare its return value to something else inside of an 'is' expression?"
                                       ff form-type)}]
 
@@ -361,7 +351,7 @@
         (assoc-subexprs formasts #{'clojure.test/testing})
 
         pr-is-formasts pr-first-is-formasts]
-    (concat (suspicious-is-forms opt pr-is-formasts)
+    (concat (suspicious-is-forms pr-is-formasts)
             (predicate-forms opt pr-deftest-subexprs 'deftest)
             (predicate-forms opt pr-testing-subexprs 'testing))))
 

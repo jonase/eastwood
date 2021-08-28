@@ -114,12 +114,14 @@
   (for [{ns-sym :eastwood/ns-sym
          :as ast} (map #(ast/postwalk % pass/reflect-validated) asts)
         :let [ns-str (str ns-sym)]
-        dexpr (->> ast
-                   ast/nodes
-                   (filter (partial deprecated? ns-str)))
+        {:keys [op]
+         :as dexpr} (->> ast
+                         ast/nodes
+                         (filter (partial deprecated? ns-str)))
         :let [loc (pass/code-loc (pass/nearest-ast-with-loc dexpr))
               w {:loc loc
                  :linter :deprecations
+                 :kind op
                  :msg (msg dexpr)
                  :var (deprecated-var dexpr)}]
         :when (not (omit-warning? w opt))]

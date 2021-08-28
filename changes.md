@@ -1,4 +1,4 @@
-## Changes from 0.9.7 to 1.0.0
+## Changes from 0.9.7 to 0.9.8
 
 #### New
 
@@ -6,6 +6,9 @@
   * Note that it's disabled by default. There are no drawbacks to enabling it (other than the burden of having to fix or silence these).
   * Closes https://github.com/jonase/eastwood/issues/416
   * [Documentation](https://github.com/jonase/eastwood#performance)
+* Add `:kind`s to all remaining linters.
+  * [Documentation](https://github.com/jonase/eastwood#ignoring-linter-sub-kinds)
+  * Closes https://github.com/jonase/eastwood/issues/418
 
 #### Bugfixes
 
