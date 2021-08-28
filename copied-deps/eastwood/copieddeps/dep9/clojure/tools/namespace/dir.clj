@@ -23,8 +23,13 @@
   (let [all-files (->> dirs
                        (map io/file)
                        (filter #(.exists ^File %))
-                       (mapcat file-seq)
-                       (remove #(.isDirectory ^File %)))
+                       (pmap (fn [d]
+                               (->> d
+                                    file-seq
+                                    (remove #(.isDirectory ^File %))
+                                    ;; no lazy pmapping:
+                                    (vec))))
+                       (apply concat))
         {:keys [extensions]} (or platform find/clj)
         grouped (group-by #(file/file-with-extension? % extensions) all-files)]
     {:clojure-files (get grouped true)

@@ -6,6 +6,10 @@
   * Note that it's disabled by default. There are no drawbacks to enabling it (other than the burden of having to fix or silence these).
   * Closes https://github.com/jonase/eastwood/issues/416
   * [Documentation](https://github.com/jonase/eastwood#performance)
+* Improve Eastwood performance substantially.
+  * Various redundant work is avoided or DRYed.
+  * Various operations are now (safely) parallelized and cached.
+    * Caching works on a per-run manner, so separate invocations from REPL will remain isolated from one another.
 * Add `:kind`s to all remaining linters.
   * [Documentation](https://github.com/jonase/eastwood#ignoring-linter-sub-kinds)
   * Closes https://github.com/jonase/eastwood/issues/418

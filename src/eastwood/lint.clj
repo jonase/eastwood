@@ -2,12 +2,12 @@
   (:require
    [clojure.edn :as edn]
    [clojure.java.io :as io]
-   [clojure.pprint :as pp]
    [clojure.set :as set]
    [clojure.string :as str]
    [eastwood.analyze-ns :as analyze-ns]
    [eastwood.copieddeps.dep10.clojure.tools.reader :as reader]
    [eastwood.copieddeps.dep11.clojure.java.classpath :as classpath]
+   [eastwood.copieddeps.dep2.clojure.tools.analyzer.jvm :as jvm]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.dir :as dir]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.file :as file]
    [eastwood.copieddeps.dep9.clojure.tools.namespace.find :as find]
@@ -27,6 +27,7 @@
    [eastwood.reporting-callbacks :as reporting]
    [eastwood.util :as util]
    [eastwood.util.ns :refer [topo-sort]]
+   [eastwood.util.parallel :refer [partitioning-pmap]]
    [eastwood.version :as version])
   (:import
    (java.io File)))
@@ -312,35 +313,70 @@
          (merge {:elapsed elapsed
                  :linter linter}))))
 
+(def ^:dynamic *nss-in-dirs* nil)
+
+(declare nss-in-dirs)
+
+(defn with-memoization-bindings* [f]
+  (binding [eastwood.copieddeps.dep9.clojure.tools.namespace.file/*read-file-ns-decl*
+            (memoize eastwood.copieddeps.dep9.clojure.tools.namespace.file/read-file-ns-decl)
+
+            eastwood.copieddeps.dep9.clojure.tools.namespace.parse/*read-ns-decl*
+            (memoize eastwood.copieddeps.dep9.clojure.tools.namespace.parse/read-ns-decl)
+
+            analyze-ns/*analyze+eval*
+            (memoize (fn [form env passes-opts _form-meta _ns-str] ;; has extra args for safe memoization
+                       (jvm/analyze+eval form env passes-opts)))
+
+            *nss-in-dirs*
+            (memoize nss-in-dirs)]
+    (f)))
+
+(defmacro with-memoization-bindings
+  {:style/indent 0}
+  [& forms]
+  `(with-memoization-bindings* (fn []
+                                 (do
+                                   ~@forms))))
+
 (defn lint-ns [ns-sym linters {:keys [exclude-namespaces
                                       exclude-linters
                                       namespaces
                                       source-paths
-                                      test-paths] :as opts}]
-  (let [effective-linters (some->> linters
-                                   (remove (set exclude-linters))
-                                   (keep linter-name->info))
-        opts (cond-> opts
-               ;; this key is generally present, except when invoking `lint-ns` directly (which is a less usual API):
-               (not (:eastwood/project-namespaces opts))
-               (assoc :eastwood/project-namespaces (:project-namespaces (effective-namespaces exclude-namespaces
-                                                                                              namespaces
-                                                                                              (setup-lint-paths source-paths
-                                                                                                                test-paths)
-                                                                                              0)))
-               ;; same
-               (not (:eastwood/linter-info opts))
-               (assoc :eastwood/linter-info linter-info))
-        opts (assoc opts :eastwood/linting-boxed-math? (contains? (into #{} (map :name) effective-linters)
-                                                                  :boxed-math))
-        [result elapsed] (util/timeit (analyze-ns/analyze-ns ns-sym :opt opts))
-        {:keys [analyze-results exception exception-phase exception-form]} result]
-    {:ns ns-sym
-     :analysis-time elapsed
-     :lint-results (some->> effective-linters
-                            (@util/linter-executor-atom (partial lint-ns* ns-sym analyze-results opts)))
-     :analyzer-exception (when exception
-                           (msgs/report-analyzer-exception exception exception-phase exception-form ns-sym))}))
+                                      test-paths]
+                               :as opts}]
+  (with-memoization-bindings
+    (let [namespaces (conj (set namespaces) ns-sym)
+          effective-linters (some->> linters
+                                     (remove (set exclude-linters))
+                                     (keep linter-name->info))
+          all-source-paths (setup-lint-paths []
+                                             source-paths
+                                             test-paths)
+          lint-paths (setup-lint-paths namespaces
+                                       source-paths
+                                       test-paths)
+          opts (cond-> opts
+                 ;; this key is generally present, except when invoking `lint-ns` directly (which is a less usual API):
+                 (not (:eastwood/project-namespaces opts))
+                 (assoc :eastwood/project-namespaces (:project-namespaces (effective-namespaces exclude-namespaces
+                                                                                                namespaces
+                                                                                                all-source-paths
+                                                                                                lint-paths
+                                                                                                0)))
+                 ;; same
+                 (not (:eastwood/linter-info opts))
+                 (assoc :eastwood/linter-info linter-info))
+          opts (assoc opts :eastwood/linting-boxed-math? (contains? (into #{} (map :name) effective-linters)
+                                                                    :boxed-math))
+          [result elapsed] (util/timeit (analyze-ns/analyze-ns ns-sym :opt opts))
+          {:keys [analyze-results exception exception-phase exception-form]} result]
+      {:ns ns-sym
+       :analysis-time elapsed
+       :lint-results (some->> effective-linters
+                              (@util/linter-executor-atom (partial lint-ns* ns-sym analyze-results opts)))
+       :analyzer-exception (when exception
+                             (msgs/report-analyzer-exception exception exception-phase exception-form ns-sym))})))
 
 (defn unknown-ns-keywords [namespaces known-ns-keywords desc]
   (let [keyword-set (set (filter keyword? namespaces))
@@ -367,32 +403,41 @@
                      (str/replace "." File/separator))]
     (set (map #(str basename %) extensions))))
 
-(defn filename-namespace-mismatches [dir-name-strs]
-  (let [files-by-dir (into {} (for [dir-name-str dir-name-strs]
-                                [dir-name-str (:clojure-files
-                                               (#'dir/find-files [dir-name-str]
-                                                                 find/clj))]))
-        fd-by-dir (util/map-vals (fn [files]
-                                   (#'file/files-and-deps files (:read-opts
-                                                                 find/clj)))
-                                 files-by-dir)]
-    (into
-     {}
-     (for [[dir fd] fd-by-dir,
-           [f namespace] (:filemap fd)
-           :let [dir-with-sep (str dir File/separator)
-                 fname (util/remove-prefix (str f) dir-with-sep)
-                 desired-ns (filename-to-ns fname)
-                 desired-fname-set (ns-to-filename-set namespace
-                                                       (:extensions find/clj))]
-           :when (not (contains? desired-fname-set fname))]
-       [fname {:dir dir, :namespace namespace,
-               :recommended-fnames desired-fname-set,
-               :recommended-namespace desired-ns}]))))
+(defn find-mismatch [dir [f namespace]]
+  (let [dir-with-sep (str dir File/separator)
+        fname (util/remove-prefix (str f) dir-with-sep)
+        desired-ns (filename-to-ns fname)
+        desired-fname-set (ns-to-filename-set namespace
+                                              (:extensions find/clj))]
+    (when-not (contains? desired-fname-set fname)
+      [fname {:dir dir
+              :namespace namespace,
+              :recommended-fnames desired-fname-set,
+              :recommended-namespace desired-ns}])))
 
-(defn nss-in-dirs [dir-name-strs modified-since]
+(defn find-mismatches [[dir {:keys [filemap]}]]
+  (->> filemap
+       (partitioning-pmap (fn [f]
+                            (find-mismatch dir f)))
+       (keep identity)))
+
+(defn filename-namespace-mismatches [dir-name-strs]
+  (->> dir-name-strs
+       (map (fn [dir-name-str]
+              [dir-name-str
+               (-> [dir-name-str]
+                   (#'dir/find-files find/clj)
+                   :clojure-files
+                   (#'file/files-and-deps (:read-opts find/clj)))]))
+       (mapcat find-mismatches)
+       (into {})))
+
+(defn nss-in-dirs [dir-name-strs modified-since search-mismatches?]
+  {:pre [(instance? Boolean search-mismatches?)]}
   (let [dir-name-strs (set (map util/canonical-filename dir-name-strs))
-        mismatches (filename-namespace-mismatches dir-name-strs)]
+        mismatches (if-not search-mismatches?
+                     []
+                     (filename-namespace-mismatches dir-name-strs))]
     (when (seq mismatches)
       (throw (ex-info "namespace-file-name-mismatch"
                       {:err :namespace-filename-mismatch
@@ -423,9 +468,10 @@
   contains the set of values in each. If both `source-paths` and `test-paths`
   are empty then `:source-path` is set to all the directories on the classpath,
   while `:test-paths` is the empty set."
-  [source-paths test-paths]
+  [namespaces source-paths test-paths]
   (if (or (seq source-paths)
-          (seq test-paths))
+          (seq test-paths)
+          (seq namespaces))
     {:source-paths (set source-paths)
      :test-paths (set test-paths)}
     {:source-paths (->> (or (seq (classpath/classpath-directories))
@@ -441,6 +487,7 @@
                         (remove (fn [^File f]
                                   (let [s (-> f .toString)]
                                     (or (-> s (.contains "resources"))
+                                        (-> s (.contains "target"))
                                         ;; https://github.com/jonase/eastwood/issues/409
                                         (-> s (.contains ".gitlibs"))))))
                         (set))
@@ -466,6 +513,8 @@
 
 (defn effective-namespaces [exclude-namespaces
                             namespaces
+                            {all-source-paths :source-paths
+                             all-test-paths :test-paths}
                             {:keys [source-paths test-paths]}
                             modified-since]
   ;; If keyword :source-paths occurs in namespaces or
@@ -477,9 +526,9 @@
   ;; needed.
   (let [all-ns (concat namespaces exclude-namespaces)
         sp (when (some #{:source-paths} all-ns)
-             (nss-in-dirs source-paths modified-since))
+             (*nss-in-dirs* source-paths modified-since true))
         tp (when (some #{:test-paths} all-ns)
-             (nss-in-dirs test-paths modified-since))
+             (*nss-in-dirs* test-paths modified-since true))
         expanded-namespaces {:source-paths (:namespaces sp)
                              :test-paths (:namespaces tp)}
         excluded-namespaces (set (expand-ns-keywords expanded-namespaces
@@ -487,31 +536,53 @@
         corpus (->> namespaces
                     (expand-ns-keywords expanded-namespaces)
                     (set))
+        namespaces-from-refresh-paths (if (System/getProperty "eastwood.internal.dev-profile-active")
+                                        ;; remove these, which can make profiling unrealistically slow
+                                        ;; (because of excessive calls to t.n file-ns-decl):
+                                        #{}
+                                        (some-> 'clojure.tools.namespace.repl/refresh-dirs
+                                                resolve
+                                                deref
+                                                seq
+                                                (*nss-in-dirs* 0 true)
+                                                :namespaces
+                                                set))
+        all-project-namespaces (set/union corpus ;; namespaces explicitly asked to be linted
+                                          (some-> all-source-paths ;; source-paths per Eastwood/Lein config
+                                                  seq
+
+                                                  (*nss-in-dirs* 0 false)
+                                                  :namespaces
+                                                  set)
+                                          (some-> all-test-paths ;; test-paths per Eastwood/Lein config
+                                                  seq
+                                                  (*nss-in-dirs* 0 false)
+                                                  :namespaces
+                                                  set)
+                                          ;; t.n integration:
+                                          namespaces-from-refresh-paths)
         project-namespaces (set/union corpus ;; namespaces explicitly asked to be linted
                                       (some-> source-paths ;; source-paths per Eastwood/Lein config
                                               seq
-                                              (nss-in-dirs 0)
+                                              (*nss-in-dirs* 0 true)
                                               :namespaces
                                               set)
                                       (some-> test-paths ;; test-paths per Eastwood/Lein config
                                               seq
-                                              (nss-in-dirs 0)
+                                              (*nss-in-dirs* 0 true)
                                               :namespaces
                                               set)
                                       ;; t.n integration:
-                                      (some-> 'clojure.tools.namespace.repl/refresh-dirs
-                                              resolve
-                                              deref
-                                              seq
-                                              (nss-in-dirs 0)
-                                              :namespaces
-                                              set))]
+                                      namespaces-from-refresh-paths)]
     {;; what will be linted:
      :namespaces (->> corpus
                       (remove excluded-namespaces)
                       (topo-sort project-namespaces))
-     ;; the set of project namespaces. Linter faults caused by namespaces outside this set may be ignored:
+     ;; the set of project namespaces, or `namespaces` if :namespaces were explicitly provided and non-empty:
      :project-namespaces project-namespaces
+     ;; the set of project namespaces, regardless of the `namespaces` value.
+     ;; Linter faults caused by namespaces outside this set may be ignored:
+     :all-project-namespaces all-project-namespaces
      :test-deps (:deps tp)
      :src-deps (:deps sp)
      :dirs (concat (:dirs sp) (:dirs tp))
@@ -625,7 +696,7 @@
   [reporter
    opts
    cwd
-   {:keys [namespaces dirs files file-map non-clojure-files project-namespaces]
+   {:keys [namespaces dirs files file-map non-clojure-files all-project-namespaces]
     :as effective-namespaces}
    lint-paths
    linters]
@@ -660,7 +731,7 @@
                           effective-namespaces
                           linters
                           (assoc opts
-                                 :eastwood/project-namespaces project-namespaces
+                                 :eastwood/project-namespaces all-project-namespaces
                                  :eastwood/linter-info linter-info))
          (into [no-ns-forms non-clojure-files]))))
 
@@ -687,7 +758,7 @@
                    :ignored-faults {}
                    :ignore-faults-from-foreign-macroexpansions? true})
 
-(defn last-options-map-adjustments [opts reporter]
+(defn last-options-map-adjustments [opts _reporter]
   (let [{:keys [_namespaces] :as opts} (merge default-opts opts)
         distinct* (fn [x] ;; distinct but keeps original coll type
                     (->> (into (empty x) (distinct) x)
@@ -709,11 +780,6 @@
 
                     :eastwood/exclude-linters
                     (util/expand-exclude-linters exclude-linters))]
-    (reporting/debug reporter
-                     :options (with-out-str
-                                (println "\nOptions map after filling in defaults:")
-                                (pp/pprint (into (sorted-map) opts))))
-
     ;; throw an error if any keywords appear in the namespace lists
     ;; that are not recognized.
     (unknown-ns-keywords (:namespaces opts) #{:source-paths :test-paths} ":namespaces")
@@ -750,38 +816,44 @@
      :some-errors has-errors?}))
 
 (defn eastwood
-  ([opts] (eastwood opts (reporting/printing-reporter opts)))
+  ([opts]
+   (eastwood opts (reporting/printing-reporter opts)))
+
   ([{:keys [rethrow-exceptions?] :as opts} reporter]
-   (try
-     (reporting/note reporter (version/version-string))
-     (let [start-time (System/currentTimeMillis)
-           {:keys [exclude-namespaces
-                   namespaces
-                   source-paths
-                   test-paths
-                   modified-since
-                   cwd] :as opts} (last-options-map-adjustments opts reporter)
-           lint-paths (setup-lint-paths source-paths test-paths)
-           namespaces-info (effective-namespaces exclude-namespaces
-                                                 namespaces
-                                                 lint-paths
-                                                 modified-since)
-           linter-info (select-keys opts [:linters :exclude-linters :add-linters :disable-linter-name-checks])]
-       (reporting/debug reporter :var-info (with-out-str
-                                             (util/print-var-info-summary @typos/var-info-map-delayed)))
-       (reporting/debug reporter :compare-forms
-                        "Writing files forms-read.txt and forms-emitted.txt")
-       (->> (effective-linters linter-info linter-name->info default-linters)
-            (eastwood-core reporter opts cwd namespaces-info lint-paths)
-            summary
-            counted-summary
-            (make-report reporter start-time namespaces-info)))
-     (catch Exception e
-       (reporting/show-error reporter (or (ex-data e) e))
-       (if rethrow-exceptions?
-         (throw e)
-         {:some-warnings true
-          :some-errors true})))))
+   (with-memoization-bindings
+     (try
+       (reporting/note reporter (version/version-string))
+       (let [start-time (System/currentTimeMillis)
+             {:keys [exclude-namespaces
+                     namespaces
+                     source-paths
+                     test-paths
+                     modified-since
+                     cwd] :as opts} (last-options-map-adjustments opts reporter)
+             all-source-paths (setup-lint-paths [] source-paths test-paths)
+             lint-paths (setup-lint-paths namespaces source-paths test-paths)
+             namespaces-info (effective-namespaces exclude-namespaces
+                                                   namespaces
+                                                   all-source-paths
+                                                   lint-paths
+                                                   modified-since)
+             linter-info (select-keys opts [:linters :exclude-linters :add-linters :disable-linter-name-checks])]
+         (reporting/debug reporter :var-info (with-out-str
+                                               (util/print-var-info-summary @typos/var-info-map-delayed)))
+         (reporting/debug reporter :compare-forms
+                          "Writing files forms-read.txt and forms-emitted.txt")
+         (->> default-linters
+              (effective-linters linter-info linter-name->info)
+              (eastwood-core reporter opts cwd namespaces-info lint-paths)
+              summary
+              counted-summary
+              (make-report reporter start-time namespaces-info)))
+       (catch Exception e
+         (reporting/show-error reporter (or (ex-data e) e))
+         (if rethrow-exceptions?
+           (throw e)
+           {:some-warnings true
+            :some-errors true}))))))
 
 (defn eastwood-from-cmdline [opts]
   (let [ret (eastwood opts)]
@@ -862,9 +934,11 @@
                    test-paths
                    modified-since
                    cwd] :as opts} (last-options-map-adjustments opts reporter)
-           lint-paths (setup-lint-paths source-paths test-paths)
+           all-source-paths (setup-lint-paths [] source-paths test-paths)
+           lint-paths (setup-lint-paths namespaces source-paths test-paths)
            namespaces-info (effective-namespaces exclude-namespaces
                                                  namespaces
+                                                 all-source-paths
                                                  lint-paths
                                                  modified-since)
            linter-info (select-keys opts [:linters :exclude-linters :add-linters :disable-linter-name-checks])

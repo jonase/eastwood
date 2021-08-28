@@ -357,6 +357,13 @@
               (= (ns-resolve *ns* b)
                  #'*warn-on-reflection*)))))
 
+(defn meta-or-val [x]
+  (if (instance? clojure.lang.IObj x)
+    (meta x)
+    x))
+
+(def ^:dynamic *analyze+eval* nil)
+
 (defn analyze-file
   "Takes a file path and optionally a pushback reader. Returns a map
   with at least the following keys:
@@ -456,9 +463,11 @@
                                                   *unchecked-math* (if linting-boxed-math?
                                                                      :warn-on-boxed
                                                                      *unchecked-math*)]
-                                          (jvm/analyze+eval form
-                                                            (jvm/empty-env)
-                                                            {:passes-opts eastwood-passes-opts}))]
+                                          (*analyze+eval* form
+                                                          (jvm/empty-env)
+                                                          {:passes-opts eastwood-passes-opts}
+                                                          (-> form meta-or-val)
+                                                          (-> *ns* str)))]
                                     (when (and (var? result)
                                                (-> result meta :arglists vector?)
                                                (some-> result meta :arglists first seq?)

@@ -57,6 +57,8 @@
            (= ::eof form) nil
            :else (recur)))))))
 
+(def ^:dynamic *read-ns-decl* read-ns-decl)
+
 ;;; Parsing dependencies
 
 (defn- prefix-spec?

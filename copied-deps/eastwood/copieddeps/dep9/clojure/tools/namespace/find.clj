@@ -84,7 +84,7 @@
   ([dir] (find-ns-decls-in-dir dir nil))
   ([dir platform]
    (keep #(ignore-reader-exception
-           (file/read-file-ns-decl % (:read-opts platform)))
+           (file/*read-file-ns-decl* % (:read-opts platform)))
          (find-sources-in-dir dir platform))))
 
 (defn find-namespaces-in-dir
@@ -142,7 +142,7 @@
                       (io/reader
                        (.getInputStream jarfile (.getEntry jarfile entry-name))))]
        (ignore-reader-exception
-        (parse/read-ns-decl rdr read-opts))))))
+        (parse/*read-ns-decl* rdr read-opts))))))
 
 (defn find-ns-decls-in-jarfile
   "Searches the JAR file for source files containing (ns ...)
