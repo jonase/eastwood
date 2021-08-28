@@ -34,6 +34,7 @@ Eastwood can be run from within a REPL, regardless of which build
 tools you may use.  See the [instructions
 here](#running-eastwood-in-a-repl).
 
+### Leiningen
 Eastwood can be run from the command line as a
 [Leiningen](http://leiningen.org) plugin.
 
@@ -56,7 +57,7 @@ If you're using `deps.edn`, you can set options to eastwood linter in a
 {:aliases
   {:eastwood
       {:main-opts ["-m" "eastwood.lint" {}]
-	   :extra-deps {jonase/eastwood {:mvn/version "RELEASE"}}}}}
+       :extra-deps {jonase/eastwood {:mvn/version "RELEASE"}}}}}
 
 ```
 to your `deps.edn`, and you should then be able to run Eastwood as

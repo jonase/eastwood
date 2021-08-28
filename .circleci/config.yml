@@ -90,6 +90,13 @@ jobs:
           command: lein with-profile -user,-dev,+test,+warn-on-reflection,+deep-diff,+<< parameters.clojure-version >> do clean, test
 
       - run:
+          name: Install Clojure
+          command: |
+            wget -nc https://download.clojure.org/install/linux-install-1.10.3.855.sh
+            chmod +x linux-install-1.10.3.855.sh
+            sudo ./linux-install-1.10.3.855.sh
+
+      - run:
           # Aims to exercise that the plugin can be run in external projects, and that the `-main` program works:
           name: minimal integration test against example projects
           command: JVM_OPTS= .circleci/integration_test.sh

@@ -1,3 +1,9 @@
+## Changes from 0.9.8 to 0.9.9
+
+#### Bugfixes
+
+* Fix `:source-paths` inference.
+
 ## Changes from 0.9.7 to 0.9.8
 
 #### New

@@ -473,7 +473,8 @@
   [namespaces source-paths test-paths]
   (if (or (seq source-paths)
           (seq test-paths)
-          (seq namespaces))
+          ;; :source-paths / :test-paths don't count for this criterion:
+          (seq (remove keyword? namespaces)))
     {:source-paths (set source-paths)
      :test-paths (set test-paths)}
     {:source-paths (->> (or (seq (classpath/classpath-directories))
@@ -985,17 +986,6 @@ Eastwood has other forms of effective, safe parallelism now. Falling back to seq
                                            (instance? c v))))
                       [k v])))
             (into {}))
-       ;; It's better to try setting :source-paths/:test-paths explicitly.
-       ;; Otherwise, in newer JDKs nothing may be analysed.
-       ;; (this is exercised in CI)
-       (assoc :source-paths (->> ["src" "dev"]
-                                 (filter (fn [^String s]
-                                           (-> s File. .exists)))
-                                 (into #{})))
-       (assoc :test-paths (->> ["test"]
-                               (filter (fn [^String s]
-                                         (-> s File. .exists)))
-                               (into #{})))
        pr-str
        -main))
 

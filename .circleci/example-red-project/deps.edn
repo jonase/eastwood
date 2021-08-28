@@ -1,0 +1,3 @@
+{:aliases {:eastwood {:main-opts  ["-m" "eastwood.lint" {}]
+                      :extra-deps {jonase/eastwood {:mvn/version "RELEASE"}
+                                   org.clojure/clojure {:mvn/version "1.10.3"}}}}}
