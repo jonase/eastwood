@@ -252,7 +252,7 @@ specifying which linters are enabled or disabled are:
   which is all linters except those documented as 'disabled by
   default'.
 * `:exclude-linters` Linters (or [linter sub `:kind`s](#ignoring-linter-sub-kinds)) to exclude
-* `:add-linters` Linters to add.  The final list of linters is the set
+* `:add-linters` Linters to add. You can use to enable linters that are disabled by default. The final list of linters is the set
   specified by `:linters`, taking away all in `:excluded-linters`,
   then adding all in `:add-linters`.
 
