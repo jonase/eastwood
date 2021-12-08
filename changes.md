@@ -3,6 +3,8 @@
 * tools.namespace integration: don't lint namespace inferred from the `refresh-dirs` that were not specified as Eastwood config/arguments to be linted.
 * Fail more clearly if/when loading tools.namespace `refresh-dirs`.
   * Closes https://github.com/jonase/eastwood/issues/423
+* Fix false positive for `alt!!`
+  * Closes https://github.com/jonase/eastwood/issues/422
 
 ## Changes from 0.9.8 to 0.9.9
 

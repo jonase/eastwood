@@ -133,13 +133,20 @@ their intention being to write to stdout and therefore have the `with-out-str` r
 (do
   ;; All these disablings within `go` are here because it's a peculiar macro which seemingly doesn't integrate well with the :if-inside-macroexpansion-of implementation.
   ;; These disablings can duplicate logic placed elsewhere.
-  ;; This section might have to groe in a future. Maybe there's a way to de-duplicate the disablings or impl logic.
+  ;; This section might have to grow in a future. Maybe there's a way to de-duplicate the disablings or impl logic.
 
   (disable-warning
    {:linter :suspicious-expression
     :for-macro 'clojure.core/or
     :if-inside-macroexpansion-of #{'clojure.core.async/go}
     :reason "https://github.com/jonase/eastwood/issues/411. Note that `alt!` is not caught as a macro, possibly because `go` is a peculiar macro."})
+
+  (disable-warning
+   {:linter :suspicious-expression
+    :for-macro 'clojure.core/or
+    :within-depth 6
+    :if-inside-macroexpansion-of #{'clojure.core.async/alt!!}
+    :reason "https://github.com/jonase/eastwood/issues/422"})
 
   (disable-warning
    {:linter :suspicious-expression
