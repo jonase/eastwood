@@ -10,3 +10,4 @@ pom.xml
 /target/
 /.circleci/example-red-project/output
 /.circleci/example-green-project/output
+/.circleci/example-refresh-project/output

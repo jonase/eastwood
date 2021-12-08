@@ -2189,7 +2189,7 @@ To be on the bleeding edge, install Eastwood in
 your local Maven repository:
 
     $ cd path/to/eastwood
-    $ lein with-profile +eastwood-plugin install
+    $ lein with-profile -user,-dev,+eastwood-plugin install
 
 Then add `[jonase/eastwood "0.9.9"]` to
 your `:plugins` vector in your `:user` profile, perhaps in your

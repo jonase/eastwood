@@ -547,13 +547,14 @@
                                         ;; remove these, which can make profiling unrealistically slow
                                         ;; (because of excessive calls to t.n file-ns-decl):
                                         #{}
-                                        (some-> 'clojure.tools.namespace.repl/refresh-dirs
-                                                resolve
-                                                deref
-                                                seq
-                                                (*nss-in-dirs* 0 true "loading tools.namespace `refresh-dirs`")
-                                                :namespaces
-                                                set))
+                                        (or (some-> 'clojure.tools.namespace.repl/refresh-dirs
+                                                    resolve
+                                                    deref
+                                                    seq
+                                                    (*nss-in-dirs* 0 true "loading tools.namespace `refresh-dirs`")
+                                                    :namespaces
+                                                    set)
+                                            #{}))
         all-project-namespaces (set/union corpus ;; namespaces explicitly asked to be linted
                                           (some-> all-source-paths ;; source-paths per Eastwood/Lein config
                                                   seq
@@ -580,7 +581,17 @@
                                               :namespaces
                                               set)
                                       ;; t.n integration:
-                                      namespaces-from-refresh-paths)]
+                                      namespaces-from-refresh-paths)
+        non-lintable-namespaces-from-t-n (set/difference namespaces-from-refresh-paths
+                                                         namespaces)]
+
+    ;; If the t.n refresh-dirs were set, all transitively-depended-on namespaces
+    ;; that are *not* part of the analyzed project will be `require`d.
+    ;; This way, any reflection warnings from those will not affect Eastwood results:
+    (when-let [corpus (seq non-lintable-namespaces-from-t-n)]
+      (binding [*warn-on-reflection* false]
+        (apply require corpus)))
+
     {;; what will be linted:
      :namespaces (->> corpus
                       (remove excluded-namespaces)
@@ -687,18 +698,18 @@ Eastwood has other forms of effective, safe parallelism now. Falling back to seq
 
 (defn eastwood-core
   "Lint a sequence of namespaces using a specified collection of linters.
+  Side-effects:
 
-  Side effects:
-  + Reads source files, analyzes them, generates Clojure forms from
-  analysis results, and eval's those forms (which if there are bugs in
-  tools.analyzer or tools.analyzer.jvm, may not be identical to the
-  original forms read. If require'ing your source files launches the
-  missiles, so will this.
-  + Does create-ns on all namespaces specified, even if an exception
+  * Reads source files, analyzes them, generates Clojure forms from
+  analysis results, and evals those forms (i.e. if `require`ing your source files launches the
+  missiles, so will this).
+
+  * `Does create-ns` on all namespaces specified, even if an exception
   during linting causes this function to return before reading all of
-  them. See the code for why.
-  + Should not print output to any output files/streams/etc., unless
-  this occurs due to eval'ing the code being linted."
+  them.
+
+  * Should not print output to any output files/streams/etc, unless
+  this occurs due to evaling the code being linted."
   [reporter
    opts
    cwd
