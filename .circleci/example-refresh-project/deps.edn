@@ -1,0 +1,9 @@
+{:deps {org.clojure/tools.namespace {:mvn/version "1.1.1"}}
+ :paths ["src" "red"]
+ :aliases {:eastwood {:main-opts  ["-m" "eastwood.lint"
+                                   ;; no red:
+                                   ;; red will be ignored because it's not set passed as Eastwood config/arguments,
+                                   ;; so its reflection warning won't show up in Eastwood output.
+                                   {:source-paths ["src"]}]
+                      :extra-deps {jonase/eastwood {:mvn/version "RELEASE"}
+                                   org.clojure/clojure {:mvn/version "1.10.3"}}}}}
