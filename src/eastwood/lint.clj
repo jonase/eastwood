@@ -314,7 +314,9 @@
          (merge {:elapsed elapsed
                  :linter linter}))))
 
-(def ^:dynamic *nss-in-dirs* nil)
+(def ^{:dynamic true
+       :arglists '([dir-name-strs modified-since search-mismatches? context-name])}
+  *nss-in-dirs* nil)
 
 (declare nss-in-dirs)
 
@@ -434,15 +436,17 @@
        (mapcat find-mismatches)
        (into {})))
 
-(defn nss-in-dirs [dir-name-strs modified-since search-mismatches?]
-  {:pre [(instance? Boolean search-mismatches?)]}
+(defn nss-in-dirs [dir-name-strs modified-since search-mismatches? context-name]
+  {:pre [(instance? Boolean search-mismatches?)
+         (string? context-name)]}
   (let [dir-name-strs (set (map util/canonical-filename dir-name-strs))
-        mismatches (if-not search-mismatches?
-                     []
-                     (filename-namespace-mismatches dir-name-strs))]
+        mismatches    (if-not search-mismatches?
+                        []
+                        (filename-namespace-mismatches dir-name-strs))]
     (when (seq mismatches)
-      (throw (ex-info "namespace-file-name-mismatch"
-                      {:err :namespace-filename-mismatch
+      (throw (ex-info (str "Detected a mismatch between filenames and namespaces while "
+                           context-name)
+                      {:err      :namespace-filename-mismatch
                        :err-data {:mismatches mismatches}})))
     (let [tracker (assoc (track/tracker) ::dir/time modified-since)
           tracker (if (seq dir-name-strs)
@@ -451,12 +455,12 @@
                     ;; Calling dir/scan-all will use complete Java
                     ;; classpath if called with an empty sequence.
                     tracker)]
-      {:dirs dir-name-strs
+      {:dirs              dir-name-strs
        :non-clojure-files (::dir/non-clojure-files tracker)
-       :files (set (::dir/files tracker))
-       :file-map (::file/filemap tracker)
-       :namespaces (::track/load tracker)
-       :deps (::track/deps tracker)})))
+       :files             (set (::dir/files tracker))
+       :file-map          (::file/filemap tracker)
+       :namespaces        (::track/load tracker)
+       :deps              (::track/deps tracker)})))
 
 (defn expand-ns-keywords
   "Expand any keyword in `namespaces` with values from `expanded-namespaces`"
@@ -529,9 +533,9 @@
   ;; needed.
   (let [all-ns (concat namespaces exclude-namespaces)
         sp (when (some #{:source-paths} all-ns)
-             (*nss-in-dirs* source-paths modified-since true))
+             (*nss-in-dirs* source-paths modified-since true "loading :source-paths from `all-ns`"))
         tp (when (some #{:test-paths} all-ns)
-             (*nss-in-dirs* test-paths modified-since true))
+             (*nss-in-dirs* test-paths modified-since true "loading :test-paths from `all-ns`"))
         expanded-namespaces {:source-paths (:namespaces sp)
                              :test-paths (:namespaces tp)}
         excluded-namespaces (set (expand-ns-keywords expanded-namespaces
@@ -547,19 +551,19 @@
                                                 resolve
                                                 deref
                                                 seq
-                                                (*nss-in-dirs* 0 true)
+                                                (*nss-in-dirs* 0 true "loading tools.namespace `refresh-dirs`")
                                                 :namespaces
                                                 set))
         all-project-namespaces (set/union corpus ;; namespaces explicitly asked to be linted
                                           (some-> all-source-paths ;; source-paths per Eastwood/Lein config
                                                   seq
 
-                                                  (*nss-in-dirs* 0 false)
+                                                  (*nss-in-dirs* 0 false "loading :source-paths for `all-project-namespaces`")
                                                   :namespaces
                                                   set)
                                           (some-> all-test-paths ;; test-paths per Eastwood/Lein config
                                                   seq
-                                                  (*nss-in-dirs* 0 false)
+                                                  (*nss-in-dirs* 0 false "loading :test-paths for `all-project-namespaces`")
                                                   :namespaces
                                                   set)
                                           ;; t.n integration:
@@ -567,12 +571,12 @@
         project-namespaces (set/union corpus ;; namespaces explicitly asked to be linted
                                       (some-> source-paths ;; source-paths per Eastwood/Lein config
                                               seq
-                                              (*nss-in-dirs* 0 true)
+                                              (*nss-in-dirs* 0 true "loading :source-paths for `project-namespaces`")
                                               :namespaces
                                               set)
                                       (some-> test-paths ;; test-paths per Eastwood/Lein config
                                               seq
-                                              (*nss-in-dirs* 0 true)
+                                              (*nss-in-dirs* 0 true "loading :test-paths for `project-namespaces`")
                                               :namespaces
                                               set)
                                       ;; t.n integration:
