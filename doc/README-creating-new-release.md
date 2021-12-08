@@ -14,7 +14,7 @@ Update changes.md with any differences in behavior.
 Places where version number should be updated:
 
 * `resources/EASTWOOD_VERSION`
-* README.md in install instructions, and instructions for developers
+* README.md
 * changes.md (header)
 
 Update the changelog in changes.md
@@ -23,7 +23,7 @@ Commit all of those changes.
 
 Tag it with a version tag, e.g.:
 
-    % git tag -a Release-0.1.2 -m "0.1.2"
+    % git tag -a Release-1.0.0 -m "1.0.0"
 
 'git push' by default does not push tags to the remote server.  To
 cause that to happen, use:
