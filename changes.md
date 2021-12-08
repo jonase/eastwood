@@ -1,3 +1,8 @@
+## Changes from 0.9.9 to 1.0.0
+
+* Fix false positive for `alt!!`
+  * Closes https://github.com/jonase/eastwood/issues/422
+
 ## Changes from 0.9.8 to 0.9.9
 
 #### Bugfixes
