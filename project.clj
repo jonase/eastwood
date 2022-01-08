@@ -61,9 +61,10 @@
                                                   [com.taoensso/tufte "2.2.0"]
                                                   [manifold "0.1.9-alpha4"]
                                                   [metosin/spec-tools "0.10.5"]
-                                                  [org.clojure/core.async "1.5.644"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2021.12.01"]]}
-             :antq {:plugins [[com.github.liquidz/antq "1.3.0"]]}
+                                                  [org.clojure/core.async "1.5.648"]]}
+             :clj-kondo {:dependencies [[clj-kondo "2021.12.19"]]}
+             :antq {:plugins [[com.github.liquidz/antq "1.3.1"]]
+                    :antq {:exclude ["nrepl/nrepl" "org.clojure/clojure"]}}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
              :1.9 {:dependencies [[org.clojure/clojure "1.9.0"]]}
@@ -83,7 +84,7 @@
                                              ;; cheshire
                                              ;; clj-http
                                              ;; compojure
-                                             [org.clojure/core.async "1.5.644"]
+                                             [org.clojure/core.async "1.5.648"]
                                              [org.clojure/core.cache "1.0.225"]
                                              [org.clojure/core.memoize "1.0.253"]
                                              [org.clojure/data.codec "0.1.1"]
