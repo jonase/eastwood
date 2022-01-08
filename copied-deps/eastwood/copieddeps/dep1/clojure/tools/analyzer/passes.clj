@@ -1,5 +1,6 @@
 (ns eastwood.copieddeps.dep1.clojure.tools.analyzer.passes
   "Utilities for pass scheduling"
+  (:refer-clojure :exclude [update-vals])
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.ast :refer [prewalk postwalk]]
             [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [update-vals]]))
 

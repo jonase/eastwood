@@ -7,7 +7,7 @@
 ;;   You must not remove this notice, or any other, from this software.
 
 (ns eastwood.copieddeps.dep1.clojure.tools.analyzer.utils
-  (:refer-clojure :exclude [record? boolean?])
+  (:refer-clojure :exclude [record? boolean? update-keys update-vals])
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.env :as env])
   (:import (clojure.lang IRecord IType IObj
                          IReference Var)))
