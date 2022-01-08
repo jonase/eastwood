@@ -823,25 +823,62 @@
        (= :const (-> ast :test :op))
        (contains? #{false nil} (-> ast :test :val))))
 
+(defn map-sym? [x]
+  (and (symbol? x)
+       (-> x name (.startsWith "map__"))))
+
 (defn seq-call-from-destructuring?
   "Does `form` contain a `seq` call that was auto-generated from a `let` destructuring macroexpansion?"
   [form]
   (boolean
    (and (sequential? form)
-        (let [[_ seq?-call create-call map-sym] form]
-          (and (sequential? seq?-call)
-               (sequential? create-call)
-               (symbol? map-sym)
-               (-> map-sym name (.startsWith "map__"))
-               (let [[s? m] seq?-call
-                     [create-sym seq-call] create-call]
-                 (and (#{'clojure.core/seq?} s?)
-                      (-> m name (.startsWith "map__"))
-                      (#{'clojure.lang.PersistentHashMap/create} create-sym)
-                      (sequential? seq-call)
-                      (let [[s-call m] seq-call]
-                        (and (#{'clojure.core/seq} s-call)
-                             (-> m name (.startsWith "map__")))))))))))
+        (or
+         (let [[_ seq?-call create-call map-sym] form]
+           (and (sequential? seq?-call)
+                (sequential? create-call)
+                (or (map-sym? map-sym)
+                    (and (sequential? map-sym)
+                         (-> map-sym count #{2})
+                         (-> map-sym first #{'clojure.core/to-array})
+                         (-> map-sym last map-sym?)))
+                (let [[s? m] seq?-call
+                      [create-sym seq-call] create-call]
+                  (and (#{'clojure.core/seq?} s?)
+                       (map-sym? m)
+                       (#{'clojure.lang.PersistentHashMap/create 'clojure.lang.PersistentArrayMap/createAsIfByAssoc} create-sym)
+                       (sequential? seq-call)
+                       (let [[s-call m] seq-call]
+                         (and (#{'clojure.core/seq} s-call)
+                              (map-sym? m)))))))
+         (let [[_ seq-call first-call empty-hashmap] form]
+           (and (sequential? seq-call)
+                (sequential? first-call)
+                (#{'clojure.lang.PersistentArrayMap/EMPTY} empty-hashmap)
+                (-> seq-call count #{2})
+                (-> first-call count #{2})
+                (-> seq-call last map-sym?)
+                (-> first-call last map-sym?)
+                (-> seq-call first #{'clojure.core/seq})
+                (-> first-call first #{'clojure.core/first})))
+         (let [[_ next-call create-call other] form]
+           (and (sequential? next-call)
+                (sequential? create-call)
+                (-> next-call count #{2})
+                (-> create-call count #{2})
+                (-> next-call first #{'clojure.core/next})
+                (-> create-call first #{'clojure.lang.PersistentArrayMap/create 'clojure.lang.PersistentArrayMap/createAsIfByAssoc})
+                (-> next-call last map-sym?)
+                (-> create-call last sequential?)
+                (-> create-call last first #{'clojure.core/to-array})
+                (-> create-call last last map-sym?)
+                (seq-call-from-destructuring? other)))
+         (let [[_ seq?-call other m] form]
+           (and (map-sym? m)
+                (-> seq?-call sequential?)
+                (-> seq?-call count #{2})
+                (-> seq?-call first #{'clojure.core/seq?})
+                (-> seq?-call last map-sym?)
+                (seq-call-from-destructuring? other)))))))
 
 (defn if-with-predictable-test [ast]
   (when (and (= :if (:op ast))
