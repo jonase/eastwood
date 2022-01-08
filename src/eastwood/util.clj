@@ -43,6 +43,9 @@
 (defn clojure-1-10-or-later []
   (min-clojure-version [1 10]))
 
+(defn clojure-1-11-or-later []
+  (min-clojure-version [1 11]))
+
 ;; Before Clojure 1.8.0, an :op :def node resulting from a defn form would
 ;; have its :init value equal to an AST node with :op :fn
 

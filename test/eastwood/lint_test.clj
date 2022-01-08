@@ -601,3 +601,10 @@ See https://github.com/jonase/eastwood/issues/402"
                               true)
         #{'testcases.refer-clojure-exclude.green} {:some-warnings false}
         #{'testcases.refer-clojure-exclude.red}   {:some-warnings true}))))
+
+(when (util/clojure-1-11-or-later)
+  (deftest clojure-1-11
+    (is (= {:some-warnings false :some-errors false}
+           (-> sut/default-opts
+               (assoc :namespaces #{'testcases.clojure-1-11})
+               (sut/eastwood))))))

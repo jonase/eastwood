@@ -55,6 +55,7 @@
                                                    clojure.java.classpath
                                                    clojure.java.io
                                                    clojure.java.javadoc
+                                                   clojure.java.math
                                                    clojure.java.shell
                                                    clojure.main
                                                    clojure.pprint
@@ -76,7 +77,7 @@
                                                            (doto x require)
                                                            (catch Exception _
                                                              nil))))
-                                                 ;; possibly add some unforeseen namesapaces (in face of new clojure releases):
+                                                 ;; possibly add some unforeseen namespaces (in face of new clojure releases):
                                                  (into (clojure-core-namespaces))
                                                  ;; would cause a protocol reloading issue:
                                                  (remove #{'clojure.reflect}))

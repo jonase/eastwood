@@ -1784,12 +1784,12 @@
      :line 114, :column 3}
     1,
     {:linter :wrong-ns-form,
-     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :include-macros :refer :refer-macros.",
+     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :as-alias :include-macros :refer :refer-macros.",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 150, :column 13}
     1,
     {:linter :wrong-ns-form,
-     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :exclude :include-macros :refer :refer-macros :rename.",
+     :msg ":require has a libspec with wrong option keys: :only - option keys for :require should only include the following: :as :as-alias :exclude :include-macros :refer :refer-macros :rename.",
      :file (fname-from-parts "testcases" "wrongnsform.clj"),
      :line 182, :column 13}
     1}))
