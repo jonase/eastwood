@@ -45,6 +45,13 @@ executors:
       <<: *env_defaults
       <<: *newer_jdk_env_defaults
     <<: *executor_defaults
+  openjdk17:
+    docker:
+      - image: circleci/clojure:openjdk-17-lein-2.9.5-buster
+    environment:
+      <<: *env_defaults
+      <<: *newer_jdk_env_defaults
+    <<: *executor_defaults
 
 jobs:
   test:
@@ -333,7 +340,7 @@ workflows:
               # Just one executor - linting results are not expected to vary per platform:
               executor: [openjdk11]
               # Just one version - linting results are not expected to vary per version:
-              clojure-version: ["1.10.3"]
+              clojure-version: ["1.10.3", "1.11"]
   default:
     jobs:
       - test:
@@ -342,18 +349,18 @@ workflows:
               only: /.*/
           matrix:
             parameters:
-              executor: [openjdk8, openjdk11, openjdk16]
+              executor: [openjdk8, openjdk11, openjdk16, openjdk17]
               # NOTE: if adding a new Clojure version here, please be sure var-info.edn remains up-to-date.
               # you can use the :check-var-info Lein profile for that.
-              clojure-version: ["1.7", "1.8", "1.9", "1.10.1", "1.10.2", "1.10.3"]
+              clojure-version: ["1.7", "1.8", "1.9", "1.10.1", "1.10.2", "1.10.3", "1.11"]
       # the `test_third_party_deps` profile uses a separate matrix because the contained libs (especially the ones that use clojure.spec)
       # don't target older versions.
       - test_third_party_deps:
           matrix:
             parameters:
-              executor: [openjdk8, openjdk11, openjdk16]
+              executor: [openjdk8, openjdk11, openjdk16, openjdk17]
               # Run just the latest version. This saves resources trusts that the main test suite already exercises clojure compat sufficiently:
-              clojure-version: ["1.10.3"]
+              clojure-version: ["1.10.3", "1.11"]
       - lint:
           # add some requires for not running nvd-clojure so often:
           requires:
@@ -363,8 +370,8 @@ workflows:
             parameters:
               # Just one executor - linting results are not expected to vary per platform:
               executor: [openjdk11]
-              # Just one version - linting results are not expected to vary per version:
-              clojure-version: ["1.10.3"]
+              # Just a few versions - linting results are not expected to vary per version:
+              clojure-version: ["1.10.3", "1.11"]
 
       - deploy:
           requires:
