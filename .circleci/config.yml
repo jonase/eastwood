@@ -155,8 +155,6 @@ jobs:
     parameters:
       executor:
         type: executor
-      clojure-version:
-        type: string
     executor: << parameters.executor >>
     steps:
       - checkout
@@ -206,9 +204,31 @@ jobs:
             - ~/.m2/repository/org/owasp/dependency-check-utils/6.5.2/data
           key: v2-nvd-data-{{ checksum "project.clj" }}-{{checksum "today"}}
 
+  crucible:
+    parameters:
+      executor:
+        type: executor
+      extra-profile:
+        type: string
+    executor: << parameters.executor >>
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "project.clj" }}
+
+      - run:
+          name: Fetch dependencies
+          command: "$LEIN_DEPS_COMMAND"
+
+      - run:
+          name: Prepare for Crucible
+          command: JVM_OPTS= .circleci/crucible_prep.sh
+
       - run:
           name: Run against a variety of real-world projects
-          command: JVM_OPTS= .circleci/crucible.sh
+          command: JVM_OPTS= EXTRA_PROFILE="<< parameters.extra-profile >>" .circleci/crucible.sh
 
   build:
     docker:
@@ -337,10 +357,8 @@ workflows:
       - lint:
           matrix:
             parameters:
-              # Just one executor - linting results are not expected to vary per platform:
-              executor: [openjdk11]
-              # Just one version - linting results are not expected to vary per version:
-              clojure-version: ["1.10.3", "1.11"]
+              # Just one executor - nvd/kondo/antq results are not expected to vary per platform:
+              executor: [openjdk17]
   default:
     jobs:
       - test:
@@ -368,10 +386,15 @@ workflows:
             - test_third_party_deps
           matrix:
             parameters:
-              # Just one executor - linting results are not expected to vary per platform:
-              executor: [openjdk11]
-              # Just a few versions - linting results are not expected to vary per version:
-              clojure-version: ["1.10.3", "1.11"]
+              # Just one executor - nvd/kondo/antq results are not expected to vary per platform:
+              executor: [openjdk17]
+      - crucible:
+          requires:
+            - lint
+          matrix:
+            parameters:
+              executor: [openjdk8, openjdk11, openjdk17]
+              extra-profile: ["", ",+eastwood-ci-clojure-1-10", ",+eastwood-ci-clojure-1-11"]
 
       - deploy:
           requires:
