@@ -1,8 +1,19 @@
+## Changes from 1.0.0 to 1.1.0
+
+#### New
+
+* Compatibility with the Clojure [1.11.0](https://clojure.org/releases/devchangelog#_release_1_11_0) series.
+
 ## Changes from 0.9.9 to 1.0.0
+
+#### New
 
 * tools.namespace integration: don't lint namespaces inferred from the `refresh-dirs` that were not specified as Eastwood config/arguments to be linted.
 * Fail more clearly if/when loading tools.namespace `refresh-dirs`.
   * Closes https://github.com/jonase/eastwood/issues/423
+
+#### Bugfixes
+
 * Fix false positive for `alt!!`
   * Closes https://github.com/jonase/eastwood/issues/422
 
