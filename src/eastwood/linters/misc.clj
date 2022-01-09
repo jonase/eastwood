@@ -815,8 +815,11 @@
             ;; :require, as :refer can be used for that purpose
             ;; instead.
             :require (merge
-                      {:as :symbol, :refer :symbol-list-or-all,
-                       :include-macros :true, :refer-macros :symbol-list}
+                      {:as :symbol
+                       :as-alias :symbol
+                       :refer :symbol-list-or-all
+                       :include-macros :true
+                       :refer-macros :symbol-list}
                       (if (contains? libspec-opts :refer)
                         {:exclude :symbol-list,
                          :rename :map-from-symbol-to-symbol}

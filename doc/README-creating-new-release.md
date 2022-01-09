@@ -1,7 +1,7 @@
 Please don't create "snapshot" releases. Consider instead:
 
-* can you / people perform `lein install` instead?
-* can one gain confidence through better tests instead?
+* can you / people perform `lein install`?
+* can one gain confidence through better tests?
 
 ---
 

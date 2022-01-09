@@ -1,0 +1,9 @@
+{:paths []
+ :deps {}
+
+ :aliases
+ {:nvd
+  ;; if updating this, please make sure - ~/.m2/repository/org/owasp/dependency-check-utils/<version>/data remains valid in our CircleCI file:
+  {:extra-deps {nvd-clojure/nvd-clojure {:mvn/version "2.1.0"}}
+   :jvm-opts   ["-Dclojure.main.report=stderr"]
+   :main-opts  ["-m" "nvd.task.check"]}}}

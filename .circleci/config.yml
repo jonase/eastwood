@@ -45,6 +45,13 @@ executors:
       <<: *env_defaults
       <<: *newer_jdk_env_defaults
     <<: *executor_defaults
+  openjdk17:
+    docker:
+      - image: circleci/clojure:openjdk-17-lein-2.9.5-buster
+    environment:
+      <<: *env_defaults
+      <<: *newer_jdk_env_defaults
+    <<: *executor_defaults
 
 jobs:
   test:
@@ -148,8 +155,6 @@ jobs:
     parameters:
       executor:
         type: executor
-      clojure-version:
-        type: string
     executor: << parameters.executor >>
     steps:
       - checkout
@@ -184,17 +189,46 @@ jobs:
           keys:
             - v2-nvd-data-{{ checksum "project.clj" }}-{{checksum "today"}}
 
+      - run:
+          name: Install Clojure
+          command: |
+            wget -nc https://download.clojure.org/install/linux-install-1.10.3.855.sh
+            chmod +x linux-install-1.10.3.855.sh
+            sudo ./linux-install-1.10.3.855.sh
+
       - run: "shellcheck .circleci/*.sh"
       - run: "$LINT_SCRIPT"
 
       - save_cache:
           paths:
-            - ~/.m2/repository/org/owasp/dependency-check-utils/6.2.2/data
+            - ~/.m2/repository/org/owasp/dependency-check-utils/6.5.2/data
           key: v2-nvd-data-{{ checksum "project.clj" }}-{{checksum "today"}}
+
+  crucible:
+    parameters:
+      executor:
+        type: executor
+      extra-profile:
+        type: string
+    executor: << parameters.executor >>
+    steps:
+      - checkout
+
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "project.clj" }}
+
+      - run:
+          name: Fetch dependencies
+          command: "$LEIN_DEPS_COMMAND"
+
+      - run:
+          name: Prepare for Crucible
+          command: JVM_OPTS= .circleci/crucible_prep.sh
 
       - run:
           name: Run against a variety of real-world projects
-          command: JVM_OPTS= .circleci/crucible.sh
+          command: JVM_OPTS= EXTRA_PROFILE="<< parameters.extra-profile >>" .circleci/crucible.sh
 
   build:
     docker:
@@ -323,10 +357,8 @@ workflows:
       - lint:
           matrix:
             parameters:
-              # Just one executor - linting results are not expected to vary per platform:
-              executor: [openjdk11]
-              # Just one version - linting results are not expected to vary per version:
-              clojure-version: ["1.10.3"]
+              # Just one executor - nvd/kondo/antq results are not expected to vary per platform:
+              executor: [openjdk17]
   default:
     jobs:
       - test:
@@ -335,18 +367,18 @@ workflows:
               only: /.*/
           matrix:
             parameters:
-              executor: [openjdk8, openjdk11, openjdk16]
+              executor: [openjdk8, openjdk11, openjdk16, openjdk17]
               # NOTE: if adding a new Clojure version here, please be sure var-info.edn remains up-to-date.
               # you can use the :check-var-info Lein profile for that.
-              clojure-version: ["1.7", "1.8", "1.9", "1.10.1", "1.10.2", "1.10.3"]
+              clojure-version: ["1.7", "1.8", "1.9", "1.10.1", "1.10.2", "1.10.3", "1.11"]
       # the `test_third_party_deps` profile uses a separate matrix because the contained libs (especially the ones that use clojure.spec)
       # don't target older versions.
       - test_third_party_deps:
           matrix:
             parameters:
-              executor: [openjdk8, openjdk11, openjdk16]
+              executor: [openjdk8, openjdk11, openjdk16, openjdk17]
               # Run just the latest version. This saves resources trusts that the main test suite already exercises clojure compat sufficiently:
-              clojure-version: ["1.10.3"]
+              clojure-version: ["1.10.3", "1.11"]
       - lint:
           # add some requires for not running nvd-clojure so often:
           requires:
@@ -354,10 +386,15 @@ workflows:
             - test_third_party_deps
           matrix:
             parameters:
-              # Just one executor - linting results are not expected to vary per platform:
-              executor: [openjdk11]
-              # Just one version - linting results are not expected to vary per version:
-              clojure-version: ["1.10.3"]
+              # Just one executor - nvd/kondo/antq results are not expected to vary per platform:
+              executor: [openjdk17]
+      - crucible:
+          requires:
+            - lint
+          matrix:
+            parameters:
+              executor: [openjdk8, openjdk11, openjdk17]
+              extra-profile: ["", ",+eastwood-ci-clojure-1-10", ",+eastwood-ci-clojure-1-11"]
 
       - deploy:
           requires:

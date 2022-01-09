@@ -10,7 +10,7 @@ git submodule update --init --recursive
 # Exercise core.async because it's been historically a difficult-to-analyse one
 cd ./core.async || exit 1
 
-if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
+if lein with-profile -user,+test"$EXTRA_PROFILE" update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
   echo "Should have failed! Emitted output:"
   cat output
   exit 1
@@ -26,7 +26,7 @@ grep --silent "== Warnings: 29. Exceptions thrown: 0" output || exit 1
 # Exercise tools.reader, see https://github.com/jonase/eastwood/issues/413
 cd ../tools.reader || exit 1
 
-if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
+if lein with-profile -user,+test"$EXTRA_PROFILE" update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
   echo "Should have failed! Emitted output:"
   cat output
   exit 1
@@ -42,7 +42,7 @@ grep --silent "== Warnings: 14. Exceptions thrown: 0" output || exit 1
 # Exercise clojurescript as it's large and interesting
 cd ../clojurescript || exit 1
 
-if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
+if lein with-profile -user,+test"$EXTRA_PROFILE" update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
   echo "Should have failed! Emitted output:"
   cat output
   exit 1
@@ -53,14 +53,15 @@ if grep --silent "Reflection warning" output; then
   exit 1
 fi
 
-grep --silent "== Warnings: 339. Exceptions thrown: 0" output || exit 1
+# (Warnings vary per JDK)
+grep --silent "== Warnings: 339. Exceptions thrown: 0" output || grep --silent "== Warnings: 338. Exceptions thrown: 0" output || exit 1
 
 # Exercise malli because Eastwood used to choke on that project due to lack of explicit topo order for ns analysis
 cd ../malli || exit 1
 
 cp ../deps_project.clj project.clj
 
-if lein with-profile +test update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
+if lein with-profile -user,+test"$EXTRA_PROFILE" update-in :plugins conj "[jonase/eastwood \"RELEASE\"]" -- eastwood | tee output; then
   echo "Should have failed! Emitted output:"
   cat output
   exit 1
@@ -76,7 +77,7 @@ grep --silent "== Warnings: 111. Exceptions thrown: 0" output || exit 1
 # Exercise crux simply because it's a large project with plenty of Java hints, interop etc
 cd ../crux || exit 1
 ./lein-sub install
-./lein-sub with-profile -user,+test update-in :dependencies conj "[jonase/eastwood \"RELEASE\"]" -- run -m eastwood.lint "{:source-paths [\"src\"], :test-paths [\"test\"], :forced-exit-code 0}" | tee output
+./lein-sub with-profile -user,+test"$EXTRA_PROFILE" update-in :dependencies conj "[jonase/eastwood \"RELEASE\"]" -- run -m eastwood.lint "{:source-paths [\"src\"], :test-paths [\"test\"], :forced-exit-code 0}" | tee output
 
 # Assert that no exceptions are thrown, and that useful insights are found:
 ex_marker="Exceptions thrown:"
@@ -100,13 +101,15 @@ grep --silent "Warnings: 43. $ex_marker 0" output || exit 1
 
 zero_warns=$(grep -c "Warnings: 0. $ex_marker 0" output)
 zero_warns=${zero_warns// /}
-if [ "$zero_warns" != "11" ]; then
+# Result depends on the JDK:
+if [ "$zero_warns" != "11" ] && [ "$zero_warns" != "10" ]; then
   exit 1
 fi
 
 one_warns=$(grep -c "Warnings: 1. $ex_marker 0" output)
 one_warns=${one_warns// /}
-if [ "$one_warns" != "1" ]; then
+# Result depends on the JDK:
+if [ "$one_warns" != "1" ] && [ "$one_warns" != "2" ]; then
   exit 1
 fi
 

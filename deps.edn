@@ -1,5 +1,4 @@
 {:paths ["src" "lein-eastwood" "copied-deps" "resource" "resources"]
  :deps {org.clojure/clojure {:mvn/version "1.10.3"}
         org.clojars.brenton/google-diff-match-patch {:mvn/version "0.1"}
-        org.ow2.asm/asm-all {:mvn/version "5.2"}}
- :aliases {:eastwood {:main-opts ["-m" "eastwood.lint"]}}}
+        org.ow2.asm/asm-all {:mvn/version "5.2"}}}
