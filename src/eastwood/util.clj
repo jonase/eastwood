@@ -1168,18 +1168,18 @@ of these kind."
                                                      (not (ifn? @var-ref)))))]
                      (cond
                        uninteresting?
-                       (format "%s {:var-kind nil, :macro nil}"
+                       (format " %s {:var-kind nil, :macro nil}"
                                fqs)
 
                        ctor?
-                       (format "%s {:var-kind nil, :macro %s, :predicate %s, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}"
+                       (format " %s {:var-kind nil, :macro %s, :predicate %s, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}"
                                fqs
                                (pr-str macro?)
                                predicate?)
 
                        :else
                        ;; this format includes all keys, so as to invite maintainers to think of all relevant info.
-                       (format "%s {:var-kind nil, :macro %s, :predicate %s, :side-effect , :pure-fn , :warn-if-ret-val-unused , :lazy , :pure-if-fn-args-pure , :io-fn , :evals-exprs }"
+                       (format " %s {:var-kind nil, :macro %s, :predicate %s, :side-effect , :pure-fn , :warn-if-ret-val-unused , :lazy , :pure-if-fn-args-pure , :io-fn , :evals-exprs }"
                                fqs
                                (pr-str macro?)
                                predicate?))))]
