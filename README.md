@@ -38,10 +38,10 @@ here](#running-eastwood-in-a-repl).
 Eastwood can be run from the command line as a
 [Leiningen](http://leiningen.org) plugin.
 
-Merge the following into your `$HOME/.lein/profiles.clj` file:
+Merge the following into your `project.clj` or `~/.lein/profiles.clj`:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "1.1.0"]]}}
+:plugins [[jonase/eastwood "1.1.0"]]
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -51,13 +51,16 @@ command:
     $ lein eastwood
 
 ### deps.edn
-If you're using `deps.edn`, you can set options to eastwood linter in a
- EDN map, like this:
+
+If you're using `deps.edn`, you can set Eastwood options in an edn map, like this:
 ```clojure
 {:aliases
   {:eastwood
-      {:main-opts ["-m" "eastwood.lint" {}]
-       :extra-deps {jonase/eastwood {:mvn/version "RELEASE"}}}}}
+    {:main-opts ["-m"
+                 "eastwood.lint"
+                 ;; Any Eastwood options can be passed here as edn:
+                 {}]
+     :extra-deps {jonase/eastwood {:mvn/version "1.1.0"}}}}}
 
 ```
 to your `deps.edn`, and you should then be able to run Eastwood as
@@ -65,6 +68,14 @@ to your `deps.edn`, and you should then be able to run Eastwood as
 ```sh
 clojure -M:test:eastwood
 ```
+
+For deps.edn projects in particular, you don't need to set the `:source-paths` and `:test-paths`
+as configuration options; they will be accurately inferred at runtime.
+
+The only requirement is that you enable all relevant deps.edn aliases - mainly `test` but possibly others,
+depending on your project layout.
+
+Any `:paths` not present at runtime, as computed by the Clojure CLI, will not be analyzed by Eastwood. 
 
 ---
 
@@ -2198,7 +2209,7 @@ your `:plugins` vector in your `:user` profile, perhaps in your
 
 ## License
 
-Copyright (C) 2012-2021 Jonas Enlund, Nicola Mometto, and Andy Fingerhut
+Copyright (C) 2012-2022 Jonas Enlund, Nicola Mometto, and Andy Fingerhut
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
