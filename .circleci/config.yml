@@ -270,31 +270,17 @@ jobs:
 
   deploy:
     docker:
-      # specify the version you desire here
       - image: circleci/clojure:openjdk-8-lein-2.9.1
-      # Specify service dependencies here if necessary
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      # - image: circleci/postgres:9.4
 
     working_directory: ~/repo
 
     environment:
       LEIN_ROOT: "true"
-      # Customize the JVM maximum heap limit
       JVM_OPTS: -Xmx3200m
 
     steps:
       - checkout
 
-      # Download and cache dependencies
-      - restore_cache:
-          keys:
-            - v1-dependencies-{{ checksum "project.clj" }}
-            # fallback to using the latest cache if no exact match is found
-            - v1-dependencies-
-
-      # Download and cache dependencies
       - restore_cache:
           keys:
             - v1-dependencies-{{ checksum "project.clj" }}
@@ -302,16 +288,11 @@ jobs:
             - v1-dependencies-
 
       - run:
-         name: Install babashka
-         command: |
-           curl -s https://raw.githubusercontent.com/borkdude/babashka/master/install -o install.sh
-           sudo bash install.sh
-           rm install.sh
-      - run:
-          name: Install deployment-script
+          name: Install Clojure
           command: |
-            curl -s https://raw.githubusercontent.com/clj-commons/infra/main/deployment/circle-maybe-deploy.bb -o circle-maybe-deploy.bb
-            chmod a+x circle-maybe-deploy.bb
+            wget -nc https://download.clojure.org/install/linux-install-1.10.3.855.sh
+            chmod +x linux-install-1.10.3.855.sh
+            sudo ./linux-install-1.10.3.855.sh
 
       - run: "$LEIN_DEPS_COMMAND"
 
@@ -341,7 +322,7 @@ jobs:
            GPG_TTY=$(tty)
            export GPG_TTY
            echo $GPG_TTY
-           ./circle-maybe-deploy.bb lein with-profile -user,-dev,+eastwood-plugin deploy clojars
+           clojure -M -i .circleci/maybe_deploy.clj -m maybe-deploy lein with-profile -user,-dev,+eastwood-plugin deploy clojars
 
 workflows:
   nvd:
