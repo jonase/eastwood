@@ -74,7 +74,7 @@
   :if-inside-macroexpansion-of #{'clojure.test/are}
   :reason "`are` can template arbitrary expressions. Therefore one cannot (easily) know if a given expression came from a template, and therefore, whether it's a truly 'constant' expression."})
 
-(doseq [qualifier [true :always]]
+(doseq [qualifier [true :always :then]]
   (disable-warning
    {:linter :constant-test
     :if-inside-macroexpansion-of #{'clojure.core/cond-> 'clojure.core/cond->>}

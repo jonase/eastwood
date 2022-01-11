@@ -1,3 +1,9 @@
+## Changes from 1.1.0 to 1.1.1
+
+#### New
+
+* Also accept `:then` as a constant test in `cond->` / `cond->>`.
+
 ## Changes from 1.0.0 to 1.1.0
 
 #### New
