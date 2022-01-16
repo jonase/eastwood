@@ -5,7 +5,7 @@
 
 (def release-marker "v")
 
-(defn make-version! [tag]
+(defn make-version [tag]
   (str/replace-first tag release-marker ""))
 
 (defn log-result [m]
@@ -20,7 +20,7 @@
         (System/exit 1)
         (do
           (apply println "Executing" *command-line-args*)
-          (->> [:env (into {"PROJECT_VERSION" (make-version! tag)} (System/getenv))]
+          (->> [:env (into {"PROJECT_VERSION" (make-version tag)} (System/getenv))]
                (into (vec *command-line-args*))
                (apply sh)
                log-result

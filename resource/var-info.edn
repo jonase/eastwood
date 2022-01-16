@@ -104,6 +104,8 @@
  clojure.core/>= {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/EMPTY-NODE {:var-kind nil, :macro nil},
  clojure.core/Throwable->map {:var-kind nil, :macro nil, :lazy false, :pure-fn true}
+ clojure.core/abs {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.core/iteration {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
  clojure.core/accessor {:var-kind nil, :macro nil},
  clojure.core/aclone {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/add-classpath {:var-kind nil, :macro nil},
@@ -757,54 +759,55 @@
  clojure.java.io/reader {:var-kind nil, :macro nil, :io-fn true, :lazy false, :warn-if-ret-val-unused true},
  clojure.java.io/resource {:var-kind nil, :macro nil, :io-fn true, :lazy false, :warn-if-ret-val-unused true},
  clojure.java.io/writer {:var-kind nil, :macro nil, :io-fn true, :lazy false, :warn-if-ret-val-unused true},
- clojure.java.math/E {:var-kind nil, :macro nil}
- clojure.java.math/IEEE-remainder {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/PI {:var-kind nil, :macro nil}
- clojure.java.math/abs {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/acos {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/add-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/asin {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/atan {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/atan2 {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/cbrt {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/ceil {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/copy-sign {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/cos {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/cosh {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/decrement-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/exp {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/expm1 {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/floor {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/floor-div {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/floor-mod {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/get-exponent {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/hypot {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/increment-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/log {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/log10 {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/log1p {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/max {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/min {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/multiply-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/negative-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/next-after {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/next-down {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/next-up {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/pow {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/random {:var-kind nil, :macro nil, :predicate false, :side-effect :update-prng, :pure-fn false, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false}
- clojure.java.math/rint {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/round {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/scalb {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/signum {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/sin {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false},
- clojure.java.math/sinh {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/sqrt {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/subtract-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/tan {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/tanh {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/to-degrees {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/to-radians {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.math/ulp {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/E {:var-kind nil, :macro nil}
+ clojure.math/IEEE-remainder {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/PI {:var-kind nil, :macro nil}
+ clojure.math/abs {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/acos {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/add-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/asin {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/atan {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/atan2 {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/cbrt {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/ceil {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/copy-sign {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/cos {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/cosh {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/decrement-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/exp {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/expm1 {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/floor {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/floor-div {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/floor-mod {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/get-exponent {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/hypot {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/increment-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/log {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/log10 {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/log1p {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/max {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/min {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/multiply-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/negate-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/negative-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/next-after {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/next-down {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/next-up {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/pow {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/random {:var-kind nil, :macro nil, :predicate false, :side-effect :update-prng, :pure-fn false, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false}
+ clojure.math/rint {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/round {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/scalb {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/signum {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/sin {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false},
+ clojure.math/sinh {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/sqrt {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/subtract-exact {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/tan {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/tanh {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/to-degrees {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/to-radians {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.math/ulp {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
  clojure.java.javadoc/*core-java-api* {:var-kind nil, :macro nil},
  clojure.java.javadoc/*feeling-lucky* {:var-kind nil, :macro nil},
  clojure.java.javadoc/*feeling-lucky-url* {:var-kind nil, :macro nil},
@@ -815,7 +818,8 @@
  clojure.java.javadoc/javadoc {:var-kind nil, :macro nil},
  clojure.java.shell/*sh-dir* {:var-kind nil, :macro nil},
  clojure.java.shell/*sh-env* {:var-kind nil, :macro nil},
- clojure.java.shell/sh {:var-kind nil, :macro nil, :side-effect true}, ;; The return value is often useful from sh, but it is perfectly acceptable to ignore it as well.
+ clojure.java.shell/launch {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn true, :evals-exprs false}
+ clojure.java.shell/sh {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn true, :evals-exprs false}
  clojure.java.shell/with-sh-dir {:var-kind nil, :macro true},
  clojure.java.shell/with-sh-env {:var-kind nil, :macro true},
  clojure.main/demunge {:var-kind nil, :macro nil},
@@ -1017,6 +1021,8 @@
  clojure.xml/*sb* {:var-kind nil, :macro nil},
  clojure.xml/*stack* {:var-kind nil, :macro nil},
  clojure.xml/*state* {:var-kind nil, :macro nil},
+ clojure.xml/disable-external-entities {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false}
+ clojure.xml/sax-parser {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
  clojure.xml/attrs {:var-kind nil, :macro nil},
  clojure.xml/content {:var-kind nil, :macro nil},
  clojure.xml/content-handler {:var-kind nil, :macro nil},
@@ -1025,6 +1031,7 @@
  clojure.xml/emit-element {:var-kind nil, :macro nil, :side-effect true},
  clojure.xml/parse {:var-kind nil, :macro nil},
  clojure.xml/startparse-sax {:var-kind nil, :macro nil},
+ clojure.xml/startparse-sax-safe {:var-kind nil, :macro nil}
  clojure.xml/tag {:var-kind nil, :macro nil},
  clojure.zip/append-child {:var-kind nil, :macro nil},
  clojure.zip/branch? {:var-kind nil, :macro nil},
