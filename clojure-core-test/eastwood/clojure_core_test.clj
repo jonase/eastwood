@@ -55,7 +55,7 @@
                                                    clojure.java.classpath
                                                    clojure.java.io
                                                    clojure.java.javadoc
-                                                   clojure.java.math
+                                                   clojure.math
                                                    clojure.java.shell
                                                    clojure.main
                                                    clojure.pprint

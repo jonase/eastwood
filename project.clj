@@ -71,7 +71,7 @@
              :1.10.1 {:dependencies [[org.clojure/clojure "1.10.1"]]}
              :1.10.2 {:dependencies [[org.clojure/clojure "1.10.2"]]}
              :1.10.3 {:dependencies [[org.clojure/clojure "1.10.3"]]}
-             :1.11 {:dependencies [[org.clojure/clojure "1.11.0-alpha3"]]}
+             :1.11 {:dependencies [[org.clojure/clojure "1.11.0-alpha4"]]}
              ;; NOTE: if adding a new Clojure version here, please be sure var-info.edn remains up-to-date.
              ;; you can use the `:check-var-info` Lein profile for that.
 
