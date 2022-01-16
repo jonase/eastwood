@@ -2054,7 +2054,7 @@ The Clojure compiler optionally emits performance warnings related to the use of
 > Please refer to https://clojure.org/reference/java_interop for a guide on primive math
 (tldr: use `(long)`, or occasionally `^long` where it is permitted).
 
-Eastwood wraps these warnings, enhacing them when needed (the reported file name can be misleading),
+Eastwood wraps these warnings, enhancing them when needed (the reported file name can be misleading),
 restricting them to _your project's_ source paths and allowing them to be omitted on a file/line basis.  
 
 This linter is disabled by default because it's not customary or necessarily justified to address these warnings.
