@@ -1,3 +1,9 @@
+## Changes from 1.1.1 to 1.2.0
+
+#### New
+
+* Compatibility with the Clojure [1.11.0-alpha4](https://clojure.org/releases/devchangelog#v1.11.0-alpha4), which has some news since alpha3.
+
 ## Changes from 1.1.0 to 1.1.1
 
 #### New
