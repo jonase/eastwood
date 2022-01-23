@@ -27,7 +27,6 @@
    [eastwood.reporting-callbacks :as reporting]
    [eastwood.util :as util]
    [eastwood.util.ns :refer [topo-sort]]
-   [eastwood.util.parallel :refer [partitioning-pmap]]
    [eastwood.version :as version])
   (:import
    (java.io File)))
@@ -421,8 +420,8 @@
 
 (defn find-mismatches [[dir {:keys [filemap]}]]
   (->> filemap
-       (partitioning-pmap (fn [f]
-                            (find-mismatch dir f)))
+       (pmap (fn [f]
+               (find-mismatch dir f)))
        (keep identity)))
 
 (defn filename-namespace-mismatches [dir-name-strs]

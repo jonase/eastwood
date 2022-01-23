@@ -538,7 +538,7 @@ pprint-meta instead."
 
 (defn enhance-extend-invocations-prewalk [ast]
   (if (extend-invocation-ast? ast)
-    (update-in ast [:args] enhance-extend-args)
+    (update ast :args enhance-extend-args)
     ;; else no enhancement
     ast))
 
@@ -680,10 +680,10 @@ pprint-meta instead."
         ast)
       (let [body (:body ast)]
         (if-not (= :do (:op body))
-          (update-in ast [:body]
-                     (fn [node]
-                       (assoc node
-                              :eastwood/used-ret-val-expr-in-try-body true)))
+          (update ast :body
+                  (fn [node]
+                    (assoc node
+                           :eastwood/used-ret-val-expr-in-try-body true)))
           (let [;; Mark statements - i.e. non-returning expressions in body
                 ast (if-not (and (some #{:statements} (:children body))
                                  (vector? (:statements body)))

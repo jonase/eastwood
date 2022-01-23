@@ -82,7 +82,7 @@ jobs:
 
       - run:
           name: Run Eastwood against itself
-          command: EVAL_IN_LEININGEN=1 lein with-profile -user,+eastwood-plugin,+deep-diff eastwood
+          command: EVAL_IN_LEININGEN=1 lein with-profile -user,+eastwood-plugin,+deep-diff,+self-lint eastwood
 
       - run:
           name: Prevent any form of caching, for the next step

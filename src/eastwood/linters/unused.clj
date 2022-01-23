@@ -118,6 +118,7 @@
 
 (defn- unused-fn-args* [fn-expr]
   (reduce set/union
+          #{}
           (for [method (:methods fn-expr)]
             (let [args (params method)]
               (set/difference args (used-locals (ast/nodes (:body method))))))))

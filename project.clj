@@ -117,14 +117,16 @@
                                              ;; useful
                                              ]}
              :clojure-core-test {:test-paths ^:replace ["clojure-core-test"]}
-             :var-info-test {:test-paths ^:replace ["var-info-test"]}}
+             :var-info-test {:test-paths ^:replace ["var-info-test"]}
+             :self-lint {:test-paths ["clojure-core-test"
+                                      "var-info-test"]}}
   :aliases {"test-all" ["with-profile"
                         ~(->> ["1.7" "1.8" "1.9" "1.10.1" "1.10.2" "1.10.3"]
                               (map (partial str "-user,-dev,+test,+warn-on-reflection,+"))
                               (clojure.string/join ":"))
                         "test"]}
   :eastwood {:source-paths ["src"]
-             :test-paths ["test"]
+             :test-paths ["test" "var-info-test" "clojure-core-test"]
              :add-linters [:boxed-math :performance]
              :debug #{}}
   ;; Eastwood may work with earlier Leiningen versions, but this is

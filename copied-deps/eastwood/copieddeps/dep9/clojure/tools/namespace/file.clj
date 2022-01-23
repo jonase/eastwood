@@ -11,8 +11,7 @@
   eastwood.copieddeps.dep9.clojure.tools.namespace.file
   (:require [clojure.java.io :as io]
             [eastwood.copieddeps.dep9.clojure.tools.namespace.parse :as parse]
-            [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track]
-            [eastwood.util.parallel :refer [partitioning-pmap]])
+            [eastwood.copieddeps.dep9.clojure.tools.namespace.track :as track])
   (:import (java.io PushbackReader)))
 
 (defn read-file-ns-decl
@@ -63,13 +62,13 @@
 
 (defn- files-and-deps [files read-opts]
   (let [files (->> files
-                   (partitioning-pmap (fn [file]
-                                        (when-let [decl (*read-file-ns-decl* file read-opts)]
-                                          (let [deps (parse/deps-from-ns-decl decl)
-                                                name (parse/name-from-ns-decl decl)]
-                                            {:deps deps
-                                             :name name
-                                             :file file}))))
+                   (pmap (fn [file]
+                           (when-let [decl (*read-file-ns-decl* file read-opts)]
+                             (let [deps (parse/deps-from-ns-decl decl)
+                                   name (parse/name-from-ns-decl decl)]
+                               {:deps deps
+                                :name name
+                                :file file}))))
                    (keep identity))]
     (->> files
          (reduce (fn [m {:keys [deps name file]}]

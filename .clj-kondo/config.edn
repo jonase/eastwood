@@ -1,1 +1,4 @@
-{}
+{:linters {:docstring-leading-trailing-whitespace {:level :warning}
+           :reduce-without-init                   {:level :warning}
+           :single-key-in                         {:level :warning}
+           :used-underscored-binding              {:level :warning}}}

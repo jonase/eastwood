@@ -165,7 +165,7 @@
                                                             (->> % :args (some pred))))
                                                   first)
                                              assert)
-                const-or-map-ast (doto (->> (get-in first-invoke-do-report-ast [:args])
+                const-or-map-ast (doto (->> (get first-invoke-do-report-ast :args)
                                             (filter pred)
                                             first)
                                    assert)

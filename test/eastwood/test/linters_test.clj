@@ -38,7 +38,7 @@
                (str/re-quote-replacement "__<num>")))
 
 (defn warning-replace-auto-numbered-symbol-names [warn]
-  (update-in warn [:msg] msg-replace-auto-numbered-symbol-names))
+  (update warn :msg msg-replace-auto-numbered-symbol-names))
 
 (def empty-sorted-lint-warning-frequencies-map
   (sorted-map-by (fn [w1 w2]
