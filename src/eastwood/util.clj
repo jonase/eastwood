@@ -1245,15 +1245,42 @@ of these kind."
        (some exclude-linters--internal)
        boolean))
 
+(defn parent-dirs-set [f]
+  (->> f
+       (iterate (fn [^File f]
+                  (some-> f .getCanonicalPath File. .getParent File.)))
+       (take-while some?)
+       (set)))
+
+(defn dir-superset? [^File candidate, other]
+  (if (->> [candidate other]
+           (map (fn [^File f]
+                  (-> f .getCanonicalPath)))
+           (apply =))
+    ;; In theory an x is a superset of itself, but we'll disregard that -
+    ;; we prefer to accept a duplicate entry over a confusing error message:
+    false
+    (boolean (some #{(-> candidate .getCanonicalPath File.)}
+                   (parent-dirs-set other)))))
+
+(defn assert-no-dir-supersets [source-paths]
+  (doseq [candidate source-paths]
+    (doseq [other (remove #{candidate} source-paths)]
+      (when (dir-superset? candidate other)
+        (throw (ex-info (format "Inferred :source-path from resource `%s` which is a superset of resource `%s`.
+Resource directories shouldn't overlap with each other, otherwise there would be an important ambiguity.
+Eastwood cannot continue."
+                                candidate
+                                other)
+                        {:superset candidate
+                         :subset other})))))
+  source-paths)
+
 (defn dir-outside-root-dir? [^File f]
   {:pre [(-> f .isDirectory)]}
   (let [f (-> f .getCanonicalPath File.)
         root-dir (File. (System/getProperty "user.dir"))
-        parent-dirs (->> f
-                         (iterate (fn [^File f]
-                                    (some-> f .getCanonicalPath File. .getParent File.)))
-                         (take-while some?)
-                         (set))]
+        parent-dirs (parent-dirs-set f)]
     (not (parent-dirs root-dir))))
 
 (defn ast->ns [ast]

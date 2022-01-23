@@ -74,3 +74,24 @@
     (File. ".")                             false
     (File. "src")                           false
     (File. "/")                             true))
+
+(deftest dir-superset?
+  (are [candidate other expected] (testing [candidate other]
+                                    (is (= expected
+                                           (sut/dir-superset? (File. candidate) (File. other))))
+                                    true)
+    "/"            "."            true
+    "/"            "src"          true
+    "/"            "src/eastwood" true
+    ;; In theory an x is a superset of itself, but we'll disregard that -
+    ;; we prefer to accept a duplicate entry over a confusing error message:
+    "/"            "/"            false
+    "."            "."            false
+    "src"          "src"          false
+    "src/eastwood" "src/eastwood" false
+
+    "."            "src"          true
+    "src"          "."            false
+    "src"          "test"         false
+    "src/eastwood" "src"          false
+    "src"          "src/eastwood" true))

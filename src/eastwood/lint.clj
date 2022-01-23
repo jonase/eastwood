@@ -497,6 +497,8 @@
                                         (-> s (.contains "target"))
                                         ;; https://github.com/jonase/eastwood/issues/409
                                         (-> s (.contains ".gitlibs"))))))
+                        (distinct)
+                        (util/assert-no-dir-supersets)
                         (set))
      :test-paths #{}}))
 

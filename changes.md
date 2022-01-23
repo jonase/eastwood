@@ -1,3 +1,10 @@
+## Changes from 1.2.0 to 1.2.1
+
+#### Bugfixes
+
+* Fail when inferred source paths overlap with each other.
+  * Closes https://github.com/jonase/eastwood/issues/428
+
 ## Changes from 1.1.1 to 1.2.0
 
 #### New
