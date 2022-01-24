@@ -271,12 +271,16 @@ exception."))
 
 (defmulti error-msg
   "Given a map describing an Eastwood error result, which should
-always have at least the keys :err and :err-data, return a string
-describing the error."
+  always have at least the keys :err and :err-data, return a string
+  describing the error."
   :err)
 
 (defmethod error-msg :default [err-info]
   (str "Unknown error: " err-info))
+
+(defmethod error-msg :found-dir-supersets [{:keys [msg]}]
+  (with-out-str
+    (println msg)))
 
 (defmethod error-msg :unknown-ns-keywords [err-info]
   (let [{:keys [for-option unknown-ns-keywords allowed-ns-keywords]}

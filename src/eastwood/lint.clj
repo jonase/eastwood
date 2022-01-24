@@ -474,32 +474,36 @@
   are empty then `:source-path` is set to all the directories on the classpath,
   while `:test-paths` is the empty set."
   [namespaces source-paths test-paths]
-  (if (or (seq source-paths)
-          (seq test-paths)
-          ;; :source-paths / :test-paths don't count for this criterion:
-          (seq (remove keyword? namespaces)))
-    {:source-paths (set source-paths)
-     :test-paths (set test-paths)}
-    {:source-paths (->> (or (seq (classpath/classpath-directories))
-                            ;; fallback, because the above can fail in presence of certain libs or scenarios:
-                            (classpath/system-classpath))
-                        (filter (fn [^File f]
-                                  (-> f .isDirectory)))
-                        ;; remove dirs representing Lein checkouts
-                        ;; (which cannot be directly detected as symlinks, since Lein resolves them first):
-                        (remove util/dir-outside-root-dir?)
-                        ;; resources (whether vanilla, dev-only or test-only) should not be analyzed,
-                        ;; or account for `:ignore-faults-from-foreign-macroexpansions?`:
-                        (remove (fn [^File f]
-                                  (let [s (-> f .toString)]
-                                    (or (-> s (.contains "resources"))
-                                        (-> s (.contains "target"))
-                                        ;; https://github.com/jonase/eastwood/issues/409
-                                        (-> s (.contains ".gitlibs"))))))
-                        (distinct)
-                        (util/assert-no-dir-supersets)
-                        (set))
-     :test-paths #{}}))
+  (let [{final-source-paths :source-paths
+         final-test-paths :test-paths
+         :as final-paths}
+        (if (or (seq source-paths)
+                (seq test-paths)
+                ;; :source-paths / :test-paths don't count for this criterion:
+                (seq (remove keyword? namespaces)))
+          {:source-paths (set source-paths)
+           :test-paths (set test-paths)}
+          {:source-paths (->> (or (seq (classpath/classpath-directories))
+                                  ;; fallback, because the above can fail in presence of certain libs or scenarios:
+                                  (classpath/system-classpath))
+                              (filter (fn [^File f]
+                                        (-> f .isDirectory)))
+                              ;; remove dirs representing Lein checkouts
+                              ;; (which cannot be directly detected as symlinks, since Lein resolves them first):
+                              (remove util/dir-outside-root-dir?)
+                              ;; resources (whether vanilla, dev-only or test-only) should not be analyzed,
+                              ;; or account for `:ignore-faults-from-foreign-macroexpansions?`:
+                              (remove (fn [^File f]
+                                        (let [s (-> f .toString)]
+                                          (or (-> s (.contains "resources"))
+                                              (-> s (.contains "target"))
+                                              ;; https://github.com/jonase/eastwood/issues/409
+                                              (-> s (.contains ".gitlibs"))))))
+                              (set))
+           :test-paths #{}})]
+    (util/assert-no-dir-supersets final-source-paths)
+    (util/assert-no-dir-supersets final-test-paths)
+    final-paths))
 
 ;; If you do not specify :namespaces in the options, it defaults to
 ;; the same as if you specified [:source-paths :test-paths]. If you

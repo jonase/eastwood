@@ -608,3 +608,15 @@ See https://github.com/jonase/eastwood/issues/402"
            (-> sut/default-opts
                (assoc :namespaces #{'testcases.clojure-1-11})
                (sut/eastwood))))))
+
+(deftest assert-no-dir-supersets
+  (testing "Overlapping source-dirs cannot be specified"
+    (are [input expected] (testing input
+                            (is (= expected
+                                   (-> sut/default-opts
+                                       (assoc :namespaces ['testcases.refer-clojure-exclude.green])
+                                       (merge input)
+                                       (sut/eastwood))))
+                            true)
+      {}                          {:some-warnings false, :some-errors false}
+      {:source-paths ["src" "."]} {:some-warnings true, :some-errors true})))
