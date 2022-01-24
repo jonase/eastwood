@@ -1264,16 +1264,23 @@ of these kind."
                    (parent-dirs-set other)))))
 
 (defn assert-no-dir-supersets [source-paths]
-  (doseq [candidate source-paths]
-    (doseq [other (remove #{candidate} source-paths)]
-      (when (dir-superset? candidate other)
-        (throw (ex-info (format "Inferred :source-path from resource `%s` which is a superset of resource `%s`.
+  (let [source-paths (mapv (fn [f]
+                             (cond-> f
+                               (string? f) io/file))
+                           source-paths)]
+    (doseq [candidate source-paths]
+      (doseq [other (remove #{candidate} source-paths)]
+        (when (dir-superset? candidate other)
+          (let [msg (format "Inferred :source-path from resource `%s`, which is a superset of resource `%s`.
 Resource directories shouldn't overlap with each other, otherwise there would be an important ambiguity.
 Eastwood cannot continue."
-                                candidate
-                                other)
-                        {:superset candidate
-                         :subset other})))))
+                            candidate
+                            other)]
+            (throw (ex-info msg
+                            {:err      :found-dir-supersets
+                             :err-data {:superset (str candidate)
+                                        :subset   (str other)}
+                             :msg msg})))))))
   source-paths)
 
 (defn dir-outside-root-dir? [^File f]

@@ -1,3 +1,9 @@
+## Changes from 1.2.1 to 1.2.2
+
+#### Changes
+
+Improve `:found-dir-supersets` error reporting.
+
 ## Changes from 1.2.0 to 1.2.1
 
 #### Bugfixes
