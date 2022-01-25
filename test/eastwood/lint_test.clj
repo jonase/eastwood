@@ -612,11 +612,21 @@ See https://github.com/jonase/eastwood/issues/402"
 (deftest assert-no-dir-supersets
   (testing "Overlapping source-dirs cannot be specified"
     (are [input expected] (testing input
-                            (is (= expected
-                                   (-> sut/default-opts
-                                       (assoc :namespaces ['testcases.refer-clojure-exclude.green])
-                                       (merge input)
-                                       (sut/eastwood))))
-                            true)
-      {}                          {:some-warnings false, :some-errors false}
-      {:source-paths ["src" "."]} {:some-warnings true, :some-errors true})))
+                            (let [f (fn []
+                                      (-> sut/default-opts
+                                          (assoc :namespaces ['testcases.refer-clojure-exclude.green])
+                                          (merge input)
+                                          (sut/eastwood)))]
+                              (is (= expected
+                                     (f)))
+                              (when-not (#{{:some-warnings false, :some-errors false}} expected)
+                                (let [^String v (with-out-str
+                                                  (f))]
+                                  (is (-> v (.contains "Resource directories shouldn't overlap with each other"))
+                                      (pr-str v))))
+                              true))
+      {}                                     {:some-warnings false, :some-errors false}
+      {:source-paths ["src"]}                {:some-warnings false, :some-errors false}
+      {:source-paths ["src" "src/eastwood"]} {:some-warnings true, :some-errors true}
+      {:source-paths ["src" "."]}            {:some-warnings true, :some-errors true}
+      {:source-paths ["src" "test"]}         {:some-warnings false, :some-errors false})))
