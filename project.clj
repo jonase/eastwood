@@ -71,7 +71,7 @@
              :1.10.1 {:dependencies [[org.clojure/clojure "1.10.1"]]}
              :1.10.2 {:dependencies [[org.clojure/clojure "1.10.2"]]}
              :1.10.3 {:dependencies [[org.clojure/clojure "1.10.3"]]}
-             :1.11 {:dependencies [[org.clojure/clojure "1.11.0-alpha4"]]}
+             :1.11 {:dependencies [[org.clojure/clojure "1.11.0-beta1"]]}
              ;; NOTE: if adding a new Clojure version here, please be sure var-info.edn remains up-to-date.
              ;; you can use the `:check-var-info` Lein profile for that.
 
@@ -120,11 +120,6 @@
              :var-info-test {:test-paths ^:replace ["var-info-test"]}
              :self-lint {:test-paths ["clojure-core-test"
                                       "var-info-test"]}}
-  :aliases {"test-all" ["with-profile"
-                        ~(->> ["1.7" "1.8" "1.9" "1.10.1" "1.10.2" "1.10.3"]
-                              (map (partial str "-user,-dev,+test,+warn-on-reflection,+"))
-                              (clojure.string/join ":"))
-                        "test"]}
   :eastwood {:source-paths ["src"]
              :test-paths ["test" "var-info-test" "clojure-core-test"]
              :add-linters [:boxed-math :performance]
