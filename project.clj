@@ -62,8 +62,8 @@
                                                   [manifold "0.1.9-alpha4"]
                                                   [metosin/spec-tools "0.10.5"]
                                                   [org.clojure/core.async "1.5.648"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2022.01.15"]]}
-             :antq {:plugins [[com.github.liquidz/antq "1.4.0"]]
+             :clj-kondo {:dependencies [[clj-kondo "2022.02.09"]]}
+             :antq {:plugins [[com.github.liquidz/antq "1.5.1"]]
                     :antq {:exclude ["nrepl/nrepl" "org.clojure/clojure"]}}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
