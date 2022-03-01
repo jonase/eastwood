@@ -585,7 +585,13 @@
                   :or {reader (pb-reader-for-ns source-nsym)}}]
   (with-form-writers opt
     (fn []
-      (let [source-path (#'move/ns-file-name source-nsym)
+      (let [source-path (let [v (#'move/ns-file-name source-nsym)
+                              v2 (str v "c")] ;; handle cljc
+                          (reduce (fn [_ v]
+                                    (when (io/resource v) ;; choose clj or cljc depending on what exists
+                                      (reduced v)))
+                                  nil
+                                  [v v2]))
             {:keys [reflection-warnings
                     boxed-math-warnings
                     performance-warnings]

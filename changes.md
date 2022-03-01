@@ -1,3 +1,10 @@
+## Changes from 1.2.2 to 1.2.3
+
+#### Bugfixes
+
+* Correctly associate `:file` metadata when Eastwood analyzes a given var, for .cljc files.
+  * Fairly minor bug, that would only affect people using Eastwood via a repl.
+
 ## Changes from 1.2.1 to 1.2.2
 
 #### Changes
