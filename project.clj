@@ -87,7 +87,7 @@
                                              ;; compojure
                                              [org.clojure/core.async "1.5.648"]
                                              [org.clojure/core.cache "1.0.225"]
-                                             [org.clojure/core.memoize "1.0.253"]
+                                             [org.clojure/core.memoize "1.0.257"]
                                              [org.clojure/data.codec "0.1.1"]
                                              [org.clojure/data.csv "1.0.0"]
                                              [org.clojure/data.json "2.4.0"]
