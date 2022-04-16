@@ -62,8 +62,8 @@
                                                   [manifold "0.1.9-alpha4"]
                                                   [metosin/spec-tools "0.10.5"]
                                                   [org.clojure/core.async "1.5.648"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2022.03.09"]]}
-             :antq {:plugins [[com.github.liquidz/antq "1.6.0"]]
+             :clj-kondo {:dependencies [[clj-kondo "2022.04.08"]]}
+             :antq {:plugins [[com.github.liquidz/antq "1.6.1"]]
                     :antq {:exclude ["nrepl/nrepl" "org.clojure/clojure"]}}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
@@ -71,7 +71,7 @@
              :1.10.1 {:dependencies [[org.clojure/clojure "1.10.1"]]}
              :1.10.2 {:dependencies [[org.clojure/clojure "1.10.2"]]}
              :1.10.3 {:dependencies [[org.clojure/clojure "1.10.3"]]}
-             :1.11 {:dependencies [[org.clojure/clojure "1.11.0"]]}
+             :1.11 {:dependencies [[org.clojure/clojure "1.11.1"]]}
              ;; NOTE: if adding a new Clojure version here, please be sure var-info.edn remains up-to-date.
              ;; you can use the `:check-var-info` Lein profile for that.
 
@@ -89,7 +89,7 @@
                                              [org.clojure/core.cache "1.0.225"]
                                              [org.clojure/core.memoize "1.0.257"]
                                              [org.clojure/data.codec "0.1.1"]
-                                             [org.clojure/data.csv "1.0.0"]
+                                             [org.clojure/data.csv "1.0.1"]
                                              [org.clojure/data.json "2.4.0"]
                                              [org.clojure/data.priority-map "1.1.0"]
                                              ;; data.xml
