@@ -1010,9 +1010,8 @@ Eastwood has other forms of effective, safe parallelism now. Falling back to seq
        -main))
 
   ([& opts]
-   (if (and
-        (= 1 (count opts))
-        (string? (first opts)))
-     (eastwood-from-cmdline (edn/read-string (first opts)))
-     (let [parsed (->> opts (interpose " ") (apply str) edn/read-string)]
-       (eastwood-from-cmdline parsed)))))
+   (let [reducer #(merge %1 (if (string? %2)
+                              (edn/read-string %2)
+                              %2))
+         parsed (reduce reducer default-opts opts)]
+     (eastwood-from-cmdline parsed))))
