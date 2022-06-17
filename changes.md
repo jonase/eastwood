@@ -1,9 +1,11 @@
-## Changes from 1.2.3 to
+## Changes from 1.2.3 to 1.2.4
 
 #### Bugfixes
 
 * Fix false positive for `clojure.spec.alpha/every`.
   * Closes https://github.com/jonase/eastwood/issues/435
+* Fix false positive for `clojure.java.jdbc/with-db-connection`.
+  * Closes https://github.com/jonase/eastwood/issues/436
 
 ## Changes from 1.2.2 to 1.2.3
 

@@ -35,6 +35,12 @@
     (is (= {:some-warnings false :some-errors false}
            (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.spec-tools-example}))))))
 
+;; https://github.com/jonase/eastwood/issues/436
+(deftest jdbc-example
+  (testing "Is able to process usages of the `clojure.java.jdbc` library without false positives"
+    (is (= {:some-warnings false :some-errors false}
+           (eastwood.lint/eastwood (assoc eastwood.lint/default-opts :namespaces #{'testcases.jdbc-example}))))))
+
 (deftest core-async-example
   (testing "Handling of hard-to-analyze `go` forms"
     (let [opts (assoc eastwood.lint/default-opts :namespaces #{'testcases.core-async-example})]

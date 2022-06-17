@@ -1306,9 +1306,9 @@
  clojure.java.jdbc/sql-value {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
  clojure.java.jdbc/string-array {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
  clojure.java.jdbc/when-available {:var-kind nil, :macro true, :predicate false, :side-effect false, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false}
- clojure.java.jdbc/with-db-connection {:var-kind nil, :macro true, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.jdbc/with-db-metadata {:var-kind nil, :macro true, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
- clojure.java.jdbc/with-db-transaction {:var-kind nil, :macro true, :predicate false, :side-effect false, :pure-fn true, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure true, :io-fn false, :evals-exprs false}
+ clojure.java.jdbc/with-db-connection {:var-kind nil, :macro true, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn true, :evals-exprs false}
+ clojure.java.jdbc/with-db-metadata {:var-kind nil, :macro true, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn true, :evals-exprs false}
+ clojure.java.jdbc/with-db-transaction {:var-kind nil, :macro true, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn true, :evals-exprs false}
  clojure.java.test-jdbc/create-test-table {:var-kind nil, :macro nil, :lazy false, :side-effect true},
  clojure.java.test-jdbc/update-or-insert-values {:var-kind nil, :macro nil, :lazy false, :side-effect true},
 
