@@ -373,7 +373,17 @@ relative to a specific macroexpansion"
       ;; Suggested an improvement upstream here:
       ;; https://ask.clojure.org/index.php/10712/minor-performance-improvement-initial-values-known-compile
       #{'testcases.constant-test.some-thread-first.green} {:some-warnings false}
-      #{'testcases.constant-test.some-thread-last.green}  {:some-warnings false})))
+      #{'testcases.constant-test.some-thread-last.green}  {:some-warnings false}))
+
+  (when (util/clojure-1-9-or-later)
+    (testing "https://github.com/jonase/eastwood/issues/435"
+      (are [input expected] (testing input
+                              (is (= (assoc expected :some-errors false)
+                                     (-> sut/default-opts
+                                         (assoc :namespaces input)
+                                         (sut/eastwood))))
+                              true)
+        #{'testcases.constant-test.spec-every.green} {:some-warnings false}))))
 
 (deftest unused-fn-args-test
   (testing "fn args within defmulti, see https://github.com/jonase/eastwood/issues/1"

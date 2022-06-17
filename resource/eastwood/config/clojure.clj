@@ -52,7 +52,10 @@
 (disable-warning
  {:linter :constant-test
   :for-macro 'clojure.core/or
-  :if-inside-macroexpansion-of #{'clojure.spec/coll-of 'clojure.spec.alpha/coll-of}
+  :if-inside-macroexpansion-of #{'clojure.spec/coll-of
+                                 'clojure.spec.alpha/coll-of
+                                 'clojure.spec/every
+                                 'clojure.spec.alpha/every}
   :within-depth 8
   :reason "clojure.spec's `coll-of` can contain `clojure.core/or` invocations with only one argument."})
 

@@ -1,3 +1,10 @@
+## Changes from 1.2.3 to
+
+#### Bugfixes
+
+* Fix false positive for `clojure.spec.alpha/every`.
+  * Closes https://github.com/jonase/eastwood/issues/435
+
 ## Changes from 1.2.2 to 1.2.3
 
 #### Bugfixes
