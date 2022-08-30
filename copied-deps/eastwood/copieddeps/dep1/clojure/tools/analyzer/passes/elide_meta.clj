@@ -73,7 +73,10 @@
         (if (= new-meta (:form meta))
           ast
           (assoc ast :meta (replace-meta meta new-meta)))
-        (assoc (dissoc ast :meta) :children [:init]))
+        (let [ast (dissoc ast :meta)]
+          (if-let [new-children (not-empty (filterv (complement #{:meta}) (:children ast)))]
+            (assoc ast :children new-children)
+            (dissoc ast :children))))
       ast)))
 
 (defn elide-meta

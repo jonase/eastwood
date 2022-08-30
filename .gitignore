@@ -8,6 +8,7 @@ pom.xml
 .lein-repl-history
 *~
 /target/
+/copy-deps-scripts/repos/
 /.circleci/example-red-project/output
 /.circleci/example-green-project/output
 /.circleci/example-refresh-project/output

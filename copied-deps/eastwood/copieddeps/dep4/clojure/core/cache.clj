@@ -50,9 +50,19 @@
   ([cache item] (through default-wrapper-fn identity cache item))
   ([value-fn cache item] (through default-wrapper-fn value-fn cache item))
   ([wrap-fn value-fn cache item]
-    (if (eastwood.copieddeps.dep4.clojure.core.cache/has? cache item)
-      (eastwood.copieddeps.dep4.clojure.core.cache/hit cache item)
-      (eastwood.copieddeps.dep4.clojure.core.cache/miss cache item (wrap-fn #(value-fn %) item)))))
+   (if (eastwood.copieddeps.dep4.clojure.core.cache/has? cache item)
+     (eastwood.copieddeps.dep4.clojure.core.cache/hit cache item)
+     (eastwood.copieddeps.dep4.clojure.core.cache/miss cache item (wrap-fn #(value-fn %) item)))))
+
+(defn through-cache
+  "The basic hit/miss logic for the cache system.  Like through but always has
+  the cache argument in the first position for easier use with swap! etc."
+  ([cache item] (through-cache cache item default-wrapper-fn identity))
+  ([cache item value-fn] (through-cache cache item default-wrapper-fn value-fn))
+  ([cache item wrap-fn value-fn]
+   (if (eastwood.copieddeps.dep4.clojure.core.cache/has? cache item)
+     (eastwood.copieddeps.dep4.clojure.core.cache/hit cache item)
+     (eastwood.copieddeps.dep4.clojure.core.cache/miss cache item (wrap-fn #(value-fn %) item)))))
 
 (defmacro defcache
   [type-name fields & specifics]
@@ -151,16 +161,14 @@
     {:dropping dropping
      :keeping  keeping
      :queue
-     (concat (repeat (- limit (count keeping)) ::free)
-             (take limit keeping))}))
-
-(defn- dissoc-keys [m ks]
-  (if ks
-    (recur (dissoc m (first ks)) (next ks))
-    m))
+     (-> clojure.lang.PersistentQueue/EMPTY
+         (into (repeat (- limit (count keeping)) ::free))
+         (into (take limit keeping)))}))
 
 (defn- prune-queue [q k]
-  (remove #{k} q))
+  (reduce (fn [q e] (if (#{k} e) q (conj q e)))
+          (conj clojure.lang.PersistentQueue/EMPTY ::free)
+          q))
 
 (defcache FIFOCache [cache q limit]
   CacheProtocol
@@ -173,12 +181,12 @@
   (hit [this item]
     this)
   (miss [_ item result]
-    (let [[kache qq] (let [k (first q)]
+    (let [[kache qq] (let [k (peek q)]
                        (if (>= (count cache) limit)
-                         [(dissoc cache k) (rest q)]
-                         [cache (rest q)]))]
+                         [(dissoc cache k) (pop q)]
+                         [cache (pop q)]))]
       (FIFOCache. (assoc kache item result)
-                  (concat qq [item])
+                  (conj qq item)
                   limit)))
   (evict [this key]
     (if (contains? cache key)
@@ -197,11 +205,8 @@
     (str cache \, \space (pr-str q))))
 
 (defn- build-leastness-queue
-  [base limit start-at]
-  (into (eastwood.copieddeps.dep5.clojure.data.priority-map/priority-map)
-        (concat (take (- limit (count base)) (for [k (range (- limit) 0)] [k k]))
-                (for [[k _] base] [k start-at]))))
-
+  [base start-at]
+  (into (eastwood.copieddeps.dep5.clojure.data.priority-map/priority-map) (for [[k _] base] [k start-at])))
 
 (defcache LRUCache [cache lru tick limit]
   CacheProtocol
@@ -241,7 +246,7 @@
       this))
   (seed [_ base]
     (LRUCache. base
-               (build-leastness-queue base limit 0)
+               (build-leastness-queue base 0)
                0
                limit))
   Object
@@ -249,13 +254,19 @@
     (str cache \, \space lru \, \space tick \, \space limit)))
 
 
-(defn- key-killer
-  [ttl expiry now]
-  (let [ks (map key (filter #(> (- now (val %)) expiry) ttl))]
-    #(apply dissoc % ks)))
+(defn- key-killer-q
+  [ttl q expiry now]
+  (let [[ks q'] (reduce (fn [[ks q] [k g t]]
+                          (if (> (- now t) expiry)
+                            (if (= g (first (get ttl k)))
+                              [(conj ks k) (pop q)]
+                              [ks (pop q)])
+                            (reduced [ks q])))
+                        [[] q]
+                        q)]
+    [#(apply dissoc % ks) q']))
 
-
-(defcache TTLCache [cache ttl ttl-ms]
+(defcache TTLCacheQ [cache ttl q gen ttl-ms]
   CacheProtocol
   (lookup [this item]
     (let [ret (lookup this item ::nope)]
@@ -265,26 +276,35 @@
       (get cache item)
       not-found))
   (has? [_ item]
-    (let [t (get ttl item (- ttl-ms))]
-      (< (- (System/currentTimeMillis)
-            t)
-         ttl-ms)))
+    (and (let [[_ t] (get ttl item [0 (- ttl-ms)])]
+           (< (- (System/currentTimeMillis)
+                 t)
+              ttl-ms))
+         (contains? cache item)))
   (hit [this item] this)
   (miss [this item result]
     (let [now  (System/currentTimeMillis)
-          kill-old (key-killer ttl ttl-ms now)]
-      (TTLCache. (assoc (kill-old cache) item result)
-                 (assoc (kill-old ttl) item now)
-                 ttl-ms)))
+          [kill-old q'] (key-killer-q ttl q ttl-ms now)]
+      (TTLCacheQ. (assoc (kill-old cache) item result)
+                  (assoc (kill-old ttl) item [gen now])
+                  (conj q' [item gen now])
+                  (unchecked-inc gen)
+                  ttl-ms)))
   (seed [_ base]
     (let [now (System/currentTimeMillis)]
-      (TTLCache. base
-                 (into {} (for [x base] [(key x) now]))
-                 ttl-ms)))
+      (TTLCacheQ. base
+                  ;; we seed the cache all at gen, but subsequent entries
+                  ;; will get gen+1, gen+2 etc
+                  (into {} (for [x base] [(key x) [gen now]]))
+                  (into q  (for [x base] [(key x) gen now]))
+                  (unchecked-inc gen)
+                  ttl-ms)))
   (evict [_ key]
-    (TTLCache. (dissoc cache key)
-               (dissoc ttl key)
-               ttl-ms))
+    (TTLCacheQ. (dissoc cache key)
+                (dissoc ttl key)
+                q
+                gen
+                ttl-ms))
   Object
   (toString [_]
     (str cache \, \space ttl \, \space ttl-ms)))
@@ -303,13 +323,13 @@
   (miss [_ item result]
     (if (>= (count lu) limit) ;; need to evict?
       (let [min-key (if (contains? lu item)
-                    ::nope
-                    (first (peek lu))) ;; maybe evict case
+                      ::nope
+                      (first (peek lu))) ;; maybe evict case
             c (-> cache (dissoc min-key) (assoc item result))
             l (-> lu (dissoc min-key) (update-in [item] (fnil inc 0)))]
         (LUCache. c l limit))
       (LUCache. (assoc cache item result)  ;; no change case
-                (assoc lu item 0)
+                (update-in lu [item] (fnil inc 0))
                 limit)))
   (evict [this key]
     (if (contains? this key)
@@ -319,7 +339,7 @@
       this))
   (seed [_ base]
     (LUCache. base
-              (build-leastness-queue base limit 0)
+              (build-leastness-queue base 0)
               limit))
   Object
   (toString [_]
@@ -486,7 +506,8 @@
 (defn clear-soft-cache! [^java.util.Map cache ^java.util.Map rcache ^ReferenceQueue rq]
   (loop [r (.poll rq)]
     (when r
-      (.remove cache (get rcache r))
+      (when-let [item (get rcache r)]
+        (.remove cache item))
       (.remove rcache r)
       (recur (.poll rq)))))
 
@@ -499,9 +520,10 @@
   CacheProtocol
   (lookup [_ item]
     (when-let [^SoftReference r (get cache (or item ::nil))]
-      (if (= ::nil (.get r))
-        nil
-        (.get r))))
+      (let [v (.get r)]
+        (if (= ::nil v)
+          nil
+          v))))
   (lookup [_ item not-found]
     (if-let [^SoftReference r (get cache (or item ::nil))]
       (if-let [v (.get r)]
@@ -554,7 +576,7 @@
 ;; Factories
 
 (defn basic-cache-factory
-  "Returns a pluggable basic cache initialied to `base`"
+  "Returns a pluggable basic cache initialized to `base`"
   [base]
   {:pre [(map? base)]}
   (BasicCache. base))
@@ -581,7 +603,7 @@
   (eastwood.copieddeps.dep4.clojure.core.cache/seed (FIFOCache. {} clojure.lang.PersistentQueue/EMPTY threshold) base))
 
 (defn lru-cache-factory
-  "Returns an LRU cache with the cache and usage-table initialied to `base` --
+  "Returns an LRU cache with the cache and usage-table initialized to `base` --
    each entry is initialized with the same usage value.
 
    This function takes an optional `:threshold` argument that defines the maximum number
@@ -600,10 +622,10 @@
   [base & {ttl :ttl :or {ttl 2000}}]
   {:pre [(number? ttl) (<= 0 ttl)
          (map? base)]}
-  (eastwood.copieddeps.dep4.clojure.core.cache/seed (TTLCache. {} {} ttl) base))
+  (eastwood.copieddeps.dep4.clojure.core.cache/seed (TTLCacheQ. {} {} clojure.lang.PersistentQueue/EMPTY 0 ttl) base))
 
 (defn lu-cache-factory
-  "Returns an LU cache with the cache and usage-table initialied to `base`.
+  "Returns an LU cache with the cache and usage-table initialized to `base`.
 
    This function takes an optional `:threshold` argument that defines the maximum number
    of elements in the cache before the LU semantics apply (default is 32)."
@@ -621,7 +643,7 @@
   {:pre [(number? s-history-limit) (< 0 s-history-limit)
          (number? q-history-limit) (< 0 q-history-limit)
          (map? base)]}
-  (seed (LIRSCache. {} {} {} 0 s-history-limit q-history-limit) base))
+  (eastwood.copieddeps.dep4.clojure.core.cache/seed (LIRSCache. {} {} {} 0 s-history-limit q-history-limit) base))
 
 (defn soft-cache-factory
   "Returns a SoftReference cache.  Cached values will be referred to with
@@ -632,21 +654,5 @@
   ConcurrentHashMap."
   [base]
   {:pre [(map? base)]}
-  (seed (SoftCache. (ConcurrentHashMap.) (ConcurrentHashMap.) (ReferenceQueue.))
+  (eastwood.copieddeps.dep4.clojure.core.cache/seed (SoftCache. (ConcurrentHashMap.) (ConcurrentHashMap.) (ReferenceQueue.))
         base))
-
-(comment
-
-  (def C (-> {:a 1 :b 2}
-             (fifo-cache-factory :threshold 2)
-             (ttl-cache-factory  :ttl 5000)))
-
-  (assoc C :c 42)
-  ;;=> {:b 2, :c 42}
-
-  ;; wait 5 seconds
-
-  (assoc C :d 138)
-  ;;=> {:d 138}
-
-)

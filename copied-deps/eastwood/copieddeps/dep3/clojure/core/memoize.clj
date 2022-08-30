@@ -7,41 +7,24 @@
 ;   You must not remove this notice, or any other, from this software.
 
 (ns eastwood.copieddeps.dep3.clojure.core.memoize
-  "core.memoize is a memoization library offering functionality above Clojure's core `memoize`
-  function in the following ways:
+  "core.memoize is a memoization library offering functionality above
+  Clojure's core `memoize` function in the following ways:
 
   **Pluggable memoization**
 
-  core.memoize allows for different back-end cache implmentations to be used as appropriate without
-  changing the memoization modus operandi.
+  core.memoize allows for different back-end cache implmentations to
+  be used as appropriate without changing the memoization modus operandi.
+  See the `memoizer` function.
 
   **Manipulable memoization**
 
-  Because core.memoize allows you to access a function's memoization store, you do interesting things like
-  clear it, modify it, and save it for later.
+  Because core.memoize allows you to access a function's memoization store,
+  you do interesting things like clear it, modify it, and save it for later.
   "
   {:author "fogus"}
 
   (:require [eastwood.copieddeps.dep4.clojure.core.cache :as cache]))
 
-;; Plugging Interface
-
-(deftype PluggableMemoization [f cache]
-  cache/CacheProtocol
-  (has? [_ item]
-    (eastwood.copieddeps.dep4.clojure.core.cache/has? cache item))
-  (hit  [_ item]
-    (PluggableMemoization. f (eastwood.copieddeps.dep4.clojure.core.cache/hit cache item)))
-  (miss [_ item result]
-    (PluggableMemoization. f (eastwood.copieddeps.dep4.clojure.core.cache/miss cache item result)))
-  (evict [_ key]
-    (PluggableMemoization. f (eastwood.copieddeps.dep4.clojure.core.cache/evict cache key)))
-  (lookup [_ item]
-    (eastwood.copieddeps.dep4.clojure.core.cache/lookup cache item))
-  (seed [_ base]
-    (PluggableMemoization. f (eastwood.copieddeps.dep4.clojure.core.cache/seed cache base)))
-  Object
-  (toString [_] (str cache)))
 
 
 ;; Similar to clojure.lang.Delay, but will not memoize an exception and will
@@ -66,21 +49,67 @@
               ;; or you have a race with the first check above
               (set! value v)
               (set! available? true)
-              v)))))))
+              v))))))
+  clojure.lang.IPending
+  (isRealized [this]
+    available?))
 
-(defn ^:private d-lay [fun]
+(defn- d-lay [fun]
   (->RetryingDelay fun false nil))
+
+(defn- make-derefable
+  "If a value is not already derefable, wrap it up.
+
+  This is used to help rebuild seed/base maps passed in to the various
+  caches so that they conform to core.memoize's world view."
+  [v]
+  (if (instance? clojure.lang.IDeref v)
+    v
+    (reify clojure.lang.IDeref
+      (deref [_] v))))
+
+(defn- derefable-seed
+  "Given a seed/base map, ensure all the values in it are derefable."
+  [seed]
+  (into {} (for [[k v] seed] [k (make-derefable v)])))
+
+;; Plugging Interface
+
+(deftype PluggableMemoization [f cache]
+  cache/CacheProtocol
+  (has? [_ item]
+    (eastwood.copieddeps.dep4.clojure.core.cache/has? cache item))
+  (hit  [_ item]
+    (PluggableMemoization. f (eastwood.copieddeps.dep4.clojure.core.cache/hit cache item)))
+  (miss [_ item result]
+    (PluggableMemoization. f (eastwood.copieddeps.dep4.clojure.core.cache/miss cache item result)))
+  (evict [_ key]
+    (PluggableMemoization. f (eastwood.copieddeps.dep4.clojure.core.cache/evict cache key)))
+  (lookup [_ item]
+    (eastwood.copieddeps.dep4.clojure.core.cache/lookup cache item nil))
+  (lookup [_ item not-found]
+    (eastwood.copieddeps.dep4.clojure.core.cache/lookup cache item (delay not-found)))
+  (seed [_ base]
+    (PluggableMemoization.
+     f (eastwood.copieddeps.dep4.clojure.core.cache/seed cache (derefable-seed base))))
+  Object
+  (toString [_] (str cache)))
 
 ;; # Auxilliary functions
 
-(defn through* [cache f item]
+(def ^{:private true
+       :doc "Returns a function's argument transformer."}
+  args-fn #(or (::args-fn (meta %)) identity))
+
+(defn- through*
   "The basic hit/miss logic for the cache system based on `core.cache/through`.
   Clojure delays are used to hold the cache value."
+  [cache f args item]
   (eastwood.copieddeps.dep4.clojure.core.cache/through
-    (fn [f a] (d-lay #(f a)))
-    #(clojure.core/apply f %)
-    cache
-    item))
+   (fn [f _] (d-lay #(f args)))
+   #(clojure.core/apply f %)
+   cache
+   item))
 
 (def ^{:private true
        :doc "Returns a function's cache identity."}
@@ -94,15 +123,27 @@
    you can infer that what you get is only the cache contents at a
    moment in time."
   [memoized-fn]
-  (when-let [cache (::cache (meta memoized-fn))]
+  (when-let [cache (cache-id memoized-fn)]
     (into {}
           (for [[k v] (.cache ^PluggableMemoization @cache)]
             [(vec k) @v]))))
 
+(defn lazy-snapshot
+  "Returns a lazy snapshot of a core.memo-placed memoization cache.  By
+   lazy snapshot you can infer that what you get is only the cache contents at a
+   moment in time -- and, being lazy, the cache could change while you are
+   realizing the snapshot elements.
+
+   Returns a sequence of key/value pairs."
+  [memoized-fn]
+  (when-let [cache (cache-id memoized-fn)]
+    (for [[k v] (.cache ^PluggableMemoization @cache)]
+      [(vec k) @v])))
+
 (defn memoized?
   "Returns true if a function has an core.memo-placed cache, false otherwise."
   [f]
-  (boolean (::cache (meta f))))
+  (boolean (cache-id f)))
 
 (defn memo-clear!
   "Reaches into an core.memo-memoized function and clears the cache.  This is a
@@ -116,13 +157,13 @@
    cool though, we've learned to deal with that stuff in Clojure by
    now."
   ([f]
-     (when-let [cache (cache-id f)]
-       (swap! cache (constantly (eastwood.copieddeps.dep4.clojure.core.cache/seed @cache {})))))
+   (when-let [cache (cache-id f)]
+     (swap! cache (constantly (eastwood.copieddeps.dep4.clojure.core.cache/seed @cache {})))))
   ([f args]
-     (when-let [cache (cache-id f)]
-       (swap! cache (constantly (eastwood.copieddeps.dep4.clojure.core.cache/evict @cache args))))))
+   (when-let [cache (cache-id f)]
+     (swap! cache (constantly (eastwood.copieddeps.dep4.clojure.core.cache/evict @cache args))))))
 
-(defn memo-swap!
+(defn memo-reset!
   "Takes a core.memo-populated function and a map and replaces the memoization cache
    with the supplied map.  This is potentially some serious voodoo,
    since you can effectively change the semantics of a function on the fly.
@@ -136,50 +177,131 @@
   [f base]
   (when-let [cache (cache-id f)]
     (swap! cache
-           (constantly (eastwood.copieddeps.dep4.clojure.core.cache/seed @cache
-                             (into {}
-                                   (for [[k v] base]
-                                     [k (reify
-                                          clojure.lang.IDeref
-                                          (deref [this] v))])))))))
+           (constantly (eastwood.copieddeps.dep4.clojure.core.cache/seed @cache (derefable-seed base))))))
+
+(defn memo-swap!
+  "The 2-arity version takes a core.memo-populated function and a map and
+  replaces the memoization cache with the supplied map. Use `memo-reset!`
+  instead for replacing the cache as this 2-arity version of `memo-swap!`
+  should be considered deprecated.
+
+  The 3+-arity version takes a core.memo-populated function and arguments
+  similar to what you would pass to `clojure.core/swap!` and performs a
+  `swap!` on the underlying cache. In order to satisfy core.memoize's
+  world view, the assumption is that you will generally be calling it like:
+
+        (def id (memo identity))
+        (memo-swap! id eastwood.copieddeps.dep4.clojure.core.cache/miss [13] :omg)
+        (id 13)
+        ;=> :omg
+
+  You'll nearly always use `eastwood.copieddeps.dep4.clojure.core.cache/miss` for this operation but
+  you could pass any function that would work on an immutable cache, such
+  as `evict` or `assoc` etc.
+
+  Be aware that `memo-swap!` assumes it can wrap each of the `results` values
+  in a `delay` so that items conform to `eastwood.copieddeps.dep3.clojure.core.memoize`'s world view."
+  ([f base]
+   (when-let [cache (cache-id f)]
+     (swap! cache
+            (constantly (eastwood.copieddeps.dep4.clojure.core.cache/seed @cache (derefable-seed base))))))
+  ([f swap-fn args & results]
+   (when-let [cache (cache-id f)]
+     (apply swap! cache swap-fn args (map #(delay %) results)))))
 
 (defn memo-unwrap
   [f]
   (::original (meta f)))
 
+(defn- cached-function
+  "Given a function, an atom containing a (pluggable memoization cache), and
+  and cache key function, return a new function that behaves like the original
+  function except it is cached, based on its arguments, with the cache and the
+  original function in its metadata."
+  [f cache-atom ckey-fn]
+  (with-meta
+   (fn [& args]
+     (let [ckey (or (ckey-fn args) [])
+           cs   (swap! cache-atom through* f args ckey)
+           val  (eastwood.copieddeps.dep4.clojure.core.cache/lookup cs ckey ::not-found)]
+       ;; If `lookup` returns `(delay ::not-found)`, it's likely that
+       ;; we ran into a timing issue where eviction and access
+       ;; are happening at about the same time. Therefore, we retry
+       ;; the `swap!` (potentially several times).
+       ;;
+       ;; core.memoize currently wraps all of its values in a `delay`.
+       (when val
+         (loop [n 0 v @val]
+           (if (= ::not-found v)
+             (when-let [v' (eastwood.copieddeps.dep4.clojure.core.cache/lookup
+                            (swap! cache-atom through* f args ckey)
+                            ckey ::not-found)]
+               (when (< n 10)
+                 (recur (inc n) @v')))
+             v)))))
+   {::cache cache-atom
+    ::original f}))
+
 ;; # Public memoization API
 
+(defn memoizer
+  "Build a pluggable memoized version of a function. Given a function and a
+  (pluggable memoized) cache, and an optional seed (hash map of arguments to
+  return values), return a cached version of that function.
+
+  If you want to build your own cached function, perhaps with combined caches
+  or customized caches, this is the preferred way to do so now."
+  ([f cache]
+   (let [cache   (atom (PluggableMemoization. f cache))
+         ckey-fn (args-fn f)]
+     (cached-function f cache ckey-fn)))
+  ([f cache seed]
+   (let [cache   (atom (eastwood.copieddeps.dep4.clojure.core.cache/seed (PluggableMemoization. f cache)
+                                                (derefable-seed seed)))
+         ckey-fn (args-fn f)]
+     (cached-function f cache ckey-fn))))
+
 (defn build-memoizer
-  "Builds a function that given a function, returns a pluggable memoized
-   version of it.  `build-memoizer` Takes a cache factory function, a function
-   to memoize, and the arguments to the factory.  At least one of those
-   functions should be the function to be memoized."
+  "Builds a function that, given a function, returns a pluggable memoized
+   version of it.  `build-memoizer` takes a cache factory function, and the
+   argunments to that factory function -- at least one of those arguments
+   should be the function to be memoized (it's usually the first argument).
+
+  `memoizer` above is a simpler version of `build-memoizer` that 'does the
+  right thing' with a cache and a seed hash map. `build-memoizer` remains
+  for backward compatibility but should be considered deprecated."
   ([cache-factory f & args]
-     (let [cache (atom (apply cache-factory f args))]
-       (with-meta
-        (fn [& args]
-          (let [cs  (swap! cache through* f args)
-                val (eastwood.copieddeps.dep4.clojure.core.cache/lookup cs args)]
-            ;; The assumption here is that if what we got
-            ;; from the cache was non-nil, then we can dereference
-            ;; it.  core.memo currently wraps all of its values in
-            ;; a `delay`.
-            (and val @val)))
-        {::cache cache
-         ::original f}))))
+   (let [cache   (atom (apply cache-factory f args))
+         ckey-fn (args-fn f)]
+     (cached-function f cache ckey-fn))))
 
 (defn memo
   "Used as a more flexible alternative to Clojure's core `memoization`
    function.  Memoized functions built using `memo` will respond to
    the core.memo manipulable memoization utilities.  As a nice bonus,
    you can use `memo` in place of `memoize` without any additional
-   changes.
+   changes, with the added guarantee that the memoized function will
+   only be called once for a given sequence of arguments (`memoize`
+   can call the function multiple times when concurrent calls are
+   made with the same sequence of arguments).
 
-   The default way to use this function is to simply apply a function
+   The default way to use this function is to simply supply a function
    that will be memoized.  Additionally, you may also supply a map
    of the form `'{[42] 42, [108] 108}` where keys are a vector
    mapping expected argument values to arity positions.  The map values
    are the return values of the memoized function.
+
+   If the supplied function has metadata containing an
+   `:eastwood.copieddeps.dep3.clojure.core.memoize/args-fn` key, the value is assumed to be a
+   function that should be applied to the arguments to produce a
+   subset or transformed sequence of arguments that are used for the
+   key in the cache (the full, original arguments will still be used
+   to call the function). This allows you to memoize functions where
+   one or more arguments are irrelevant for memoization, such as the
+   `clojure.java.jdbc` functions, whose first argument may include
+   a (mutable) JDBC `Connection` object:
+
+     (memo/memo (with-meta jdbc/execute! {::memo/args-fn rest}))
 
    You can access the memoization cache directly via the `:eastwood.copieddeps.dep3.clojure.core.memoize/cache` key
    on the memoized function's metadata.  However, it is advised to
@@ -187,10 +309,7 @@
    change over time."
   ([f] (memo f {}))
   ([f seed]
-     (build-memoizer
-       #(PluggableMemoization. %1 (cache/basic-cache-factory %2))
-       f
-       seed)))
+   (memoizer f (cache/basic-cache-factory {}) seed)))
 
 ;; ## Utilities
 
@@ -233,11 +352,7 @@
   ([f] (memo-fifo f 32 {}))
   ([f limit] (memo-fifo f limit {}))
   ([f limit base]
-     (build-memoizer
-       #(PluggableMemoization. %1 (cache/fifo-cache-factory %3 :threshold %2))
-       f
-       limit
-       base)))
+   (memoizer f (cache/fifo-cache-factory {} :threshold limit) base)))
 
 (defn fifo
   "Works the same as the basic memoization function (i.e. `memo`
@@ -268,13 +383,8 @@
   ([f base] (fifo f base :fifo/threshold 32))
   ([f tkey threshold] (fifo f {} tkey threshold))
   ([f base key threshold]
-    (check-args "fifo" f base key threshold)
-
-    (build-memoizer
-       #(PluggableMemoization. %1 (cache/fifo-cache-factory %3 :threshold %2))
-       f
-       threshold
-       base)))
+   (check-args "fifo" f base key threshold)
+   (memoizer f (cache/fifo-cache-factory {} :threshold threshold) base)))
 
 ;; ### LRU
 
@@ -283,11 +393,7 @@
   ([f] (memo-lru f 32))
   ([f limit] (memo-lru f limit {}))
   ([f limit base]
-     (build-memoizer
-       #(PluggableMemoization. %1 (cache/lru-cache-factory %3 :threshold %2))
-       f
-       limit
-       base)))
+   (memoizer f (cache/lru-cache-factory {} :threshold limit) base)))
 
 (defn lru
   "Works the same as the basic memoization function (i.e. `memo`
@@ -329,13 +435,8 @@
   ([f base] (lru f base :lru/threshold 32))
   ([f tkey threshold] (lru f {} tkey threshold))
   ([f base key threshold]
-    (check-args "lru" f base key threshold)
-
-    (build-memoizer
-       #(PluggableMemoization. %1 (cache/lru-cache-factory %3 :threshold %2))
-       f
-       threshold
-       base)))
+   (check-args "lru" f base key threshold)
+   (memoizer f (cache/lru-cache-factory {} :threshold threshold) base)))
 
 ;; ### TTL
 
@@ -344,11 +445,7 @@
   ([f] (memo-ttl f 3000 {}))
   ([f limit] (memo-ttl f limit {}))
   ([f limit base]
-     (build-memoizer
-       #(PluggableMemoization. %1 (cache/ttl-cache-factory %3 :ttl %2))
-       f
-       limit
-       {})))
+   (memoizer f (cache/ttl-cache-factory {} :ttl limit) base)))
 
 (defn ttl
   "Unlike many of the other core.memo memoization functions,
@@ -375,13 +472,8 @@
   ([f base] (ttl f base :ttl/threshold 32))
   ([f tkey threshold] (ttl f {} tkey threshold))
   ([f base key threshold]
-    (check-args "ttl" f base key threshold)
-
-    (build-memoizer
-       #(PluggableMemoization. %1 (cache/ttl-cache-factory %3 :ttl %2))
-       f
-       threshold
-       base)))
+   (check-args "ttl" f base key threshold)
+   (memoizer f (cache/ttl-cache-factory {} :ttl threshold) base)))
 
 ;; ### LU
 
@@ -390,11 +482,7 @@
   ([f] (memo-lu f 32))
   ([f limit] (memo-lu f limit {}))
   ([f limit base]
-     (build-memoizer
-       #(PluggableMemoization. %1 (cache/lu-cache-factory %3 :threshold %2))
-       f
-       limit
-       base)))
+   (memoizer f (cache/lu-cache-factory {} :threshold limit) base)))
 
 (defn lu
   "Similar to the implementation of memo-lru, except that this
@@ -417,10 +505,5 @@
   ([f base] (lu f base :lu/threshold 32))
   ([f tkey threshold] (lu f {} tkey threshold))
   ([f base key threshold]
-    (check-args "lu" f base key threshold)
-
-    (build-memoizer
-       #(PluggableMemoization. %1 (cache/lu-cache-factory %3 :threshold %2))
-       f
-       threshold
-       base)))
+   (check-args "lu" f base key threshold)
+   (memoizer f (cache/lu-cache-factory {} :threshold threshold) base)))

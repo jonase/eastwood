@@ -69,7 +69,12 @@
   (map io/as-file (get-urls loader)))
 
 (defn classpath
-  "Returns a sequence of File objects of the elements on the classpath."
+  "Returns a sequence of File objects of the elements on the
+  classpath. Defaults to searching for instances of
+  java.net.URLClassLoader in the classloader hierarchy above
+  clojure.lang.RT/baseLoader or the given classloader. If no
+  URLClassloader can be found, as on Java 9, falls back to the
+  'java.class'path' system property."
   ([classloader]
      (distinct
       (mapcat
@@ -77,7 +82,9 @@
        (take-while
         identity
         (iterate #(.getParent ^ClassLoader %) classloader)))))
-  ([] (classpath (clojure.lang.RT/baseLoader))))
+  ([]
+   (or (seq (classpath (clojure.lang.RT/baseLoader)))
+       (system-classpath))))
 
 (defn classpath-directories
   "Returns a sequence of File objects for the directories on classpath."

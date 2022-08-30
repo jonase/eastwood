@@ -2226,25 +2226,11 @@ License 1.0.
 
 Copyright (c) Rich Hickey, Michael Fogus and contributors, 2012. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound by the terms of this license.  You must not remove this notice, or any other, from this software.
 
-### core.contracts
-
-[core.contracts](https://github.com/clojure/core.contracts)
-
-Copyright (c) Rich Hickey, Michael Fogus and contributors, 2012. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound by the terms of this license.  You must not remove this notice, or any other, from this software.
-
 ### core.memoize
 
 [core.memoize](https://github.com/clojure/core.memoize)
 
 Copyright (c) Rich Hickey and Michael Fogus, 2012, 2013. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound by the terms of this license.  You must not remove this notice, or any other, from this software.
-
-### core.unify
-
-[core.unify](https://github.com/clojure/core.unify)
-
-Copyright © 2011 Rich Hickey
-
-Licensed under the EPL. (See the file epl.html.)
 
 ### data.priority-map
 
@@ -2253,15 +2239,6 @@ Copyright (C) 2013 Mark Engelberg
 Distributed under the Eclipse Public License, the same as Clojure.
 
 [data.priority-map](https://github.com/clojure/data.priority-map)
-
-### leinjacker
-
-[leinjacker](https://github.com/sattvik/leinjacker)
-
-Copyright © 2012 Sattvik Software & Technology Resources, Ltd. Co.
-All rights reserved.
-
-Distributed under the Eclipse Public License, the same as Clojure.
 
 ### tools.analyzer
 

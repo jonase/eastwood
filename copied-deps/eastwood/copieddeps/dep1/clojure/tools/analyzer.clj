@@ -102,7 +102,7 @@
    * :form the form represented by the AST node
    * :env  the environment map of the AST node
 
-   Additionaly if the AST node contains sub-nodes, it is guaranteed to have:
+   Additionally if the AST node contains sub-nodes, it is guaranteed to have:
    * :children a vector of the keys of the AST node mapping to the sub-nodes,
                ordered, when that makes sense
 

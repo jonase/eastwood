@@ -12,7 +12,7 @@
   (:require [eastwood.copieddeps.dep1.clojure.tools.analyzer.utils :refer [into! rseqv mapv']]))
 
 (defn cycling
-  "Combine the given passes in a single pass that will be applieed repeatedly
+  "Combine the given passes in a single pass that will be applied repeatedly
    to the AST until applying it another time will have no effect"
   [& fns*]
   (let [fns (cycle fns*)]
@@ -26,7 +26,7 @@
 (defn children*
   "Return a vector of vectors of the children node key and the children expression
    of the AST node, if it has any.
-   The returned vector returns the childrens in the order as they appear in the
+   The returned vector returns the children in the order as they appear in the
    :children field of the AST, and the children expressions may be either a node
    or a vector of nodes."
   [{:keys [children] :as ast}]
