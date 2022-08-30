@@ -34,7 +34,7 @@
 
 (defmethod validate-recur :recur [ast]
   (when (-> ast :env :no-recur)
-    (throw (ex-info "Cannot recur accross try"
+    (throw (ex-info "Cannot recur across try"
                     (merge {:form (:form ast)}
                            (-source-info (:form ast) (:env ast))))))
   ast)

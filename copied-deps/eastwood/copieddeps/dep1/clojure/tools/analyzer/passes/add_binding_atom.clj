@@ -24,6 +24,10 @@
          (swap! state assoc (:name ast) a)
          (assoc ast :atom a))
        :local
-       (assoc ast :atom (or (@state (:name ast))
-                            (atom {})))
+       (if-let [a (@state (:name ast))]
+         (assoc ast :atom a)
+         ;; handle injected locals
+         (let [a (get-in ast [:env :locals (:name ast) :atom] (atom {}))]
+           (swap! state assoc (:name ast) a)
+           (assoc ast :atom a)))
        ast)))

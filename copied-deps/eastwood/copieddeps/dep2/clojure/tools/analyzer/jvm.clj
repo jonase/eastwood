@@ -199,7 +199,7 @@
                macro?
                (let [res (apply v form (:locals env) (rest form))] ; (m &form &env & args)
                  (when-not (ns-safe-macro v)
-                   (update-ns-map!))
+                    (update-ns-map!))
                  (if (obj? res)
                    (vary-meta res merge (meta form))
                    res))
@@ -293,7 +293,7 @@
                         (not (vector? args))
                         (str "Parameter listing should be a vector, had: " (class args))
                         (not (first args))
-                        (str"Must supply at least one argument for 'this' in: " method))]
+                        (str "Must supply at least one argument for 'this' in: " method))]
     (throw (ex-info error-msg
                     (merge {:form     form
                             :in       (:this env)
@@ -325,9 +325,9 @@
     (memo-clear! members* [(str arg)]))
 
   (let [interfaces (mapv #(symbol (.getName ^Class %)) interfaces)]
-    (eval (list 'let []
+    (eval (list `let []
                 (list 'deftype* name class-name args :implements interfaces)
-                (list 'import class-name)))))
+                (list `import class-name)))))
 
 (defn parse-reify*
   [[_ interfaces & methods :as form] env]

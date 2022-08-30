@@ -41,7 +41,7 @@ Eastwood can be run from the command line as a
 Merge the following into your `project.clj` or `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[jonase/eastwood "1.2.4"]]
+:plugins [[jonase/eastwood "1.2.5"]]
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -60,7 +60,7 @@ If you're using `deps.edn`, you can set Eastwood options in an edn map, like thi
                  "eastwood.lint"
                  ;; Any Eastwood options can be passed here as edn:
                  {}]
-     :extra-deps {jonase/eastwood {:mvn/version "1.2.4"}}}}}
+     :extra-deps {jonase/eastwood {:mvn/version "1.2.5"}}}}}
 
 ```
 to your `deps.edn`, and you should then be able to run Eastwood as
@@ -421,7 +421,7 @@ If you use Leiningen, merge this into your project's `project.clj`
 file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "1.2.4" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "1.2.5" :exclusions [org.clojure/clojure]]]}}
 ```
 
 If you use a different build tool, you will need to add the dependency
@@ -564,7 +564,7 @@ can be used to modify this merging behavior.
 For example, if your user-wide `profiles.clj` file contains this:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "1.2.4"]]
+{:user {:plugins [[jonase/eastwood "1.2.5"]]
         :eastwood {:exclude-linters [:unlimited-use]
                    :debug [:time]}
         }}
@@ -2202,7 +2202,7 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein with-profile -user,-dev,+eastwood-plugin install
 
-Then add `[jonase/eastwood "1.2.4"]` to
+Then add `[jonase/eastwood "1.2.5"]` to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `$HOME/.lein/profiles.clj` file.
 
@@ -2226,25 +2226,11 @@ License 1.0.
 
 Copyright (c) Rich Hickey, Michael Fogus and contributors, 2012. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound by the terms of this license.  You must not remove this notice, or any other, from this software.
 
-### core.contracts
-
-[core.contracts](https://github.com/clojure/core.contracts)
-
-Copyright (c) Rich Hickey, Michael Fogus and contributors, 2012. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound by the terms of this license.  You must not remove this notice, or any other, from this software.
-
 ### core.memoize
 
 [core.memoize](https://github.com/clojure/core.memoize)
 
 Copyright (c) Rich Hickey and Michael Fogus, 2012, 2013. All rights reserved.  The use and distribution terms for this software are covered by the Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php) which can be found in the file epl-v10.html at the root of this distribution. By using this software in any fashion, you are agreeing to be bound by the terms of this license.  You must not remove this notice, or any other, from this software.
-
-### core.unify
-
-[core.unify](https://github.com/clojure/core.unify)
-
-Copyright © 2011 Rich Hickey
-
-Licensed under the EPL. (See the file epl.html.)
 
 ### data.priority-map
 
@@ -2253,15 +2239,6 @@ Copyright (C) 2013 Mark Engelberg
 Distributed under the Eclipse Public License, the same as Clojure.
 
 [data.priority-map](https://github.com/clojure/data.priority-map)
-
-### leinjacker
-
-[leinjacker](https://github.com/sattvik/leinjacker)
-
-Copyright © 2012 Sattvik Software & Technology Resources, Ltd. Co.
-All rights reserved.
-
-Distributed under the Eclipse Public License, the same as Clojure.
 
 ### tools.analyzer
 

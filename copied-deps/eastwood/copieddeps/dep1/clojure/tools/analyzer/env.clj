@@ -10,9 +10,9 @@
   (:refer-clojure :exclude [ensure]))
 
 (def ^:dynamic *env*
-  "Global env atom
+  "Global env atom containing a map.
    Required options:
-    * :namespaces an atom containing a map from namespace symbol to namespace map,
+    * :namespaces a map from namespace symbol to namespace map,
       the namespace map contains at least the following keys:
      ** :mappings a map of mappings of the namespace, symbol to var/class
      ** :aliases a map of the aliases of the namespace, symbol to symbol

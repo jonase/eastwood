@@ -1,12 +1,20 @@
+;;   Copyright (c) Mark Engelberg, Rich Hickey and contributors. All rights reserved.
+;;   The use and distribution terms for this software are covered by the
+;;   Eclipse Public License 1.0 (http://opensource.org/licenses/eclipse-1.0.php)
+;;   which can be found in the file epl-v10.html at the root of this distribution.
+;;   By using this software in any fashion, you are agreeing to be bound by
+;;   the terms of this license.
+;;   You must not remove this notice, or any other, from this software.
+
 ;; A priority map is a map from items to priorities,
 ;; offering queue-like peek/pop as well as the map-like ability to
 ;; easily reassign priorities and other conveniences.
 ;; by Mark Engelberg (mark.engelberg@gmail.com)
-;; October 31, 2013
+;; Last update - July 9, 2018
 
 (ns 
-  ^{:author "Mark Engelberg",
-     :doc "A priority map is very similar to a sorted map, but whereas a sorted map produces a
+    ^{:author "Mark Engelberg",
+      :doc "A priority map is very similar to a sorted map, but whereas a sorted map produces a
 sequence of the entries sorted by key, a priority map produces the entries sorted by value.
 In addition to supporting all the functions a sorted map supports, a priority map
 can also be thought of as a queue of [item priority] pairs.  To support usage as
@@ -89,6 +97,22 @@ user=> (first p)
 user=> (rest p)
 ([:a 2] [:c 3] [:f 3] [:e 4] [:d 5])
 
+Priority maps also support subseq and rsubseq, however, *you must use the subseq and rsubseq
+defined in the eastwood.copieddeps.dep5.clojure.data.priority-map namespace*, which patches longstanding JIRA issue
+[CLJ-428](https://clojure.atlassian.net/browse/CLJ-428).  These patched versions
+of subseq and rsubseq will work on Clojure's other sorted collections as well, so you can
+use them as a drop-in replacement for the subseq and rsubseq found in core.
+user=> (subseq p < 3)
+([:b 1] [:a 2])
+user=> (subseq p >= 3)
+([:c 3] [:f 3] [:e 4] [:d 5])
+user=> (subseq p >= 2 < 4)
+([:a 2] [:c 3] [:f 3])
+user=> (rsubseq p < 4)
+([:c 3] [:f 3] [:a 2] [:b 1])
+user=> (rsubseq p >= 4)
+([:d 5] [:e 4])
+
 Priority maps support metadata:
 user=> (meta (with-meta p {:extra :info}))
 {:extra :info}
@@ -113,14 +137,15 @@ than just the priority.  For example, let's say you want a map like:
 and you want to sort the map by the numeric priority found in the pair.
 
 A common mistake is to try to solve this with a custom comparator:
-(priority-map 
+(priority-map-by 
   (fn [[priority1 _] [priority2 _]] (< priority1 priority2))
   :a [2 :apple], :b [1 :banana], :c [3 :carrot])
 
-This will not work!  In Clojure, like Java, all comparators must be total orders,
+This will not work!  Although it may appear to work with these particular values, it is not safe.
+In Clojure, like Java, all comparators must be *total orders*,
 meaning that you can't have a tie unless the objects you are comparing are
-in fact equal.  The above comparator breaks that rule because
-[2 :apple] and [2 :apricot] tie, but are not equal.
+in fact equal.  The above comparator breaks that rule because objects such as
+`[2 :apple]` and `[2 :apricot]` would tie, but are not equal.
 
 The correct way to construct such a priority map is by specifying a keyfn, which is used
 to extract the true priority from the priority map's vals.  (Note: It might seem a little odd
@@ -179,33 +204,70 @@ All in all, I hope you will find priority maps to be an easy-to-use and useful a
 to Clojure's assortment of built-in maps (hash-map and sorted-map).
 "}
     eastwood.copieddeps.dep5.clojure.data.priority-map
+  (:refer-clojure :exclude [subseq rsubseq])
   (:import clojure.lang.MapEntry java.util.Map clojure.lang.PersistentTreeMap))
-
-; Note that the plan is to eventually support subseq, but this will require
-; some changes to core:
-;; user=> (subseq p < 3)
-;; ([:b 1] [:a 2])
-;; user=> (subseq p >= 3)
-;; ([:c 3] [:f 3] [:e 4] [:d 5])
 
 (declare pm-empty)
 
 (defmacro apply-keyfn [x]
   `(if ~'keyfn (~'keyfn ~x) ~x)) 
 
-; A Priority Map is comprised of a sorted map that maps priorities to hash sets of items
-; with that priority (priority->set-of-items),
-; as well as a hash map that maps items to priorities (item->priority)
-; Priority maps may also have metadata
-; Priority maps can also have a keyfn which is applied to the "priorities" found as values in 
-; the item->priority map to get the actual sortable priority keys used in priority->set-of-items.
+(defmacro ^:private compile-if [test then else]
+  (if (eval test)
+    then
+    else))
+
+;; We create a patched version of subseq and rsubseq from core, that works on ordinary sorted collections, as well as priority maps
+;; See https://dev.clojure.org/jira/browse/CLJ-428
+
+(defn mk-bound-fn
+  {:private true}
+  [^clojure.lang.Sorted sc test key]
+  (fn [e] (test (.. sc comparator (compare (. sc entryKey e) key)) 0)))
+
+(defn subseq
+  "sc must be a sorted collection, test(s) one of <, <=, > or
+  >=. Returns a seq of those entries with keys ek for
+  which (test (.. sc comparator (compare ek key)) 0) is true"
+  ([^clojure.lang.Sorted sc test key]
+   (let [include (mk-bound-fn sc test key)]
+     (if (#{> >=} test)
+       (when-let [[e :as s] (. sc seqFrom key true)]
+         (seq (drop-while #(not (include %)) s)))
+       (seq (take-while include (. sc seq true))))))
+  ([^clojure.lang.Sorted sc start-test start-key end-test end-key]
+   (when-let [[e :as s] (. sc seqFrom start-key true)]
+     (seq (take-while (mk-bound-fn sc end-test end-key)
+                      (drop-while (complement (mk-bound-fn sc start-test start-key)) s))))))
+
+(defn rsubseq
+  "sc must be a sorted collection, test(s) one of <, <=, > or
+  >=. Returns a reverse seq of those entries with keys ek for
+  which (test (.. sc comparator (compare ek key)) 0) is true"
+  ([^clojure.lang.Sorted sc test key]
+   (let [include (mk-bound-fn sc test key)]
+     (if (#{< <=} test)
+       (when-let [[e :as s] (. sc seqFrom key false)]
+         (seq (drop-while #(not (include %)) s)))
+       (seq (take-while include (. sc seq false))))))
+  ([^clojure.lang.Sorted sc start-test start-key end-test end-key]
+   (when-let [[e :as s] (. sc seqFrom end-key false)]
+     (seq (take-while (mk-bound-fn sc start-test start-key)
+                      (drop-while (complement (mk-bound-fn sc end-test end-key)) s))))))
+
+;; A Priority Map is comprised of a sorted map that maps priorities to hash sets of items
+;; with that priority (priority->set-of-items),
+;; as well as a hash map that maps items to priorities (item->priority)
+;; Priority maps may also have metadata
+;; Priority maps can also have a keyfn which is applied to the "priorities" found as values in 
+;; the item->priority map to get the actual sortable priority keys used in priority->set-of-items.
 
 (deftype PersistentPriorityMap [priority->set-of-items item->priority _meta keyfn]
   Object
   (toString [this] (str (.seq this)))
 
   clojure.lang.ILookup
-  ; valAt gives (get pm key) and (get pm key not-found) behavior
+  ;; valAt gives (get pm key) and (get pm key not-found) behavior
   (valAt [this item] (get item->priority item))
   (valAt [this item not-found] (get item->priority item not-found))
 
@@ -215,56 +277,56 @@ to Clojure's assortment of built-in maps (hash-map and sorted-map).
   (assoc [this item priority]
     (let [current-priority (get item->priority item nil)]
       (if current-priority
-        ;Case 1 - item is already in priority map, so this is a reassignment
+        ;;Case 1 - item is already in priority map, so this is a reassignment
         (if (= current-priority priority)
-          ;Subcase 1 - no change in priority, do nothing
+          ;;Subcase 1 - no change in priority, do nothing
           this
           (let [priority-key (apply-keyfn priority)
                 current-priority-key (apply-keyfn current-priority)
                 item-set (get priority->set-of-items current-priority-key)]
             (if (= (count item-set) 1)
-              ;Subcase 2 - it was the only item of this priority
-              ;so remove old priority entirely
-              ;and conj item onto new priority's set
+              ;;Subcase 2 - it was the only item of this priority
+              ;;so remove old priority entirely
+              ;;and conj item onto new priority's set
               (PersistentPriorityMap.
-                (assoc (dissoc priority->set-of-items current-priority-key)
-                  priority-key (conj (get priority->set-of-items priority-key #{}) item))
-                (assoc item->priority item priority)
-                (meta this)
-                keyfn)
-              ;Subcase 3 - there were many items associated with the item's original priority,
-              ;so remove it from the old set and conj it onto the new one.
+               (assoc (dissoc priority->set-of-items current-priority-key)
+                      priority-key (conj (get priority->set-of-items priority-key #{}) item))
+               (assoc item->priority item priority)
+               (meta this)
+               keyfn)
+              ;;Subcase 3 - there were many items associated with the item's original priority,
+              ;;so remove it from the old set and conj it onto the new one.
               (PersistentPriorityMap.
-                (assoc priority->set-of-items
-                  current-priority-key (disj (get priority->set-of-items current-priority-key) item)
-                  priority-key (conj (get priority->set-of-items priority-key #{}) item))
-                (assoc item->priority item priority)
-                (meta this)
-                keyfn))))
-        ; Case 2: Item is new to the priority map, so just add it.
+               (assoc priority->set-of-items
+                      current-priority-key (disj (get priority->set-of-items current-priority-key) item)
+                      priority-key (conj (get priority->set-of-items priority-key #{}) item))
+               (assoc item->priority item priority)
+               (meta this)
+               keyfn))))
+        ;; Case 2: Item is new to the priority map, so just add it.
         (let [priority-key (apply-keyfn priority)]
           (PersistentPriorityMap.
-            (assoc priority->set-of-items
-                   priority-key (conj (get priority->set-of-items priority-key #{}) item))
-            (assoc item->priority item priority)
-            (meta this)
-            keyfn)))))
+           (assoc priority->set-of-items
+                  priority-key (conj (get priority->set-of-items priority-key #{}) item))
+           (assoc item->priority item priority)
+           (meta this)
+           keyfn)))))
 
   (empty [this] (PersistentPriorityMap. (empty priority->set-of-items) {} _meta keyfn))
 
-  ; cons defines conj behavior
+  ;; cons defines conj behavior
   (cons [this e] 
     (if (map? e)
       (into this e)
       (let [[item priority] e] (.assoc this item priority))))
 
-  ; Like sorted maps, priority maps are equal to other maps provided
-  ; their key-value pairs are the same.
+  ;; Like sorted maps, priority maps are equal to other maps provided
+  ;; their key-value pairs are the same.
   (equiv [this o] (= item->priority o))
   (hashCode [this] (.hashCode item->priority))
   (equals [this o] (or (identical? this o) (.equals item->priority o)))
 
-  ;containsKey implements (contains? pm k) behavior
+  ;;containsKey implements (contains? pm k) behavior
   (containsKey [this item] (contains? item->priority item))
 
   (entryAt [this k]
@@ -279,7 +341,7 @@ to Clojure's assortment of built-in maps (hash-map and sorted-map).
       (seq (for [[priority item-set] priority->set-of-items, item item-set]
              (MapEntry. item priority)))))
 
-  ;without implements (dissoc pm k) behavior
+  ;;without implements (dissoc pm k) behavior
   (without
     [this item]
     (let [priority (item->priority item ::not-found)]
@@ -296,10 +358,16 @@ to Clojure's assortment of built-in maps (hash-map and sorted-map).
                                     keyfn)
             ;;Otherwise, just remove the item from the priority's set.
             (PersistentPriorityMap.
-              (assoc priority->set-of-items priority-key (disj item-set item)),
-              (dissoc item->priority item)
-              (meta this)
-              keyfn))))))
+             (assoc priority->set-of-items priority-key (disj item-set item)),
+             (dissoc item->priority item)
+             (meta this)
+             keyfn))))))
+  
+  clojure.lang.IHashEq
+  (hasheq [this]
+    (compile-if (resolve 'clojure.core/hash-unordered-coll)
+                (hash-unordered-coll this)
+                (.hashCode this)))
   
   java.io.Serializable  ;Serialization comes for free with the other things implemented
   clojure.lang.MapEquivalence
@@ -322,6 +390,16 @@ to Clojure's assortment of built-in maps (hash-map and sorted-map).
   Iterable
   (iterator [this] (clojure.lang.SeqIterator. (seq this)))
 
+  clojure.core.protocols/IKVReduce
+  (kv-reduce [this f init]
+    (if keyfn            
+      (reduce-kv (fn [a k v]
+                   (reduce (fn [a v] (f a v (item->priority v))) a v))
+                 init priority->set-of-items)
+      (reduce-kv (fn [a k v]
+                   (reduce (fn [a v] (f a v k)) a v))
+                 init priority->set-of-items)))
+
   clojure.lang.IPersistentStack
   (peek [this]
     (when-not (.isEmpty this)
@@ -333,31 +411,31 @@ to Clojure's assortment of built-in maps (hash-map and sorted-map).
 
   (pop [this]
     (if (.isEmpty this) (throw (IllegalStateException. "Can't pop empty priority map"))
-      (let [f (first priority->set-of-items),
-            item-set (val f)
-            item (first item-set),
-            priority-key (key f)]
-        (if (= (count item-set) 1)
-          ;If the first item is the only item with its priority, remove that priority's set completely
-          (PersistentPriorityMap.
-            (dissoc priority->set-of-items priority-key)
-            (dissoc item->priority item)
-            (meta this)
-            keyfn)
-          ;Otherwise, just remove the item from the priority's set.
-          (PersistentPriorityMap.
-            (assoc priority->set-of-items priority-key (disj item-set item)),
-            (dissoc item->priority item)
-            (meta this)
-            keyfn)))))
+        (let [f (first priority->set-of-items),
+              item-set (val f)
+              item (first item-set),
+              priority-key (key f)]
+          (if (= (count item-set) 1)
+            ;;If the first item is the only item with its priority, remove that priority's set completely
+            (PersistentPriorityMap.
+             (dissoc priority->set-of-items priority-key)
+             (dissoc item->priority item)
+             (meta this)
+             keyfn)
+            ;;Otherwise, just remove the item from the priority's set.
+            (PersistentPriorityMap.
+             (assoc priority->set-of-items priority-key (disj item-set item)),
+             (dissoc item->priority item)
+             (meta this)
+             keyfn)))))
 
   clojure.lang.IFn
-  ;makes priority map usable as a function
+  ;;makes priority map usable as a function
   (invoke [this k] (.valAt this k))
   (invoke [this k not-found] (.valAt this k not-found))
 
   clojure.lang.IObj
-  ;adds metadata support
+  ;;adds metadata support
   (meta [this] _meta)
   (withMeta [this m] (PersistentPriorityMap. priority->set-of-items item->priority m keyfn))
 
@@ -367,57 +445,66 @@ to Clojure's assortment of built-in maps (hash-map and sorted-map).
       (seq (for [[priority item-set] (rseq priority->set-of-items), item item-set]
              (MapEntry. item (item->priority item))))
       (seq (for [[priority item-set] (rseq priority->set-of-items), item item-set]
-             (MapEntry. item priority))))))
+             (MapEntry. item priority)))))
 
-;; clojure.lang.Sorted
-;; ; These methods provide support for subseq
-;; (comparator [this] (.comparator ^PersistentTreeMap priority->set-of-items))
-;; (entryKey [this entry] (val entry))
-;; (seqFrom [this k ascending]
-;;   (let [sets (if ascending (subseq priority->set-of-items >= k) (rsubseq priority->set-of-items <= k))]
-;;     (seq (for [[priority item-set] sets, item item-set]
-;;            (MapEntry. item priority)))))
-;; (seq [this ascending]
-;;   (if ascending (seq this) (rseq this))))
+  clojure.lang.Sorted
+  ;; These methods provide support for subseq and rsubseq
+  (comparator [this] (.comparator ^PersistentTreeMap priority->set-of-items))
+  (entryKey [this entry] (if keyfn (keyfn (val entry)) (val entry)))
+  (seqFrom [this k ascending]
+    (let [sets (if ascending (subseq priority->set-of-items >= k) (rsubseq priority->set-of-items <= k))]
+      (if keyfn
+        (seq (for [[priority item-set] sets, item item-set]
+               (MapEntry. item (item->priority item))))
+        (seq (for [[priority item-set] sets, item item-set]
+               (MapEntry. item priority))))))
+  (seq [this ascending]
+    (if ascending (seq this) (rseq this))))
 
 (def ^:private pm-empty (PersistentPriorityMap. (sorted-map) {} {} nil))
 (defn- pm-empty-by [comparator] (PersistentPriorityMap. (sorted-map-by comparator) {} {} nil))
 (defn- pm-empty-keyfn
   ([keyfn] (PersistentPriorityMap. (sorted-map) {} {} keyfn))
   ([keyfn comparator] (PersistentPriorityMap. (sorted-map-by comparator) {} {} keyfn)))
-    
 
-; The main way to build priority maps
+
+;; The main way to build priority maps
 (defn priority-map
   "Usage: (priority-map key val key val ...)
-Returns a new priority map with optional supplied mappings.
-(priority-map) returns an empty priority map."
+  Returns a new priority map with optional supplied mappings.
+  (priority-map) returns an empty priority map."
   [& keyvals]
   {:pre [(even? (count keyvals))]}
   (reduce conj pm-empty (partition 2 keyvals)))
 
 (defn priority-map-by
   "Usage: (priority-map comparator key val key val ...)
-Returns a new priority map with custom comparator and optional supplied mappings.
-(priority-map-by comparator) yields an empty priority map with custom comparator."
+  Returns a new priority map with custom comparator and optional supplied mappings.
+  (priority-map-by comparator) yields an empty priority map with custom comparator."
   [comparator & keyvals]
   {:pre [(even? (count keyvals))]}
   (reduce conj (pm-empty-by comparator) (partition 2 keyvals)))
 
 (defn priority-map-keyfn
   "Usage: (priority-map-keyfn keyfn key val key val ...)
-Returns a new priority map with custom keyfn and optional supplied mappings.
-The priority is determined by comparing (keyfn val). 
-(priority-map-keyfn keyfn) yields an empty priority map with custom keyfn."
+  Returns a new priority map with custom keyfn and optional supplied mappings.
+  The priority is determined by comparing (keyfn val). 
+  (priority-map-keyfn keyfn) yields an empty priority map with custom keyfn."
   [keyfn & keyvals]
   {:pre [(even? (count keyvals))]}
   (reduce conj (pm-empty-keyfn keyfn) (partition 2 keyvals)))
 
 (defn priority-map-keyfn-by
   "Usage: (priority-map-keyfn-by keyfn comparator key val key val ...)
-Returns a new priority map with custom keyfn, custom comparator, and optional supplied mappings.
-The priority is determined by comparing (keyfn val).
-(priority-map-keyfn-by keyfn comparator) yields an empty priority map with custom keyfn and comparator."
+  Returns a new priority map with custom keyfn, custom comparator, and optional supplied mappings.
+  The priority is determined by comparing (keyfn val).
+  (priority-map-keyfn-by keyfn comparator) yields an empty priority map with custom keyfn and comparator."
   [keyfn comparator & keyvals]
   {:pre [(even? (count keyvals))]}
   (reduce conj (pm-empty-keyfn keyfn comparator) (partition 2 keyvals)))
+
+(defn priority->set-of-items
+  "Takes a priority map p, and returns a sorted map from each priority
+  to the set of items with that priority in p"
+  [^PersistentPriorityMap p]
+  (.priority->set-of-items p))

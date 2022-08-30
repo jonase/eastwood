@@ -1,3 +1,10 @@
+## Changes from 1.2.5 to 1.2.5
+
+#### Bugfixes
+
+* Upgrade `tools.namespace`.
+  * Closes https://github.com/jonase/eastwood/issues/439
+
 ## Changes from 1.2.3 to 1.2.4
 
 #### Bugfixes

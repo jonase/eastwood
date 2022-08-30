@@ -33,9 +33,10 @@
                                     :username :env/clojars_username
                                     :password :env/clojars_password
                                     :sign-releases true}]]
-  :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.5"]
-                                  [jafingerhut/dolly "0.1.0"]]
+  :profiles {:dev {:dependencies [[org.clojure/tools.macro "0.1.5"]]
                    :jvm-opts ["-Deastwood.internal.dev-profile-active=true"]}
+             :dolly {:source-paths ["copy-deps-scripts/dolly"]
+                     :dependencies [[jafingerhut/dolly "0.1.0"]]}
              :eastwood-plugin {:source-paths [~plugin-source-path]
                                :jvm-opts ["-Deastwood.internal.plugin-profile-active=true"]}
              :warn-on-reflection {:global-vars {*warn-on-reflection* true}}
