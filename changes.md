@@ -1,4 +1,11 @@
-## Changes from 1.2.5 to 1.2.5
+## Changes from 1.2.5 to 1.3.0
+
+#### New
+
+* Lint against incorrect usage of transients.
+  * Closes https://github.com/jonase/eastwood/issues/441
+
+## Changes from 1.2.4 to 1.2.5
 
 #### Bugfixes
 

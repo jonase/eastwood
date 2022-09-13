@@ -139,7 +139,8 @@
  clojure.core/assert {:var-kind nil, :macro true},
  clojure.core/assert-same-protocol {:var-kind nil, :macro nil, :side-effect true},
  clojure.core/assoc {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/assoc! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
+ ;; `:warn-if-ret-val-unused true` because "transients are not designed to be bashed in-place" (https://clojure.org/reference/transients):
+ clojure.core/assoc! {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn false, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/assoc-in {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/associative? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/atom {:var-kind nil, :macro nil},
@@ -210,7 +211,8 @@
  clojure.core/cond->> {:var-kind nil, :macro true},
  clojure.core/condp {:var-kind nil, :macro true},
  clojure.core/conj {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/conj! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
+ ;; `:warn-if-ret-val-unused true` because "transients are not designed to be bashed in-place" (https://clojure.org/reference/transients):
+ clojure.core/conj! {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn false, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/cons {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/constantly {:var-kind nil, :macro nil, :pure-if-fn-args-pure true},
  clojure.core/construct-proxy {:var-kind nil, :macro nil},
@@ -248,7 +250,8 @@
  clojure.core/disj {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/disj! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/dissoc {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/dissoc! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
+ ;; `:warn-if-ret-val-unused true` because "transients are not designed to be bashed in-place" (https://clojure.org/reference/transients):
+ clojure.core/dissoc! {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn false, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/distinct {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
  clojure.core/distinct? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/doall {:var-kind nil, :macro nil, :predicate false, :side-effect true :pure-fn false :warn-if-ret-val-unused false :lazy false, :pure-if-fn-args-pure false :io-fn false :evals-exprs false}, ;; TBD: Consider making a special warning just for this one, suggesting to use dorun instead if the return value is not needed, potentially saving memory
@@ -447,7 +450,8 @@
  clojure.core/persistent! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/pmap {:var-kind nil, :macro nil, :lazy true, :pure-fn-if-fn-args-pure true},
  clojure.core/pop {:var-kind nil, :macro nil, :lazy false, :pure-fn true},
- clojure.core/pop! {:var-kind nil, :macro nil, :predicate false, :side-effect true, :pure-fn false, :warn-if-ret-val-unused false, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
+ ;; `:warn-if-ret-val-unused true` because "transients are not designed to be bashed in-place" (https://clojure.org/reference/transients):
+ clojure.core/pop! {:var-kind nil, :macro nil, :predicate false, :side-effect false, :pure-fn false, :warn-if-ret-val-unused true, :lazy false, :pure-if-fn-args-pure false, :io-fn false, :evals-exprs false},
  clojure.core/pop-thread-bindings {:var-kind nil, :macro nil},
  clojure.core/pos? {:var-kind nil, :macro nil, :lazy false, :pure-fn true, :predicate true},
  clojure.core/pr {:var-kind nil, :macro nil, :io-fn true, :side-effect true},
