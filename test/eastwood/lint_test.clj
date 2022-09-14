@@ -462,7 +462,18 @@ See https://github.com/jonase/eastwood/issues/402"
       #{'testcases.unused-ret-vals.red1}   {:some-warnings true}
       #{'testcases.unused-ret-vals.red2}   {:some-warnings true}
       #{'testcases.unused-ret-vals.red3}   {:some-warnings true}
-      #{'testcases.unused-ret-vals.red4}   {:some-warnings true})))
+      #{'testcases.unused-ret-vals.red4}   {:some-warnings true}))
+
+  (testing "Transients"
+    (let [^String s (with-out-str
+                      (-> sut/default-opts
+                          (assoc :namespaces #{'testcases.unused-ret-vals.red5})
+                          (sut/eastwood)))]
+      (is (-> s (.contains
+                 "cases/testcases/unused_ret_vals/red5.clj:5:3: unused-ret-vals {:kind :invoke}: Should use return value of function call, but it is discarded: (conj! x 2).
+cases/testcases/unused_ret_vals/red5.clj:9:3: unused-ret-vals {:kind :invoke}: Should use return value of function call, but it is discarded: (assoc! x :a 2).
+cases/testcases/unused_ret_vals/red5.clj:13:3: unused-ret-vals {:kind :invoke}: Should use return value of function call, but it is discarded: (pop! x).
+cases/testcases/unused_ret_vals/red5.clj:17:3: unused-ret-vals {:kind :invoke}: Should use return value of function call, but it is discarded: (dissoc! x :a)."))))))
 
 (deftest reflection
   (are [desc input expected] (testing input
