@@ -4,9 +4,6 @@ orbs:
   shellcheck: circleci/shellcheck@2.2.3
 
 executor_defaults: &executor_defaults
-  # xlarge: use as many CPU cores as possible, to exercise parallelism as realistically as possible
-  # xlarge is only applied in paid accounts and gracefully degrades to a compatible resource_class in regular accounts
-  resource_class: xlarge
   working_directory: ~/repo
 
 env_defaults: &env_defaults
