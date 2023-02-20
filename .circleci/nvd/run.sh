@@ -5,7 +5,7 @@ NVD_DIR="$PWD/.circleci/nvd"
 # calculate a production classpath within the main project:
 CLASSPATH="$(LEIN_SILENT=true lein with-profile -user,-dev classpath)"
 
-DEPENDENCY_CHECK_COMMAND="clojure -M:nvd $NVD_DIR/nvd-config.json $CLASSPATH"
+DEPENDENCY_CHECK_COMMAND="clojure -M:nvd $NVD_DIR/nvd-config.edn $CLASSPATH"
 
 # cd into a different project defining its own deps.edn:
 cd "$NVD_DIR" || exit 1

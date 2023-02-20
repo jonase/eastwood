@@ -201,7 +201,7 @@ jobs:
 
       - save_cache:
           paths:
-            - ~/.m2/repository/org/owasp/dependency-check-utils/6.5.2/data
+            - ~/.m2/repository/org/owasp/dependency-check-utils/8.2.1/data
           key: v2-nvd-data-{{ checksum "project.clj" }}-{{checksum "today"}}
 
   crucible:
