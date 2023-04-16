@@ -928,6 +928,7 @@ of these kind."
                  ;; `Linter name | debug | suppress` table in README.
                  (let [[path op obj] (case linter
                                        (:constant-test
+                                        :def-in-def
                                         :redefd-vars
                                         :suspicious-test
                                         :unused-fn-args
@@ -1066,6 +1067,7 @@ of these kind."
                                                    opt)))
 
       (:constant-test
+       :def-in-def
        :suspicious-test
        :unused-fn-args
        :unused-meta-on-macro

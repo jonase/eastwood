@@ -1,3 +1,8 @@
+## Changes from 1.3.0 to 1.4.0
+
+* Make the `:def-in-def` linter omittable via the `disable-warning` mechanism.
+  * Closes https://github.com/jonase/eastwood/issues/445
+
 ## Changes from 1.2.5 to 1.3.0
 
 #### New

@@ -41,7 +41,7 @@ Eastwood can be run from the command line as a
 Merge the following into your `project.clj` or `~/.lein/profiles.clj`:
 
 ```clojure
-:plugins [[jonase/eastwood "1.3.0"]]
+:plugins [[jonase/eastwood "1.4.0"]]
 ```
 
 To run Eastwood with the default set of lint warnings on all of the
@@ -60,7 +60,7 @@ If you're using `deps.edn`, you can set Eastwood options in an edn map, like thi
                  "eastwood.lint"
                  ;; Any Eastwood options can be passed here as edn:
                  {}]
-     :extra-deps {jonase/eastwood {:mvn/version "1.3.0"}}}}}
+     :extra-deps {jonase/eastwood {:mvn/version "1.4.0"}}}}}
 
 ```
 to your `deps.edn`, and you should then be able to run Eastwood as
@@ -172,7 +172,7 @@ linter can be selectively disabled via Eastwood config files.  See
 | no name*                 |  |  |
 | `:bad-arglists`          |  |  |
 | `:constant-test`         | yes | yes |
-| `:def-in-def`            |  |  |
+| `:def-in-def`            |  | yes |
 | `:deprecations`          |  | yes |
 | `:keyword-typos`         |  |  |
 | `:local-shadows-var`     |  |  |
@@ -421,7 +421,7 @@ If you use Leiningen, merge this into your project's `project.clj`
 file first:
 
 ```clojure
-:profiles {:dev {:dependencies [[jonase/eastwood "1.3.0" :exclusions [org.clojure/clojure]]]}}
+:profiles {:dev {:dependencies [[jonase/eastwood "1.4.0" :exclusions [org.clojure/clojure]]]}}
 ```
 
 If you use a different build tool, you will need to add the dependency
@@ -564,7 +564,7 @@ can be used to modify this merging behavior.
 For example, if your user-wide `profiles.clj` file contains this:
 
 ```clojure
-{:user {:plugins [[jonase/eastwood "1.3.0"]]
+{:user {:plugins [[jonase/eastwood "1.4.0"]]
         :eastwood {:exclude-linters [:unlimited-use]
                    :debug [:time]}
         }}
@@ -2202,14 +2202,14 @@ your local Maven repository:
     $ cd path/to/eastwood
     $ lein with-profile -user,-dev,+eastwood-plugin install
 
-Then add `[jonase/eastwood "1.3.0"]` to
+Then add `[jonase/eastwood "1.4.0"]` to
 your `:plugins` vector in your `:user` profile, perhaps in your
 `$HOME/.lein/profiles.clj` file.
 
 
 ## License
 
-Copyright (C) 2012-2022 Jonas Enlund, Nicola Mometto, and Andy Fingerhut
+Copyright (C) 2012-2023 Jonas Enlund, Nicola Mometto, and Andy Fingerhut
 
 Distributed under the Eclipse Public License, the same as Clojure.
 

@@ -348,17 +348,20 @@
 (defn- def-in-def-vars [exprs]
   (:nested-defs (def-walker exprs)))
 
-(defn def-in-def [{:keys [asts]} _opt]
+(defn def-in-def [{:keys [asts]} opt]
   (let [nested-vars (def-in-def-vars asts)]
     (for [nested-var-ast nested-vars
-          :let [loc (-> nested-var-ast var-of-ast meta)]]
-      {:loc loc
-       :linter :def-in-def
-       :msg (format "There is a def of %s nested inside def %s."
-                    (var-of-ast nested-var-ast)
-                    (-> nested-var-ast
-                        :eastwood/enclosing-def-ast
-                        var-of-ast))})))
+          :let [loc (-> nested-var-ast var-of-ast meta)
+                w {:loc loc
+                   :linter :def-in-def
+                   :def-in-def {:ast nested-var-ast}
+                   :msg (format "There is a def of %s nested inside def %s."
+                                (var-of-ast nested-var-ast)
+                                (-> nested-var-ast
+                                    :eastwood/enclosing-def-ast
+                                    var-of-ast))}]
+          :when (util/allow-warning w opt)]
+      w)))
 
 ;; Helpers for wrong arity and bad :arglists
 

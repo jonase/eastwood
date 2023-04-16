@@ -651,3 +651,20 @@ cases/testcases/unused_ret_vals/red5.clj:17:3: unused-ret-vals {:kind :invoke}: 
       {:source-paths ["src" "src/eastwood"]} {:some-warnings true, :some-errors true}
       {:source-paths ["src" "."]}            {:some-warnings true, :some-errors true}
       {:source-paths ["src" "test"]}         {:some-warnings false, :some-errors false})))
+
+(deftest def-in-def-test
+  (are [input builtin-config-files expected] (testing [input builtin-config-files]
+                                               (is (= (assoc expected :some-errors false)
+                                                      (-> sut/default-opts
+                                                          (assoc :namespaces input)
+                                                          (assoc :linters [:def-in-def])
+                                                          (assoc :builtin-config-files builtin-config-files)
+                                                          (sut/eastwood))))
+                                               true)
+    #_input                       #_builtin-config-files               #_expected
+    #{'testcases.def-in-def.red1} []                                   {:some-warnings true}
+    #{'testcases.def-in-def.red2} []                                   {:some-warnings true}
+
+    #{'testcases.def-in-def.red3} []                                   {:some-warnings true}
+    #{'testcases.def-in-def.red3} ["disable_def_in_def.clj"]           {:some-warnings false}
+    #{'testcases.def-in-def.red3} ["disable_def_in_def_unrelated.clj"] {:some-warnings true}))
