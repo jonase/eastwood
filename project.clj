@@ -64,8 +64,8 @@
                                                   [metosin/spec-tools "0.10.5"]
                                                   [org.clojure/core.async "1.6.673"]
                                                   [org.clojure/java.jdbc "0.7.12"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2023.04.14"]]}
-             :antq {:plugins [[com.github.liquidz/antq "2.3.1043"]]
+             :clj-kondo {:dependencies [[clj-kondo "2023.07.13"]]}
+             :antq {:plugins [[com.github.liquidz/antq "2.5.1102"]]
                     :antq {:exclude ["nrepl/nrepl" "org.clojure/clojure"]}}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
