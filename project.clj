@@ -62,7 +62,7 @@
                                                   [com.taoensso/tufte "2.2.0"]
                                                   [manifold "0.1.9-alpha4"]
                                                   [metosin/spec-tools "0.10.5"]
-                                                  [org.clojure/core.async "1.6.673"]
+                                                  [org.clojure/core.async "1.6.681"]
                                                   [org.clojure/java.jdbc "0.7.12"]]}
              :clj-kondo {:dependencies [[clj-kondo "2023.10.20"]]}
              :antq {:plugins [[com.github.liquidz/antq "2.7.1133"]]
@@ -87,7 +87,7 @@
                                              ;; cheshire
                                              ;; clj-http
                                              ;; compojure
-                                             [org.clojure/core.async "1.6.673"]
+                                             [org.clojure/core.async "1.6.681"]
                                              [org.clojure/core.cache "1.0.225"]
                                              [org.clojure/core.memoize "1.0.257"]
                                              [org.clojure/data.codec "0.1.1"]
