@@ -128,7 +128,8 @@
                ast))]
     (postwalk ast pw)))
 
-(def ^:private ^:dynamic *ancestors*)
+(def ^:private ^:dynamic *ancestors*
+  nil)
 
 (defn add-ancestors-pre [ast]
   (swap! *ancestors* #(update % :ancestors conj ast))

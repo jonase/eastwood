@@ -1,3 +1,10 @@
+## Changes from 1.4.0 to 1.4.1
+
+#### Bugfixes
+
+* Exclude `data_readers.cljc` files from the `:no-ns-form-found` linter.
+  * Closes https://github.com/jonase/eastwood/issues/447
+
 ## Changes from 1.3.0 to 1.4.0
 
 * Make the `:def-in-def` linter omittable via the `disable-warning` mechanism.
