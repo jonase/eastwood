@@ -1008,11 +1008,16 @@
                     (map str)
                     (set))
           tfilemap (-> filemap keys set)
-          maybe-data-readers (->> dir-name-strs
-                                  (map #(File.
-                                         (str % File/separator
-                                              "data_readers.clj")))
-                                  set)]
+          maybe-data-readers (into (->> dir-name-strs
+                                        (map #(File.
+                                               (str % File/separator
+                                                    "data_readers.clj")))
+                                        set)
+                                   (->> dir-name-strs
+                                        (map #(File.
+                                               (str % File/separator
+                                                    "data_readers.cljc")))
+                                        set))]
       {:lint-warnings
        (->> (set/difference files tfilemap maybe-data-readers omit)
             (map (partial make-lint-warning :no-ns-form-found "No ns form was found in file" cwd)))})))
