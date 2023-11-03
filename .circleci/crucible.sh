@@ -54,7 +54,7 @@ if grep --silent "Reflection warning" output; then
 fi
 
 # (Warnings vary per JDK)
-grep --silent "== Warnings: 339. Exceptions thrown: 0" output || grep --silent "== Warnings: 338. Exceptions thrown: 0" output || exit 1
+grep --silent "== Warnings: 339. Exceptions thrown: 0" output || grep --silent "== Warnings: 338. Exceptions thrown: 0" output || grep --silent "== Warnings: 337. Exceptions thrown: 0" output || exit 1
 
 # Exercise malli because Eastwood used to choke on that project due to lack of explicit topo order for ns analysis
 cd ../malli || exit 1
