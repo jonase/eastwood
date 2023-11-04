@@ -1,3 +1,9 @@
+## Changes from 1.4.1 to 1.4.2
+
+#### Changes
+
+* Upgrade `org.ow2.asm/asm-all` to `org.ow2.asm/asm`.
+
 ## Changes from 1.4.0 to 1.4.1
 
 #### Bugfixes

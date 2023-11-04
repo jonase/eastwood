@@ -28,7 +28,7 @@
                    eval-in-leiningen? (conj plugin-source-path))
   :dependencies [[org.clojure/clojure "1.10.3" :scope "provided"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
-                 [org.ow2.asm/asm-all "5.2"]]
+                 [org.ow2.asm/asm "9.6"]]
   :deploy-repositories [["clojars" {:url "https://repo.clojars.org"
                                     :username :env/clojars_username
                                     :password :env/clojars_password
