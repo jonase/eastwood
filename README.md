@@ -453,7 +453,8 @@ depending upon the kind of results you want.
 ;; files.
 (e/eastwood {:source-paths ["src"] :test-paths ["test"]})
 
-(e/lint {:source-paths ["src"] :test-paths ["test"]})
+(e/with-memoization-bindings
+  (e/lint {:source-paths ["src"] :test-paths ["test"]}))
 ```
 
 All of the same options that can be given on a Leiningen command line
