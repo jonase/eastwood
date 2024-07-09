@@ -1,3 +1,8 @@
+## Changes from 1.4.2 to 1.4.3
+
+* No longer consider `No namespaces linted.` as a warning if `:only-modified true`
+and the `.eastwood` file contains a valid timestamp.
+
 ## Changes from 1.4.1 to 1.4.2
 
 #### Changes
@@ -114,7 +119,7 @@ Improve `:found-dir-supersets` error reporting.
 * Deprecate `:parallel?` option.
   * It has never been a safe option; it was removed from the README some time ago.
   * Now if passed, it will fallback to non-parallel code analysis.
-    * A few other things _are_ parallel in Eastwood: from parsing projects, to running linters. 
+    * A few other things _are_ parallel in Eastwood: from parsing projects, to running linters.
 
 #### Bugfixes
 
@@ -125,7 +130,7 @@ Improve `:found-dir-supersets` error reporting.
 * var-info.edn: mark various side-effectful fns as such.
   * This silences a few `:unused-ret-vals` false positives.
   * Fixes https://github.com/jonase/eastwood/issues/421
-* Exclude Lein checkouts' directories from the inferred `:source-paths` (source path inference being Eastwood's fallback to a lack of explicitly specified `:source-paths` / `:test-paths`). 
+* Exclude Lein checkouts' directories from the inferred `:source-paths` (source path inference being Eastwood's fallback to a lack of explicitly specified `:source-paths` / `:test-paths`).
 
 ## Changes from 0.9.6 to 0.9.7
 
@@ -152,7 +157,7 @@ Improve `:found-dir-supersets` error reporting.
   * Fixes https://github.com/jonase/eastwood/issues/411
 * Upgrade `tools.reader`
   * Closes https://github.com/jonase/eastwood/issues/297
-  * Fixes https://github.com/jonase/eastwood/issues/413 
+  * Fixes https://github.com/jonase/eastwood/issues/413
 
 ## Changes from 0.9.3 to 0.9.4
 
@@ -199,7 +204,7 @@ Improve `:found-dir-supersets` error reporting.
 * Enable and refine `:non-dynamic-earmuffs`
   * See https://github.com/jonase/eastwood#non-dynamic-earmuffs
   * It used to be disabled by default.
-  * Now It lints for both missing earmuffs and missing `^:dynamic` metadata. 
+  * Now It lints for both missing earmuffs and missing `^:dynamic` metadata.
 
 #### Bugfixes
 
@@ -237,7 +242,7 @@ Improve `:found-dir-supersets` error reporting.
   * For static method calls (i.e. Java interop), these linters are based on a hardcoded list (`jvm-method-info.edn`) describing their side-effects. Now, if a method isn't found in said list it will be considered side-effectful, favoring false negatives over false positives.
 * Now `:unused-ret-vals`/`:unused-ret-val-on-try` also lint instance method calls.
   * Before, they only linted static method calls (aside from vanilla Clojure calls/exprs)
-  * Similarly to the previous bullet point, these new linters won't fail easily in face of missing method information. 
+  * Similarly to the previous bullet point, these new linters won't fail easily in face of missing method information.
 * Now the `:deprecations` linter won't emit faults if the deprecated defn and a given consumer defn belong to the same ns.
   * Closes https://github.com/jonase/eastwood/issues/402
 
@@ -252,8 +257,8 @@ Improve `:found-dir-supersets` error reporting.
 
 * Omit exceptions coming from individual top-level forms, if they made use of the `clojure.core.async/go` macro.
   * Closes https://github.com/jonase/eastwood/issues/395
-  * This makes Eastwood more capable of analyzing core.async -based projects. It's a temporary measure though, as it ideally this would be simply fixed in the tools.analyzer project. 
-  * You can revert to the old behavior (which most likely will result in errors) by passing `:abort-on-core-async-exceptions? true` as a top-level Eastwood option. 
+  * This makes Eastwood more capable of analyzing core.async -based projects. It's a temporary measure though, as it ideally this would be simply fixed in the tools.analyzer project.
+  * You can revert to the old behavior (which most likely will result in errors) by passing `:abort-on-core-async-exceptions? true` as a top-level Eastwood option.
 * Don't exit succesfully when no namespaces were linted.
   * This could happen on misconfigured `:source-paths`, etc.
   * Closes https://github.com/jonase/eastwood/issues/400
@@ -323,9 +328,9 @@ Improve `:found-dir-supersets` error reporting.
 #### New
 
 * Now the `:wrong-tag` linter can also be configured via the [`disable-warning`](https://github.com/jonase/eastwood#eastwood-config-files) mechanism.
-  * Related: the `disable-warnings` that Eastwood ships by default now prevent false positives against the [speced.def](https://github.com/nedap/speced.def) lib. 
+  * Related: the `disable-warnings` that Eastwood ships by default now prevent false positives against the [speced.def](https://github.com/nedap/speced.def) lib.
 * Now the `:suspicious-test` linter can also be configured via the [`disable-warning`](https://github.com/jonase/eastwood#eastwood-config-files) mechanism.
-  * Relatedly, a certain pattern of usage of the `clojure.test/are` macro now does not trigger a linter fault. 
+  * Relatedly, a certain pattern of usage of the `clojure.test/are` macro now does not trigger a linter fault.
 * Now the `:unused-meta-on-macro` linter can also be configured via the [`disable-warning`](https://github.com/jonase/eastwood#eastwood-config-files) mechanism.
   * Closes https://github.com/jonase/eastwood/issues/303
 * If you invoke `eastwood.lint/eastwood` programatically, now a new key is offered: `:some-errors`, akin to `:some-warnings`.
@@ -333,15 +338,15 @@ Improve `:found-dir-supersets` error reporting.
 
 #### Bugfixes
 
-* Fix false positive `unused-ret-vals-in-try` for `clojure.test` 
+* Fix false positive `unused-ret-vals-in-try` for `clojure.test`
   * Fixes https://github.com/jonase/eastwood/issues/206
 * Fix false positive `suspicious-expression` for `clojure.test/is`
   * Fixes https://github.com/jonase/eastwood/issues/207
 * Support `clojure.test/assert-expr` better
   * Fixes https://github.com/jonase/eastwood/issues/313
-* Vanilla `defn`s having `:test` metadata don't result in false positives for the `:bad-arglists` linter anymore. 
+* Vanilla `defn`s having `:test` metadata don't result in false positives for the `:bad-arglists` linter anymore.
 
-## Changes from 0.3.14 to 0.4.0 
+## Changes from 0.3.14 to 0.4.0
 
 #### New
 
@@ -356,7 +361,7 @@ Improve `:found-dir-supersets` error reporting.
 
 * Improve compatibility with Leiningen higher-order tasks, plugins, etc
   * Fixes https://github.com/jonase/eastwood/issues/244
-* Improve compatibility with forms defined with `^:const` 
+* Improve compatibility with forms defined with `^:const`
   * Fixes https://github.com/jonase/eastwood/issues/341
 * Improve compatibility with CIDER
   * Fixes https://github.com/jonase/eastwood/issues/298
@@ -373,7 +378,7 @@ Improve `:found-dir-supersets` error reporting.
 
 * Drop support for Clojure 1.6
 
-## Changes from 0.3.13 to 0.3.14 
+## Changes from 0.3.13 to 0.3.14
 
 * Improve `:implicit-dependencies` to support potemkin/import-vars
 
@@ -413,7 +418,7 @@ Eastwood will only lint the files which are modified since the timestamp stored 
 ## Changes from 0.3.3 to 0.3.4
 
 * Add support for parallelism. First shot is `:naive` which runs `pmap` over
-the namespaces. 
+the namespaces.
 
 ## Changes from 0.3.2 to 0.3.3
 * Disable `:redefd-vars` warning for mount's `defstate`
