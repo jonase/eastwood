@@ -26,9 +26,9 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :source-paths ~(cond-> ["src" "copied-deps"]
                    eval-in-leiningen? (conj plugin-source-path))
-  :dependencies [[org.clojure/clojure "1.10.3" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.11.3" :scope "provided"]
                  [org.clojars.brenton/google-diff-match-patch "0.1"]
-                 [org.ow2.asm/asm "9.6"]]
+                 [org.ow2.asm/asm "9.7"]]
   :deploy-repositories [["clojars" {:url "https://repo.clojars.org"
                                     :username :env/clojars_username
                                     :password :env/clojars_password
@@ -64,8 +64,8 @@
                                                   [metosin/spec-tools "0.10.5"]
                                                   [org.clojure/core.async "1.6.681"]
                                                   [org.clojure/java.jdbc "0.7.12"]]}
-             :clj-kondo {:dependencies [[clj-kondo "2023.10.20"]]}
-             :antq {:plugins [[com.github.liquidz/antq "2.7.1133"]]
+             :clj-kondo {:dependencies [[clj-kondo "2024.05.24"]]}
+             :antq {:plugins [[com.github.liquidz/antq "2.8.1201"]]
                     :antq {:exclude ["nrepl/nrepl" "org.clojure/clojure"]}}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}
@@ -73,7 +73,7 @@
              :1.10.1 {:dependencies [[org.clojure/clojure "1.10.1"]]}
              :1.10.2 {:dependencies [[org.clojure/clojure "1.10.2"]]}
              :1.10.3 {:dependencies [[org.clojure/clojure "1.10.3"]]}
-             :1.11 {:dependencies [[org.clojure/clojure "1.11.1"]]}
+             :1.11 {:dependencies [[org.clojure/clojure "1.11.3"]]}
              ;; NOTE: if adding a new Clojure version here, please be sure var-info.edn remains up-to-date.
              ;; you can use the `:check-var-info` Lein profile for that.
 
@@ -88,19 +88,19 @@
                                              ;; clj-http
                                              ;; compojure
                                              [org.clojure/core.async "1.6.681"]
-                                             [org.clojure/core.cache "1.0.225"]
-                                             [org.clojure/core.memoize "1.0.257"]
-                                             [org.clojure/data.codec "0.1.1"]
-                                             [org.clojure/data.csv "1.0.1"]
-                                             [org.clojure/data.json "2.4.0"]
-                                             [org.clojure/data.priority-map "1.1.0"]
+                                             [org.clojure/core.cache "1.1.234"]
+                                             [org.clojure/core.memoize "1.1.266"]
+                                             [org.clojure/data.codec "0.2.0"]
+                                             [org.clojure/data.csv "1.1.0"]
+                                             [org.clojure/data.json "2.5.0"]
+                                             [org.clojure/data.priority-map "1.2.0"]
                                              ;; data.xml
                                              ;; data.zip
                                              ;; loom?
                                              ;; instaparse
                                              [org.clojure/java.jdbc "0.7.12"]
                                              ;; math.combinatorics
-                                             [org.clojure/math.numeric-tower "0.0.5"]
+                                             [org.clojure/math.numeric-tower "0.1.0"]
                                              ;; medley
                                              ;; plumbing
                                              ;; potemkin
@@ -114,8 +114,8 @@
                                              ;; tools.macro
                                              ;; tools.namespace
                                              ;; tools.nrepl
-                                             [org.clojure/tools.reader "1.3.6"]
-                                             [org.clojure/tools.trace "0.7.11"]
+                                             [org.clojure/tools.reader "1.4.2"]
+                                             [org.clojure/tools.trace "0.8.0"]
                                              ;; useful
                                              ]}
              :clojure-core-test {:test-paths ^:replace ["clojure-core-test"]}

@@ -612,7 +612,8 @@
      :files (set (concat (:files sp) (:files tp)))
      :file-map (merge (:file-map sp) (:file-map tp))
      :non-clojure-files (set/union (:non-clojure-files sp)
-                                   (:non-clojure-files tp))}))
+                                   (:non-clojure-files tp))
+     :modified-since modified-since}))
 
 (defn replace-linter-keywords [linters all-linters default-linters]
   (mapcat (fn [x]
@@ -762,11 +763,13 @@ Eastwood has other forms of effective, safe parallelism now. Falling back to seq
    "clojure-contrib.clj"
    "third-party-libs.clj"])
 
+(def default-modified-since 0)
+
 (def default-opts {:cwd (.getCanonicalFile (io/file "."))
                    :linters default-linters
                    :debug #{}
                    :only-modified false
-                   :modified-since 0
+                   :modified-since default-modified-since
                    :parallel? :none
                    :source-paths #{}
                    :test-paths #{}
@@ -824,7 +827,7 @@ Eastwood has other forms of effective, safe parallelism now. Falling back to seq
 
 (defn make-report [reporter
                    ^long start-time
-                   {:keys [namespaces]}
+                   {:keys [namespaces modified-since]}
                    {:keys [warning-count error-count]}]
   (reporting/note reporter (format "== Linting done in %d ms ==" (- (System/currentTimeMillis)
                                                                     start-time)))
@@ -839,7 +842,7 @@ Eastwood has other forms of effective, safe parallelism now. Falling back to seq
       (reporting/note reporter "== No namespaces were linted. This might indicate a misconfiguration."))
     {:some-warnings (or (> warning-count 0)
                         has-errors?
-                        nothing-was-linted?)
+                        (and (= default-modified-since modified-since) nothing-was-linted?))
      :some-errors has-errors?}))
 
 (defn eastwood
