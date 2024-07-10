@@ -1,7 +1,6 @@
 ## Changes from 1.4.2 to 1.4.3
 
-* No longer consider `No namespaces linted.` as a warning if `:only-modified true`
-and the `.eastwood` file contains a valid timestamp.
+* No longer consider `No namespaces linted.` as a warning if `:only-modified true` and the `.eastwood` file contains a valid timestamp.
 
 ## Changes from 1.4.1 to 1.4.2
 

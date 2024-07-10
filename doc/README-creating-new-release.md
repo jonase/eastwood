@@ -23,7 +23,7 @@ Commit all of those changes.
 
 Tag it with a version tag, e.g.:
 
-    % git tag -a v1.4.2 -m "1.4.2"
+    % git tag -a v1.4.3 -m "1.4.3"
 
 'git push' by default does not push tags to the remote server.  To
 cause that to happen, use:
